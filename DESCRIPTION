@@ -1,0 +1,17 @@
+Package: point
+Type: Package
+Title: Reading, Processing, and Analysing Raw Ion Count Data
+Version: 0.0.0.9000
+Author@R: person("Martin", "Schobben", email = "schobbenmartin@gmail.com",
+            role = "cre")
+Maintainer: The package maintainer <yourself@somewhere.net>
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+License: What license is it under?
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    dplyr,
+    readr,
+    stringr,
+    purrr
