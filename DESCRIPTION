@@ -10,9 +10,16 @@ Description: More about what it does (maybe more than one line)
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
-Imports: 
+Depends: 
+    R (>= 3.6.2),
     dplyr,
     readr,
     stringr,
     purrr,
-    rlang
+    rlang,
+    tibble,
+    tidyr
+Imports: 
+Suggests: 
+    testthat
+RoxygenNote: 7.0.2

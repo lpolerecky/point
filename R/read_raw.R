@@ -1,51 +1,29 @@
+#' Read raw ion count data
+#'
+#' @param directory A character string
+#'
+#' @return A tibble containing raw ion count data
+#' @examples
+#' read_IC("2018-01-19-GLENDON")
+#'
+#' @importFrom dplyr
+#' @importFrom purrr
+#' @importFrom stringr
+#' @importFrom tibble
+#' @importFrom tidyr
+#'
+#' @export
 
 
 read_IC <- function(directory){
 
-  # extract txt files with count data blocks of each single point measuremen
-  l.c <- dir(paste0(data.path, directory),
-             pattern= ".is_txt") %>%
-    # set names for subsequent storage
-    set_names()
+  l.c <- read_validator(directory)
 
-  # extract stat files with diagnostics of the machine and statistics
-  # l.s <- dir(paste0(data.path, directory),
-  #            pattern= ".stat$") %>%
-  #   # set names for subsequent storage
-  #   set_names()
-  #
-  # x.stat <- map_df(l.s, ~(read_lines(paste0(data.path, directory, "/", .),
-  #                                    skip_empty_rows = TRUE,
-  #                                    n_max = 22)) %>%
-  #                    list() %>% enframe(),
-  #                  .id = "file_nm") %>%
-  #   mutate(file_nm = str_sub(file_nm, end = (str_length(file_nm) - 6)))
-
-  # function for extracting metadata
-  # num_ext <- function(string, regular) {
-  #   if(str_detect(string, regular)){
-  #     string %>%
-  #       str_subset(. , regular) %>%
-  #       str_split(. ,":|=") %>%
-  #       flatten() %>%
-  #       str_trim() %>%
-  #       str_subset(., "^[0-9]") %>%
-  #       as.numeric()} else {NA}
-  # }
-
-  # x.stat <- x.stat %>%
-  #   mutate(
-  #     Bl.n = map_dbl(value, num_ext, "Block number"),
-  #     Bl.m = map_dbl(value, num_ext, "Meas. per block"),
-  #     FC.b = map_dbl(value, num_ext, "FC Background before acq"),
-  #     FC.a = map_dbl(value, num_ext, "FC Background after acq")
-  #   )
-
-  # collecting measurement data and metadata
+# collecting measurement data and metadata
   x.tb <- left_join(
     bind_cols(
-      # raw count data of measrument
-      map_df(l.c, ~read_tsv(paste0(data.path, directory, "/", .),
+# raw count data of measrument
+      map_df(l.c, ~read_tsv(paste0(directory, "/", .),
                             col_names = c("X1", "t", "N"),
                             col_types = cols(X1 = col_skip(),
                                              t = col_character(),
@@ -54,13 +32,13 @@ read_IC <- function(directory){
                             comment = "B",
                             skip = 1
       ), .id = "file_nm") %>%
-        # remove old column headers
+# remove old column headers
         filter(t != "X", N  != "Y") %>%
-        # coercion to numeric values
+# coercion to numeric values
         mutate(t = as.numeric(t), N = as.numeric(N)),
 
-      # saving the metadata of measurement
-      map_df(l.c, ~(read_lines(paste0(data.path, directory, "/", .),
+# saving the metadata of measurement
+      map_df(l.c, ~(read_lines(paste0(directory, "/", .),
                                skip_empty_rows = TRUE)  %>%
                       enframe(name = "n") %>%
                       filter(str_detect(value,"(^\\nB) ([^ ]+) ([^ ]+)")) %>%
@@ -83,17 +61,15 @@ read_IC <- function(directory){
 
 
     ),
-
-    # saving the date of measurement
-    map_df(l.c, ~read_lines(
-      paste0(data.path, directory, "/", .),
-      skip_empty_rows = TRUE)  %>%
-        enframe(name = "n"),
-      .id = "file_nm") %>%
+# saving the date of measurement
+    map_df(l.c, ~read_lines(paste0(directory, "/", .),
+                            skip_empty_rows = TRUE)  %>%
+                   enframe(name = "n"),
+           .id = "file_nm") %>%
       filter(n == 1) %>%
       select(file_nm, sample_date = value),
 
-    by = "file_nm"
+  by = "file_nm"
 
   ) %>%
 
@@ -126,11 +102,80 @@ read_IC <- function(directory){
     mutate(ID = paste(file_nm, t.rw, sep = "/"))
 
 
-  # empty directory list
-  # l.c <- NULL
-  # return(x.stat)
+
   return(x.tb)
-  # x <-left_join(x.tb, x.stat, by = "file_nm")
-  # return(x)
+
 }
+
+#' Validate directory of raw ion count data
+#'
+#' @param directory A character string
+#'
+#' @return A named vector of file names
+#' @examples
+#' read_validator("2018-01-19-GLENDON")
+#'
+#' @importFrom dplyr
+#' @importFrom purrr
+#' @importFrom stringr
+#' @importFrom tibble
+#' @importFrom tidyr
+#'
+
+read_validator <- function(directory){
+
+  # argument class check
+  stopifnot(is_character(directory))
+
+  # extract txt files with count data blocks of each single point measurement
+  l.c <- dir(directory,
+             pattern = ".is_txt") %>%
+           set_names()
+
+  # length check of txt files
+    if (any(map_dbl(l.c, ~
+                    length(read_lines(paste0(directory, "/", .))
+                           )) == 0)) {
+      good <- map_dbl(l.c, ~
+                        length(read_lines(paste0(directory, "/", .)))) > 0
+
+      l.c <- l.c[good]
+
+      warning("empty txt file removed")
+
+    }
+
+  # column content check of txt files
+    if (any(map_dbl(l.c, ~
+               nrow(read_tsv(paste0(directory, "/", .),
+                             comment = "B",
+                             skip = 1,
+                             col_names = c("X1", "t", "N"),
+                             col_types = cols(X1 = col_skip(),
+                                              t = col_character(),
+                                              N = col_character()),
+                             n_max = 2) %>%
+                              filter(t != "X", N  != "Y"))) == 0)){
+
+       good <- map_dbl(l.c, ~
+                         nrow(read_tsv(paste0(directory, "/", .),
+                                       comment = "B",
+                                       skip = 1,
+                                       col_names = c("X1", "t", "N"),
+                                       col_types = cols(X1 = col_skip(),
+                                                        t = col_character(),
+                                                        N = col_character()),
+                                       n_max = 2) %>%
+                                filter(t != "X", N  != "Y"))) > 0
+
+       l.c <- l.c[good]
+
+       warning("txt file contains empty columns")
+
+
+    }
+
+  return(l.c)
+}
+
 
