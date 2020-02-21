@@ -8,6 +8,7 @@
 #'
 #' @import dplyr
 #' @importFrom readr read_tsv read_lines read_table
+#' @importFrom rlang enquo enquos quo get_expr expr_text parse_expr set_expr as_name
 #' @import stringr
 #'
 #' @docType package
