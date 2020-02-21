@@ -1,0 +1,55 @@
+		CAMECA \ ISOTOPES \ Sample : H-6-2-A 
+
+						18.01.20 15:42
+Stage Position   : x=-11308 um  y=-6395  um  z=3566   um
+Raw data file    : D:\Cameca NanoSIMS Data\experience\2020-01-17-TREASURE\2020-01-17-TREASURE_58.is
+Block number     : 15
+Meas. per block  : 10
+Rejection(sigma) : 2
+Slit Preset : None
+Lens Preset : D:\Cameca NanoSIMS Data\Isf\200114_Cs+8kV.isf (Low current [5 pA])
+Pre Sputtering Time (s) : 0.0.
+Scanning On : Frame:1,1-64,64 / Blanking:100.0% / Raster:5.0um
+Tuning Mode: Multicollection
+Regulation Mode: HALL
+Check every (fr.): 0
+Secondary Ion Beam Centering : ON / during Acq : ON every 150 frames.
+	 Width Horizontal(V): 1.039 / Vertical(V): 1.935
+E0S Centering : ON / during Acq : ON every 150 frames.
+	 Width(V): 93.347
+E0P Offset (V): 0.000
+
+Primary Current before acq :   22788 pA / after acq :   22754 pA
+
+FC Background before acq :  Det1= 3262.84 
+
+FC Background after acq :  Det1= 3263.04 
+
+
+Mass# Species        Mass  Det.   Tc(s)   BField    Radius  Peak# RefPeak# Method
+   1  32S           31.968 Tr1    0.541  1217.113   598.199                                
+   2  34S           33.962 Tr2    0.541  1217.113   616.571                            SIBC      E0SC
+
+
+
+E0S Centering Results (Ct:0.540s / Before Centering:E0S(DAC)=2797 )
+	E0S(DAC)=2797  ( 5)                                    
+
+
+SIBC Results
+	Horizontal Centering (Ct:0.540s): Cy(DAC)=519   ( 5)
+	Vertical Centering (Ct:0.540s): P3B(DAC)=783  / P3H(DAC)=782  / P2B(DAC)=1804 / P2H(DAC)=1797 ( 5)
+
+
+E0S Centering during Acq results (Ct:0.540s)
++-----------+------------+
+| E0S Cent# |  E0S(DAC)  |
++-----------+------------+
++-----------+------------+
+
+Sib during Acq results Horizontal Centering (Ct:0.540s) / Vertical Centering (Ct:0.540s)
++-----------+------------+------------+------------+------------+------------+
+| Sib Cent# |   Cy(DAC)  |  P3B(DAC)  |  P3H(DAC)  |  P2B(DAC)  |  P2H(DAC)  |
++-----------+------------+------------+------------+------------+------------+
++-----------+------------+------------+------------+------------+------------+
+

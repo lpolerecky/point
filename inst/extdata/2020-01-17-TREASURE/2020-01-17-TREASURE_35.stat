@@ -1,0 +1,227 @@
+		CAMECA \ ISOTOPES \ Sample : H-6-2-A 
+
+						17.01.20 19:46
+Stage Position   : x=-11512 um  y=-6177  um  z=3516   um
+Raw data file    : D:\Cameca NanoSIMS Data\experience\2020-01-17-TREASURE\2020-01-17-TREASURE_35.is
+Block number     : 15
+Meas. per block  : 10
+Rejection(sigma) : 2
+Slit Preset : None
+Lens Preset : D:\Cameca NanoSIMS Data\Isf\200114_Cs+8kV.isf (Low current [5 pA])
+Pre Sputtering Time (s) : 0.0.
+Scanning On : Frame:1,1-64,64 / Blanking:100.0% / Raster:5.0um
+Tuning Mode: Multicollection
+Regulation Mode: HALL
+Check every (fr.): 0
+Secondary Ion Beam Centering : ON / during Acq : OFF
+	 Width Horizontal(V): 1.052 / Vertical(V): 1.915
+E0S Centering : ON / during Acq : OFF
+	 Width(V): 96.396
+E0P Offset (V): 0.000
+
+Primary Current before acq :   23712 pA / after acq :   23725 pA
+
+FC Background before acq :  Det1= 3262.24 
+
+FC Background after acq :  Det1= 3262.54 
+
+
+Mass# Species        Mass  Det.   Tc(s)   BField    Radius  Peak# RefPeak# Method
+   1  32S           31.968 Tr1    0.541  1217.113   598.197                                
+   2  34S           33.962 Tr2    0.541  1217.113   616.569                            SIBC      E0SC
+
+
+-- Section 1 ---- EM & FC with Setup Background ---------------------
+
+  Block to block results
+
+    Block#  Ratio#    Mean        SD      N_rej Err_mean(%)  Poisson(%)    Khi2 
+
+       1     2/1   4.440E-002  2.67E-004    0   1.90E-001    1.53E-001   1.5E+000
+
+       2     2/1   4.439E-002  2.84E-004    0   2.02E-001    1.53E-001   1.7E+000
+
+       3     2/1   4.453E-002  3.06E-004    0   2.17E-001    1.53E-001   2.0E+000
+
+       4     2/1   4.458E-002  3.10E-004    0   2.20E-001    1.53E-001   2.1E+000
+
+       5     2/1   4.458E-002  1.57E-004    1   1.18E-001    1.61E-001   5.3E-001
+
+       6     2/1   4.465E-002  2.53E-004    0   1.79E-001    1.53E-001   1.4E+000
+
+       7     2/1   4.448E-002  2.07E-004    1   1.55E-001    1.61E-001   9.3E-001
+
+       8     2/1   4.452E-002  3.03E-004    0   2.15E-001    1.53E-001   2.0E+000
+
+       9     2/1   4.446E-002  3.36E-004    0   2.39E-001    1.53E-001   2.4E+000
+
+      10     2/1   4.454E-002  2.71E-004    0   1.93E-001    1.53E-001   1.6E+000
+
+      11     2/1   4.471E-002  3.71E-004    0   2.62E-001    1.53E-001   2.9E+000
+
+      12     2/1   4.452E-002  1.86E-004    0   1.32E-001    1.53E-001   7.5E-001
+
+      13     2/1   4.465E-002  2.84E-004    0   2.01E-001    1.53E-001   1.7E+000
+
+      14     2/1   4.438E-002  3.41E-004    0   2.43E-001    1.53E-001   2.5E+000
+
+      15     2/1   4.443E-002  1.93E-004    1   1.45E-001    1.61E-001   8.1E-001
+
+
+  Cumulated results
+
+    Mass# Cumulated count
+
+       1    1.50336E+008
+       2    6.69372E+006
+
+    Ratio#    Ratios     Err_Poisson(%)  Err_mean(%)    Khi2     SD_Block(%)
+
+     2/1   4.45251E-002    3.95E-002      5.34E-002   1.8E+000    6.54E-001
+
+
+-- Section 2 ---- EM (Yield and Dead time) & FC (Relative gain) with Setup Background
+
+  Block to block results
+
+    Block#  Ratio#    Mean        SD      N_rej Err_mean(%)  Poisson(%)    Khi2
+
+       1     2/1   4.456E-002  2.68E-004    0   1.90E-001    1.53E-001   1.6E+000
+
+       2     2/1   4.455E-002  2.86E-004    0   2.03E-001    1.53E-001   1.8E+000
+
+       3     2/1   4.469E-002  3.08E-004    0   2.18E-001    1.53E-001   2.0E+000
+
+       4     2/1   4.475E-002  3.11E-004    0   2.20E-001    1.53E-001   2.1E+000
+
+       5     2/1   4.474E-002  1.58E-004    1   1.18E-001    1.61E-001   5.3E-001
+
+       6     2/1   4.481E-002  2.55E-004    0   1.80E-001    1.53E-001   1.4E+000
+
+       7     2/1   4.465E-002  2.09E-004    1   1.56E-001    1.61E-001   9.4E-001
+
+       8     2/1   4.468E-002  3.05E-004    0   2.16E-001    1.53E-001   2.0E+000
+
+       9     2/1   4.462E-002  3.37E-004    0   2.39E-001    1.53E-001   2.5E+000
+
+      10     2/1   4.470E-002  2.73E-004    0   1.93E-001    1.53E-001   1.6E+000
+
+      11     2/1   4.487E-002  3.73E-004    0   2.63E-001    1.53E-001   3.0E+000
+
+      12     2/1   4.468E-002  1.87E-004    0   1.32E-001    1.53E-001   7.5E-001
+
+      13     2/1   4.482E-002  2.85E-004    0   2.01E-001    1.53E-001   1.7E+000
+
+      14     2/1   4.455E-002  3.43E-004    0   2.43E-001    1.53E-001   2.5E+000
+
+      15     2/1   4.460E-002  1.94E-004    1   1.45E-001    1.61E-001   8.1E-001
+
+
+  Cumulated results
+
+    Mass# Cumulated count
+
+       1    1.50336E+008
+       2    6.71812E+006
+
+    Ratio#    Ratios     Err_Poisson(%)  Err_mean(%)    Khi2     SD_Block(%)
+
+     2/1   4.46874E-002    3.94E-002      5.35E-002   1.8E+000    6.56E-001
+
+
+-- Section 3 ---- EM (Yield and Dead time) & FC (Relative gain) with Baseline 
+
+  Block to block results
+
+    Block#  Ratio#    Mean        SD      N_rej Err_mean(%)  Poisson(%)    Khi2
+
+       1     2/1   4.456E-002  2.68E-004    0   1.90E-001    1.53E-001   1.6E+000
+
+       2     2/1   4.455E-002  2.86E-004    0   2.03E-001    1.53E-001   1.8E+000
+
+       3     2/1   4.469E-002  3.08E-004    0   2.18E-001    1.53E-001   2.0E+000
+
+       4     2/1   4.475E-002  3.11E-004    0   2.20E-001    1.53E-001   2.1E+000
+
+       5     2/1   4.474E-002  1.58E-004    1   1.18E-001    1.61E-001   5.3E-001
+
+       6     2/1   4.481E-002  2.55E-004    0   1.80E-001    1.53E-001   1.4E+000
+
+       7     2/1   4.465E-002  2.09E-004    1   1.56E-001    1.61E-001   9.4E-001
+
+       8     2/1   4.468E-002  3.05E-004    0   2.16E-001    1.53E-001   2.0E+000
+
+       9     2/1   4.462E-002  3.37E-004    0   2.39E-001    1.53E-001   2.5E+000
+
+      10     2/1   4.470E-002  2.73E-004    0   1.93E-001    1.53E-001   1.6E+000
+
+      11     2/1   4.487E-002  3.73E-004    0   2.63E-001    1.53E-001   3.0E+000
+
+      12     2/1   4.468E-002  1.87E-004    0   1.32E-001    1.53E-001   7.5E-001
+
+      13     2/1   4.482E-002  2.85E-004    0   2.01E-001    1.53E-001   1.7E+000
+
+      14     2/1   4.455E-002  3.43E-004    0   2.43E-001    1.53E-001   2.5E+000
+
+      15     2/1   4.460E-002  1.94E-004    1   1.45E-001    1.61E-001   8.1E-001
+
+
+  Cumulated results
+
+    Mass# Cumulated count
+
+       1    1.50336E+008
+       2    6.71812E+006
+
+    Ratio#    Ratios     Err_Poisson(%)  Err_mean(%)    Khi2     SD_Block(%)
+
+     2/1   4.46874E-002    3.94E-002      5.35E-002   1.8E+000    6.56E-001
+
+
+-- Section 4 ---- EM (Yield and Dead time) & FC (Relative gain) with Analysis Background 
+
+  Block to block results
+
+    Block#  Ratio#    Mean        SD      N_rej Err_mean(%)  Poisson(%)    Khi2
+
+       1     2/1   4.402E-002  2.63E-004    0   1.89E-001    1.53E-001   1.5E+000
+
+       2     2/1   4.401E-002  2.81E-004    0   2.02E-001    1.53E-001   1.7E+000
+
+       3     2/1   4.416E-002  3.03E-004    0   2.17E-001    1.53E-001   2.0E+000
+
+       4     2/1   4.421E-002  3.04E-004    0   2.18E-001    1.53E-001   2.0E+000
+
+       5     2/1   4.421E-002  1.56E-004    1   1.17E-001    1.61E-001   5.3E-001
+
+       6     2/1   4.428E-002  2.51E-004    0   1.80E-001    1.53E-001   1.4E+000
+
+       7     2/1   4.411E-002  2.05E-004    1   1.55E-001    1.61E-001   9.3E-001
+
+       8     2/1   4.414E-002  3.00E-004    0   2.15E-001    1.53E-001   2.0E+000
+
+       9     2/1   4.409E-002  3.31E-004    0   2.38E-001    1.52E-001   2.4E+000
+
+      10     2/1   4.417E-002  2.68E-004    0   1.92E-001    1.53E-001   1.6E+000
+
+      11     2/1   4.433E-002  3.65E-004    0   2.61E-001    1.53E-001   2.9E+000
+
+      12     2/1   4.415E-002  1.82E-004    0   1.30E-001    1.53E-001   7.3E-001
+
+      13     2/1   4.428E-002  2.78E-004    0   1.99E-001    1.53E-001   1.7E+000
+
+      14     2/1   4.401E-002  3.35E-004    0   2.41E-001    1.53E-001   2.5E+000
+
+      15     2/1   4.406E-002  1.91E-004    1   1.44E-001    1.61E-001   8.1E-001
+
+
+  Cumulated results
+
+    Mass# Cumulated count
+
+       1    1.52162E+008
+       2    6.71812E+006
+
+    Ratio#    Ratios     Err_Poisson(%)  Err_mean(%)    Khi2     SD_Block(%)
+
+     2/1   4.41512E-002    3.94E-002      5.32E-002   1.8E+000    6.51E-001
