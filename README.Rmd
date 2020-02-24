@@ -10,7 +10,9 @@ knitr::opts_chunk$set(
   comment = "#>",
   fig.path = "man/figures/README-",
   out.width = "100%",
-  warning = FALSE
+  warning = FALSE, 
+  results = "asis",
+  encoding ='UTF-8'
 )
 ```
 
@@ -57,7 +59,7 @@ tb.R <- stat_R(tb.pr, Xt.pr, N.pr, ID = "ID", ion1 = "13C", ion2 = "12C",
 
 
 
-kableExtra::kable(tb.R[[1]] %>% rename(!!!tb.R[[2]]), escape = FALSE)
+knitr::kable(tb.R[[1]] %>% rename(!!tb.R[[2]]), escape = FALSE) 
 
 
 ```
