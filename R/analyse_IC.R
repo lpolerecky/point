@@ -148,28 +148,36 @@ stat_R <- function(df, Xt, N, ID, ion1, ion2, ... , latex = FALSE){
                      "hat_S", "hat_RS", "hat_SeM", "hat_RSeM",
                      "chi2"), "R", quo_name(Xt), sep = "_")
 
+# to render nice latex variable names in Rmarkdown with mathjax and latex
   ls.latex <- ls.names %>%
-                purrr::set_names(., nm = c("$$n$$", "$$\\bar{x}$$", "$$r$$", "$$s_x$$",
-                                           "$$\\epsilon_x$$", "$$s_\\bar{x}$$", "$$\\epsilon_\\bar{x}$$",
-                                           "$$\\hat{s}_x$$", "$$\\hat{\\epsilon}_x$$", "$$\\hat{s}_\\bar{x}$$",
-                                           "$$\\hat{\\epsilon}_\\bar{x}$$", "$$\\chi^2$$"))
+                purrr::set_names(., nm = c("$n$",
+                                           "$\\bar{x}$",
+                                           "$r$",
+                                           "$s_x$",
+                                           "$\\epsilon_x$",
+                                           "$s_\\bar{x}$",
+                                           "$\\epsilon_\\bar{x}$",
+                                           "$\\hat{s}_x$",
+                                           "$\\hat{\\epsilon}_x$",
+                                           "$\\hat{s}_\\bar{x}$",
+                                           "$\\hat{\\epsilon}_\\bar{x}$",
+                                           "$\\chi^2$"))
 
   args <- purrr::set_names(args, nm = ls.names)
 
-  if (latex) {return(list(
+  df <- df %>%
+          filter(species.nm == ion1 | species.nm == ion2) %>%
+          stat_Xt(., Xt = !!Xt, N = !!N, !!! gr_by) %>%
+          left_join(df, . ,by = sapply(gr_by, as_name)) %>%
+          cov_R(df = . , ID = ID, ion1 = ion1, ion2 = ion2, !!! gr_by) %>%
+          group_by(!!! gr_by) %>%
+          summarise(!!! args) %>%
+          mutate(species.nm = paste(ion1, ion2, sep = "/")) %>%
+          rename(R.nm = "species.nm") %>%
+          ungroup()
 
-  df %>%
-    filter(species.nm == ion1 | species.nm == ion2) %>%
-    stat_Xt(., Xt = !!Xt, N = !!N, !!! gr_by) %>%
-    left_join(df, . ,by = sapply(gr_by, as_name)) %>%
-    cov_R(df = . , ID = ID, ion1 = ion1, ion2 = ion2, !!! gr_by) %>%
-    group_by(!!! gr_by) %>%
-    summarise(!!! args) %>%
-    mutate(species.nm = paste(ion1, ion2, sep = "/")) %>%
-    rename(R.nm = "species.nm") %>%
-    ungroup(),
-
-    ls.latex))}
+  # return list for nice latex variable names in Rmarkdown with mathjax and latex
+  if (latex) {return(list(df, ls.latex))} else {return(df)}
 }
 
 

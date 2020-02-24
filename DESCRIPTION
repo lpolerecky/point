@@ -2,7 +2,8 @@ Package: point
 Type: Package
 Title: Reading, Processing, and Analysing Raw Ion Count Data
 Version: 0.0.0.9000
-Author@R: person("Martin", "Schobben", email = "schobbenmartin@gmail.com",
+Author@R: 
+    person("Martin", "Schobben", email = "schobbenmartin@gmail.com",
             role = "cre")
 Maintainer: The package maintainer <yourself@somewhere.net>
 Description: More about what it does (maybe more than one line)

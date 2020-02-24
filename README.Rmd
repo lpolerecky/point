@@ -1,8 +1,10 @@
 ---
-output: github_document
+output: 
+  github_document:
+    pandoc_args: --webtex
 ---
+<!--  use the --webtex argument in the YAML to render equations -->
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
@@ -57,10 +59,12 @@ tb.Xt <- stat_Xt(tb.pr, Xt.pr, N.pr, file.nm, species.nm)
 tb.R <- stat_R(tb.pr, Xt.pr, N.pr, ID = "ID", ion1 = "13C", ion2 = "12C",
                file.nm, species.nm, latex = TRUE)
 
-
-
-knitr::kable(tb.R[[1]] %>% rename(!!tb.R[[2]]), escape = FALSE) 
-
-
+# use the second element of the list to get nice variable names rendering in 
+# Rmarkdown
+knitr::kable(tb.R[[1]] , escape = FALSE, 
+             col.names = c("file","R", names(tb.R[[2]])),
+             format.args = list(digits = 5, format = "G", flag = "0")) 
 ```
+
+
 
