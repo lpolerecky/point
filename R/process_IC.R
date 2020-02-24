@@ -18,7 +18,7 @@
 #' @export
 cor_IC <-function(df, N, t, Det, deadtime = 44){
 
-  stopifnot(is.tibble(df))
+  stopifnot(tibble::is_tibble(df))
   stopifnot(is.numeric(deadtime))
 
   N <- enquo(N)

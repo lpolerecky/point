@@ -79,7 +79,7 @@ read_IC <- function(directory){
 read_validator <- function(directory){
 
 # argument class check
-  stopifnot(is_character(directory))
+  stopifnot(is.character(directory))
 
 # extract txt files with count data blocks of each single point measurement
   l.c <- dir(directory,
@@ -133,8 +133,7 @@ read_validator <- function(directory){
 
 #' @describeIn read_IC
 #'
-
-
+#' @export
 read_meta <- function(directory){
 
 # NA aliases
@@ -150,13 +149,13 @@ read_meta <- function(directory){
 # remove transect files
            purrr::discard(., str_detect(., "transect.stat"))
 
-  min_n <- lapply(map(l.s, ~read_lines(paste0(directory, "/", .),
+  min_n <- lapply(purrr::map(l.s, ~read_lines(paste0(directory, "/", .),
                                        n_max = 50)),
                   str_which, "#") %>%
             purrr::map(., 1) %>%
             purrr::flatten_dbl()
 
-  max_n <- lapply(map(l.s, ~read_lines(paste0(directory, "/", .),
+  max_n <- lapply(purrr::map(l.s, ~read_lines(paste0(directory, "/", .),
                                        n_max = 50)),
                   str_which, "--") %>%
             purrr::map(., 1) %>%
@@ -213,8 +212,8 @@ read_meta <- function(directory){
       filter(str_detect(value, ".")) %>%
 # remove date
       filter(!str_detect(value, pattern  = "\t\t\t\t\t\t")) %>%
-      separate_rows(value, sep = "(/(?=[:blank:])) | =") %>%
-      separate(value,
+      tidyr::separate_rows(value, sep = "(/(?=[:blank:])) | =") %>%
+      tidyr::separate(value,
                into = c("variable", "value"),
                sep =":(?!\\\\)",
                extra = "merge") %>%
@@ -257,7 +256,7 @@ meta.nm  <- c(
 
   tb.meas <- tb.meas %>%
                mutate(value = purrr::map(value, str_unfold)) %>%
-               unnest(cols = c(value)) %>%
+               tidyr::unnest(cols = c(value)) %>%
                select(file.nm, date, !!! meta.nm[meta.nm %in% colnames(.)]) %>%
                mutate_at(vars(contains(".mt")), as.double) %>%
 # add measurement number

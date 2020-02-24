@@ -66,7 +66,7 @@ stat_Xt <- function(df, Xt, N, ...){
   ls.names <-paste0(c("n_", "Ntot_", "M_", "S_", "RS_", "SeM_", "hat_S_", "hat_SeM_"),
                     quo_name(Xt))
 
-  args <- set_names(args, nm = ls.names)
+  args <- purrr::set_names(args, nm = ls.names)
 
   df <- df %>%
     group_by(!!! gr_by) %>%
@@ -77,7 +77,7 @@ stat_Xt <- function(df, Xt, N, ...){
 
 #' function for propagation of uncertainty in ion ratios (isotope values)
 #' @export
-stat_R <- function(df, Xt, N, ID, ion1, ion2, ...){
+stat_R <- function(df, Xt, N, ID, ion1, ion2, ... , latex = FALSE){
 
   Xt <- enquo(Xt)
   N <- enquo(N)
@@ -148,7 +148,15 @@ stat_R <- function(df, Xt, N, ID, ion1, ion2, ...){
                      "hat_S", "hat_RS", "hat_SeM", "hat_RSeM",
                      "chi2"), "R", quo_name(Xt), sep = "_")
 
-  args <- set_names(args, nm = ls.names)
+  ls.latex <- ls.names %>%
+                purrr::set_names(., nm = c("$$n$$", "$$\\bar{x}$$", "$$r$$", "$$s_x$$",
+                                           "$$\\epsilon_x$$", "$$s_\\bar{x}$$", "$$\\epsilon_\\bar{x}$$",
+                                           "$$\\hat{s}_x$$", "$$\\hat{\\epsilon}_x$$", "$$\\hat{s}_\\bar{x}$$",
+                                           "$$\\hat{\\epsilon}_\\bar{x}$$", "$$\\chi^2$$"))
+
+  args <- purrr::set_names(args, nm = ls.names)
+
+  if (latex) {return(list(
 
   df %>%
     filter(species.nm == ion1 | species.nm == ion2) %>%
@@ -159,7 +167,9 @@ stat_R <- function(df, Xt, N, ID, ion1, ion2, ...){
     summarise(!!! args) %>%
     mutate(species.nm = paste(ion1, ion2, sep = "/")) %>%
     rename(R.nm = "species.nm") %>%
-    ungroup()
+    ungroup(),
+
+    ls.latex))}
 }
 
 
