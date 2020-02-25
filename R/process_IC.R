@@ -16,7 +16,7 @@
 #' @param ... Variables for grouping
 #'
 #' @export
-cor_IC <-function(df, N, t, Det, deadtime = 44){
+cor_IC <-function(df, N, t, Det, deadtime = 44, disc.value = 180){
 
   stopifnot(tibble::is_tibble(df))
   stopifnot(is.numeric(deadtime))
@@ -38,4 +38,18 @@ cor_IC <-function(df, N, t, Det, deadtime = 44){
                  N.pr = if_else(!!Det == "EM",
                                 (Xt.rw / (1 - (Xt.rw * deadtime * 10^-9))) * dt,
                                 Xt.rw ))
+  if (!is.null(disc.value)) {
+
+    df <- df %>%
+# remove data that has not the required metadata for yield correction
+            filter(!is.na(PHD)) %>%
+            group_by(file.nm) %>%
+            mutate(Y = ppois(disc.value, lambda = PHD, lower.tail = FALSE),
+                   Xt.pr = Xt.pr / Y,
+                   N.pr = Xt.pr * dt)
+
+    warning("if primary current metadata is not avalaible ion counts are removed")
+
+  }
+  return(df)
   }

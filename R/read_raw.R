@@ -275,4 +275,58 @@ meta.nm  <- c(
 
 # function to read CAMECA output to validate point output (future work!!)
 # read_test
+read_test <- function(directory, block = 1){
 
+  # block for checking
+  if (block == 1) {bl <- 2}
+  if (block == 4) {bl <- max}
+
+  # extract stat files with diagnostics of the machine and statistics
+  l.s <- dir(directory,
+             pattern = ".stat$") %>%
+    # set names for subsequent storage
+    purrr::set_names() %>%
+    # remove transect files
+    purrr::discard(., str_detect(., "transect.stat"))
+
+
+  max_n <- lapply(purrr::map(l.s, ~read_lines(paste0(directory, "/", .),
+                                                n_max = -1)),
+                    str_which, "Mass#") %>%
+    purrr::map(., bl) %>%
+    purrr::flatten_dbl()
+
+
+# test dataset
+  l.R <- lst(a = l.s, b =  max_n  + 8  , c = 5) # isotope
+  l.N <- lst(a = l.s, b =  max_n  - 1  , c = 7) # cumulative count
+# function
+  fun_read.R <- function(a, b, c) {
+
+    read_table(paste0(directory, "/", a),
+               skip =  b,
+               n_max = c,
+               col_types = "cddddd")
+  }
+
+  fun_read.N <- function(a, b, c) {
+
+    read_table(paste0(directory, "/", a),
+                       skip = b,
+                       n_max = c ,
+                       col_types = "cd") %>%
+      tidyr::drop_na()
+  }
+
+  tb.test.R <- purrr::pmap_dfr(l.R, fun_read.R, .id = "file.nm") %>%
+                 mutate(file.nm = str_sub(file.nm,
+                                        end = (str_length(file.nm) - 5)))%>%
+                 mutate(file.nm = paste0(file.nm, ".is_txt"))
+
+  tb.test.N <- purrr::pmap_dfr(l.N, fun_read.N, .id = "file.nm") %>%
+                 mutate(file.nm = str_sub(file.nm,
+                                          end = (str_length(file.nm) - 5)))%>%
+                 mutate(file.nm = paste0(file.nm, ".is_txt"))
+
+  return(list(tb.test.N = tb.test.N, tb.test.R = tb.test.R))
+}
