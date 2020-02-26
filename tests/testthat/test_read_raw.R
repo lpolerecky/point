@@ -58,11 +58,10 @@ validate_IC <- function(ion1, ion2, block){
                    thr <- 180}
 
 
-# perform the routine point workflow for EM data but without correcting the data
-# raw data containing 13C and 12C counts on carbonate
+# perform the routine point workflow for IC data
   tb.rw <- read_IC(sv1)
 
-# processing raw ion count data (deadtime to zero, no correction for deadtime)
+# processing raw ion count data
   tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt, deadtime = deadtime, thr = thr)
 
 # single ion descriptive an predictive statistics for all measured ions
@@ -72,11 +71,11 @@ validate_IC <- function(ion1, ion2, block){
 
 # descriptive an predictive statistics for 13C/12C ratios
   tb.R <- stat_R(tb.pr, Xt.pr, N.pr, ID = "ID", ion1 = "13C", ion2 = "12C",
-               file.nm, species.nm, latex = FALSE) %>%
+                 file.nm, species.nm, latex = FALSE) %>%
 # round number as provided comparison data is not accurate enough
             mutate(M_R_Xt.pr = round(M_R_Xt.pr, 7))
 
-# the comparison dataset
+# ion counts in comparison dataset
   tb.test.Xt <- read_test(sv1, block = block)[[1]] %>%
                   mutate(species.nm = recode(num.mt,
                                          !!! rlang::set_names(unique(tb.rw$species.nm),

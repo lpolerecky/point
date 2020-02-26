@@ -21,5 +21,8 @@ Imports:
     stringr,
     readr
 Suggests: 
-    testthat
+    testthat,
+    knitr,
+    rmarkdown
 RoxygenNote: 7.0.2
+VignetteBuilder: knitr

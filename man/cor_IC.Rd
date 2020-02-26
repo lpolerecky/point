@@ -4,7 +4,7 @@
 \alias{cor_IC}
 \title{Process raw ion count data}
 \usage{
-cor_IC(df, N, t, Det, deadtime = 44, disc.value = 180)
+cor_IC(df, N, t, Det, deadtime = 44, thr = 180)
 }
 \arguments{
 \item{df}{A tibble containing raw ion count data}
@@ -27,4 +27,16 @@ count data and accompayning is extracted and collated into a single tible
 from text files with the extensions \emph{.is_txt} and \emph{.stat},
 respectively. These files can be found in the directories associated with the
 SIMS measurements.
+}
+\examples{
+# Use system.file() to access the examples bundled with this package in the
+# inst/extdata directory. The examples directories are named:
+# 2020-01-17-TREASURE and "2018-01-19-GLENDON"
+
+# raw data containing 13C and 12C counts on carbonate
+tb.rw <- read_IC(system.file("extdata", "2018-01-19-GLENDON", package = "point"))
+
+# processing raw ion count data
+tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
+
 }
