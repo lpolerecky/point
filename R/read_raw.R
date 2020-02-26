@@ -149,6 +149,36 @@ read_meta <- function(directory){
 # remove transect files
            purrr::discard(., str_detect(., "transect.stat"))
 
+  l.p <- dir(directory,
+             pattern = ".chk_is$") %>%
+# set names for subsequent storage
+           purrr::set_names() %>%
+# remove transect files
+           purrr::discard(., str_detect(., "transect.chk_is"))
+
+  PHD_n <- lapply(purrr::map(l.p, ~read_lines(paste0(directory, "/", .),
+                                       n_max = 50) ),
+                  str_which, "PHDc(?=\\(Mass)")
+
+  l.PHD <- lst(a = l.p,  b = PHD_n, c = lapply(b, length))
+
+  f.PHD <- function(a, b, c) {
+
+         readr::read_table2(paste0(directory, "/", a),
+
+                            col_names = c("num.mt", "PHD", "SD", "EMHV"),
+                            col_types = "-cddd",
+                            na = c(mapply(strrep,"X", 1:10, USE.NAMES =  FALSE), "1.#R"),
+                            skip = b[1] - 1,
+                            n_max = c)
+  }
+
+  tb.PHD <- purrr::pmap_dfr(l.PHD, f.PHD, .id = "file.nm") %>%
+                  mutate(file.nm = str_sub(file.nm,
+                             end = (str_length(file.nm) - 7))) %>%
+                  mutate(num.mt = as.numeric(str_extract(num.mt,"[:digit:]")))
+
+
   min_n <- lapply(purrr::map(l.s, ~read_lines(paste0(directory, "/", .),
                                        n_max = 50)),
                   str_which, "#") %>%
@@ -160,7 +190,6 @@ read_meta <- function(directory){
                   str_which, "--") %>%
             purrr::map(., 1) %>%
             purrr::flatten_dbl()
-
 
 # ions and MS setup
   l <- lst(a = l.s, b =  min_n  , c = (max_n - 3) - b )
@@ -265,9 +294,11 @@ meta.nm  <- c(
                mutate(det_type.mt = if_else("FC_start.mt" %in% colnames(.),
                                             "FC", "EM"))
 
-# combine MS and beam metadata
+# combine PHD, MS and beam metadata
 
-  tb.meta <- left_join(tb.ion, tb.meas, by = "file.nm") %>%
+  tb.meta <- list(tb.ion, tb.meas, tb.PHD) %>%
+               purrr::reduce2(., lst(by = c("file.nm"),
+                                     by = c("file.nm", "num.mt")) , left_join) %>%
                mutate(file.nm = paste0(file.nm, ".is_txt"))
 
   }
@@ -298,15 +329,20 @@ read_test <- function(directory, block = 1){
 
 
 # test dataset
-  l.R <- lst(a = l.s, b =  max_n  + 8  , c = 5) # isotope
-  l.N <- lst(a = l.s, b =  max_n  - 1  , c = 7) # cumulative count
+  l.R <- lst(a = l.s, b =  max_n  + 10 , c = 5) # isotope
+  l.N <- lst(a = l.s, b =  max_n, c = 7) # cumulative count
 # function
   fun_read.R <- function(a, b, c) {
 
     read_table(paste0(directory, "/", a),
                skip =  b,
                n_max = c,
-               col_types = "cddddd")
+               col_names = c("R.nm", "M_R_Xt.test",
+                             "RSeM_R_Xt.test", "hat_RSeM_R_Xt.test",
+                             "chi2_R_Xt.test"),
+               col_types = "cdddd-") %>%
+      mutate(RSeM_R_Xt.test = RSeM_R_Xt.test * 10,
+             hat_RSeM_R_Xt.test = hat_RSeM_R_Xt.test *10)
   }
 
   fun_read.N <- function(a, b, c) {
@@ -314,6 +350,7 @@ read_test <- function(directory, block = 1){
     read_table(paste0(directory, "/", a),
                        skip = b,
                        n_max = c ,
+                       col_names = c("num.mt", "Ntot_Xt.test"),
                        col_types = "cd") %>%
       tidyr::drop_na()
   }

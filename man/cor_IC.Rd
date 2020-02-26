@@ -4,7 +4,7 @@
 \alias{cor_IC}
 \title{Process raw ion count data}
 \usage{
-cor_IC(df, N, t, Det, deadtime = 44)
+cor_IC(df, N, t, Det, deadtime = 44, disc.value = 180)
 }
 \arguments{
 \item{df}{A tibble containing raw ion count data}
