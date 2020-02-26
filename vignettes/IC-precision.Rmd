@@ -1,0 +1,233 @@
+---
+title: "IC-precision"
+author: "Martin Schobben" 
+output: 
+  rmarkdown::html_vignette:
+        fig_caption: true
+        pandoc_args:  [
+      "--csl", "~/Documents/work/projects/Glendonite_project/common/aquatic-microbial-ecology.csl",
+      "--citation-abbreviations", "~/Documents/work/projects/Glendonite_project/common/abbreviations.json", "--filter", "~/.cabal/bin/pandoc-crossref"
+      ]
+bibliography: biblio.bib
+vignette: >
+  %\VignetteIndexEntry{IC-precision}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+
+
+# Analysis for Ion Count Precision
+Secondary ion mass spectrometry (SIMS) have become an increasingly popular tool for Earth scientists to investigate natural phenomena such as biomineralization and sediment diagenesis, or to track the fate of labelled tracers in stable isotope probing experiments. The random nature of secondary ions emitted from a sample is described by Poisson statistics, which can be used to predict the precision of SIMS measurements under ideal circumstances (e.g., the predicted standard error can be deduced from the total counts of secondary ions). Usefully, we can compare these predictive values with the actual descriptive statistics which rely on estimates of the true population location (e.g. mean) and spread (variance), and assuming that our sample of the infinite population is an accurate estimation. In the package `point` tools are implemented that perform these statistical analysis on raw ion count data with error propagation when appropriate. Working with raw ion count data has certain benefits as it allows subsetting of certain parts of the analysis by checking for anomolous measurements. The latter is more detailed in the vignette *IC-diagnostics* but which heavily relies on the here outlined data transformations.
+
+
+```{r setup}
+# library(point)
+devtools::load_all(".")
+```
+
+## Nomenclature
+
+* Sample: sample of the true population
+* Analytical substrate: Physical sample measured during SIMS analysis
+* Event: single event of an ion hitting the detector
+* Measurement: single count cycle $N_i$
+* Count block: multitude of measurements $N_{(i)}$ (count cycles of length $n$)
+* Analysis: multitude of count blocks, constituting the different spots on the analytical substrate 
+
+
+## Internal precision of the SIMS analysis
+
+Analytical precission is consistency check of a series of analytical results. In the here outlined example, we will check for internal consistency in the analytical output of ion count data generated with a *NanoSIMS Cameca 50L*. In these exercises, we will elucidate the steps taken to obtain descriptive statistics for single ion counts and isotope ratios ($R$). The descriptive are then cross-validated with the results of predictive statistics (Poisson statistics) for single ions and isotopic ratios. 
+
+## Example dataset
+
+In this document we use ion count data generated with the *Cameca NanoSIMS 50L* at the Department of Earth Sciences at Utrecht University. The analysis were performed in January 2018 by the analysts: *Chloe Morales*, *Michiel Kienhuis*, and *Lubos Polerecky*. Measurements were performed on calcium carbonate rock (so-called glendonites) of Jurassic and Cretaceous age. This dataset consisting of several text files, contained in one directory (with suffix *GLENDON*), are provided along with the package, and can be accessed as follows with the function `read_IC` (more information on reading raw ion count data can be found in the vignette *IC-reader*).
+
+
+```{r warning = FALSE}
+# Use system.file() to access the examples bundled with this package in the
+# inst/extdata directory. The examples directories are named:
+# 2020-01-17-TREASURE and "2018-01-19-GLENDON"
+
+# raw data containing 13C and 12C counts on carbonate
+tb.rw <- read_IC(system.file("extdata", "2018-01-19-GLENDON", package = "point"))
+```
+
+
+The ion count obtained include: `r unique(tb.rw$species.nm)`, of which some are polyatomic.
+
+
+As a first step, the counts of a single count cycle ($N_i$) are normalised against the time it took to complete the cycle ($0.541$ s) to account for differences in the count times for two different isotopes during stable isotopic SIMS analysis. Hence, for the time period ($t$) over which an isotope species $a$ during measurement $i$ accumulated, the count rate is given by 
+
+
+$$X_i^{a} = N_i^{a} / t_i^{a}$$ {#eq:N.rate}
+
+For this we will use the function `cor_IC`
+
+```{r}
+# processing raw ion count data
+tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
+```
+
+
+## Descriptive and predictive statistics for single ions
+The function `stat_Xt` can be used on the previously processed dataset and gives descriptive and predictive statistics of all the individual ions. The function requires the following arguments; `df`, which is a tibble containing the processed ion cound data; `Xt`, which is the column in said tibble containing the ion count rates; `N`, which is the processed counts. The dots `...` should be used to define a grouping variable for an analysis (here defined as the filenames of the loaded data) and a grouping variable for the count block for the individual species.
+
+```{r}
+# single ion descriptive an predictive statistics for all measured ions
+tb.Xt <- stat_Xt(tb.pr, Xt.pr, N.pr, file.nm, species.nm, latex = TRUE)
+
+knitr::kable(head(tb.Xt[[1]] %>% rename(file = "file.nm", species = "species.nm", 
+                                   !!! tb.Xt[[2]])))
+```
+
+The following statistics are calculated with the function `stat_Xt` for single ions: number of measurements ($n$), total number of counts ($N_{(i)}$), the arithmetic mean ($\bar{x}$), the standard deviation ($s_x$), the standard error of the mean ($s_{\bar{x}}$), the predicted standard deviation ($\hat{s}_x$), and the predicted standard error of the mean ($\hat{s}_{\bar{x}}$) for which the .. is delineated in detail below.
+
+### Arithmetic mean
+The sample mean ($\bar{x}$) of isotope species $a$ over a complete count block is given by: 
+
+$$ \bar{x}_a =  \frac{1}{n} \sum_{i=1}^{n} X_i^a $$ {#eq:M.rate}
+
+To validate the internal consistency of the SIMS data, it is necessary to define the internal precision of the count blocks. This can be done with the standard deviation ($s_x$), which gives the spread of the sample, and the standard error of the mean ($s_{\bar{x}}$), which defines how well this sample mean approximates the true population mean ($\mu$). These statistics rely on the assumption that the underlying probability distribution follows a normal distribution.    
+
+### Standard deviation
+
+The standard deviation for a limited sample of the population gives a measure of how individual measurements are spread about the mean in one count block, and is given by   
+
+
+$$ s_x = \sqrt{\sum_{i=1}^{n}  \frac{(x_{i}-\bar{x})^2}{n-1}} $$ {#eq:std}
+  
+where $n$ is the number of measurement cycles in the count block and $x_i$ is the $i$-th measurement cycle. The number of measurements is subtracted with one ($n - 1$) to show that only $n - 1$ of the $(x_{i}-\bar{x})^2$ are independent. The sample standard deviation can inform about the confidence whether a single measurements falls within a given range of the sample mean value. 
+
+### Standard error of the mean
+
+The standard error of the mean ($s_{\bar{x}}$) provides a measure of how well the mean of a limited sample (i.e., count block) approximates the actual population mean. This measure can be used to gauge the precision of the count block with $n$ measurement cycles. This value is dependent on the number of measurements ($n$) and thus becomes smaller with increasing measurement numbers (i.e. $\bar{x}$ becomes more precise). The standard error of the mean is given by the following equation
+
+$$ s_{\bar{x}} = \frac{s_{x}}{\sqrt{n}} $$ {#eq:se}
+
+### Predicted standard deviation
+
+SIMS measurements have an inherent fundamental imprecision, which  is dictated by the random nature of secondary ion production. This restrict the precision of the analysis to a certain analytical threshold. The amplitude of this inherent variation can be gauged with Poisson statistics. The Poisson distribution describes the likelihood of random events occurring over a defined (and fixed) time-period. Further conditions to be satisfied to validate the assumption of a Poisson distribution is the observation that $N$ should be able to occur over a larger number of occasions and that the probability of the event occurring at a particular occasions is limited but constant. In the case of SIMS measurements $N_i$ is the number of secondary ions counted by the detector during a single measurement cycle. 
+
+
+The predicted standard deviation of a whole count block is directly related to the population mean of $N_{(i)}$ ($\mu_{N}$) by the equation;
+
+$$ \sigma = \sqrt(\mu_{N})$$ {#eq:base.pois}
+
+In this formulation the population mean of N ($\mu_{N}$) can be substituted by the mean number of events (i.e. secondary ion counts) per time unit, or $\bar{N}$. The predicted standard deviation can therefore be deduced from the mean number of counts for that particular ion per count block, as follows
+
+$$\hat{s}_{N} = \sqrt{\bar{N}}$$ {#eq:std.pois}
+
+where:
+
+$$\bar{N} = \frac{1}{n}\sum_{i=1}^{n}N_i$$ {#eq:mean.N}
+
+In this formulation, the hat on $\hat{s}_x$ denotes that the statistics is predictive, instead of $s_x$ which is an observed value. The commonality of the two measures is, however that they are a estimate of the true population $\sigma$. 
+
+### Predicted standard error of the mean
+
+In a similar fashion the standard error of the mean for Poisson statistics depends again on the number of measurements $n$, and can be formulated as follows
+
+$$\hat{s}_{\bar{N}} = \sqrt{\left( \frac{ \bar{N}}{n}\right)}$$ {#eq:se.pois}
+
+## Descriptive and descriptive statistics for isotope ratios
+The function `stat_R` can be used on the previously processed dataset and gives descriptive and predictive statistics for a pre-specified isotope ratio ($R$); e.g. $^{13}$C/$^{12}$C. Note that only isotope pairs give sensible statistical results as the ionization potential for two isotope of one element should be relatively similar. The function requires the following arguments; `df`, which is a tibble containing the processed ion count data; `Xt`, which is the column in said tibble containing the ion count rates; `N`, which is the processed counts; `ID`, a character string which should uniquelly identify ion pairs for calculating the isotope ratio; `ion1`, representing the heavy ion of the pair, and `ion2` for the ligth isotope. The dots `...` should be used to define a grouping variable for an analysis (here defined as the filenames of the loaded data) and a grouping variable for the count block for the individual species.
+
+
+```{r}
+# descriptive an predictive statistics for 13C/12C ratios
+tb.R <- stat_R(tb.pr, Xt.pr, N.pr, ID = "ID", ion1 = "13C", ion2 = "12C",
+               file.nm, species.nm, latex = TRUE)
+
+knitr::kable(head(tb.R[[1]] %>% rename(file = "file.nm", R = "R.nm", 
+                                   !!! tb.R[[2]])))
+```
+
+### Error propagation for descriptive statistics of isotope ratios
+
+The mean isotope ratio ($\bar{x}_{R}$) can be calculated from the mean values of the specific ions of the complete count block.
+
+$$ \bar{x}_{R} = \frac{\frac{1}{n}\sum_{i = 1}^{n} X_i^{b}}{\frac{1}{n}\sum_{i = 1}^{n} X_i^{a}} $$ {#eq:mean.R}
+
+and this value can be considered as an estimate of the true isotopic value ($\mu_R$). The uncertainties associated with the SIMS count rates of the individual variables $X^{b}$ (e.g. ^13^C) and $X^{a}$ (e.g. ^12^C) need to be combined. This can be achieved by applying; *The formula for exact propagation of error*
+
+
+$$s_x^{2} \approx \sum_{i = 1}^{n} \left[ \left( \frac{\partial F}{\partial z_i} \right) s_i^{2} \right] + 2 \sum_{j = 1}^{n} \sum_{k = 1}^{n} \left[ \left( \frac{\partial F}{\partial z_j} \right) \left( \frac{\partial F}{\partial z_k} \right) s_j s_k \right]$${#eq:er.prop}
+
+
+, which ensures proper propagation of the error. In this formulation $r_{jk}$ stands for the correlation coefficient for the variables $z_j$ and $z_k$, as defined by
+
+$$ r_{jk} = \frac{1}{\left(n-1\right) s_j s_k} \sum_{i=1}^n{ \left[ \left(z_{j}\right)_i - \bar{z}_j \right] \left[ \left(z_{k}\right)_i - \bar{z}_k \right]} $${#eq:corr}
+
+yields an estimate for the sample correlation coefficient, where values can range between $-1$ and $+1$, and thereby recording a inverse or positive linear correlation between the variables, and no correlation if $r$ falls close to zero. For this the `R base` function `cor()` was used, with the `method` argument set to `"pearson"`.
+
+Recasting [@eq:er.prop] for when $\mathrm{F}(...)$ is $R$, and with the variables $\bar{x}^{b}$ (e.g. ^13^C) and $\bar{x}^{a}$ (e.g. ^12^C), yields the following equation:
+ 
+$$  s_{x_{R}} = \sqrt{ \left( \frac{ s_{x_{b}}}{\bar{x}_{b}} \right)^2 + \left( \frac{ s_{x_{a}}}{\bar{x}_{a}} \right)^2 - \frac{2r_{X^{b}X^{a}} s_{x_{b}} s_{x_{a}}}{\bar{x}_{b}\bar{x}_{a}}} \times \bar{x}_{R} $${#eq:er.prop.ad}
+
+The standard error of the mean isotope value $s_{\bar{x}_{R}}$ is obtained through diving $s_{x_{R}}$ by $\sqrt(n)$. Both the standard deviation and standard error of the mean of the isotope value can be expressed as relative values in ‰ by dividing them through the $\bar{x}_{R}$ and multiplying by $1.000$.  
+ 
+
+
+### Error propagation for predictive statistics of isotope ratios
+
+For SIMS isotope analysis we need to have at least two different count blocks, so that we can get a count ratio, as defined by [@eq:mean.R], and where $X_i$ is a time normalised count, or count rate. Satisfying this assumption provides us with count-rate ratio $R$ for measurement $i$ of the isotopes $a$ and $b$, where we take a mean $\bar{x}_{R}$ from the completed count block as our estimate of the true isotope value $\mu_R$.  As the predicted $\hat{S}_x$ can be calculated for single  ions, this should also mean that the uncertainty in the isotope measurement can be predicted ($\hat{S}_R$). And, again this requires proper error propagation to incorporate the cumulative errors on the counts of both isotopes; $N^{a}$ and $N^{b}$, over one count block [@Fitzsimons2000a]. Since the count-rate ratio $R$ is a linear function of the count ratio, it is possible to use the standard deviation of the count ratio $\hat{S}_{N^{b}/N^{a}}$ instead of $\hat{S}_{R}$, following that:
+
+$$ \hat{S}_{R} \approx \left(\frac{t^{a}}{t^{b}} \right) \hat{S}_{N^{b}/N^{a}}$$ {#eq:N_R}
+
+This provides the possibility to express $\hat{S}_{N^{b}/N^{a}}$ in terms of the standard deviations of the individual counts, and by using [@eq:er.prop], yielding;
+
+$$ \hat{S}_{N^{b}/N^{a}} \approx \sqrt{ \left( \frac{\hat{S}_{N^{b}}}{N^{a}} \right) + \left( \frac{\hat{S}_{N^{b}}}{N^{a}} \right)  - \frac{2r_{N^{b}N^{a}} s_{N^{b}} s_{N^{a}}}{N^{b}N^{a}} }\times \frac{N^{b}}{N^{a}} $$ {#eq:std.pois.R1}
+
+As the both count statistics are independent, the $r$ becomes zero. The predicted standard deviations for $N^{b}$ and $N^{a}$ can be approximated by the population mean, according to [@eq:std.pois], thereby transforming [@eq:std.pois.R1] to
+
+$$ \hat{S}_{N^{b}/N^{a}} \approx \sqrt{\frac{1}{ \bar{N}^{b}} + \frac{1}{ \bar{N}^{a}}} \times  \bar{N}^{b}/\bar{N}^{a} $$ {#eq:std.pois.R2}
+
+in which we can substitute [@eq:N_R] to obtain
+
+$$ \hat{S}_{x} \approx \sqrt{\frac{1}{ \bar{N}^{b}} + \frac{1}{ \bar{N}^{a}}} \times  \frac{\bar{N}^{b}}{\bar{N}^{a}} \left( \frac{t^{a}}{t^{b}} \right) $$  {#eq:std.pois.R3}
+
+, which is equivalent to 
+
+$$ \hat{S}_{N^{b}/N^{a}} \approx \sqrt{\frac{1}{ \bar{N}^{b}} + \frac{1}{ \bar{N}^{a}}} \times  \bar{x}_{R}$$ {#eq:std.pois.R4}
+
+In [@eq:std.pois.R4], we can substitute [@eq:mean.N] for $\bar{N}^{b}$ and $\bar{N}^{b}$, respectively.
+
+$$ \hat{s}_{x_{R}} = 
+        \sqrt{ 
+            \left( 
+                \frac{1}{\sum_{i = 1}^{n}{N_i^a}} \right)  + 
+             \left( 
+                 \frac{1}{\sum_{i = 1}^{n}{N_i^b}} \right)} \times \bar{x}_R \sqrt{n}
+                $$ {#eq:std.pois.R5}
+
+The predicted standard error of the mean of a repeated set of measurements in one count block is then:
+
+
+$$ \hat{s}_{\bar{x}_{R}} = 
+        \sqrt{ 
+            \left( 
+                \frac{1}{\sum_{i = 1}^{n}{N_i^a}} \right)  + 
+             \left( 
+                 \frac{1}{\sum_{i = 1}^{n}{N_i^b}} \right)}  \times  \bar{x}_R$$ {#eq:std.pois.R6}
+                 
+The latter to measures can be expressed as relative uncertainties in ‰, following the same transformation as for the descriptive statistics.         
+
+
+## Verdict predictive and descriptive statistics
+
+The $\chi^2$ is used how well the machine approximated the theoretical precision for isotope analysis:
+
+$$\chi^2 = \left( \frac{s_{\bar{x}_R}} {\hat{s}_{\bar{x}_R}} \right)^2   $$
+
+
+
