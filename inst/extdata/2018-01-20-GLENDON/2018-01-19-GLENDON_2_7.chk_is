@@ -1,0 +1,63 @@
+		CAMECA \ ISOTOPES \ Sample : W12, Indium (W12_Indium_1_7) 
+
+						19.01.18 19:42
+Stage Position   : x=13060  um  y=13876  um  z=2915   um
+Raw data file    : D:\Cameca NanoSIMS Data\experience\2018-01-19-GLENDON\2018-01-19-GLENDON_2_7.is
+Block number     : 50
+Meas. per block  : 80
+Rejection(sigma) : 2
+Slit Preset : None
+Lens Preset : D:\Cameca NanoSIMS Data\Isf\180111_Cs+0kV.isf (Low current [200pA])
+Pre Sputtering Time (s) : 299.5.
+               Raster (um) : 7.0
+               Slit Preset : None
+               Lens Preset : D:\Cameca NanoSIMS Data\Isf\180111_Cs+0kV.isf (Low current [100pA])
+Scanning On : Frame:1,1-32,32 / Blanking:35.3% / Raster:5.0um
+Tuning Mode: Multicollection
+Regulation Mode: HALL
+Check every (fr.): 0
+Secondary Ion Beam Centering : ON / during Acq : ON every 4000 frames.
+	 Width Horizontal(V): 1.919 / Vertical(V): 1.683
+E0S Centering : ON / during Acq : ON every 4000 frames.
+	 Width(V): 136.357
+E0P Offset (V): 0.000
+
+Primary Current before acq :   27980 pA / after acq :   27850 pA
+
+
+Mass# Species        Mass  Det.   Tc(s)   BField    Radius  Peak# RefPeak# Method
+   1  12C           12.000 Tr1    0.191  1435.746   310.698                       PHDc SIBC      E0SC
+   2  13C           13.002 Tr2    0.191  1435.746   323.409                                
+   3  12C2          24.001 Tr3    0.191  1435.746   439.398                                
+   4  12C 13C       25.002 Tr4    0.191  1435.746   448.467                                
+   5  12C 14N       26.004 Tr5    0.191  1435.746   457.363                                
+   6  13C 14N       27.003 Tr6    0.191  1435.746   466.068                                
+   7  40Ca 16O      55.958 Det7   0.191  1435.746   670.920                       PHDc     
+
+
+Phd Centering Results
+                Max(mV)    SD   EMHV(V)
+  PHDc(Mass# 1)  207.10  19.66  2050.27
+  PHDc(Mass# 7)  213.03   9.55     0.00
+
+E0S Centering Results (Ct:0.540s / Before Centering:E0S(DAC)=2839 )
+	E0S(DAC)=2837  ( 5) (Before SIBC : E0S(DAC)=2836  ( 7))
+
+
+SIBC Results
+	Horizontal Centering (Ct:0.540s): Cy(DAC)=456   ( 5)
+	Vertical Centering (Ct:0.540s): P3B(DAC)=806  / P3H(DAC)=805  / P2B(DAC)=1871 / P2H(DAC)=1877 ( 5)
+
+
+E0S Centering during Acq results (Ct:0.540s)
++-----------+------------+
+| E0S Cent# |  E0S(DAC)  |
++-----------+------------+
++-----------+------------+
+
+Sib during Acq results Horizontal Centering (Ct:0.540s) / Vertical Centering (Ct:0.540s)
++-----------+------------+------------+------------+------------+------------+
+| Sib Cent# |   Cy(DAC)  |  P3B(DAC)  |  P3H(DAC)  |  P2B(DAC)  |  P2H(DAC)  |
++-----------+------------+------------+------------+------------+------------+
++-----------+------------+------------+------------+------------+------------+
+
