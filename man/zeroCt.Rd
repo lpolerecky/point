@@ -4,7 +4,7 @@
 \alias{zeroCt}
 \title{function to detect and remove zero counts of desired isotope system}
 \usage{
-zeroCt(df, N, ion1, ion2, ...)
+zeroCt(df, N, species, ion1, ion2, ...)
 }
 \description{
 function to detect and remove zero counts of desired isotope system

@@ -68,8 +68,9 @@ read_IC <- function(directory){
       tb.meta,
 
       by = c("file.nm", "num.mt")) %>%
-# creation of unique ID within count which links the different ions
-        mutate(ID = paste(file.nm, t.rw, sep = "/"))
+# clear suffix from filename
+        mutate(file.nm = str_sub(file.nm,
+                                  end = (str_length(file.nm) - 7)))
 
 }
 
@@ -286,7 +287,7 @@ meta.nm  <- c(
   tb.meas <- tb.meas %>%
                mutate(value = purrr::map(value, str_unfold)) %>%
                tidyr::unnest(cols = c(value)) %>%
-               select(file.nm, date, !!! meta.nm[meta.nm %in% colnames(.)]) %>%
+               select(file.nm, sample.nm, date, !!! meta.nm[meta.nm %in% colnames(.)]) %>%
                mutate_at(vars(contains(".mt")), as.double) %>%
 # add measurement number
                mutate(n.rw = `bl_num.mt (n)` * `meas_bl.mt (n)`) %>%
@@ -338,7 +339,7 @@ read_test <- function(directory, block = 1){
                skip =  b,
                n_max = c,
                col_names = c("R.nm", "M_R_Xt.test",
-                             "RSeM_R_Xt.test", "hat_RSeM_R_Xt.test",
+                             "hat_RSeM_R_Xt.test", "RSeM_R_Xt.test",
                              "chi2_R_Xt.test"),
                col_types = "cdddd-") %>%
       mutate(RSeM_R_Xt.test = RSeM_R_Xt.test * 10,
@@ -366,4 +367,26 @@ read_test <- function(directory, block = 1){
                  mutate(file.nm = paste0(file.nm, ".is_txt"))
 
   return(list(tb.test.N = tb.test.N, tb.test.R = tb.test.R))
+}
+
+
+
+
+#' Get path to point example
+#'
+#' This function comes from the package `readr`, and has been modified to access
+#' the bundled datatsets in it directory `inst/extdata` of `point`. This
+#' function make them easy to access
+#'
+#' @param path Name of file. If `NULL`, the example files will be listed.
+#' @export
+#' @examples
+#' point_example()
+#' point_example("2018-01-19-GLENDON")
+point_example <- function(path = NULL) {
+  if (is.null(path)) {
+    dir(system.file("extdata", package = "point"))
+  } else {
+    system.file("extdata", path, package = "point", mustWork = TRUE)
+  }
 }

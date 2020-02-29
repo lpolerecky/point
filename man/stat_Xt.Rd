@@ -4,7 +4,7 @@
 \alias{stat_Xt}
 \title{Analyse raw ion count data}
 \usage{
-stat_Xt(df, Xt, N, ...)
+stat_Xt(df, Xt, N, species, ..., latex = FALSE)
 }
 \arguments{
 \item{df}{A tibble containing processed ion count data}

@@ -4,7 +4,7 @@
 \alias{cov_R}
 \title{covariate convertion for isotope systems}
 \usage{
-cov_R(df, ID, ion1, ion2, ...)
+cov_R(df, species, ion1, ion2, ...)
 }
 \description{
 covariate convertion for isotope systems

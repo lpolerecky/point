@@ -1,0 +1,38 @@
+---
+title: "IC-read"
+author: "Martin Schobben" 
+output: 
+  rmarkdown::html_vignette:
+        fig_caption: true
+        pandoc_args:  [
+      "--csl", "~/Documents/work/projects/Glendonite_project/common/aquatic-microbial-ecology.csl",
+      "--citation-abbreviations", "~/Documents/work/projects/Glendonite_project/common/abbreviations.json", "--filter", "~/.cabal/bin/pandoc-crossref"
+      ]
+bibliography: biblio.bib
+vignette: >
+  %\VignetteIndexEntry{IC-precision}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+# Reading Raw Ion Count Data and Metadata
+
+Raw count data was extracted and collated into a single data frame from files with the extension *"is_txt"* found in the directories associated with the SIMS measurements on glendonite specimens and a belemnite reference, which had been labelled with the suffix *"-GLENDON"*. 
+
+The function `ext_SIMS()`, which takes a single argument; the directory file name, was written to collect the data and transform it into a single file containing; the file name (`file`), the counts (`Y`) and associated measurement order (`X`). The data is complemented with metadata of the associated measurement; the number of measurements (`n`), the magnetic field flux (`B`), the radius (`R`), the mass of measured species (`M`), the assigned name of the species (`species`), the measurement time in milliseconds (`Tc (ms)`), the assigned sample name (`sample`), and the date and time of the measurement (`date`).
+
+
+
+```{r setup}
+#library(point)
+devtools::load_all(".")
+```
+

@@ -41,11 +41,11 @@
 #'                file.nm, species.nm)
 #'
 #' @export
-stat_Xt <- function(df, Xt, N, ... , latex = FALSE){
+stat_Xt <- function(df, Xt, N, species, ... , latex = FALSE){
 
   Xt <- enquo(Xt)
   N <- enquo(N)
-  gr_by <- enquos(...)
+  gr_by <- enquos(..., species)
 
   args <- list(# number of ion counts
     quo(n()),
@@ -68,12 +68,12 @@ stat_Xt <- function(df, Xt, N, ... , latex = FALSE){
   # to render nice latex variable names in Rmarkdown with mathjax and latex
   ls.latex <- ls.names %>%
     purrr::set_names(., nm = c("$n$",
-                               "$N_{(i)}$",
-                               "$\\bar{x}$",
-                               "$s_x$",
-                               "$s_\\bar{x}$",
-                               "$\\hat{s}_x$",
-                               "$\\hat{s}_\\bar{x}$"))
+                               "$N_{tot}$",
+                               "$\\bar{X}$",
+                               "$s_X$",
+                               "$s_\\bar{X}$",
+                               "$\\hat{s}_N$",
+                               "$\\hat{s}_\\bar{N}$"))
 
   args <- purrr::set_names(args, nm = ls.names)
 
@@ -82,22 +82,37 @@ stat_Xt <- function(df, Xt, N, ... , latex = FALSE){
     summarise(!!! args) %>%
     ungroup()
 
-  # return list for nice latex variable names in Rmarkdown with mathjax and latex
-  if (latex) {return(list(df, ls.latex))} else {return(df)}
+  if(latex) {
+
+      df <- df %>%
+              mutate(species.nm = purrr::map_chr(species.nm,
+                                                 ~latex_parser(.x,
+                                                               ion1 = NULL,
+                                                               ion2 = NULL)))
+
+# return list for nice latex variable names in Rmarkdown with mathjax and latex
+    return(list(df, ls.latex))
+
+    } else {
+
+      return(df)
+    }
 
   }
 
 
 #' function for propagation of uncertainty in ion ratios (isotope values)
 #' @export
-stat_R <- function(df, Xt, N, ID, ion1, ion2, ... , latex = FALSE){
+stat_R <- function(df, Xt, N, species, ion1, ion2, ..., latex = FALSE){
 
   Xt <- enquo(Xt)
   N <- enquo(N)
+  species <- enquo(species)
   gr_by <- enquos(...)
 
+
   # # check and remove zero counts
-  df <- zeroCt(df = df, N = !!N, ion1 = ion1, ion2 = ion2, !!! gr_by)
+  # df <- zeroCt(df = df, N = !!N, ion1 = ion1, ion2 = ion2, !!! gr_by)
 
   # heavy isotope
   Xt1 <- quo_updt(Xt, ion1)
@@ -120,7 +135,7 @@ stat_R <- function(df, Xt, N, ID, ion1, ion2, ... , latex = FALSE){
     # mean isotope
     quo(mean(!!Xt1) / mean(!!Xt2)),
     # correlation coefficient
-    quo(cor(!!Xt2, !!Xt1, method = "pearson")),
+    quo(cor(!!Xt1, !!Xt2, method = "pearson")),
     # SD isotope
     quo(sqrt(
       ((unique(!!S.Xt1) / unique(!!M.Xt1)) ^ 2) +
@@ -131,30 +146,31 @@ stat_R <- function(df, Xt, N, ID, ion1, ion2, ... , latex = FALSE){
            (unique(!!M.Xt1) * unique(!!M.Xt2)))) *
         !!quo_updt(my_q = Xt , x = "M_R")),
     # RSD isotope
-    quo(!!quo_updt(my_q = Xt , x = "S_R") /
-          !!quo_updt(my_q = Xt , x = "M_R") * 1000),
+    quo((!!quo_updt(my_q = Xt , x = "S_R") /
+         !!quo_updt(my_q = Xt , x = "M_R")) * 1000),
     # SE isotope
     quo(!!quo_updt(my_q = Xt , x = "S_R") / sqrt(n())),
     # RSE isotope
-    quo(!!quo_updt(my_q = Xt , x = "SeM_R") /
-          !!quo_updt(my_q = Xt , x = "M_R") * 1000),
+    quo((!!quo_updt(my_q = Xt , x = "SeM_R") /
+         !!quo_updt(my_q = Xt , x = "M_R")) * 1000),
     # predictive SD isotope
     quo(sqrt((1 / sum(!!Yt2)) +
-               (1 / sum(!!Yt1))) *
+             (1 / sum(!!Yt1))) *
           unique(!!quo_updt(my_q = Xt , x = "M_R")) *
           sqrt(n())),
     # predictive RSD isotope
-    quo(!!quo_updt(my_q = Xt , x = "hat_S_R") /
-          !!quo_updt(my_q = Xt , x = "M_R") * 1000),
+    quo((!!quo_updt(my_q = Xt , x = "hat_S_R") /
+         !!quo_updt(my_q = Xt , x = "M_R")) * 1000),
     # predictive SE isotope
-    quo(!!quo_updt(my_q = Xt , x = "hat_S_R") /
-          sqrt(n())),
+    quo(sqrt((1 / sum(!!Yt2)) +
+             (1 / sum(!!Yt1))) *
+        unique(!!quo_updt(my_q = Xt , x = "M_R"))),
     # predictive RSE isotope
-    quo(!!quo_updt(my_q = Xt , x = "hat_SeM_R") /
-          !!quo_updt(my_q = Xt , x = "M_R") * 1000),
+    quo(sqrt((1 / sum(!!Yt2)) +
+             (1 / sum(!!Yt1))) * 1000),
     # reduced chi squared
     quo((!!quo_updt(my_q = Xt , x = "SeM_R") /
-           !!quo_updt(my_q = Xt , x = "hat_SeM_R")) ^ 2)
+         !!quo_updt(my_q = Xt , x = "hat_SeM_R")) ^ 2)
   )
 
   ls.names <-paste(c("n", "M", "cor", "S", "RS", "SeM", "RSeM",
@@ -164,45 +180,56 @@ stat_R <- function(df, Xt, N, ID, ion1, ion2, ... , latex = FALSE){
 # to render nice latex variable names in Rmarkdown with mathjax and latex
   ls.latex <- ls.names %>%
                 purrr::set_names(., nm = c("$n$",
-                                           "$\\bar{x}$",
+                                           "$\\bar{R}$",
                                            "$r$",
-                                           "$s_x$",
-                                           "$\\epsilon_x$",
-                                           "$s_\\bar{x}$",
-                                           "$\\epsilon_\\bar{x}$",
-                                           "$\\hat{s}_x$",
-                                           "$\\hat{\\epsilon}_x$",
-                                           "$\\hat{s}_\\bar{x}$",
-                                           "$\\hat{\\epsilon}_\\bar{x}$",
-                                           "$\\chi^2$"))
+                                           "$s_{R}$",
+                                           "$\\epsilon_{R} (\\text{‰})$",
+                                           "$s_{\\bar{R}}$",
+                                           "$\\epsilon_{\\bar{R}} (\\text{‰})$",
+                                           "$\\hat{s}_{R}$",
+                                           "$\\hat{\\epsilon}_{R} (\\text{‰})$",
+                                           "$\\hat{s}_{\\bar{R}}$",
+                                           "$\\hat{\\epsilon}_{\\bar{R}} (\\text{‰})$",
+                                           "$\\chi^{2}$"))
 
   args <- purrr::set_names(args, nm = ls.names)
 
-  df <- df %>%
-          filter(species.nm == ion1 | species.nm == ion2) %>%
-          stat_Xt(., Xt = !!Xt, N = !!N, !!! gr_by) %>%
-          left_join(df, . ,by = sapply(gr_by, as_name)) %>%
-          cov_R(df = . , ID = ID, ion1 = ion1, ion2 = ion2, !!! gr_by) %>%
+  gr_names <- c(sapply(gr_by, as_name), purrr::pluck(as_name(species)))
+
+  df <- df  %>%
+          stat_Xt(., Xt = !!Xt, N = !!N, species =  !!species, !!! gr_by) %>%
+          left_join(df, . , by = gr_names) %>%
+    # check and remove zero counts
+          zeroCt(., N = !!N, species = !!species, ion1 = "13C", ion2 = "12C", !!! gr_by) %>%
+
+          cov_R(df = . , species = !!species, ion1 = ion1, ion2 = ion2, !!! gr_by) %>%
           group_by(!!! gr_by) %>%
           summarise(!!! args) %>%
-          mutate(species.nm = paste(ion1, ion2, sep = "/")) %>%
-          rename(R.nm = "species.nm") %>%
           ungroup()
 
-  # return list for nice latex variable names in Rmarkdown with mathjax and latex
-  if (latex) {return(list(df, ls.latex))} else {return(df)}
+# return list for nice latex variable names in Rmarkdown with mathjax and latex
+  if (latex) {
+
+    df <- df %>%
+      mutate(R.nm = latex_parser(species = NULL, ion1, ion2))
+
+    return(list(df, ls.latex))
+
+
+    } else {return(df)}
 }
 
 
 
 #' function to detect and remove zero counts of desired isotope system
-zeroCt <- function(df, N, ion1, ion2, ...){
+zeroCt <- function(df, N, species, ion1, ion2, ...){
 
   N <- enquo(N)
+  species <- enquo(species)
   gr_by <- enquos(...)
 
   gr.ls <- df %>%
-             filter(species.nm == ion1 | species.nm == ion2)
+            filter_at(vars(!!species), any_vars(. %in% "12C"))
 
   if (any(gr.ls %>% select(!!N) %>% pull(!!N) == 0)) {
 
@@ -219,20 +246,34 @@ zeroCt <- function(df, N, ion1, ion2, ...){
 }
 
 #' covariate convertion for isotope systems
-cov_R <- function(df, ID, ion1, ion2, ...){
-
+cov_R <- function(df, species, ion1, ion2, ...){
 
   gr_by <- enquos(...)
+  species <- enquo(species)
+
+  df <- df %>%
+          group_by(!!! gr_by, !! species) %>%
+          mutate(ID = row_number()) %>%
+          ungroup() %>%
+# uniqually identifies ion pairs for calculating isotope ratios
+          tidyr::unite(col = ID, !!! gr_by, ID, sep = "/", remove = FALSE) # %>%
+          # filter_at(vars(contains("species")), any_vars(. %in% c("12C", "13C")))
 
   # filtering single ion stats minor isotope
-  df.13C <- df %>% filter(species.nm == ion1)
+  # df.13C <- df %>%
+  #             filter_at(vars(contains("species")), any_vars(. %in% ion1))
+  df.13C <- df %>% filter(!! species == ion1)
 
   # filtering single ion stats major isotope
-  df.12C <- df %>% filter(species.nm == ion2) %>% select(-c(!!! gr_by))
+  # df.12C <- df %>%
+  #             filter_at(vars(contains("species")), any_vars(. %in% ion2)) %>%
+  df.12C <- df %>% filter(!! species == ion2) %>%
+                    select(-c(!!! gr_by))
 
-  df.R <- full_join(df.13C,  df.12C, by = ID,
+  df.R <- full_join(df.13C,  df.12C, by = "ID",
                     suffix = c(paste0(".", ion1),
-                               paste0(".", ion2)))}
+                               paste0(".", ion2)))
+  }
 
 #' quosure updater
 quo_updt <- function(my_q, txt = NULL, x = NULL, sepfun = "_"){
@@ -257,4 +298,54 @@ quo_updt <- function(my_q, txt = NULL, x = NULL, sepfun = "_"){
   new_expr <- parse_expr(new_chr)
   # update old quosure
   set_expr(my_q, new_expr)
+}
+
+
+latex_parser <- function(species, ion1, ion2){
+
+if(length(species) != 0){
+
+# seperator for poly atomic speices
+if (any(str_detect(species, "[:blank:]"))){ sep <- "--"} else {sep <- ""}
+
+species <- paste(
+  paste0(
+         paste0("$^{",
+                str_extract_all(species, "[:digit:]+(?=[:alpha:])")[[1]][1],
+                "}$"),
+         str_extract_all(species, "[:alpha:]+")[[1]][1],
+         paste0("$_{",
+                str_extract_all(species, "(?<=[:alpha:])[:digit:]+")[[1]][1],
+                "}$")
+         ),
+  paste0(
+         paste0("$^{",
+                str_extract_all(species, "[:digit:]+(?=[:alpha:])")[[1]][2],
+                "}$"),
+         str_extract_all(species, "[:alpha:]+")[[1]][2],
+         paste0("$_{",
+                str_extract_all(species, "(?<=[:alpha:])[:digit:]+")[[1]][2],
+                "}$")
+         ),
+  sep = sep
+  )
+
+species <- str_replace_all(species, "NA", "")
+
+}else{
+
+R <- paste(
+  paste0(
+    paste0("$^{",str_extract(ion1, "^\\d+"),"}$"),
+    str_extract(ion1, "\\D+"),
+    paste0("$_{",str_extract(ion1, "\\d*$"),"}$")
+  ),
+  paste0(
+    paste0("$^{",str_extract(ion2, "^\\d+"),"}$"),
+    str_extract(ion2, "\\D+"),
+    paste0("$_{",str_extract(ion2, "\\d*$"),"}$")
+  ), sep = "/")
+
+}
+
 }

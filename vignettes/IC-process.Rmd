@@ -1,0 +1,60 @@
+---
+title: "IC-process"
+author: "Martin Schobben" 
+output: 
+  rmarkdown::html_vignette:
+        fig_caption: true
+        pandoc_args:  [
+      "--csl", "~/Documents/work/projects/Glendonite_project/common/aquatic-microbial-ecology.csl",
+      "--citation-abbreviations", "~/Documents/work/projects/Glendonite_project/common/abbreviations.json", "--filter", "~/.cabal/bin/pandoc-crossref"
+      ]
+bibliography: biblio.bib
+vignette: >
+  %\VignetteIndexEntry{IC-precision}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+#library(point)
+devtools::load_all(".")
+```
+
+# Accuracy of Ion Coun Data
+
+
+## Analytical bias introduced by electron multipliers
+
+Bias can be introduced by the way secondary ions are generated from primary Cs and O as well as the ion to electron conversion efficiency. The latter results in the EM gain, which is a measure of the electron output current relative to the ion input and the aplification afcter ion to electron conversion. In this succesive amplification phase the EM's high voltgae and age play a determening role. A correction for EM aging can be made by using the (pulse height distribution) PHD distribution, and by keeping the HG constant throughout sibsequent measurements. As the high counts of the heavy isotope excelerate the age proces this effects shoudl be obvious from the isotope rate over time. As such equation is a way to monitor over time:
+
+$$ \delta_t = \frac{R_t - R_{t1}}{R_{t1} }\times 10^3 $$
+
+
+ 
+Another bias introduced is the time associated for recovery after an ion hits the first dynode in the EM, as a second ion arriving at the same time could then not be recorede. ALthough this deadtime $t_{ns}$ is small $44$ns, with high count frequencty the cumulate change of this occuring in that timewindow increases and ebcomes significant.FOr the SIMS Cameca 50L this has to be corrected for, by use of the following equation:
+
+$$X_{i}^* = \frac{1}{Y} \times \frac{X_i - X_b}{1-\left(X_i - X_b\right) \times t_{ns} \times 10^9}$$
+, where Y is the detector yield, $N_b$ is the background count rate.
+
+Next in line is another effect which relates to the source of the secondary ions. The efficiency by which an secondary ion is generated can vary dramtically per matrix, element and even isotope. As a result high secondary ion production can result instances where two ion are arriving simultaneously at the EM as the originate from the same primary ion impacting the substrate. Thereby representing a misrepresentation of the counts and skewed isotope values. This is especially relevatn for the major ion in isotope analyses as the efficiency of secondary ion generation is higher, and the low probability of QSA becomes higher. This can be corrected by taking the average number of secondary ions ejected per primary ion, or efficiency (seconary ion geneated : primary ions) : $K$, and by assuming Poisson statistics dictates the probability of QSA:
+
+$$X_i^{**} = X_i^{*} \times (1+fK)$$
+
+, where $f$ is 0.5 based on Poisson statistics, btu has been shown to vary among matrices. At this stage it is hard assess what $K$ could have been.
+
+## The instrumental mass fractionation
+
+The instrumental mass fractionation causes the isotopic composition of the ion current and signal registered to be distinctly different from the true isotopic composition of the analytical substrate. To accomodate for this often large discrepance in the accuracy of SIMS isotope analsyses, a standard with a known isotopic value is measured along with the samples of interest. With this standard the unkown isotopic composition of the sample can be calculated as follows:
+
+$$ \delta = \left(\left[\frac{\bar{x}_R}{\bar{x}_{R_{std}}}  \right] \left( \delta_{std} + 1000  \right) \right) -1000 $$
+
+The isotopic composition of the standard is measured via traditional IRMS and posses it's own analytical uncertainty. Along with the precision achievable with the multiple count cycles of SIMS on the sample and standard this yield a cumulative uncertainty for each sample's isotopic measurement. The standard error of the isotope value that can account for both the SIMS and IRMS precision can be calculated by:
+
+$$ s_{\delta_{\bar{x}}} = \sqrt{\left( \frac{ s_{\bar{x}_{R}} } { \bar{x}_R } \right)^2 + \left( \frac{ s_{\bar{x}_{R_{std}}}  } { \bar{x}_{R_{std}} } \right)^2 + \left( \frac{ s_{\delta_{std}} } { \delta_{std} +1000 } \right)^2} $$

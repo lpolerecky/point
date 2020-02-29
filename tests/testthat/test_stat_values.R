@@ -31,7 +31,9 @@ validate_IC <- function(ion1, ion2, block){
   # single ion descriptive an predictive statistics for all measured ions
   tb.Xt <- stat_Xt(tb.pr, Xt.pr, N.pr, file.nm, species.nm) %>%
     # round number as provided comparison data is not accurate enough
-    mutate(Ntot_Xt.pr = if_else(Ntot_Xt.pr > 10^6, round(Ntot_Xt.pr, -2), Ntot_Xt.pr))
+             mutate(Ntot_Xt.pr = if_else(Ntot_Xt.pr > 10^6,
+                                         round(Ntot_Xt.pr, -2),
+                                         Ntot_Xt.pr))
 
   # descriptive an predictive statistics for 13C/12C ratios
   tb.R <- stat_R(tb.pr, Xt.pr, N.pr, ID = "ID", ion1 = "13C", ion2 = "12C",
@@ -41,9 +43,11 @@ validate_IC <- function(ion1, ion2, block){
 
   # ion counts in comparison dataset
   tb.test.Xt <- read_test(sv1, block = block)[[1]] %>%
-    mutate(species.nm = recode(num.mt,
+                  mutate(species.nm =
+                           recode(num.mt,
                                !!! rlang::set_names(unique(tb.rw$species.nm),
-                                                    nm = unique(tb.rw$num.mt)))) %>%
+                                                    nm = unique(tb.rw$num.mt))
+                               )) %>%
     left_join(tb.Xt, . , by = c("file.nm", "species.nm"))
 
   # ratios provide in comparison dataset
@@ -80,7 +84,7 @@ R1 <- val_IC[[2]] %>%
   filter(R.nm == paste(ion1, ion2, sep = "/"))
 
 
-test_that("block 1: Xt and R from EM data", {
+test_that("block 1: Ntot of Xt and mean R from EM data", {
   expect_equal(Xt1 %>%
                  pull(Ntot_Xt.test) %>% round(),
                Xt1 %>%
@@ -93,6 +97,21 @@ test_that("block 1: Xt and R from EM data", {
   )
 })
 
+
+test_that("block 1: Descriptive and predictive sd of R from EM data", {
+  expect_equal(R1 %>%
+                 pull(RSeM_R_Xt.test) %>% round(., 2),
+               R1 %>%
+                 pull(RSeM_R_Xt.pr) %>% round(., 2)
+  )
+  expect_equal(R1 %>%
+                 pull(hat_RSeM_R_Xt.test) %>% round(., 2),
+               R1 %>%
+                 pull(hat_RSeM_R_Xt.pr) %>% round(., 2)
+  )
+})
+
+
 val_IC <- validate_IC(ion1 = "13C", ion2 = "12C", block = 4)
 
 # total ion counts
@@ -104,7 +123,7 @@ R4 <- val_IC[[2]] %>%
   filter(R.nm == paste(ion1, ion2, sep = "/"))
 
 
-test_that("block 4: Xt and R from EM data", {
+test_that("block 4: Ntot of Xt and mean R from EM data", {
   expect_equal(Xt4 %>%
                  pull(Ntot_Xt.test) %>% round(),
                Xt4 %>%
