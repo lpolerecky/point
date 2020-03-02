@@ -32,6 +32,7 @@ Secondary ion mass spectrometry (SIMS) have become an increasingly popular tool 
 ```{r setup}
 # library(point)
 devtools::load_all(".")
+
 ```
 
 ## Nomenclature

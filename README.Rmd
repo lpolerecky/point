@@ -35,7 +35,7 @@ You can install the released version of point
 
 ## Example1: internal precision of isotope ratios
 
-This is an example of how Cameca NanoSIMS50L raw datafiles can be extracted, processed and analysed for the ^13^C/^12^C isotope ratio (R). This produces a tibble with descriptive and predictive poisson statistics (demarcated with an $\\\hat{}$) of the ion count data. This can be done for single count blocks in order to obtain internal precision.
+This is an example of how Cameca NanoSIMS50L raw datafiles can be extracted, processed and analysed for the ^13^C/^12^C isotope ratio ($R$). This produces a tibble with descriptive and predictive poisson statistics (demarcated with an $\\\hat{\\\phantom{,}}$) of the ion count data. This can be done for single count blocks in order to obtain internal precision.
 
 ```{r example}
 

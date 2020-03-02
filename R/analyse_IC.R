@@ -183,13 +183,13 @@ stat_R <- function(df, Xt, N, species, ion1, ion2, ..., latex = FALSE){
                                            "$\\bar{R}$",
                                            "$r$",
                                            "$s_{R}$",
-                                           "$\\epsilon_{R} (\\text{‰})$",
+                                           "$\\epsilon_{R} \\, (\\text{‰})$",
                                            "$s_{\\bar{R}}$",
-                                           "$\\epsilon_{\\bar{R}} (\\text{‰})$",
+                                           "$\\epsilon_{\\bar{R}} \\, (\\text{‰})$",
                                            "$\\hat{s}_{R}$",
-                                           "$\\hat{\\epsilon}_{R} (\\text{‰})$",
+                                           "$\\hat{\\epsilon}_{R} \\, (\\text{‰})$",
                                            "$\\hat{s}_{\\bar{R}}$",
-                                           "$\\hat{\\epsilon}_{\\bar{R}} (\\text{‰})$",
+                                           "$\\hat{\\epsilon}_{\\bar{R}} \\, (\\text{‰})$",
                                            "$\\chi^{2}$"))
 
   args <- purrr::set_names(args, nm = ls.names)
@@ -306,11 +306,14 @@ latex_parser <- function(species, ion1, ion2){
 if(length(species) != 0){
 
 # seperator for poly atomic speices
-if (any(str_detect(species, "[:blank:]"))){ sep <- "--"} else {sep <- ""}
+if (any(str_detect(species, "[:blank:]"))){
+  sep <- "--"
+} else {
+  sep <- ""}
 
 species <- paste(
   paste0(
-         paste0("$^{",
+         paste0("$\\phantom{,}^{",
                 str_extract_all(species, "[:digit:]+(?=[:alpha:])")[[1]][1],
                 "}$"),
          str_extract_all(species, "[:alpha:]+")[[1]][1],
@@ -336,12 +339,12 @@ species <- str_replace_all(species, "NA", "")
 
 R <- paste(
   paste0(
-    paste0("$^{",str_extract(ion1, "^\\d+"),"}$"),
+    paste0("$\\phantom{,}^{",str_extract(ion1, "^\\d+"),"}$"),
     str_extract(ion1, "\\D+"),
     paste0("$_{",str_extract(ion1, "\\d*$"),"}$")
   ),
   paste0(
-    paste0("$^{",str_extract(ion2, "^\\d+"),"}$"),
+    paste0("$\\phantom{,}^{",str_extract(ion2, "^\\d+"),"}$"),
     str_extract(ion2, "\\D+"),
     paste0("$_{",str_extract(ion2, "\\d*$"),"}$")
   ), sep = "/")
