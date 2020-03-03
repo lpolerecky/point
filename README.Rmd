@@ -1,7 +1,10 @@
 ---
 output: 
   github_document:
-    pandoc_args: --webtex
+    pandoc_args: --webtex 
+# header-includes:
+#    - \usepackage{wasysym}
+#    - \usepackage{textcomp}
 ---
 <!--  use the --webtex argument in the YAML to render equations -->
 
@@ -23,25 +26,43 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-This projects was originally inspired by the lack of detailed insight in the inner workings of the default software for the Cameca NanoSIMS50L (Utrecht University). Hence this project has the objective of processing raw count data into ion and isotope ratios of point-sourced measurements, and to establish the internal and external precision of individual measurements and complete series of measurements, respectively. Access to raw ion count data is useful as it allows detection of anomolous values associated with e.g. machine instability or heterogeneity of the analysed sample. Such anomolous values can then be omitted, or further analysed to delineate the source of variation.
+This projects was originally inspired by the lack of detailed insight in the inner workings of the default software for the Cameca NanoSIMS50L (Utrecht University). Hence this project has the objective of processing raw count data into ion and isotope ratios of point-sourced measurements; and to establish the internal and external precision of, respectively, individual measurements and complete series of measurements. Access to raw ion count data is useful as it allows detection of anomolous values associated with e.g. machine instability or heterogeneity of the analysed sample. Upon detection, anomolous values can be omitted or further analysed to delineate the source of variation.
 
 ## Installation
 
 You can install the released version of point 
 
-<!-- ``` r -->
-<!-- install.packages("point") -->
-<!-- ``` -->
+``` r
+# Install point rom GitHub:
+# install.packages("devtools")
+devtools::install_github("point")
+```
 
-## Example1: internal precision of isotope ratios
+## Usage
 
-This is an example of how Cameca NanoSIMS50L raw datafiles can be extracted, processed and analysed for the ^13^C/^12^C isotope ratio ($R$). This produces a tibble with descriptive and predictive poisson statistics (demarcated with an $\\\hat{\\\phantom{,}}$) of the ion count data. This can be done for single count blocks in order to obtain internal precision.
+Load point with library
+
+```r
+library(point)
+```
+
+To read, process and analyse raw ion coun data use the functions:
+
+* `read_IC`: raw ion count data
+* `cor_IC`: process ion count data
+* `stat_Xt`: analyse single ion count data
+* `stat_R`: analyse ion ratios
+
+## Example 1: internal precision of isotope ratios
+
+This is an example of how Cameca NanoSIMS50L raw datafiles can be extracted, processed and analysed for the ^13^C/^12^C isotope ratio ($R$). This produces a tibble with descriptive and predictive poisson statistics (demarcated with an $\\\hat{\\\phantom{,}}$ ) of the ion count data. This can be done for single count blocks in order to obtain internal precision.
+
+```{r setup-point, include=FALSE}
+devtools::load_all(".")
+```
+
 
 ```{r example}
-
-# library(point)
-devtools::load_all(".")
-
 # Use point_example() to access the examples bundled with this package in the
 # inst/extdata directory. The examples directories are named:
 # 2020-01-17-TREASURE and "2018-01-19-GLENDON"
@@ -50,22 +71,31 @@ devtools::load_all(".")
 tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
 
 # processing raw ion count data
-tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt, deadtime = 44, thr = 180)
-
-# single ion descriptive an predictive statistics for all measured ions
-tb.Xt <- stat_Xt(tb.pr, Xt.pr, N.pr, species.nm, sample.nm, file.nm)
+tb.pr <- cor_IC(tb.rw, 
+                N = N.rw, 
+                t = t.rw, 
+                Det = det_type.mt, 
+                deadtime = 44, 
+                thr = 180)
 
 # descriptive an predictive statistics for 13C/12C ratios
-tb.R <- stat_R(tb.pr, Xt.pr, N.pr, species.nm, ion1 = "13C", ion2 = "12C", 
-               sample.nm, file.nm, latex = TRUE)
-
+tb.R <- stat_R(tb.pr, 
+               Xt = Xt.pr, 
+               N = N.pr, 
+               species = species.nm, 
+               ion1 = "13C", 
+               ion2 = "12C", 
+               sample.nm, 
+               file.nm, 
+               latex = TRUE, 
+               output = "sum")
 
 # use the second element of the list to get nice variable names rendering in 
 # Rmarkdown
-knitr::kable(head(tb.R[[1]] %>% 
-                    rename(sample = "sample.nm", file = "file.nm", R = "R.nm", 
-                                   !!! tb.R[[2]])),
-             format.args = list(digits = 5, format = "G", flag = "0")) 
+knitr::kable(head(tb.R),
+             format.args = list(digits = 3, 
+                                format = "G", 
+                                flag = "0")) 
 ```
 
 
@@ -74,6 +104,16 @@ knitr::kable(head(tb.R[[1]] %>%
 To calculate the external reproducibility of isotope ratios one needs to use the total ion count of one block and the block count rate. The latter is equivalent to the mean ion count rate, which was already calculated with the function `stat_Xt`. 
 
 ```{r}
+# single ion descriptive an predictive statistics for all measured ions
+tb.Xt <- stat_Xt(tb.pr, 
+                 Xt = Xt.pr, 
+                 N = N.pr, 
+                 species = species.nm, 
+                 sample.nm, 
+                 file.nm,
+                 latex = FALSE,
+                 output = "sum")
+
 # For this particular run a belemnite was used as reference material. 
 tb.R.ext  <- stat_R(tb.Xt, 
                     Xt = M_Xt.pr, 
@@ -82,14 +122,18 @@ tb.R.ext  <- stat_R(tb.Xt,
                     ion1 = "13C", 
                     ion2 = "12C",  
                     sample.nm, 
-                    latex = TRUE)
+                    latex = TRUE,
+                    output = "sum")
 
-knitr::kable(head(tb.R.ext[[1]]  %>% 
-                    filter(str_detect(sample.nm, "Belemnite")) %>% 
-                    rename(sample = "sample.nm", R = "R.nm", 
-                                   !!! tb.R.ext[[2]])),
-              format.args = list(digits = 5, format = "G", flag = "0")) 
-
+knitr::kable(head(tb.R.ext %>% 
+                    filter(str_detect(sample.nm, "Belemnite"))),
+             format.args = list(digits = 3, 
+                                format = "G", 
+                                flag = "0")) 
 ```
 
-For more detailed information about reading raw ion count data use `vignette("IC-read")`; processing ion count data `vignette("IC-read")`; and for statistical test concerning ion count precision `vignette("IC-precision")`.
+For more detailed information:
+
+* `vignette("IC-read")`: reading raw ion count data use
+* `vignette("IC-process")`: processing ion count data   
+* `vignette("IC-precision")`: statistics concerning ion count precision

@@ -3,12 +3,11 @@ title: "IC-precision"
 author: "Martin Schobben" 
 output: 
   rmarkdown::html_vignette:
-        fig_caption: true
-        pandoc_args:  [
+    fig_caption: true
+    pandoc_args: [
       "--csl", "~/Documents/work/projects/Glendonite_project/common/aquatic-microbial-ecology.csl",
       "--citation-abbreviations", "~/Documents/work/projects/Glendonite_project/common/abbreviations.json", "--filter", "~/.cabal/bin/pandoc-crossref"
-      ]
-bibliography: biblio.bib
+                 ]
 vignette: >
   %\VignetteIndexEntry{IC-precision}
   %\VignetteEngine{knitr::rmarkdown}
@@ -90,7 +89,8 @@ tb.Xt <- stat_Xt(tb.pr, Xt.pr, N.pr, species.nm, file.nm, latex = TRUE)
 knitr::kable(head(tb.Xt[[1]] %>% 
                     rename(file = "file.nm", species = "species.nm", 
                            !!! tb.Xt[[2]])),
-              format.args = list(digits = 5, format = "G", flag = "0"))
+             format.args = list(digits = 1, format = "G", flag = "0"))
+             # booktabs = TRUE)
 
 ```
 
@@ -152,8 +152,11 @@ The function `stat_R` can be used on the previously processed dataset and gives 
 tb.R <- stat_R(tb.pr, Xt.pr, N.pr, species.nm, ion1 = "13C", ion2 = "12C",
                file.nm, latex = TRUE)
 
-knitr::kable(head(tb.R[[1]] %>% rename(file = "file.nm", R = "R.nm", 
-                                   !!! tb.R[[2]])))
+knitr::kable(head(tb.R[[1]] %>% 
+                    rename(file = "file.nm", 
+                           R = "R.nm", 
+                           !!! tb.R[[2]])),
+             format.args = list(digits = 3, format = "G", flag = "0"))
 ```
 
 The following statistics are calculated with the function `stat_R` for a specific isotope ratio: number of measurements ($n$); the arithmetic mean ($\bar{R}$); the standard deviation and relative standard deviation ($s_R$ and $\epsilon_R$); the standard error of the mean and its relative counterpart ($s_{\bar{R}}$ and $\epsilon_{\bar{R}}$), the predicted standard deviation and the predicted relative standard deviation ($\hat{s}_R$ and $\hat{\epsilon}_R$); and the predicted standard error of the mean and its relative counterpart ($\hat{s}_{\bar{X}}$ and $\hat{\epsilon}_{\bar{R}}$); and the reduced Chi-squared statistic ($\chi^2$), for which the underlying principals are delineated in detail below.
@@ -167,18 +170,18 @@ $$ \bar{R} = \frac{\frac{1}{n}\sum_{i = 1}^{n} X_i^{b}}{\frac{1}{n}\sum_{i = 1}^
 and this value can be considered as an estimate of the true isotopic value ($\mu_R$). The uncertainties associated with the SIMS count rates of the individual variables $X^{b}$ (e.g. ^13^C) and $X^{a}$ (e.g. ^12^C) need to be combined. This can be achieved by applying; *The formula for exact propagation of error*
 
 
-$$s_x^{2} \approx \sum_{i = 1}^{n} \left[ \left( \frac{\partial F}{\partial z_i} \right) s_i^{2} \right] + 2 r_{jk}\sum_{j = 1}^{n} \sum_{k = 1}^{n} \left[ \left( \frac{\partial F}{\partial z_j} \right) \left( \frac{\partial F}{\partial z_k} \right) s_j s_k \right]$$ {#eq:er.prop}
+$$s_x^{2} \approx \sum_{i = 1}^{n} \left[ \left( \frac{\partial F}{\partial z_i} \right) s_i^{2} \right] + 2 \sum_{j = 1}^{n} \sum_{k = 1}^{n} \left[ \left( \frac{\partial F}{\partial z_j} \right) \left( \frac{\partial F}{\partial z_k} \right) s_j s_k r_{(z_j, z_k)} \right]$$ {#eq:er.prop}
 
 
 , which ensures proper propagation of the error. In this formulation $r_{jk}$ stands for the correlation coefficient for the variables $z_j$ and $z_k$, as defined by
 
 $$ r_{jk} = \frac{1}{\left(n-1\right) s_j s_k} \sum_{i=1}^n{ \left[ \left(z_{j}\right)_i - \bar{z}_j \right] \left[ \left(z_{k}\right)_i - \bar{z}_k \right]}$${#eq:corr}
 
-yields an estimate for the sample correlation coefficient, where values can range between $-1$ and $+1$, and thereby recording a inverse or positive linear correlation between the variables, and no correlation if $r$ falls close to zero. For this the `base` function `cor()` was used, with the `method` argument set to `"pearson"`.
+yields an estimate for the sample correlation coefficient, where values can range between $-1$ and $+1$, and thereby recording a inverse or positive linear correlation between the variables, and no correlation if $r$ falls close to zero. The product of $r_{(z_j, z_k)}$, $s_j$, and $s_k$ is the same as the covariance between the two input variables, as such simplifying to $s_{jk}$. For this calculation the `base` function `cov()` was used, with the `method` argument set to `"pearson"` and `use` to `"everything"`.
 
 Recasting [@eq:er.prop] for when $\mathrm{F}(...)$ is $R$, and with the variables $\bar{X}^{b}$ (e.g. ^13^C) and $\bar{X}^{a}$ (e.g. ^12^C), yields the following equation:
  
-$$  s_{R} = \sqrt{ \left( \frac{ s_{X^{b}}}{\bar{X}^{b}} \right)^2 + \left( \frac{ s_{X^{a}}}{\bar{X}^{a}} \right)^2 - \frac{2r_{X^{b}X^{a}} s_{X^{b}} s_{X^{a}}}{\bar{X}^{b}\bar{X}^{a}}} \times \bar{R}$${#eq:er.prop.ad}
+$$  s_{R} = \sqrt{ \left( \frac{ s_{X^{b}}}{\bar{X}^{b}} \right)^2 + \left( \frac{ s_{X^{a}}}{\bar{X}^{a}} \right)^2 - 2 \frac{s_{\bar{X}^{a} \bar{X}^{b}}}{\bar{X}^{b}\bar{X}^{a}}} \times \bar{R}$${#eq:er.prop.ad}
 
 The standard error of the mean isotope value ${\bar{R}}$ is obtained through diving $s_{R}$ by $\sqrt(n)$. Both the standard deviation and standard error of the mean of the isotope value can be expressed as relative values in ‰ by dividing them with the $\bar{R}$ and multiplying by $1,000$.  
  
@@ -192,15 +195,15 @@ $$ \hat{s}_{R} \approx \left(\frac{t^{a}}{t^{b}} \right) \hat{s}_{N^{b}/N^{a}}$$
 
 This provides the possibility to express $\hat{s}_{N^{b}/N^{a}}$ in terms of the standard deviations of the individual counts, and by using [@eq:er.prop], yielding;
 
-$$ \hat{s}_{N^{b}/N^{a}} \approx \sqrt{ \left( \frac{\hat{s}_{N^{b}}}{N^{a}} \right)^2 + \left( \frac{\hat{s}_{N^{b}}}{N^{a}} \right)^2  - \frac{2r_{N^{b}N^{a}} s_{N^{b}} s_{N^{a}}}{N^{b}N^{a}} }\times \frac{N^{b}}{N^{a}} $$ {#eq:std.pois.R1}
+$$ \hat{s}_{N^{b}/N^{a}} \approx \sqrt{ \left( \frac{\hat{s}_{N^{b}}}{N^{b}} \right)^2 + \left( \frac{\hat{s}_{N^{a}}}{N^{a}} \right)^2  - 2\frac{r_{N^{b}N^{a}} s_{N^{b}} s_{N^{a}}}{N^{b}N^{a}} }\times \frac{\bar{N}^{b}}{\bar{N}^{a}} $$ {#eq:std.pois.R1}
 
 As the both count statistics are independent, the $r$ becomes zero. The predicted standard deviations for $N^{b}$ and $N^{a}$ can be approximated by the population mean, according to [@eq:std.pois], thereby transforming [@eq:std.pois.R1] to
 
-$$ \hat{s}_{N^{b}/N^{a}} \approx \sqrt{\frac{1}{ \bar{N}^{b}} + \frac{1}{ \bar{N}^{a}}} \times  \bar{N}^{b}/\bar{N}^{a} $$ {#eq:std.pois.R2}
+$$ \hat{s}_{N^{b}/N^{a}} \approx \sqrt{\frac{1}{ \bar{N}^{b}} + \frac{1}{ \bar{N}^{a}}} \times  \frac{\bar{N}^{b}}{\bar{N}^{a}} $$ {#eq:std.pois.R2}
 
 in which we can substitute [@eq:N_R] to obtain
 
-$$ \hat{s}_{x} \approx \sqrt{\frac{1}{ \bar{N}^{b}} + \frac{1}{ \bar{N}^{a}}} \times  \frac{\bar{N}^{b}}{\bar{N}^{a}} \left( \frac{t^{a}}{t^{b}} \right) $$  {#eq:std.pois.R3}
+$$ \hat{s}_{R} \approx \sqrt{\frac{1}{ \bar{N}^{b}} + \frac{1}{ \bar{N}^{a}}} \times  \frac{\bar{N}^{b}}{\bar{N}^{a}} \left( \frac{t^{a}}{t^{b}} \right) $$  {#eq:std.pois.R3}
 
 , which is equivalent to 
 

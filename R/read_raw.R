@@ -358,13 +358,13 @@ read_test <- function(directory, block = 1){
 
   tb.test.R <- purrr::pmap_dfr(l.R, fun_read.R, .id = "file.nm") %>%
                  mutate(file.nm = str_sub(file.nm,
-                                        end = (str_length(file.nm) - 5)))%>%
-                 mutate(file.nm = paste0(file.nm, ".is_txt"))
+                                        end = (str_length(file.nm) - 5))) #%>%
+                 # mutate(file.nm = paste0(file.nm, ".is_txt"))
 
   tb.test.N <- purrr::pmap_dfr(l.N, fun_read.N, .id = "file.nm") %>%
                  mutate(file.nm = str_sub(file.nm,
-                                          end = (str_length(file.nm) - 5)))%>%
-                 mutate(file.nm = paste0(file.nm, ".is_txt"))
+                                          end = (str_length(file.nm) - 5))) #%>%
+                 # mutate(file.nm = paste0(file.nm, ".is_txt"))
 
   return(list(tb.test.N = tb.test.N, tb.test.R = tb.test.R))
 }

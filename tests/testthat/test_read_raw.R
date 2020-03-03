@@ -24,7 +24,7 @@ test_that("empty txt file", {
 test_that("zero counts", {
   expect_warning(
     zeroCt(
-      read_IC(sv1), N.rw, "13C", "12C", file.nm)
+      read_IC(sv1), N.rw, species.nm, "13C", "12C", file.nm)
     )
   }
   )

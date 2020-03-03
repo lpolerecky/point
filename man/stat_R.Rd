@@ -4,7 +4,7 @@
 \alias{stat_R}
 \title{function for propagation of uncertainty in ion ratios (isotope values)}
 \usage{
-stat_R(df, Xt, N, species, ion1, ion2, ..., latex = FALSE)
+stat_R(df, Xt, N, species, ion1, ion2, ..., latex = FALSE, complete = TRUE)
 }
 \description{
 function for propagation of uncertainty in ion ratios (isotope values)

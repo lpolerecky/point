@@ -10,7 +10,7 @@ output:
       ]
 bibliography: biblio.bib
 vignette: >
-  %\VignetteIndexEntry{IC-precision}
+  %\VignetteIndexEntry{IC-process}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

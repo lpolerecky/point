@@ -13,11 +13,12 @@
 #' @param df A tibble containing processed ion count data
 #' @param Xt A variable constituting the ion count rate
 #' @param N A variable constituting the ion counts
+#' @param species A variable constituting the species analysed
 #' @param ... Variables for grouping
-#' @param ID A character string that uniqually identifies ion pairs for
-#' calculating isotope ratios
 #' @param ion1 A character string constituting the heavy isotope ("13C")
 #' @param ion2 A character string constituting the light isotope ("12C")
+#' @param output A character string for output as summary statistics ("sum");
+#' statistics only ("stat"); and statistics with the original data ("complete")
 #'
 #' @return A tibble containing descriptive and predictive statistics for ion
 #' count and isotope ratio data
@@ -41,7 +42,7 @@
 #'                file.nm, species.nm)
 #'
 #' @export
-stat_Xt <- function(df, Xt, N, species, ... , latex = FALSE){
+stat_Xt <- function(df, Xt, N, species, ... , latex = FALSE, output = "sum"){
 
   Xt <- enquo(Xt)
   N <- enquo(N)
@@ -77,42 +78,68 @@ stat_Xt <- function(df, Xt, N, species, ... , latex = FALSE){
 
   args <- purrr::set_names(args, nm = ls.names)
 
-  df <- df %>%
-    group_by(!!! gr_by) %>%
-    summarise(!!! args) %>%
-    ungroup()
+  #gr_names <- sapply(gr_by, as_name)
 
-  if(latex) {
+  # switch complete dataset, stats or summary stats
+  mod_cal <- function(type) {
+    switch(type,
+           complete = call2( "mutate", quote(.), quote(!!! args)),
+           stat = call2( "transmute", quote(.), quote(!!! args)),
+           sum = call2("summarize", quote(.), quote(!!! args)),
+    )
+  }
+
+  #mod_cal <- call2(if_else(complete, "mutate", "summarize"), quote(.), !!!args)
+
+  df <- df %>%
+              group_by(!!! gr_by) %>%
+              eval_tidy(expr = mod_cal(output), data = .) %>%
+              #summarise(!!! args) %>%
+              ungroup()
+
+  # if (summary) {
+  #
+  # df <- df.sum
+  #
+  # } else {
+  #
+  # df <- df.sum %>%
+  #        left_join(df, . , by = gr_names)
+  #
+  # }
+
+  if (latex) {
 
       df <- df %>%
               mutate(species.nm = purrr::map_chr(species.nm,
                                                  ~latex_parser(.x,
                                                                ion1 = NULL,
-                                                               ion2 = NULL)))
+                                                               ion2 = NULL))) %>%
+              select(file = "file.nm",
+                     species = "species.nm",
+                     !!! ls.latex)
 
 # return list for nice latex variable names in Rmarkdown with mathjax and latex
-    return(list(df, ls.latex))
+    # return(list(df, ls.latex))
+    #
+    # } else {
+    #
+  return(df)
+  }
 
-    } else {
-
-      return(df)
-    }
+  return(df)
 
   }
 
 
 #' function for propagation of uncertainty in ion ratios (isotope values)
 #' @export
-stat_R <- function(df, Xt, N, species, ion1, ion2, ..., latex = FALSE){
+stat_R <- function(df, Xt, N, species, ion1, ion2, ..., latex = FALSE, output = "sum"){
 
   Xt <- enquo(Xt)
   N <- enquo(N)
   species <- enquo(species)
   gr_by <- enquos(...)
-
-
-  # # check and remove zero counts
-  # df <- zeroCt(df = df, N = !!N, ion1 = ion1, ion2 = ion2, !!! gr_by)
 
   # heavy isotope
   Xt1 <- quo_updt(Xt, ion1)
@@ -135,16 +162,23 @@ stat_R <- function(df, Xt, N, species, ion1, ion2, ..., latex = FALSE){
     # mean isotope
     quo(mean(!!Xt1) / mean(!!Xt2)),
     # correlation coefficient
-    quo(cor(!!Xt1, !!Xt2, method = "pearson")),
+    quo(cov(!!Xt1, !!Xt2, method = "pearson", use = "everything")),
     # SD isotope
-    quo(sqrt(
-      ((unique(!!S.Xt1) / unique(!!M.Xt1)) ^ 2) +
-        ((unique(!!S.Xt2) / unique(!!M.Xt2)) ^ 2) -
-        ((2 * !!quo_updt(my_q = Xt , x = "cor_R") *
-            unique(!!S.Xt1)  *
-            unique(!!S.Xt2)) /
-           (unique(!!M.Xt1) * unique(!!M.Xt2)))) *
-        !!quo_updt(my_q = Xt , x = "M_R")),
+      quo(sqrt(
+        ((unique(!!S.Xt1) / unique(!!M.Xt1)) ^ 2) +
+          ((unique(!!S.Xt2) / unique(!!M.Xt2)) ^ 2) -
+          (2 *( !!quo_updt(my_q = Xt , x = "cor_R") /
+             (unique(!!M.Xt1) * unique(!!M.Xt2))))
+                ) *
+          !!quo_updt(my_q = Xt , x = "M_R")),
+    # quo(sqrt(
+    #   ((unique(!!S.Xt1) / unique(!!M.Xt1)) ^ 2) +
+    #     ((unique(!!S.Xt2) / unique(!!M.Xt2)) ^ 2) -
+    #     ((2 * !!quo_updt(my_q = Xt , x = "cor_R") *
+    #         unique(!!S.Xt1)  *
+    #         unique(!!S.Xt2)) /
+    #        (unique(!!M.Xt1) * unique(!!M.Xt2)))) *
+    #     !!quo_updt(my_q = Xt , x = "M_R")),
     # RSD isotope
     quo((!!quo_updt(my_q = Xt , x = "S_R") /
          !!quo_updt(my_q = Xt , x = "M_R")) * 1000),
@@ -183,40 +217,68 @@ stat_R <- function(df, Xt, N, species, ion1, ion2, ..., latex = FALSE){
                                            "$\\bar{R}$",
                                            "$r$",
                                            "$s_{R}$",
-                                           "$\\epsilon_{R} \\, (\\text{‰})$",
+                                           "$\\epsilon_{R} \\,$ (\u2030)",
                                            "$s_{\\bar{R}}$",
-                                           "$\\epsilon_{\\bar{R}} \\, (\\text{‰})$",
+                                           "$\\epsilon_{\\bar{R}} \\,$ (\u2030)",
                                            "$\\hat{s}_{R}$",
-                                           "$\\hat{\\epsilon}_{R} \\, (\\text{‰})$",
+                                           "$\\hat{\\epsilon}_{R} \\,$ (\u2030)",
                                            "$\\hat{s}_{\\bar{R}}$",
-                                           "$\\hat{\\epsilon}_{\\bar{R}} \\, (\\text{‰})$",
+                                           "$\\hat{\\epsilon}_{\\bar{R}} \\,$ (\u2030)",
                                            "$\\chi^{2}$"))
 
   args <- purrr::set_names(args, nm = ls.names)
 
-  gr_names <- c(sapply(gr_by, as_name), purrr::pluck(as_name(species)))
+# extra arg in case of mutate and transmute (isotope ratio for each time step)
+  args2 <- append(args, purrr::set_names(list(quo(!!Xt1 / !!Xt2)) ,
+                                         nm = paste("R", quo_name(Xt),
+                                                    sep = "_")))
+
+# switch complete dataset, stats or summary stats
+  mod_cal <- function(type) {
+    switch(type,
+           complete = call2( "mutate", quote(.), quote(!!! args2)),
+           stat = call2( "transmute", quote(.), quote(!!! args2)),
+           sum = call2("summarize", quote(.), quote(!!! args)),
+           )
+  }
+  # mod_cal <- call2(if_else(complete, "mutate", "summarize"), quote(.), !!! args2)
+  # tb_names <- c(Sample = "sample", File = "file", Species = "species")
+
+  tb_names  <- sapply(gr_by, as_name) %>% purrr::set_names()
+
+
 
   df <- df  %>%
-          stat_Xt(., Xt = !!Xt, N = !!N, species =  !!species, !!! gr_by) %>%
-          left_join(df, . , by = gr_names) %>%
-    # check and remove zero counts
+          stat_Xt(., Xt = !!Xt, N = !!N, species =  !!species, !!! gr_by, output = "complete") %>%
+# check and remove zero counts
           zeroCt(., N = !!N, species = !!species, ion1 = "13C", ion2 = "12C", !!! gr_by) %>%
-
           cov_R(df = . , species = !!species, ion1 = ion1, ion2 = ion2, !!! gr_by) %>%
           group_by(!!! gr_by) %>%
-          summarise(!!! args) %>%
+          #summarise(!!!args) %>%
+          eval_tidy(expr = mod_cal(output), data = .) %>%
           ungroup()
 
-# return list for nice latex variable names in Rmarkdown with mathjax and latex
+
   if (latex) {
 
+# nice variable names in Rmarkdown with webtex and latex
     df <- df %>%
-      mutate(R.nm = latex_parser(species = NULL, ion1, ion2))
+            mutate(R.nm = latex_parser(species = NULL, ion1, ion2)) %>%
+            select(!!! tb_names,
+                   R = "R.nm",
+                   !!! ls.latex)
 
-    return(list(df, ls.latex))
+    return(df)
 
 
-    } else {return(df)}
+  } else {
+
+    df <- df %>%
+            mutate(R.nm = paste(ion1, ion2, sep = "/"))
+
+    return(df)
+
+  }
 }
 
 
@@ -229,7 +291,7 @@ zeroCt <- function(df, N, species, ion1, ion2, ...){
   gr_by <- enquos(...)
 
   gr.ls <- df %>%
-            filter_at(vars(!!species), any_vars(. %in% "12C"))
+            filter(!!species == ion1 | !!species == ion2)
 
   if (any(gr.ls %>% select(!!N) %>% pull(!!N) == 0)) {
 
@@ -245,7 +307,7 @@ zeroCt <- function(df, N, species, ion1, ion2, ...){
 
 }
 
-#' covariate convertion for isotope systems
+# covariate convertion for isotope systems
 cov_R <- function(df, species, ion1, ion2, ...){
 
   gr_by <- enquos(...)
@@ -256,19 +318,17 @@ cov_R <- function(df, species, ion1, ion2, ...){
           mutate(ID = row_number()) %>%
           ungroup() %>%
 # uniqually identifies ion pairs for calculating isotope ratios
-          tidyr::unite(col = ID, !!! gr_by, ID, sep = "/", remove = FALSE) # %>%
-          # filter_at(vars(contains("species")), any_vars(. %in% c("12C", "13C")))
+          tidyr::unite(col = ID, !!! gr_by, ID, sep = "/", remove = FALSE)
 
-  # filtering single ion stats minor isotope
-  # df.13C <- df %>%
-  #             filter_at(vars(contains("species")), any_vars(. %in% ion1))
-  df.13C <- df %>% filter(!! species == ion1)
 
-  # filtering single ion stats major isotope
-  # df.12C <- df %>%
-  #             filter_at(vars(contains("species")), any_vars(. %in% ion2)) %>%
-  df.12C <- df %>% filter(!! species == ion2) %>%
-                    select(-c(!!! gr_by))
+# filtering single ion stats minor isotope
+  df.13C <- df %>%
+              filter(!! species == ion1)
+
+# filtering single ion stats major isotope
+  df.12C <- df %>%
+              filter(!! species == ion2) %>%
+              select(-c(!!! gr_by))
 
   df.R <- full_join(df.13C,  df.12C, by = "ID",
                     suffix = c(paste0(".", ion1),
@@ -322,7 +382,7 @@ species <- paste(
                 "}$")
          ),
   paste0(
-         paste0("$^{",
+         paste0("$\\phantom{,}^{",
                 str_extract_all(species, "[:digit:]+(?=[:alpha:])")[[1]][2],
                 "}$"),
          str_extract_all(species, "[:alpha:]+")[[1]][2],
