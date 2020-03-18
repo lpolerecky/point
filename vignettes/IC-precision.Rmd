@@ -29,10 +29,9 @@ Secondary ion mass spectrometry (SIMS) have become an increasingly popular tool 
 
 
 ```{r setup}
-# library(point)
-devtools::load_all(".")
-
+library(point) # load package
 ```
+
 
 ## Nomenclature
 
@@ -50,24 +49,22 @@ Analytical precission is consistency check of a series of analytical results. In
 
 ## Example dataset
 
-In this document we use ion count data generated with the *Cameca NanoSIMS 50L* at the Department of Earth Sciences at Utrecht University. Measurements were performed on calcium carbonate rock (so-called glendonites) of Jurassic and Cretaceous age. This dataset consisting of several text files, contained in one directory (with suffix *GLENDON*), are provided along with the package, and can be accessed as follows with the function `read_IC` (more information on reading raw ion count data can be found in the vignette *IC-reader*).
+ and can be accessed as follows with the function `read_IC` (more information on reading raw ion count data can be found in the vignette *IC-read*).
 
 
 ```{r warning = FALSE}
-# Use system.file() to access the examples bundled with this package in the
+# Use point_example() to access the examples bundled with this package in the
 # inst/extdata directory. The examples directories are named:
 # 2020-01-17-TREASURE and "2018-01-19-GLENDON"
 
-# raw data containing 13C and 12C counts on carbonate
+# Raw data containing 13C and 12C counts on carbonate
 tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
 ```
 
 
-The ion counts obtained from this dataset include the species: `r latex_parser(unique(tb.rw$species.nm), ion1 = NULL, ion2 = NULL)`, of which some are polyatomic.
-
+The ion counts obtained from this dataset include the species: `r sapply(unique(tb.rw$species.nm), latex_parser)`, of which some are polyatomic.
 
 As a first step, the counts of a single count cycle ($N_i$) are normalised against the time it took to complete the cycle ($0.541$ s) to account for differences in the count times for two different isotopes during stable isotopic SIMS analysis. Hence, for the time period ($t$) over which an isotope species $a$ during measurement $i$ accumulated, the count rate is given by 
-
 
 $$X_i^{a} = N_i^{a} / t_i^{a}$$ {#eq:N.rate}
 
@@ -75,23 +72,37 @@ For this we will use the function `cor_IC`
 
 ```{r}
 # processing raw ion count data
-tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
+tb.pr <- cor_IC(tb.rw, 
+                N = N.rw, 
+                t = t.rw, 
+                Det = det_type.mt,
+                deadtime = 0, 
+                thr = 0)
+```
+
+This function can also make correction on the ion counts associated with the machine setup, such as, the ion detector type. These settings affect mostly the accuracy of the analysis. For more information on this topic see the vignette *IC-process*.
+
+## Descriptive and predictive statistics for single ions
+The function `stat_Xt` can be appliec to the previously processed dataset and gives descriptive and predictive statistics of all the individual ions. The function requires the following arguments; `df`, which is a tibble containing the processed ion cound data; `Xt`, which is the column in said tibble containing the ion count rates; `N`, which is the processed counts. The dots `...` should be used to define a grouping variable for an analysis (here defined as the sample and filenames of the loaded data) and a grouping variable for the count block for the individual species. In addition, it is possible to choose whether the variable names can be rendered with $\LaTeX$; and whether to create a `tibble` that contains only statistics as a summary `"sum"`; a `tibble` with same number of observation as the input `"stat"`; or return a `tibble` complete with the statistics and the original data. 
+
+```{r warning=FALSE}
+# single ion descriptive an predictive statistics for all measured ions
+tb.Xt <- stat_Xt(tb.pr, 
+                 Xt = Xt.pr, 
+                 N = N.pr, 
+                 species = species.nm, 
+                 sample.nm, 
+                 file.nm, 
+                 latex = TRUE, 
+                 output = "sum")
 ```
 
 
-## Descriptive and predictive statistics for single ions
-The function `stat_Xt` can be used on the previously processed dataset and gives descriptive and predictive statistics of all the individual ions. The function requires the following arguments; `df`, which is a tibble containing the processed ion cound data; `Xt`, which is the column in said tibble containing the ion count rates; `N`, which is the processed counts. The dots `...` should be used to define a grouping variable for an analysis (here defined as the filenames of the loaded data) and a grouping variable for the count block for the individual species.
-
-```{r}
-# single ion descriptive an predictive statistics for all measured ions
-tb.Xt <- stat_Xt(tb.pr, Xt.pr, N.pr, species.nm, file.nm, latex = TRUE)
-
-knitr::kable(head(tb.Xt[[1]] %>% 
-                    rename(file = "file.nm", species = "species.nm", 
-                           !!! tb.Xt[[2]])),
-             format.args = list(digits = 1, format = "G", flag = "0"))
-             # booktabs = TRUE)
-
+```{r echo=FALSE}
+knitr::kable(head(tb.Xt),
+             format.args = list(digits = 3, 
+                                format = "G", 
+                                flag = "0")) 
 ```
 
 The following statistics are calculated with the function `stat_Xt` for single ions: number of measurements ($n$), total number of counts ($N_{tot} = \sum_{i=1}^{n}N_i$), the arithmetic mean ($\bar{X}$), the standard deviation ($s_X$), the standard error of the mean ($s_{\bar{X}}$), the predicted standard deviation ($\hat{s}_X$), and the predicted standard error of the mean ($\hat{s}_{\bar{X}}$) for which the underlying principals are delineated in detail below.
@@ -143,20 +154,30 @@ In a similar fashion the standard error of the mean for Poisson statistics depen
 
 $$\hat{s}_{\bar{N}^a} = \sqrt{\left( \frac{ \bar{N}^a}{n}\right)}$$ {#eq:se.pois}
 
-## Descriptive and descriptive statistics for isotope ratios
-The function `stat_R` can be used on the previously processed dataset and gives descriptive and predictive statistics for a pre-specified isotope ratio ($R$); e.g. $^{13}$C/$^{12}$C. Note that only isotope pairs give sensible statistical results as the ionization potential for two isotope of one element should be relatively similar. The function requires the following arguments; `df`, which is a tibble containing the processed ion count data; `Xt`, which is the column in said tibble containing the ion count rates; `N`, which is the processed counts; `ID`, a character string which should uniquelly identify ion pairs for calculating the isotope ratio; `ion1`, representing the heavy ion of the pair, and `ion2` for the ligth isotope. The dots `...` should be used to define a grouping variable for an analysis (here defined as the filenames of the loaded data) and a grouping variable for the count block for the individual species.
+## Descriptive and predictive statistics for isotope ratios
+The function `stat_R` can be used on the previously processed dataset and gives descriptive and predictive statistics for a pre-specified isotope ratio ($R$); e.g. $^{13}$C/$^{12}$C. Note that only isotope pairs give sensible statistical results as the ionization potential for two isotope of one element should be relatively similar. The function requires the following arguments; `df`, which is a tibble containing the processed ion count data; `Xt`, which is the column in said tibble containing the ion count rates; `N`, which is the processed counts; `ID`, a character string which should uniquelly identify ion pairs for calculating the isotope ratio; `ion1`, representing the heavy ion of the pair, and `ion2` for the ligth isotope. The dots `...` should be used to define a grouping variable for an analysis (here defined as the filenames of the loaded data) and a grouping variable for the count block for the individual species. Again for this function, the arguments `latex` and `output` tailor to generated `tibble` to the specific need, following the same definitions as outlined for `stat_Xt`. 
 
 
 ```{r}
 # descriptive an predictive statistics for 13C/12C ratios
-tb.R <- stat_R(tb.pr, Xt.pr, N.pr, species.nm, ion1 = "13C", ion2 = "12C",
-               file.nm, latex = TRUE)
+tb.R <- stat_R(tb.pr, 
+               Xt = Xt.pr, 
+               N = N.pr, 
+               species = species.nm, 
+               ion1 = "13C", 
+               ion2 = "12C", 
+               sample.nm, 
+               file.nm, 
+               latex = TRUE, 
+               output = "sum")
+```
 
-knitr::kable(head(tb.R[[1]] %>% 
-                    rename(file = "file.nm", 
-                           R = "R.nm", 
-                           !!! tb.R[[2]])),
-             format.args = list(digits = 3, format = "G", flag = "0"))
+
+```{r echo=FALSE}
+knitr::kable(head(tb.R),
+             format.args = list(digits = 3, 
+                                format = "G", 
+                                flag = "0")) 
 ```
 
 The following statistics are calculated with the function `stat_R` for a specific isotope ratio: number of measurements ($n$); the arithmetic mean ($\bar{R}$); the standard deviation and relative standard deviation ($s_R$ and $\epsilon_R$); the standard error of the mean and its relative counterpart ($s_{\bar{R}}$ and $\epsilon_{\bar{R}}$), the predicted standard deviation and the predicted relative standard deviation ($\hat{s}_R$ and $\hat{\epsilon}_R$); and the predicted standard error of the mean and its relative counterpart ($\hat{s}_{\bar{X}}$ and $\hat{\epsilon}_{\bar{R}}$); and the reduced Chi-squared statistic ($\chi^2$), for which the underlying principals are delineated in detail below.

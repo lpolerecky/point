@@ -27,74 +27,27 @@ validate_IC <- function(ion1, ion2, block){
     thr <- 180
     }
 
-  # perform the routine point workflow for IC data
+# perform the routine point workflow for IC data
   tb.rw <- read_IC(sv1)
 
 # processing raw ion count data
   tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt, deadtime = deadtime, thr = thr)
 
+# remove zeros and select 12C and 13C
+  tb.pr <- suppressWarnings(zeroCt(tb.pr, N.rw, species.nm, "13C", "12C", file.nm))
+
+# single ion count statistics
   tb.Xt <- stat_Xt(tb.pr, Xt.pr, N.pr, species.nm, file.nm, latex = FALSE, output = "sum")
 
-# perform Cameca correction augmention based on block internal variation
-  fun_cam <- function(x, y) {
-    seq <- rep(1: unique(x), each = unique(y))
-    n <- row_number()
-    seq[n]
-  }
 
-  tb.pr1 <- tb.pr  %>%
-             zeroCt(., N.pr, species.nm, "13C", "12C", file.nm)  %>%
-             filter(species.nm == "13C" | species.nm == "12C") %>%
-             group_by(file.nm, species.nm) %>%
-             mutate(bl = fun_cam(`bl_num.mt (n)`, `meas_bl.mt (n)`)) %>%
-    group_by(file.nm, species.nm, bl) %>%
-    mutate(ID = row_number()) %>%
-    ungroup() %>%
-    # uniqually identifies ion pairs for calculating isotope ratios
-    tidyr::unite(col = ID, file.nm, bl, ID, sep = "/", remove = FALSE)
-
-
-
-
-
-# descriptive an predictive statistics for 13C/12C ratios
-  tb.pr2 <- stat_R(tb.pr1, Xt.pr, N.pr, species = species.nm, ion1 = "13C", ion2 = "12C",
-                   file.nm, bl, latex = FALSE, output = "complete") %>%
-              group_by(file.nm, bl) %>%
-              mutate(lower = M_R_Xt.pr - 2 * S_R_Xt.pr,
-                     upper = M_R_Xt.pr + 2 * S_R_Xt.pr,
-                     n_rej = if_else(
-                                between(R_Xt.pr,
-                                        unique(lower),  # mean - 2SD
-                                        unique(upper)), # mean + 2SD
-                                "good", "bad")) %>%
-# SD block from data files
-              group_by(file.nm) %>%
-              mutate(SD_bl = sd(R_Xt.pr) / mean(R_Xt.pr))  %>%
-              ungroup() %>%
-              select(ID, SD_bl , n_rej)
-
-# Cameca style augmented datafile
-  tb.aug <- left_join(tb.pr1, tb.pr2, by = "ID") %>%
-             filter(n_rej == "good") %>%
-             add_count(file.nm, species.nm, bl, name = "n_good")
-
-# single ion descriptive an predictive statistics for all measured ions for all blocks seperate (CAMECA style)
-  tb.Xt.aug <- stat_Xt(tb.aug, Xt.pr, N.pr, species.nm, file.nm, bl, latex = FALSE, output = "sum")
-
-# descriptive an predictive statistics for 13C/12C ratios (blockwise)
-  tb.R.bl <- stat_R(tb.aug, Xt.pr, N.pr, species = species.nm, ion1 = "13C", ion2 = "12C",
-                 file.nm, bl,  latex = FALSE, output = "sum")
-  tb.R.aug <- stat_R(tb.aug, Xt.pr, N.pr, species = species.nm, ion1 = "13C", ion2 = "12C",
-                    file.nm,   latex = FALSE, output = "sum")
-
-# descriptive an predictive statistics for 13C/12C ratios (blockwise)
-  tb.R.aug.bl <- stat_R(tb.Xt.aug, M_Xt.pr, Ntot_Xt.pr, species = species.nm, ion1 = "13C", ion2 = "12C",
+# normal descriptive an predictive statistics for 13C/12C ratios (global)
+  tb.R <- stat_R(tb.pr, Xt.pr, N.pr, species = species.nm, ion1 = "13C", ion2 = "12C",
                  file.nm, latex = FALSE, output = "sum")
 
-  tb.R <- stat_R(tb.pr, Xt.pr, N.pr, species = species.nm, ion1 = "13C", ion2 = "12C",
-                     file.nm, latex = FALSE, output = "sum")
 
+#===============================================================================
+# CAMECA stat files
+#===============================================================================
 
 # ion counts in comparison dataset
   tb.test.Xt <- read_test(sv1, block = block)[[1]] %>%
@@ -119,7 +72,7 @@ validate_IC <- function(ion1, ion2, block){
   tb.test.R <- read_test(sv1, block = block)[[2]] %>%
                  mutate(R.nm = recode(R.nm, !!! R_vec)) %>%
 # combine datasets
-                 left_join(tb.R.aug.bl, . ,by = c("file.nm", "R.nm"))
+                 left_join(tb.R, . ,by = c("file.nm", "R.nm"))
 
   return(list(tb.test.Xt, tb.test.R))
 }
@@ -141,32 +94,32 @@ R1 <- val_IC[[2]] %>%
 
 test_that("block 1: Ntot of Xt and mean R from EM data", {
   expect_equal(Xt1 %>%
-                 pull(Ntot_Xt.test) %>% round(),
+                 pull(Ntot_Xt.test) %>% round(-2),
                Xt1 %>%
-                 pull(Ntot_Xt.pr)
-  )
+                 pull(Ntot_Xt.pr) %>% round(-2)
+              )
   expect_equal(R1 %>%
                  pull(M_R_Xt.test),
                R1 %>%
-                 pull(M_R_M_Xt.pr)
-  )
+                 pull(M_R_Xt.pr) %>% round(7)
+              )
 })
 
 
 test_that("block 1: Descriptive RSE of R by EM", {
   expect_equal(R1 %>%
-                 pull(RSeM_R_Xt.test) %>% round(., 2),
+                 pull(RSeM_R_Xt.test) ,
                R1 %>%
-                 pull(RSeM_R_M_Xt.pr) %>% round(., 2)
-  )
+                 pull(RSeM_R_Xt.pr) %>% round(2)
+              )
 })
 
 test_that("block 1: Predictive RSE of R by EM", {
   expect_equal(R1 %>%
-                 pull(hat_RSeM_R_Xt.test) %>% round(., 2),
+                 pull(hat_RSeM_R_Xt.test),
                R1 %>%
-                 pull(hat_RSeM_R_M_Xt.pr) %>% round(., 2)
-  )
+                 pull(hat_RSeM_R_Xt.pr) %>% round(2)
+               )
 })
 
 

@@ -32,20 +32,22 @@ devtools::load_all(".")
 
 ## Analytical bias introduced by electron multipliers
 
-Bias can be introduced by the way secondary ions are generated from primary Cs and O as well as the ion to electron conversion efficiency. The latter results in the EM gain, which is a measure of the electron output current relative to the ion input and the aplification afcter ion to electron conversion. In this succesive amplification phase the EM's high voltgae and age play a determening role. A correction for EM aging can be made by using the (pulse height distribution) PHD distribution, and by keeping the HG constant throughout sibsequent measurements. As the high counts of the heavy isotope excelerate the age proces this effects shoudl be obvious from the isotope rate over time. As such equation is a way to monitor over time:
+Bias can be introduced by the way secondary ions are generated from primary Cs and O as well as the ion to electron conversion efficiency. The latter results in the EM gain, which is a measure of the electron output current relative to the ion input and the aplification afcter ion to electron conversion. In this succesive amplification phase the EM's high voltgae and age play a determening role. A correction for EM aging can be made by using the (pulse height distribution) PHD distribution, and by keeping the HG constant throughout sibsequent measurements. On the other hand a threshold is to filter out the backgroudn noise (typically 5ct/s). The PHD distrobution is approximated by Polya distribution, as it entails the events over a fixed time interval where eache vent is indepedent of the other, and follows:
 
-$$ \delta_t = \frac{R_t - R_{t1}}{R_{t1} }\times 10^3 $$
+$$ Y = 1 - \text{G}_k(0) - \sum_{i=1}^m \text{P}_k(n)$$
 
+Taken the threshold on can calculate the probability that an events yields a sucesel ion to electron conversion or Yield (Y). Integrating the area udnerneth of this Poisson CDF generates the Y.
 
+$$X_{i}^* = \frac{1}{Y}$$
  
 Another bias introduced is the time associated for recovery after an ion hits the first dynode in the EM, as a second ion arriving at the same time could then not be recorede. ALthough this deadtime $t_{ns}$ is small $44$ns, with high count frequencty the cumulate change of this occuring in that timewindow increases and ebcomes significant.FOr the SIMS Cameca 50L this has to be corrected for, by use of the following equation:
 
-$$X_{i}^* = \frac{1}{Y} \times \frac{X_i - X_b}{1-\left(X_i - X_b\right) \times t_{ns} \times 10^9}$$
+ $$X_{i}^{**} =X_{i}^* \times \frac{X_i - X_b}{1-\left(X_i - X_b\right) \times t_{ns} \times 10^9}$$
 , where Y is the detector yield, $N_b$ is the background count rate.
 
 Next in line is another effect which relates to the source of the secondary ions. The efficiency by which an secondary ion is generated can vary dramtically per matrix, element and even isotope. As a result high secondary ion production can result instances where two ion are arriving simultaneously at the EM as the originate from the same primary ion impacting the substrate. Thereby representing a misrepresentation of the counts and skewed isotope values. This is especially relevatn for the major ion in isotope analyses as the efficiency of secondary ion generation is higher, and the low probability of QSA becomes higher. This can be corrected by taking the average number of secondary ions ejected per primary ion, or efficiency (seconary ion geneated : primary ions) : $K$, and by assuming Poisson statistics dictates the probability of QSA:
 
-$$X_i^{**} = X_i^{*} \times (1+fK)$$
+$$X_i^{***} = X_i^{**} \times (1+fK)$$
 
 , where $f$ is 0.5 based on Poisson statistics, btu has been shown to vary among matrices. At this stage it is hard assess what $K$ could have been.
 
@@ -58,3 +60,16 @@ $$ \delta = \left(\left[\frac{\bar{x}_R}{\bar{x}_{R_{std}}}  \right] \left( \del
 The isotopic composition of the standard is measured via traditional IRMS and posses it's own analytical uncertainty. Along with the precision achievable with the multiple count cycles of SIMS on the sample and standard this yield a cumulative uncertainty for each sample's isotopic measurement. The standard error of the isotope value that can account for both the SIMS and IRMS precision can be calculated by:
 
 $$ s_{\delta_{\bar{x}}} = \sqrt{\left( \frac{ s_{\bar{x}_{R}} } { \bar{x}_R } \right)^2 + \left( \frac{ s_{\bar{x}_{R_{std}}}  } { \bar{x}_{R_{std}} } \right)^2 + \left( \frac{ s_{\delta_{std}} } { \delta_{std} +1000 } \right)^2} $$
+
+
+
+
+
+
+
+## assessors of aging
+
+
+ As the high counts of the heavy isotope excelerate the age proces this effects shoudl be obvious from the isotope rate over time. As such equation is a way to monitor over time:
+
+$$ \delta_t = \frac{R_t - R_{t1}}{R_{t1} }\times 10^3 $$

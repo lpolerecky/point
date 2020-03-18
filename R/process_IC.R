@@ -15,19 +15,22 @@
 #' @param deadtime A numeric value for the deadtime of the EM
 #' @param ... Variables for grouping
 #'
+#' @return A \code{\link[tibble:tibble]{tibble}} containing processed
+#' ion count data and metadata
+#'
 #' @examples
-#' # Use system.file() to access the examples bundled with this package in the
+#' # Use point_example() to access the examples bundled with this package in the
 #' # inst/extdata directory. The examples directories are named:
 #' # 2020-01-17-TREASURE and "2018-01-19-GLENDON"
 #'
 #' # raw data containing 13C and 12C counts on carbonate
-#' tb.rw <- read_IC(system.file("extdata", "2018-01-19-GLENDON", package = "point"))
+#' tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
 #'
 #' # processing raw ion count data
 #' tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
 #'
 #' @export
-cor_IC <-function(df, N, t, Det, deadtime = 44, thr = 180){
+cor_IC <-function(df, N, t, Det, deadtime = 44, thr_PHD = 50){
 
   stopifnot(tibble::is_tibble(df))
   stopifnot(is.numeric(deadtime))
@@ -37,22 +40,22 @@ cor_IC <-function(df, N, t, Det, deadtime = 44, thr = 180){
   Det <- enquo(Det)
 
   df <- df %>%
-# time increments
+# Time increments
           mutate(dt = min(!!t),
-# count rates
+# Count rates
                  Xt.rw = !!N / dt) %>%
-# deadtime correction on count rates
+# Deadtime correction on count rates
           mutate(Xt.pr = if_else(!!Det == "EM",
                                  Xt.rw / (1 - (Xt.rw * deadtime * 10^-9)),
                                  Xt.rw ),
-# deadtime correction on counts
+# Deadtime correction on counts
                  N.pr = if_else(!!Det == "EM",
                                 (Xt.rw / (1 - (Xt.rw * deadtime * 10^-9))) * dt,
                                 Xt.rw )) %>%
 # Yield correction on count rates
-            mutate(Y = if_else(is.na(PHD),
+            mutate(Y = if_else(is.na(mean_PHD),
                                NA_real_,
-                               ppois(thr, lambda = PHD, lower.tail = FALSE)),
+                               ppois(thr, lambda = mean_PHD, lower.tail = FALSE)),
                    Xt.pr = if_else(is.na(PHD), Xt.pr,  Xt.pr / Y),
                    N.pr = if_else(is.na(PHD),N.pr , Xt.pr * dt))
 

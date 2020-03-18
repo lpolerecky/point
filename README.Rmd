@@ -59,6 +59,7 @@ This is an example of how Cameca NanoSIMS50L raw datafiles can be extracted, pro
 
 ```{r setup-point, include=FALSE}
 devtools::load_all(".")
+library(dplyr)
 ```
 
 
@@ -90,8 +91,6 @@ tb.R <- stat_R(tb.pr,
                latex = TRUE, 
                output = "sum")
 
-# use the second element of the list to get nice variable names rendering in 
-# Rmarkdown
 knitr::kable(head(tb.R),
              format.args = list(digits = 3, 
                                 format = "G", 

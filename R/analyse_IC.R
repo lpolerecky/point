@@ -29,7 +29,7 @@
 #' # 2020-01-17-TREASURE and "2018-01-19-GLENDON"
 #'
 #' # raw data containing 13C and 12C counts on carbonate
-#' tb.rw <- read_IC(system.file("extdata", "2018-01-19-GLENDON", package = "point"))
+#' tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
 #'
 #' # processing raw ion count data
 #' tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
@@ -131,8 +131,8 @@ stat_Xt <- function(df, Xt, N, species, ... , latex = FALSE, output = "sum"){
 
   }
 
-
-#' function for propagation of uncertainty in ion ratios (isotope values)
+#' @describeIn stat_Xt
+#'
 #' @export
 stat_R <- function(df, Xt, N, species, ion1, ion2, ..., latex = FALSE, output = "sum"){
 
@@ -161,16 +161,25 @@ stat_R <- function(df, Xt, N, species, ion1, ion2, ..., latex = FALSE, output = 
     quo(n()),
     # mean isotope
     quo(mean(!!Xt1) / mean(!!Xt2)),
-    # correlation coefficient
-    quo(cov(!!Xt1, !!Xt2, method = "pearson", use = "everything")),
+    # # correlation coefficient
+    # quo(cov(!!Xt1, !!Xt2, method = "pearson", use = "everything")),
     # SD isotope
-      quo(sqrt(
-        ((unique(!!S.Xt1) / unique(!!M.Xt1)) ^ 2) +
-          ((unique(!!S.Xt2) / unique(!!M.Xt2)) ^ 2) -
-          (2 *( !!quo_updt(my_q = Xt , x = "cor_R") /
-             (unique(!!M.Xt1) * unique(!!M.Xt2))))
-                ) *
-          !!quo_updt(my_q = Xt , x = "M_R")),
+    quo(des_SD_prop(M_R = !!quo_updt(my_q = Xt , x = "M_R"),
+                    ion1 = !!Xt1,
+                    ion2 = !!Xt2,
+                    M_ion1 = !!M.Xt1,
+                    M_ion2 = !!M.Xt2,
+                    S_ion1 = !!S.Xt1,
+                    S_ion2 = !!S.Xt2,
+                    n = !!quo_updt(my_q = Xt , x = "n_R"),
+                    type = "sd")),
+      # quo(sqrt(
+      #   ((unique(!!S.Xt1) / unique(!!M.Xt1)) ^ 2) +
+      #     ((unique(!!S.Xt2) / unique(!!M.Xt2)) ^ 2) -
+      #     (2 *( !!quo_updt(my_q = Xt , x = "cor_R") /
+      #        (unique(!!M.Xt1) * unique(!!M.Xt2))))
+      #           ) *
+      #     !!quo_updt(my_q = Xt , x = "M_R")),
     # quo(sqrt(
     #   ((unique(!!S.Xt1) / unique(!!M.Xt1)) ^ 2) +
     #     ((unique(!!S.Xt2) / unique(!!M.Xt2)) ^ 2) -
@@ -188,26 +197,36 @@ stat_R <- function(df, Xt, N, species, ion1, ion2, ..., latex = FALSE, output = 
     quo((!!quo_updt(my_q = Xt , x = "SeM_R") /
          !!quo_updt(my_q = Xt , x = "M_R")) * 1000),
     # predictive SD isotope
-    quo(sqrt((1 / sum(!!Yt2)) +
-             (1 / sum(!!Yt1))) *
-          unique(!!quo_updt(my_q = Xt , x = "M_R")) *
-          sqrt(n())),
+    quo(hat_SD_prop(M_R = !!quo_updt(my_q = Xt , x = "M_R"),
+                    ion1 = !!Xt1,
+                    ion2 = !!Xt2,
+                    N_ion1 = !!Yt1,
+                    N_ion2 = !!Yt2,
+                    n = !!quo_updt(my_q = Xt , x = "n_R"),
+                    type = "sd")),
+    # quo(sqrt((1 / sum(!!Yt2)) +
+    #          (1 / sum(!!Yt1))) *
+    #       unique(!!quo_updt(my_q = Xt , x = "M_R")) *
+    #       sqrt(n())),
     # predictive RSD isotope
     quo((!!quo_updt(my_q = Xt , x = "hat_S_R") /
          !!quo_updt(my_q = Xt , x = "M_R")) * 1000),
     # predictive SE isotope
-    quo(sqrt((1 / sum(!!Yt2)) +
-             (1 / sum(!!Yt1))) *
-        unique(!!quo_updt(my_q = Xt , x = "M_R"))),
+    quo(!!quo_updt(my_q = Xt , x = "hat_S_R") / sqrt(n())),
+    # quo(sqrt((1 / sum(!!Yt2)) +
+    #          (1 / sum(!!Yt1))) *
+    #     unique(!!quo_updt(my_q = Xt , x = "M_R"))),
     # predictive RSE isotope
-    quo(sqrt((1 / sum(!!Yt2)) +
-             (1 / sum(!!Yt1))) * 1000),
+    quo((!!quo_updt(my_q = Xt , x = "hat_SeM_R") /
+           !!quo_updt(my_q = Xt , x = "M_R")) * 1000),
+    # quo(sqrt((1 / sum(!!Yt2)) +
+    #          (1 / sum(!!Yt1))) * 1000),
     # reduced chi squared
     quo((!!quo_updt(my_q = Xt , x = "SeM_R") /
          !!quo_updt(my_q = Xt , x = "hat_SeM_R")) ^ 2)
   )
 
-  ls.names <-paste(c("n", "M", "cor", "S", "RS", "SeM", "RSeM",
+  ls.names <-paste(c("n", "M", "S", "RS", "SeM", "RSeM",
                      "hat_S", "hat_RS", "hat_SeM", "hat_RSeM",
                      "chi2"), "R", quo_name(Xt), sep = "_")
 
@@ -215,7 +234,6 @@ stat_R <- function(df, Xt, N, species, ion1, ion2, ..., latex = FALSE, output = 
   ls.latex <- ls.names %>%
                 purrr::set_names(., nm = c("$n$",
                                            "$\\bar{R}$",
-                                           "$r$",
                                            "$s_{R}$",
                                            "$\\epsilon_{R} \\,$ (\u2030)",
                                            "$s_{\\bar{R}}$",
@@ -317,7 +335,8 @@ cov_R <- function(df, species, ion1, ion2, ...){
           group_by(!!! gr_by, !! species) %>%
           mutate(ID = row_number()) %>%
           ungroup() %>%
-# uniqually identifies ion pairs for calculating isotope ratios
+# uniqually identifies ion pairs for calculating isotope ratios (in case raw
+# file does not contain it)
           tidyr::unite(col = ID, !!! gr_by, ID, sep = "/", remove = FALSE)
 
 
@@ -410,5 +429,51 @@ R <- paste(
   ), sep = "/")
 
 }
+
+}
+
+des_SD_prop <- function(M_R, ion1, ion2, M_ion1, M_ion2, S_ion1, S_ion2, n,
+                        type = "sd"){
+
+  M_R <- unique(M_R)
+  n <- unique(n)
+
+  sd <- sqrt(
+              ((unique(S_ion1) / unique(M_ion1)) ^ 2) +
+              ((unique(S_ion2) / unique(M_ion2)) ^ 2) -
+              (2 *
+                  (
+                    cov(ion1, ion2, method = "pearson", use = "everything") /
+                    (unique(M_ion1) * unique(M_ion2))
+                  )
+              )
+            )
+
+  if (type == "sd") {return(sd * M_R)}
+  if (type == "rsd") {return(sd * 1000)}
+  if (type == "se") {return(sd * M_R / sqrt(n))}
+  if (type == "rse") {return((sd / sqrt(n)) * 1000)}
+}
+
+hat_SD_prop <- function(M_R, ion1, ion2 ,N_ion1, N_ion2, n, type = "sd"){
+
+  M_R <- unique(M_R)
+  n <- unique(n)
+
+  hat_sd <- sqrt(
+                  (1 / sum(N_ion1)) +
+                  (1 / sum(N_ion2))
+                )
+
+  if (type == "sd") {return(hat_sd * M_R * sqrt(n))}
+  if (type == "rsd") {return(hat_sd * sqrt(n) * 1000)}
+  if (type == "se") {return(hat_sd * M_R / sqrt(n))}
+  if (type == "rse") {return((hat_sd / sqrt(n)) * 1000)}
+}
+
+sum_sd_prop <- function(x, type = "rse"){
+
+  n <- length(x)
+  sum_sd <- sqrt( 1 / sum(x^-2))
 
 }

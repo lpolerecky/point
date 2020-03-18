@@ -19,7 +19,9 @@ Imports:
     tidyr,
     tibble,
     stringr,
-    readr
+    readr,
+    magrittr,
+    ggplot2
 Suggests: 
     testthat,
     knitr,

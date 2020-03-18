@@ -2,9 +2,12 @@
 % Please edit documentation in R/analyse_IC.R
 \name{stat_Xt}
 \alias{stat_Xt}
+\alias{stat_R}
 \title{Analyse raw ion count data}
 \usage{
-stat_Xt(df, Xt, N, species, ..., latex = FALSE, complete = TRUE)
+stat_Xt(df, Xt, N, species, ..., latex = FALSE, output = "sum")
+
+stat_R(df, Xt, N, species, ion1, ion2, ..., latex = FALSE, output = "sum")
 }
 \arguments{
 \item{df}{A tibble containing processed ion count data}
@@ -13,10 +16,12 @@ stat_Xt(df, Xt, N, species, ..., latex = FALSE, complete = TRUE)
 
 \item{N}{A variable constituting the ion counts}
 
+\item{species}{A variable constituting the species analysed}
+
 \item{...}{Variables for grouping}
 
-\item{ID}{A character string that uniqually identifies ion pairs for
-calculating isotope ratios}
+\item{output}{A character string for output as summary statistics ("sum");
+statistics only ("stat"); and statistics with the original data ("complete")}
 
 \item{ion1}{A character string constituting the heavy isotope ("13C")}
 
@@ -38,13 +43,18 @@ into a single tible from text files with the extensions \emph{.is_txt} and
 \emph{.stat}, respectively. These files can be found in the directories
 associated with the SIMS measurements.
 }
+\section{Functions}{
+\itemize{
+\item \code{stat_R}: 
+}}
+
 \examples{
 # Use system.file() to access the examples bundled with this package in the
 # inst/extdata directory. The examples directories are named:
 # 2020-01-17-TREASURE and "2018-01-19-GLENDON"
 
 # raw data containing 13C and 12C counts on carbonate
-tb.rw <- read_IC(system.file("extdata", "2018-01-19-GLENDON", package = "point"))
+tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
 
 # processing raw ion count data
 tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)

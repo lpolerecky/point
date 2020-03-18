@@ -17,6 +17,10 @@ cor_IC(df, N, t, Det, deadtime = 44, thr = 180)
 
 \item{...}{Variables for grouping}
 }
+\value{
+A \code{\link[tibble:tibble]{tibble}} containing processed
+ion count data and metadata
+}
 \description{
 \code{proc_Xt} function for processing ion count data
 }
@@ -29,12 +33,12 @@ respectively. These files can be found in the directories associated with the
 SIMS measurements.
 }
 \examples{
-# Use system.file() to access the examples bundled with this package in the
+# Use point_example() to access the examples bundled with this package in the
 # inst/extdata directory. The examples directories are named:
 # 2020-01-17-TREASURE and "2018-01-19-GLENDON"
 
 # raw data containing 13C and 12C counts on carbonate
-tb.rw <- read_IC(system.file("extdata", "2018-01-19-GLENDON", package = "point"))
+tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
 
 # processing raw ion count data
 tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
