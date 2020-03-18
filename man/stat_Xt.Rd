@@ -28,12 +28,14 @@ statistics only ("stat"); and statistics with the original data ("complete")}
 \item{ion2}{A character string constituting the light isotope ("12C")}
 }
 \value{
-A tibble containing descriptive and predictive statistics for ion
-count and isotope ratio data
+A t\code{\link[tibble:tibble]{tibble}} containing descriptive and
+predictive statistics for ion counts and isotope ratios
 }
 \description{
-\code{stat_Xt} function for propagation of uncertainty for single ions
-\code{stat_R} function for propagation of uncertainty for isotope ratios (R)
+\code{stat_Xt} function for descriptive and predictive statistics on single
+ion precision
+\code{stat_R} function for descriptive and predictive statistics on isotope
+ratios (R) precision with appropiate error propagation
 }
 \details{
 Ion count data consisting of time-incremented integer values are process.

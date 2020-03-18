@@ -25,9 +25,21 @@ Ion count data consisting of time-incremented integer values are
 # inst/extdata directory. The examples directories are named:
 # 2020-01-17-TREASURE and "2018-01-19-GLENDON"
 
+# raw data containing 13C and 12C counts on carbonate
+tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
 
-tb.dia <- diag_R(tb.pr, method = "standard", Moreargs = quos(Xt = Xt.pr,
-                 N = N.pr, species = species.nm, ion1 = "13C", ion2 = "12C",
-                 .named = TRUE), file.nm)
+# processing raw ion count data
+tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
+
+# CAMECA style augmentatio of ion count data for isotope ratios
+tb.aug <- diag_R(tb.pr,
+                 method = "standard",
+                 Moreargs = quos(Xt = Xt.pr,
+                                 N = N.pr,
+                                 species = species.nm,
+                                 ion1 = "13C",
+                                 ion2 = "12C",
+                                 .named = TRUE),
+                 file.nm)
 
 }

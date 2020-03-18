@@ -128,9 +128,9 @@ tb.mt <- tb.mt %>%
            tidyr::unnest(cols = c(PHD)) %>% 
            mutate(lambda = (2 * mean_PHD^2) / (SD_PHD^2 + mean_PHD),
                   prob = (SD_PHD^2 - mean_PHD) / (SD_PHD^2 + mean_PHD),
-                  prob = if_else(prob < 0, NA_real_, prob),
-                  prob = if_else(prob >= 1, NA_real_, prob)) %>% 
-           tidyr::drop_na(prob) %>% 
+                  prob = if_else(prob < 0 | prob >= 1 , NA_real_, prob),
+                  ) %>% 
+           tidyr::drop_na(lambda, prob) %>% 
            mutate(density = polyaAeppli::dPolyaAeppli(PHD, lambda = lambda, prob = prob),
                   Y = polyaAeppli::pPolyaAeppli(50, lambda = lambda, prob = prob, lower.tail = FALSE)) %>% 
            group_by(file.nm) %>% 
@@ -145,6 +145,6 @@ ggplot(tb.mt, aes(x = PHD, y = density)) +
 
 ```
 
-In the above example we use the package `pPolyaAeppli` [@Burden2014] to approximate the peak height distribution with the compounded Polya-Aeppli density probability function [@Dietz1970; @Dietz1978], which, together with the discriminator threshold value, enables calculating the EM Yield ($Y$) (Fig. `r figr("FigPHD")`). More on this topic can be found in the vignette *IC-process*.
+The compounded Polya-Aeppli density probability function can approximate the peak height distribution  [@Dietz1970; @Dietz1978]. The package `pPolyaAeppli` [@Burden2014] together with the discriminator threshold value (usually 50 V) enables calculating the EM Yield ($Y$) (Fig. `r figr("FigPHD")`). More on this topic can be found in the vignette *IC-process*.
 
 # References

@@ -20,8 +20,7 @@ devtools::load_all(".")
 ```
 
 
-```{r}
-
+```{r warning=FALSE}
 
 # Use point_example() to access the examples bundled with this package in the
 # inst/extdata directory. The examples directories are named:
@@ -35,29 +34,42 @@ tb.pr <- cor_IC(tb.rw,
                 N = N.rw, 
                 t = t.rw, 
                 Det = det_type.mt, 
-                deadtime = 0, 
-                thr = 0)
-
+                deadtime = 44, 
+                thr_PHD = 50)
 
 # CAMECA style augmented datafile
-  tb.aug <- diag_R(tb.pr,
-                   method = "standard",
-                   Moreargs = quos(Xt = Xt.pr,
-                                   N = N.pr,
-                                   species = species.nm,
-                                   ion1 = "13C",
-                                   ion2 = "12C",
-                                   .named = TRUE),
-                   file.nm) %>%
+tb.aug <- diag_R(tb.pr,
+                 method = "standard",
+                 Moreargs = quos(Xt = Xt.pr,
+                                 N = N.pr,
+                                 species = species.nm,
+                                 ion1 = "13C",
+                                 ion2 = "12C",
+                                 .named = TRUE),
+                 file.nm) %>%
               filter(flag == "good") # filter the analysis that pass the test
 
 # descriptive an predictive statistics for 13C/12C ratios (blockwise)
-  tb.R.bl <- stat_R(tb.aug, Xt.pr, N.pr, species = species.nm, ion1 = "13C", ion2 = "12C",
-                    file.nm, bl,  latex = FALSE, output = "sum")
+  tb.R.bl <- stat_R(tb.aug, 
+                    Xt.pr, 
+                    N.pr, 
+                    species = species.nm, 
+                    ion1 = "13C", 
+                    ion2 = "12C",
+                    file.nm, 
+                    bl.mt,  
+                    latex = FALSE, 
+                    output = "sum")
   
-# augmneted descriptive an predictive statistics for 13C/12C ratios (global)
-  tb.R.aug <- stat_R(tb.aug, Xt.pr, N.pr, species = species.nm, ion1 = "13C", ion2 = "12C",
-                 file.nm, latex = FALSE, output = "sum")
-  
+# augmented descriptive an predictive statistics for 13C/12C ratios (global)
+  tb.R.aug <- stat_R(tb.aug, 
+                     Xt.pr, 
+                     N.pr, 
+                     species = species.nm, 
+                     ion1 = "13C", 
+                     ion2 = "12C",
+                     file.nm, 
+                     latex = FALSE, 
+                     output = "sum")
 ```
 

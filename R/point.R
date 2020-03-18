@@ -1,7 +1,8 @@
 #' point: A package for reading, processing, and analysing raw ion count data.
 #'
 #' The point package provides three categories of important functions: read,
-#' process and analyse.
+#' process and analyse that assist with a convenient way of interpreting ion
+#' count data.
 #'
 #' @section point functions:
 #' The point functions ...

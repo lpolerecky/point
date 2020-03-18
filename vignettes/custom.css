@@ -1,4 +1,5 @@
 body {
+  text-align: justify;
   background-color: #fff;
   margin: 1em auto;
   max-width: 700px;
@@ -6,8 +7,12 @@ body {
   padding-left: 2em;
   padding-right: 2em;
   font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size: 44px;
+  font-size: 14px;
   line-height: 1.35;
+}
+
+#header {
+  text-align: center;
 }
 
 #TOC {
@@ -131,6 +136,7 @@ div.figure {
   text-align: center;
 }
 img {
+  font-size: 15px;
   background-color: #FFFFFF;
   padding: 2px;
   border: 1px solid #DDDDDD;
@@ -199,3 +205,4 @@ code > span.ot { color: #007020; } /* OtherToken */
 code > span.al { color: #ff0000; font-weight: bold; } /* AlertToken */
 code > span.fu { color: #900; font-weight: bold; } /* Function calls */
 code > span.er { color: #a61717; background-color: #e3d2d2; } /* ErrorTok */
+
