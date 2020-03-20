@@ -45,25 +45,27 @@ cor_IC <-function(df, N, t, Det, deadtime = 44, thr_PHD = 50){
   t <- enquo(t)
   Det <- enquo(Det)
 
-  df <- df %>%
+  tb.pr <- df %>%
 # Time increments
-          mutate(dt = min(!!t),
+             mutate(dt = min(!!t),
 # Count rates
-                 Xt.rw = !!N / dt) %>%
+                    Xt.rw = !!N / dt) %>%
 # Deadtime correction on count rates
-          mutate(Xt.pr = if_else(!!Det == "EM",
-                                 Xt.rw / (1 - (Xt.rw * deadtime * 10^-9)),
-                                 Xt.rw ),
+             mutate(Xt.pr = if_else(!!Det == "EM",
+                                    cor_DT(Xt.rw ,deadtime),
+                                    Xt.rw ),
 # Deadtime correction on counts
-                 N.pr = if_else(!!Det == "EM",
-                                (Xt.rw / (1 - (Xt.rw * deadtime * 10^-9))) * dt,
-                                 Xt.rw )) %>%
+                    N.pr = if_else(!!Det == "EM",
+                                   cor_DT(Xt.rw ,deadtime) * dt,
+                                   Xt.rw )) %>%
 # Yield correction on count rates
-            mutate(Y = if_else(!!Det == "EM",
-                               cor_yield(mean_PHD, SD_PHD, thr_PHD),
-                               1),
-                   Xt.pr = if_else(is.na(Y), Xt.pr,  Xt.pr / Y),
-                   N.pr = if_else(is.na(Y), N.pr , Xt.pr * dt))
+              mutate(Y = if_else(!!Det == "EM",
+                                 cor_yield(mean_PHD, SD_PHD, thr_PHD),
+                                 1),
+                     Xt.pr = if_else(is.na(Y), Xt.pr,  Xt.pr / Y),
+                     N.pr = if_else(is.na(Y), N.pr , Xt.pr * dt))
+
+  return(tb.pr %>% select(-c(dt, Y)))
 
 }
 

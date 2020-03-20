@@ -134,6 +134,8 @@ p > code, li > code {
 
 div.figure {
   text-align: center;
+  font-style: italic;
+  font-size: smaller;
 }
 img {
   font-size: 15px;

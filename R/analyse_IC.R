@@ -80,8 +80,6 @@ stat_Xt <- function(df, Xt, N, species, ... , latex = FALSE, output = "sum"){
 
   args <- purrr::set_names(args, nm = ls.names)
 
-  #gr_names <- sapply(gr_by, as_name)
-
   # switch complete dataset, stats or summary stats
   mod_cal <- function(type) {
     switch(type,
@@ -91,24 +89,13 @@ stat_Xt <- function(df, Xt, N, species, ... , latex = FALSE, output = "sum"){
     )
   }
 
-  #mod_cal <- call2(if_else(complete, "mutate", "summarize"), quote(.), !!!args)
+  tb_names  <- sapply(gr_by, as_name) %>% purrr::set_names()
 
   df <- df %>%
               group_by(!!! gr_by) %>%
               eval_tidy(expr = mod_cal(output), data = .) %>%
               #summarise(!!! args) %>%
               ungroup()
-
-  # if (summary) {
-  #
-  # df <- df.sum
-  #
-  # } else {
-  #
-  # df <- df.sum %>%
-  #        left_join(df, . , by = gr_names)
-  #
-  # }
 
   if (latex) {
 
@@ -117,8 +104,7 @@ stat_Xt <- function(df, Xt, N, species, ... , latex = FALSE, output = "sum"){
                                                  ~latex_parser(.x,
                                                                ion1 = NULL,
                                                                ion2 = NULL))) %>%
-              select(file = "file.nm",
-                     species = "species.nm",
+              select(!!! tb_names,
                      !!! ls.latex)
 
 # return list for nice latex variable names in Rmarkdown with mathjax and latex
