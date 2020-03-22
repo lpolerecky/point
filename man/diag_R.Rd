@@ -4,15 +4,22 @@
 \alias{diag_R}
 \title{Diagnostics raw ion count data}
 \usage{
-diag_R(df, method = "standard", Moreargs = quos(NULL), ...)
+diag_R(df, method = "standard", args = expr_R(NULL), ...)
 }
 \arguments{
 \item{df}{A tibble containing processed ion count data}
 
 \item{method}{Character string for the type of diagnostics}
+
+\item{args}{A list of expression pertaining to the variables required for a
+call to stat_R. The function expr_R can be used to simplify this.}
+
+\item{...}{Variables for grouping}
 }
 \value{
-A tibble containing diagnostics
+A t\code{\link[tibble:tibble]{tibble}} containing the original
+dataset and new columns related to the diagnostics. Flag variables enable
+convenient filtering of the tibble for augmentation of the dataset.
 }
 \description{
 \code{diag_R} function for propagation of uncertainty for single ions
@@ -21,9 +28,8 @@ A tibble containing diagnostics
 Ion count data consisting of time-incremented integer values are
 }
 \examples{
-# Use system.file() to access the examples bundled with this package in the
-# inst/extdata directory. The examples directories are named:
-# 2020-01-17-TREASURE and "2018-01-19-GLENDON"
+# Use point_example() to access the examples bundled with this package in the
+# inst/extdata directory.
 
 # raw data containing 13C and 12C counts on carbonate
 tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
@@ -34,12 +40,11 @@ tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
 # CAMECA style augmentatio of ion count data for isotope ratios
 tb.aug <- diag_R(tb.pr,
                  method = "standard",
-                 Moreargs = quos(Xt = Xt.pr,
-                                 N = N.pr,
-                                 species = species.nm,
-                                 ion1 = "13C",
-                                 ion2 = "12C",
-                                 .named = TRUE),
-                 file.nm)
+                 args = expr_R(Xt = "Xt.pr",
+                               N = "N.pr",
+                               species = "species.nm",
+                               ion1 = "13C",
+                               ion2 = "12C"),
+                 file.nm, bl.mt)
 
 }

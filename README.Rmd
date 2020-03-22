@@ -1,7 +1,7 @@
 ---
 output: 
   github_document:
-    pandoc_args: --webtex 
+    # pandoc_args: --webtex 
 # header-includes:
 #    - \usepackage{wasysym}
 #    - \usepackage{textcomp}
@@ -77,7 +77,7 @@ tb.pr <- cor_IC(tb.rw,
                 t = t.rw, 
                 Det = det_type.mt, 
                 deadtime = 44, 
-                thr = 180)
+                thr_PHD = 50)
 
 # descriptive an predictive statistics for 13C/12C ratios
 tb.R <- stat_R(tb.pr, 
@@ -100,8 +100,8 @@ knitr::kable(head(tb.R),
 
 ## Example 2: external precision of isotope ratios
 
-To calculate the external reproducibility of isotope ratios one needs to use the total ion count of one block and the block count rate. The latter is equivalent to the mean ion count rate, which was already calculated with the function `stat_Xt`. 
-
+To calculate the external reproducibility of isotope ratios one needs to use the total ion count of one block and the block count rate. The latter is equivalent to the mean ion count rate, which can be calculated with the function `stat_Xt`. 
+  
 ```{r}
 # single ion descriptive an predictive statistics for all measured ions
 tb.Xt <- stat_Xt(tb.pr, 

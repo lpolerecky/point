@@ -20,9 +20,10 @@ and metadata
 \description{
 \code{read_IC()} is designed to obtain the numerical data associated with ion
 counts.
-\code{read_meta()} can be used to solely retrieve the metadate associated
-with ion count data analysis; loading specifications related to the optics,
-the primary and secondary ion beam, and mass spectrometer settings.
+\code{read_meta()} can be used to specifically retrieve the metadate
+associated with ion count data analysis, thereby loading specifications
+related to the optics, the primary and secondary ion beams, and the mass
+spectrometer.
 }
 \details{
 Ion count data consists of time-incremented integer values. These functions

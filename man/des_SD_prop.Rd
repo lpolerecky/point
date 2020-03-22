@@ -34,7 +34,7 @@ counts of the light isotope}
 
 \item{type}{A character string for the type of uncertainty estimate:
 \code{"sd"}, standard deviation; \code{"rsd"}, relative standard deviation in
-per mille;#' \code{"se"}, standard error of the mean; \code{"rse"}, relative
+per mille; \code{"se"}, standard error of the mean; \code{"rse"}, relative
 standard error of the mean in per mille}
 
 \item{N_ion1}{A numeric vector constituting the single ion counts of the
@@ -54,10 +54,10 @@ predictive (Poisson) error statistics for isotope ratios (R).
 }
 \details{
 Isotope ratios are based on two measured variables, i.e., two isotopes of a
-single chemical species. Considering that two variables are combined,
-the precision of the isotope ratio arises from the combined uncertainty of
-the two measurements. Hence error propagation is required to obtain a
-reliable estimate of the uncertainty associated with the isotope ratio.
+single chemical species. The combined variable compounds the uncertainty
+associated with the individual measurement. Hence error propagation is
+required to obtain a reliable estimate of the uncertainty associated
+with the compounded variable (i.e. isotope ratio).
 }
 \examples{
 # light isotope count rates

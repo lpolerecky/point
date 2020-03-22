@@ -46,6 +46,11 @@ body {
     line-height: 16px;
   }
 
+caption {
+  text-align: center;
+  font-style: italic;
+  font-size: smaller;
+}
 table {
   margin: 1em auto;
   border-width: 1px;

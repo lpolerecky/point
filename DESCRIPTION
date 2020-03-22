@@ -21,7 +21,8 @@ Imports:
     stringr,
     readr,
     magrittr,
-    ggplot2
+    ggplot2,
+    polyaAeppli
 Suggests: 
     testthat,
     knitr,

@@ -1,11 +1,20 @@
 ---
 title: "IC-diagnostics"
-output: rmarkdown::html_vignette
+author: "Martin Schobben" 
+output: 
+  rmarkdown::html_vignette:
+    fig_caption: true
+    pandoc_args:  [
+      "--csl", "~/Documents/work/projects/Glendonite_project/common/aquatic-microbial-ecology.csl",
+      "--citation-abbreviations", "~/Documents/work/projects/Glendonite_project/common/abbreviations.json", "--filter", "~/.cabal/bin/pandoc-crossref", "--css", "custom.css" 
+               ]
+bibliography: SIMS.bib
 vignette: >
   %\VignetteIndexEntry{IC-diagnostics}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
@@ -14,62 +23,204 @@ knitr::opts_chunk$set(
 )
 ```
 
+```{r functions, include=FALSE}
+# A function for captioning and referencing images
+fig <- local({
+    i <- 0
+    ref <- list()
+    list(
+        cap=function(refName, text) {
+            i <<- i + 1
+            ref[[refName]] <<- i
+            paste("Figure ", i, ": ", text, sep="")
+        },
+        ref=function(refName) {
+            ref[[refName]]
+        })
+})
+```
+
+# Diagnostics for Ion Count Data
+The random nature of secondary ions emitted from a sample is described by Poisson statistics, which can be used to predict the precision of SIMS measurements under ideal circumstances (e.g., the predicted standard error can be deduced from the total counts of secondary ions). However, besides this fundamental source of imprecision, real SIMS measurements are additionally affected by other factors such as sample heterogeneity, instrument instability, the development and geometry of the sputter pit, and sample charging. Although some of these biases can be avoided by proper instrument tuning and sample documentation (e.g. T/SEM to characterise the textural properties of a rock sample) prior to SIMS measurement, factors such as instrument instability or sample heterogeneity can never be fully eliminated. In this vignette, diagnostic tools are showcased which can help evaluate the potential impact of such factors on the precision of ion count data.
+
 ```{r setup}
 library(point)
-devtools::load_all(".")
 ```
+
+
+## Nomenclature
+
+* Sample: sample of the true population
+* Analytical substrate: Physical sample measured during SIMS analysis
+* Event: single event of an ion hitting the detector
+* Measurement: single count cycle $N_i$
+* Analysis: $n$-series of measurements $N_{(i)} = M_j$ 
+* Study: $m$-series of analyses $M_{(j)}$, constituting the different spots on the analytical substrate 
+
+## Isotope ratios: A special case
+Isotopes of the same element should have more-or-less the same ionization efficiency [@Fitzsimons2000a]. It thus follows, that in an isotopically homogeneous analytical substrate the count rates of two isotope from the same element should be dependent on each. From this it can be deduced that large deviations in count rate ratios of an isotope system between consecutive measurements indicate a potential discrepancy (e.g., sample heterogeneity and instrument instability).  
+
+## Count block based count optimization (Default Cameca software procedure)
+The default method to account for these discrepancies as incorporated in the Cameca software entails a blockwise check for variability. If values fall outside of a pre-defined range of variance (for example two standard deviations; named $\sigma$ in the Cameca software), the measurement will be rejected.  
 
 
 ```{r warning=FALSE}
 
 # Use point_example() to access the examples bundled with this package in the
-# inst/extdata directory. The examples directories are named:
-# 2020-01-17-TREASURE and "2018-01-19-GLENDON"
+# inst/extdata directory. 
 
-# raw data containing 13C and 12C counts on carbonate
+# Carry-out the routine point workflow
+# Raw data containing 13C and 12C counts on carbonate
 tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
 
-# processing raw ion count data
+# Processing raw ion count data
 tb.pr <- cor_IC(tb.rw, 
                 N = N.rw, 
                 t = t.rw, 
                 Det = det_type.mt, 
-                deadtime = 44, 
-                thr_PHD = 50)
+                deadtime = 0, 
+                thr_PHD = 0)
 
 # CAMECA style augmented datafile
-tb.aug <- diag_R(tb.pr,
-                 method = "standard",
-                 Moreargs = quos(Xt = Xt.pr,
-                                 N = N.pr,
-                                 species = species.nm,
-                                 ion1 = "13C",
-                                 ion2 = "12C",
-                                 .named = TRUE),
-                 file.nm) %>%
-              filter(flag == "good") # filter the analysis that pass the test
+# Vectors of isotope ratios 
+ion1 <-  c("13C", "12C 13C", "13C 14N", "12C 14N", "12C") 
+ion2 <-  c("12C", "12C2", "12C 14N", "40Ca 16O", "40Ca 16O")
 
-# descriptive an predictive statistics for 13C/12C ratios (blockwise)
-  tb.R.bl <- stat_R(tb.aug, 
-                    Xt.pr, 
-                    N.pr, 
-                    species = species.nm, 
-                    ion1 = "13C", 
-                    ion2 = "12C",
-                    file.nm, 
-                    bl.mt,  
-                    latex = FALSE, 
-                    output = "sum")
+# Call function Diag_R over all ion ratio combinations  
+tb.aug <- purrr::map2(ion1, ion2, ~(diag_R(tb.pr,
+                                           method = "standard",
+                                           args = expr_R(Xt = "Xt.pr",
+                                                         N = "N.pr",
+                                                         species = "species.nm",
+                                                         ion1 = .x,
+                                                         ion2 = .y),
+                                           file.nm,
+                                           bl.mt) %>%
+                                     filter(flag == "good")))
+                                   
+# Reproduce Cameca stat file: descriptive an predictive statistics for  
+# ratios (blockwise)
+
+# List variables
+ls.CAMECA <- lst(df = tb.aug, a = ion1, b = ion2)
+
+# Function to transform to calculate block wise and produce CAMECA output style
+fun_CAMECA <-function(df, a, b){
   
-# augmented descriptive an predictive statistics for 13C/12C ratios (global)
-  tb.R.aug <- stat_R(tb.aug, 
-                     Xt.pr, 
-                     N.pr, 
-                     species = species.nm, 
-                     ion1 = "13C", 
-                     ion2 = "12C",
-                     file.nm, 
-                     latex = FALSE, 
-                     output = "sum")
+               df <- stat_R(df, Xt.pr, N.pr, species.nm, 
+                                            a, b, file.nm, bl.mt,
+                                            output = "complete") %>%   
+                       filter(file.nm == "2018-01-19-GLENDON_1_1") %>% 
+                       distinct(bl.mt, .keep_all = TRUE) %>% 
+                       mutate_at(vars(contains("meas_bl.mt")), ~(. - n_R_Xt.pr)) %>% 
+                       mutate(`Err_mean (%)` = RSeM_R_Xt.pr / 10,
+                              `Poisson (%)` = hat_RSeM_R_Xt.pr / 10,
+                              `Ratio#` = paste(a, b, sep = "/")) %>% 
+                       select(`Block#` = bl.mt, 
+                              `Ratio#` , 
+                              "Mean" = M_R_Xt.pr, 
+                              "SD" = S_R_Xt.pr, 
+                              N_rej = contains("meas_bl.mt")[1], 
+                              `Err_mean (%)`,
+                              `Poisson (%)`,
+                              "Khi2" = chi2_R_Xt.pr)
+}
+
+# Call the function
+tb.CAMECA <- purrr::pmap_dfr(ls.CAMECA, fun_CAMECA) %>% 
+              arrange(`Block#`)
+              
 ```
 
+
+
+```{r out.width="90%", echo=FALSE, fig.cap=fig$cap("excerpt_cameca","An excerpt of the Cameca stat-file for count block based 2$\\sigma$-rejection and associated blockwise statistics")}
+
+knitr::include_graphics("excerpt_stat.png")
+
+knitr::kable(tb.CAMECA[1:13, ],
+             format.args = list(digits = 2, 
+                                format = "G", 
+                                flag = "0"),
+              caption = "Table 1: Blockwise statistics for augmented dataset (replication of Fig.1).") 
+```
+
+Note, that in the above example of the Cameca diagnostics (Fig. `r fig$ref("excerpt_cameca")`), ratios of none-isotope pairs have been calculated.
+
+```{r fig.width=6, fig.height=4, fig.cap=fig$cap("ion_potential", "The blockwise mean plotted against consecutive blocks. Note that the non-isotope ratios show a decreasing trend over time."), echo=FALSE}
+
+ggplot(tb.CAMECA, aes(x =`Block#`, y = Mean)) +
+  geom_point() +
+  facet_wrap(vars(`Ratio#`), scales = "free") +
+  theme_classic()
+
+```
+
+
+Upon plotting the blockwise mean against the block number (Fig. `r fig$ref("ion_potential")`), it becomes apparent that the none-isotope ratios display a monotonic decreasing trend over the duration of the analysis. This effect likely reflects the differential ionization potentials and trajectories of secondary beam stabilization over the analysis.
+
+Based on the Cameca $\sigma$-rejection, it is possible to augment the dataset for each of the analyses by simply removing the anomalous measurements ($N_i$), which pertains to the $N\_rej$ in Fig `r fig$ref("excerpt_cameca")`.   
+
+````{r}
+# Augmented descriptive an predictive statistics (global dataset)
+
+# Function to transform to calculate block wise and produce CAMECA output style
+fun_CAMECA_gl <-function(df, a, b){
+  
+               df <- stat_R(df, Xt.pr, N.pr, species.nm, 
+                                            a, b, file.nm, 
+                                            output = "complete") %>%   
+                       filter(file.nm == "2018-01-19-GLENDON_1_1") %>%
+                       
+                       mutate(`Err_mean (%)` = RSeM_R_Xt.pr / 10,
+                              `Poisson (%)` = hat_RSeM_R_Xt.pr / 10,
+                              `Ratio#` = paste(a, b, sep = "/"),
+                              SD_bl = sd(R_Xt.pr) /
+                                      mean(R_Xt.pr) * 100) %>% 
+                       distinct(file.nm, .keep_all = TRUE) %>% 
+                       select(`Ratio#` , 
+                              "Ratios" = M_R_Xt.pr, 
+                              `Poisson (%)`,
+                              `Err_mean (%)`,
+                              "Khi2" = chi2_R_Xt.pr,
+                              `SD_Block(%)`= SD_bl)
+}
+
+# Call the function
+tb.CAMECA_aug <- purrr::pmap_dfr(ls.CAMECA, fun_CAMECA_gl)
+
+# And the same without augmentation of the dataset
+ls.CAMECA$df <- replicate(length(ion1), tb.pr, simplify = FALSE)
+
+tb.CAMECA_org <- purrr::pmap_dfr(ls.CAMECA, fun_CAMECA_gl)
+
+```
+
+```{r out.width="90%", echo=FALSE, fig.cap=fig$cap("excerpt_cameca","An excerpt of the Cameca stat-file for count block based 2$\\sigma$-rejection and associated blockwise statistics")}
+
+knitr::include_graphics("excerpt_stat_global.png")
+```
+
+```{r echo=FALSE}
+knitr::kable(tb.CAMECA_aug,
+             format.args = list(digits = 2, 
+                                format = "G", 
+                                flag = "0"),
+             caption = "Table 2: Summary stats for augmented dataset") 
+```
+
+
+```{r echo=FALSE}
+knitr::kable(tb.CAMECA_org,
+             format.args = list(digits = 2, 
+                                format = "G", 
+                                flag = "0"),
+             caption = "Table 3: Summary stats for original dataset") 
+```
+
+However, when comparing the summary statistics of the augmented dataset (Table 2) with the excerpt from the Cameca stat-file (Fig. `r fig$ref("excerpt_cameca")`) their seems to be a substantial difference. Instead upon comparison with Table 3, which consist of summary statistics calculated on the original dataset (without $\sigma$-rejection of measurements), the replication is surprisingly consistent. This heralds the question whether their might be a mistake in the Cameca software for calculating statistics on ion ratios for complete analyses. Otherwise the blockwise $\sigma$-rejection of measurements seems rather obfuscated, as it does not seem to serve an obvious purpose.
+
+## Regression diagnostic based count optimization
+This will be included in future release.
+
+# References
