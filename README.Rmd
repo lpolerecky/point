@@ -1,11 +1,9 @@
 ---
 output: 
   github_document:
-    # pandoc_args: --webtex 
-# header-includes:
-#    - \usepackage{wasysym}
-#    - \usepackage{textcomp}
+    pandoc_args: --webtex
 ---
+
 <!--  use the --webtex argument in the YAML to render equations -->
 
 
