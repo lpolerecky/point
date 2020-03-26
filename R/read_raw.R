@@ -19,14 +19,11 @@
 #'
 #' @return A \code{\link[tibble:tibble]{tibble}} containing raw ion count data
 #' and metadata
-#'
+#' @export
 #' @examples
-#' # Use point_example() to access the examples bundled with this
-#' package in the inst/extdata directory.
+#' # Use point_example() to access the examples bundled with this package
 #'
 #' read_IC(point_example("2018-01-19-GLENDON"))
-#'
-#' @export
 read_IC <- function(directory){
 
   l.c <- read_validator(directory)
@@ -61,31 +58,28 @@ read_IC <- function(directory){
                                      ),
                             .id = "file.nm") %>%
 # Remove old column headers
-                                filter(t.rw != "X", N.rw  != "Y") %>%
+                                filter(.data$t.rw != "X",
+                                       .data$N.rw  != "Y") %>%
 # Coercion to numeric values
-                                mutate(t.rw = as.numeric(t.rw),
-                                       N.rw = as.integer(N.rw)) %>%
-                                group_by(file.nm) %>%
+                                mutate(t.rw = as.numeric(.data$t.rw),
+                                       N.rw = as.numeric(.data$N.rw)) %>%
+                                group_by(.data$file.nm) %>%
                                 mutate(num.mt =
                                          ntile(n =
                                                  with(tb.meta,
                                                       length(unique(
-                                                        species.nm))))) %>%
+                                                             species.nm))))) %>%
                                 ungroup(),
 
                     tb.meta,
                     by = c("file.nm", "num.mt")) %>%
 # Clear suffix from filename
-        mutate(file.nm = str_sub(file.nm,
-                                  end = (str_length(file.nm) - 7))) %>%
+        mutate(file.nm = str_sub(.data$file.nm,
+                                  end = (str_length(.data$file.nm) - 7))) %>%
 # Add block number
-        group_by(file.nm, species.nm) %>%
-        mutate(bl.mt = fun_bl(`bl_num.mt`, `meas_bl.mt`)) %>%
-# uniqually identifies ion pairs for calculating isotope ratios
-        group_by(file.nm, bl.mt, species.nm) %>% # remove later on
-        mutate(ID = row_number()) %>%
-        ungroup() %>%
-        tidyr::unite(col = ID, file.nm, bl.mt, ID, sep = "/", remove = FALSE)
+        group_by(.data$file.nm, .data$species.nm) %>%
+        mutate(bl.mt = fun_bl(.data$`bl_num.mt`, .data$`meas_bl.mt`)) %>%
+        ungroup()
 
   return(tb.rw)
 }
@@ -100,7 +94,7 @@ read_meta <- function(directory){
                   purrr::set_names(rep(NA_character_,
                                        length(.)), nm = .)
 
-# extract stat files with diagnostics of the machine and statistics
+# Extract stat files with diagnostics of the machine and statistics
   l.s <- dir(directory,
              pattern = ".stat$") %>%
 # Set names for subsequent storage
@@ -119,7 +113,7 @@ read_meta <- function(directory){
                                        n_max = 50) ),
                   str_which, "PHDc(?=\\(Mass)")
 
-  l.PHD <- lst(a = l.p,  b = PHD_n, c = lapply(b, length))
+  l.PHD <- lst(a = l.p,  b = PHD_n, c = lapply(.data$b, length))
 
   f.PHD <- function(a, b, c) {
 
@@ -137,10 +131,10 @@ read_meta <- function(directory){
   }
 
   tb.PHD <- purrr::pmap_dfr(l.PHD, f.PHD, .id = "file.nm") %>%
-                  mutate(file.nm = str_sub(file.nm,
-                             end = (str_length(file.nm) - 7))) %>%
-                  mutate(num.mt = as.numeric(str_extract(num.mt,"[:digit:]")))
-
+                  mutate(file.nm = str_sub(.data$file.nm,
+                             end = (str_length(.data$file.nm) - 7))) %>%
+                  mutate(num.mt = as.numeric(str_extract(.data$num.mt,
+                                                         "[:digit:]")))
 
   min_n <- lapply(purrr::map(l.s, ~read_lines(paste0(directory, "/", .),
                                        n_max = 50)),
@@ -154,8 +148,8 @@ read_meta <- function(directory){
             purrr::map(., 1) %>%
             purrr::flatten_dbl()
 
-# ions and MS setup
-  l <- lst(a = l.s, b =  min_n  , c = (max_n - 3) - b)
+# Ions and MS setup
+  l <- lst(a = l.s, b =  min_n  , c = (max_n - 3) - .data$b)
   f <- function(a, b, c) {
 
         read_table(paste0(directory, "/", a),
@@ -170,11 +164,10 @@ read_meta <- function(directory){
 
 
   tb.ion <- purrr::pmap_dfr(l, f, .id = "file.nm") %>%
-              mutate(file.nm = str_sub(file.nm,
-                                       end = (str_length(file.nm) - 5)))
+              mutate(file.nm = str_sub(.data$file.nm,
+                                       end = (str_length(.data$file.nm) - 5)))
 
-# primary and secondary ion beam metadata
-
+# Primary and secondary ion beam metadata
   tb.meas <- purrr::map2_df(l.s, min_n - 1 ,
                             ~(
                               read_lines(paste0(directory, "/", .x),
@@ -183,83 +176,102 @@ read_meta <- function(directory){
                             list() %>%
                               tibble::enframe(name = NULL),
                    .id = "file.nm") %>%
-              mutate(file.nm = str_sub(file.nm,
-                                       end = (str_length(file.nm) - 5)))
+              mutate(file.nm = str_sub(.data$file.nm,
+                                       end = (str_length(.data$file.nm) - 5)))
 
-# function to make metadate readible
+# Function to make metadate readible
   str_unfold <-  function(string) {
 
     string %>%
-# create tibble from list
+# Create tibble from list
       tibble::enframe(name = NULL) %>%
-# remove empty rows
-      filter(str_detect(value, ".")) %>%
-# remove date
-      filter(!str_detect(value, pattern  = "\t\t\t\t\t\t")) %>%
-      tidyr::separate_rows(value, sep = "(/(?=[:blank:])) | =") %>%
-      tidyr::separate(value,
+# Remove empty rows
+      filter(str_detect(.data$value, ".")) %>%
+# Remove date
+      filter(!str_detect(.data$value, pattern  = "\t\t\t\t\t\t")) %>%
+      tidyr::separate_rows(.data$value, sep = "(/(?=[:blank:])) | =") %>%
+      tidyr::separate(.data$value,
                into = c("variable", "value"),
                sep =":(?!\\\\)",
                extra = "merge") %>%
       mutate_all(str_trim) %>%
-      distinct(., variable, .keep_all = TRUE) %>%
-# convert NA aliases to NA
-      mutate(value = recode(value, !!!NA_aliases),
-# remove units behind numerics
-             value = str_replace(value,
+      distinct(.data$variable, .keep_all = TRUE) %>%
+# Convert NA aliases to NA
+      mutate(value = recode(.data$value, !!!NA_aliases),
+# Remove units behind numerics
+             value = str_replace(.data$value,
                                  "(?<=[:digit:]|[:blank:])(pA|um|%)|Det1=",
                                  "")) %>%
-      tidyr::pivot_wider(names_from = variable, values_from = value) %>%
-# separate date
+      tidyr::pivot_wider(names_from = .data$variable,
+                         values_from = .data$value) %>%
+# Separate date
       mutate(date = as.POSIXct(
         str_replace_all(
-                                        string[str_detect(string,
-                                               pattern  = "\t\t\t\t\t\t")],
-                                        "\\t|\\n", ""),
-                       format = c("%d.%m.%y  %H:%M")
-                       )) %>%
+          string[str_detect(string, pattern  = "\t\t\t\t\t\t")],
+          "\\t|\\n", ""),
+             format = c("%d.%m.%y  %H:%M"))) %>%
       rename(sample.nm = "CAMECA \\ ISOTOPES \\ Sample") %>%
-# remove extra dot
-      mutate(`Pre Sputtering Time (s)` = str_sub(`Pre Sputtering Time (s)`,
-                                                 end = -2)
-             )
+# Remove extra punct
+      mutate(`Pre Sputtering Time (s)` =
+               str_sub(.data$`Pre Sputtering Time (s)`, end = -2))
 
   }
 
-meta.nm  <- c(
-              `presput.mt` = "Pre Sputtering Time (s)",
-              `bl_num.mt` = "Block number",
-              `meas_bl.mt` = "Meas. per block",
-              `width_hor.mt` = "Width Horizontal(V)",
-              `width_ver.mt` =  "Vertical(V)",
-              `prim_cur_start.mt` = "Primary Current before acq",
-              `prim_cur_after.mt` = "after acq",
-              `rast_com.mt` = "Raster (um)",
-              `blank_rast.mt` = "Blanking",
-              `FC_start.mt` = "FC Background before acq",
-              `FC_after.mt` = "FC Background after acq"
-              )
+# Function for selecting possible meta variables
+  select_IC <- function(df) {
+
+
+    meta.nm <-c ("Pre Sputtering Time (s)",
+                 "Block number",
+                 "Meas. per block",
+                 "Width Horizontal(V)",
+                 "Vertical(V)",
+                 "Primary Current before acq",
+                 "after acq",
+                 "Raster (um)",
+                 "Blanking",
+                 "FC Background before acq",
+                 "FC Background after acq") %>%
+  # The to be used new names for th output
+      set_names(., nm = c("presput.mt",
+                          "bl_num.mt",
+                          "meas_bl.mt",
+                          "width_hor.mt",
+                          "width_ver.mt",
+                          "prim_cur_start.mt",
+                          "prim_cur_after.mt",
+                          "rast_com.mt",
+                          "blank_rast.mt",
+                          "FC_start.mt",
+                          "FC_after.mt"))
+
+    meta.nm <- meta.nm[meta.nm %in% colnames(df)]
+# Add required variables
+    meta.nm <- purrr::prepend(meta.nm, c(file.nm = "file.nm",
+                                         sample.nm = "sample.nm",
+                                         date = "date"))
+# Select variables
+    select(df, !!! meta.nm)
+  }
+
 
   tb.meas <- tb.meas %>%
-               mutate(value = purrr::map(value, str_unfold)) %>%
-               tidyr::unnest(cols = c(value)) %>%
-               select(file.nm,
-                      sample.nm,
-                      date,
-                      !!! meta.nm[meta.nm %in% colnames(.)]) %>%
+               mutate(value = purrr::map(.data$value, str_unfold)) %>%
+               tidyr::unnest(cols = c(.data$value)) %>%
+               select_IC() %>%
                mutate_at(vars(contains(".mt")), as.double) %>%
-# add measurement number
-               mutate(n.rw = `bl_num.mt` * `meas_bl.mt`) %>%
-# add electron detector type (EM or FC)
+# Add measurement number
+               mutate(n.rw = .data$`bl_num.mt` * .data$`meas_bl.mt`) %>%
+# Add electron detector type (EM or FC)
                mutate(det_type.mt = if_else("FC_start.mt" %in% colnames(.),
                                             "FC", "EM"))
 
-# combine PHD, MS and beam metadata
+# Combine PHD, MS and beam metadata
   tb.meta <- list(tb.ion, tb.meas, tb.PHD) %>%
                purrr::reduce2(., lst(by = c("file.nm"),
                                      by = c("file.nm", "num.mt")) ,
                               left_join) %>%
-               mutate(file.nm = paste0(file.nm, ".is_txt"))
+               mutate(file.nm = paste0(.data$file.nm, ".is_txt"))
 
   return(tb.meta)
   }
@@ -267,8 +279,10 @@ meta.nm  <- c(
 #' Get path to point example
 #'
 #' This function comes from the package `readr`, and has been modified to access
-#' the bundled datatsets in it directory `inst/extdata` of `point`. This
-#' function make them easy to access
+#' the bundled datatsets in directory `inst/extdata` of `point`. This
+#' function make them easy to access. This function is modified from
+#' \code{\link[readr:readr_example]{readr_example}} of the package
+#' \code{\link[readr]{readr}}.
 #'
 #' @param path Name of file. If `NULL`, the example files will be listed.
 #' @export
@@ -339,66 +353,15 @@ read_validator <- function(directory){
 
 }
 
-# function to read CAMECA output to validate point output
-read_test <- function(directory, block = 1){
+# Function for building IDs
+ID_builder <- function(df, species, ...){
 
-  # block for checking
-  if (block == 1) {bl <- 2}
-  if (block == 4) {bl <- max}
+  species <- enquo(species)
+  gr_by <- enquos(...)
 
-  # extract stat files with diagnostics of the machine and statistics
-  l.s <- dir(directory,
-             pattern = ".stat$") %>%
-    # set names for subsequent storage
-    purrr::set_names() %>%
-    # remove transect files
-    purrr::discard(., str_detect(., "transect.stat"))
-
-  max_n <- lapply(purrr::map(l.s, ~read_lines(paste0(directory, "/", .),
-                                              n_max = -1)),
-                  str_which, "Mass#") %>%
-    purrr::map(., bl) %>%
-    purrr::flatten_dbl()
-
-# Test dataset
-  l.R <- lst(a = l.s, b =  max_n  + 10 , c = 5) # isotope
-  l.N <- lst(a = l.s, b =  max_n, c = 7) # cumulative count
-
-# Function for R
-  fun_read.R <- function(a, b, c) {
-
-    read_table(paste0(directory, "/", a),
-               skip =  b,
-               n_max = c,
-               col_names = c("R.nm", "M_R_Xt.test",
-                             "hat_RSeM_R_Xt.test", "RSeM_R_Xt.test",
-                             "chi2_R_Xt.test"),
-               col_types = "cdddd-") %>%
-      mutate(RSeM_R_Xt.test = RSeM_R_Xt.test * 10,
-             hat_RSeM_R_Xt.test = hat_RSeM_R_Xt.test *10)
-  }
-
-# Function for N
-  fun_read.N <- function(a, b, c) {
-
-    read_table(paste0(directory, "/", a),
-               skip = b,
-               n_max = c ,
-               col_names = c("num.mt", "Ntot_Xt.test"),
-               col_types = "cd") %>%
-      tidyr::drop_na()
-  }
-
-  tb.test.R <- purrr::pmap_dfr(l.R, fun_read.R, .id = "file.nm") %>%
-    mutate(file.nm = str_sub(file.nm,
-                             end = (str_length(file.nm) - 5))) #%>%
-  # mutate(file.nm = paste0(file.nm, ".is_txt"))
-
-  tb.test.N <- purrr::pmap_dfr(l.N, fun_read.N, .id = "file.nm") %>%
-    mutate(file.nm = str_sub(file.nm,
-                             end = (str_length(file.nm) - 5))) #%>%
-  # mutate(file.nm = paste0(file.nm, ".is_txt"))
-
-  return(list(tb.test.N = tb.test.N, tb.test.R = tb.test.R))
+  group_by(df, !!! gr_by, !! species) %>%
+  mutate(ID = row_number()) %>%
+  ungroup() %>%
+  tidyr::unite(col = "ID", !!! gr_by, .data$ID, sep = "/", remove = FALSE)
 }
 

@@ -7,34 +7,43 @@
 diag_R(df, method = "standard", args = expr_R(NULL), ...)
 }
 \arguments{
-\item{df}{A tibble containing processed ion count data}
+\item{df}{A tibble containing processed ion count data.}
 
-\item{method}{Character string for the type of diagnostics}
+\item{method}{Character string for the type of diagnostics. Currently only
+"standard" is supported, which pertains to the default Cameca software
+setting.}
 
-\item{args}{A list of expression pertaining to the variables required for a
-call to stat_R. The function expr_R can be used to simplify this.}
+\item{args}{A list of quosures pertaining to the variables required for a
+call to stat_R. The function expr_R can be used to simplify setting this
+argument.}
 
-\item{...}{Variables for grouping}
+\item{...}{Variables for grouping.}
 }
 \value{
 A t\code{\link[tibble:tibble]{tibble}} containing the original
-dataset and new columns related to the diagnostics. Flag variables enable
-convenient filtering of the tibble for augmentation of the dataset.
+dataset and new columns related to the diagnostics. The flag variable enables
+convenient filtering of the original tibble for an augmentation of the
+original dataset.
 }
 \description{
 \code{diag_R} function for propagation of uncertainty for single ions
 }
 \details{
-Ion count data consisting of time-incremented integer values are
+The \code{diag_R} function performs an internal call to stat_R to perform
+diagnostics on the influence of individial measurements on the blockwise or
+global (i.e., a complete analysis) stastics. It identifies potentially
+influential measurements that can subsequentally be filtered from the
+original dataset to improve the precision. See
+\code{vignette("IC-diagnostics", package = "point")} for more information
+on how to use the function, and possible methods for diagnostics.
 }
 \examples{
-# Use point_example() to access the examples bundled with this package in the
-# inst/extdata directory.
+# Use point_example() to access the examples bundled with this package
 
 # raw data containing 13C and 12C counts on carbonate
 tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
 
-# processing raw ion count data
+# Processing raw ion count data
 tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
 
 # CAMECA style augmentatio of ion count data for isotope ratios
@@ -45,6 +54,6 @@ tb.aug <- diag_R(tb.pr,
                                species = "species.nm",
                                ion1 = "13C",
                                ion2 = "12C"),
-                 file.nm, bl.mt)
-
+                 file.nm,
+                 bl.mt)
 }

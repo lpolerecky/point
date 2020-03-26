@@ -4,26 +4,29 @@
 \alias{cor_IC}
 \title{Process raw ion count data}
 \usage{
-cor_IC(df, N, t, Det, deadtime = 44, thr_PHD = 50)
+cor_IC(df, N, t, Det, deadtime = 0, thr_PHD = 0)
 }
 \arguments{
-\item{df}{A tibble containing raw ion count data}
+\item{df}{A tibble containing raw ion count data.}
 
-\item{N}{A variable constituting the ion counts}
+\item{N}{A variable constituting the ion counts.}
 
-\item{t}{A variable constituting the time increments}
+\item{t}{A variable constituting the time increments.}
 
 \item{Det}{A character string or variable for the detection system ("EM" or
-"FC")}
+"FC").}
 
-\item{deadtime}{A numeric value for the deadtime of the EM system}
+\item{deadtime}{A numeric value for the deadtime of the EM system.}
 
-\item{thr_PHD}{A numeric value for the disrcriminator threshold of the EM
+\item{thr_PHD}{A numeric value for the disrcriminator threshold of the EM.
 system}
 }
 \value{
 A \code{\link[tibble:tibble]{tibble}} containing the original dataset
-and the processed ion count data
+and adds the variables: \code{Xt.rw}, ion count rates uncorrected for
+detection device-specific biases; \code{Xt.pr}, ion count rates corrected for
+detection device-specific biases; and \code{N.pr}, counts corrected for
+detection device-specific biases.
 }
 \description{
 \code{cor_IC} function for processing ion count data.
@@ -41,13 +44,11 @@ height distribution (PHD) which is the probability for an EM output to have a
 certain voltage amplitude.
 }
 \examples{
-# Use point_example() to access the examples bundled with this package in the
-# inst/extdata directory.
+# Use point_example() to access the examples bundled with this package
 
 # raw data containing 13C and 12C counts on carbonate
 tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
 
-# processing raw ion count data
+# Processing raw ion count data
 tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt, deadtime = 44, thr_PHD = 50)
-
 }

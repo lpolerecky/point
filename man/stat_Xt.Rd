@@ -21,28 +21,35 @@ stat_R(
 )
 }
 \arguments{
-\item{df}{A tibble containing processed ion count data}
+\item{df}{A tibble containing processed ion count data.}
 
-\item{Xt}{A variable constituting the ion count rate}
+\item{Xt}{A variable constituting the ion count rate.}
 
-\item{N}{A variable constituting the ion counts}
+\item{N}{A variable constituting the ion counts.}
 
-\item{species}{A variable constituting the species analysed}
+\item{species}{A variable constituting the species analysed.}
 
-\item{...}{Variables for grouping}
+\item{...}{Variables for grouping.}
 
-\item{latex}{A logical indicating whether variable names are latex compatible}
+\item{latex}{A logical indicating whether variable names are latex
+compatible.}
 
 \item{output}{A character string for output as summary statistics ("sum");
-statistics only ("stat"); and statistics with the original data ("complete")}
+statistics only ("stat"); and statistics with the original data ("complete").}
 
-\item{ion1}{A character string constituting the heavy isotope ("13C")}
+\item{ion1}{A character string constituting the heavy isotope ("13C").}
 
-\item{ion2}{A character string constituting the light isotope ("12C")}
+\item{ion2}{A character string constituting the light isotope ("12C").}
+
+\item{zero}{A character string that determines whether analyses with zero
+count measurements present will be removed from the calculations.}
 }
 \value{
-A t\code{\link[tibble:tibble]{tibble}} containing descriptive and
-predictive statistics for ion counts and isotope ratios
+A \code{\link[tibble:tibble]{tibble}} containing descriptive and
+predictive statistics for ion counts and isotope ratios. The naming
+convention depends on the argument \code{latex}; if set to \code{FALSE},
+variable names concerning statistics will consist of an abbreviation pasted
+together with the input variable names of \code{Xt}.
 }
 \description{
 \code{stat_Xt} function for descriptive and predictive statistics on single
@@ -57,23 +64,21 @@ spectrometry). The statistics can either be calculated for single ions or
 isotope ratios, and include observed and predicted (Poisson) statistics.
 Calculations for isotope ratios include proper error propagation. For more
 information on the usage as well as the mathematics behind these
-functions see the vignette \code{"IC-precision"}.
+functions see \code{vignette("IC-precision", package = "point")}.
 }
 \examples{
-# Use point_example() to access the examples bundled with this package in the
-# inst/extdata directory.
+# Use point_example() to access the examples bundled with this package
 
 # raw data containing 13C and 12C counts on carbonate
 tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
 
-# processing raw ion count data
+# Processing raw ion count data
 tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
 
-# single ion descriptive an predictive statistics for all measured ions
+# Single ion descriptive an predictive statistics for all measured ions
 tb.Xt <- stat_Xt(tb.pr, Xt.pr, N.pr, species.nm, file.nm)
 
-# descriptive an predictive statistics for 13C/12C ratios
+# Descriptive an predictive statistics for 13C/12C ratios
 tb.R <- stat_R(tb.pr, Xt.pr, N.pr, species.nm, ion1 = "13C",
                ion2 = "12C", file.nm)
-
 }

@@ -34,9 +34,7 @@ from text files with the extensions \emph{.is_txt} \emph{.chk_is} and
 associated with the SIMS measurements.
 }
 \examples{
-# Use point_example() to access the examples bundled with this
-package in the inst/extdata directory.
+# Use point_example() to access the examples bundled with this package
 
 read_IC(point_example("2018-01-19-GLENDON"))
-
 }

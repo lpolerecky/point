@@ -2,27 +2,30 @@ Package: point
 Type: Package
 Title: Reading, Processing, and Analysing Raw Ion Count Data
 Version: 0.0.0.9000
-Author@R: 
-    person("Martin", "Schobben", email = "schobbenmartin@gmail.com",
-            role = "cre")
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Authors@R: 
+    person(given = "Martin", 
+           family = "Schobben", 
+           email = "schobbenmartin@gmail.com",
+           role = "cre", 
+           comment = c(ORCID = "0000-0001-8560-0037"))
+Maintainer: Martin Schobben <schobbenmartin@gmail.com>
+Description: The point functions provide a convenient way to work with and evaluate pulsed ion count data. 
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Depends: 
-    R (>= 3.6.2),
+    R (>= 3.6),
 Imports: 
     dplyr,
-    purrr,
     tidyr,
     tibble,
     stringr,
     readr,
     magrittr,
     ggplot2,
-    polyaAeppli
+    polyaAeppli,
+    rlang,
+    purrr
 Suggests: 
     testthat,
     knitr,

@@ -47,6 +47,14 @@ The random nature of secondary ions emitted from a sample is described by Poisso
 library(point)
 ```
 
+The following packages are used in the examples that follow.
+
+```{r additiona_ packages, message = FALSE}
+library(purrr) # functional programming
+library(dplyr) # manipulating data
+library(ggplot2) # graphics
+```
+
 
 ## Nomenclature
 
@@ -66,8 +74,7 @@ The default method to account for these discrepancies as incorporated in the Cam
 
 ```{r warning=FALSE}
 
-# Use point_example() to access the examples bundled with this package in the
-# inst/extdata directory. 
+# Use point_example() to access the examples bundled with this package 
 
 # Carry-out the routine point workflow
 # Raw data containing 13C and 12C counts on carbonate

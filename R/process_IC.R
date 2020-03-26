@@ -13,66 +13,85 @@
 #' height distribution (PHD) which is the probability for an EM output to have a
 #' certain voltage amplitude.
 #'
-#' @param df A tibble containing raw ion count data
-#' @param N A variable constituting the ion counts
-#' @param t A variable constituting the time increments
+#' @param df A tibble containing raw ion count data.
+#' @param N A variable constituting the ion counts.
+#' @param t A variable constituting the time increments.
 #' @param Det A character string or variable for the detection system ("EM" or
-#' "FC")
-#' @param deadtime A numeric value for the deadtime of the EM system
-#' @param thr_PHD A numeric value for the disrcriminator threshold of the EM
+#' "FC").
+#' @param deadtime A numeric value for the deadtime of the EM system.
+#' @param thr_PHD A numeric value for the disrcriminator threshold of the EM.
 #' system
 #'
 #' @return A \code{\link[tibble:tibble]{tibble}} containing the original dataset
-#' and the processed ion count data
-#'
+#' and adds the variables: \code{Xt.rw}, ion count rates uncorrected for
+#' detection device-specific biases; \code{Xt.pr}, ion count rates corrected for
+#' detection device-specific biases; and \code{N.pr}, counts corrected for
+#' detection device-specific biases.
+#' @export
 #' @examples
-#' # Use point_example() to access the examples bundled with this package in the
-#' # inst/extdata directory.
+#' # Use point_example() to access the examples bundled with this package
 #'
 #' # raw data containing 13C and 12C counts on carbonate
 #' tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
 #'
-#' # processing raw ion count data
+#' # Processing raw ion count data
 #' tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt, deadtime = 44, thr_PHD = 50)
-#'
-#' @export
-cor_IC <-function(df, N, t, Det, deadtime = 44, thr_PHD = 50){
+cor_IC <-function(df, N, t, Det, deadtime = 0, thr_PHD = 0){
 
   stopifnot(tibble::is_tibble(df))
   stopifnot(is.numeric(deadtime))
+  stopifnot(is.numeric(thr_PHD))
 
   N <- enquo(N)
   t <- enquo(t)
   Det <- enquo(Det)
 
-  tb.pr <- df %>%
-# Time increments
-             mutate(dt = min(!!t),
-# Count rates
-                    Xt.rw = !!N / dt) %>%
-# Deadtime correction on count rates
-             mutate(Xt.pr = if_else(!!Det == "EM",
-                                    cor_DT(Xt.rw, deadtime),
-                                    Xt.rw ),
-# Deadtime correction on counts
-                    N.pr = if_else(!!Det == "EM",
-                                   as.integer(cor_DT(Xt.rw, deadtime) * dt),
-                                   N.rw ),
-# Yield correction on count rates
-                    Xt.pr = if_else(!!Det == "EM",
-                                    cor_yield(Xt.pr, mean_PHD, SD_PHD, thr_PHD),
-                                    Xt.pr),
-# Yield correction on counts
-                    N.pr = if_else(!!Det == "EM",
-                                   as.integer(cor_yield(Xt.pr,
-                                                        mean_PHD,
-                                                        SD_PHD,
-                                                        thr_PHD)
-                                   * dt),
-                                   N.pr))
+# The corrections
+  args <- lst(
+              # Time increments (time between measurements minus blanking time)
+              quo(min(!! t) - .data$tc.mt),
+              # Count rates
+              quo(!! N / .data$diff.t),
+              # Deadtime correction on count rates
+              quo(if_else(!! Det == "EM",
+                          cor_DT(.data$Xt.rw, deadtime),
+                          .data$Xt.rw)),
+              # Deadtime correction on counts
+              quo(if_else(!! Det == "EM",
+                          cor_DT(.data$Xt.rw, deadtime) * .data$diff.t,
+                          !! N)),
+              # Yield correction on count rates
+              quo(if_else(!! Det == "EM",
+                          cor_yield(.data$Xt.pr,
+                                    .data$mean_PHD,
+                                    .data$SD_PHD,
+                                    thr_PHD),
+                          .data$Xt.pr)),
+              # Yield correction on counts
+              quo(if_else(!! Det == "EM",
+                          cor_yield(.data$Xt.pr,
+                                    .data$mean_PHD,
+                                    .data$SD_PHD,
+                                    thr_PHD) * .data$diff.t,
+                          !! quo_updt2(N, "pr")))
+              )
 
-    return(tb.pr %>% select(-dt))
-    }
+# The correction names (depend on user-supplied expression)
+  ls.names <- c("diff.t", "Xt.rw", "Xt.pr",
+                as_name(quo_updt2(N, "pr")),
+                "Xr.pr",
+                as_name(quo_updt2(N, "pr")))
+
+# Set correction names
+  args <- set_names(args, nm = ls.names)
+
+# Execute corrections
+  tb.pr <- df %>%
+             mutate(!!! args)
+
+  return(tb.pr %>% select(-.data$diff.t))
+
+  }
 
 #' Correct ion detection bias
 #'
@@ -90,16 +109,16 @@ cor_IC <-function(df, N, t, Det, deadtime = 44, thr_PHD = 50){
 #' height distribution (PHD) which is the probability for an EM output to have a
 #' certain voltage amplitude.
 #'
-#' @param Xt A numeric vector containing raw ion count data
-#' @param mean_PHD A numeric vector coontaining the mean PHD value
+#' @param Xt A numeric vector containing raw ion count data.
+#' @param mean_PHD A numeric vector coontaining the mean PHD value.
 #' @param SD_PHD A numeric vector coontaining the standard deviation of the
-#' PHD
+#' PHD.
 #' @param thr_PHD A numeric value for the disrcriminator threshold of the EM
-#' system
-#' @param deadtime A numeric value for the deadtime of the EM system
+#' system.
+#' @param deadtime A numeric value for the deadtime of the EM system.
 #'
-#' #' @return A numeric vector with the corrected count rates
-#'
+#' @return A numeric vector with the corrected count rates.
+#' @export
 #' @examples
 #' # Original count rate of a chemical species
 #' x <- 30000
@@ -109,10 +128,10 @@ cor_IC <-function(df, N, t, Det, deadtime = 44, thr_PHD = 50){
 #'
 #' # Corrected count rate for a deadtime of 44 ns
 #' cor_DT(x, 44)
-#'
-#' @export
 cor_yield <- function(Xt, mean_PHD, SD_PHD, thr_PHD){
 
+# Stop execution if threshold = 0 an dterurn Xt
+  if (thr_PHD == 0){ return(Xt) } else {
 # Lambda parameter
   lambda <- (2 * mean_PHD^2) / (SD_PHD^2 + mean_PHD)
 
@@ -120,7 +139,11 @@ cor_yield <- function(Xt, mean_PHD, SD_PHD, thr_PHD){
   prob <- (SD_PHD^2 - mean_PHD) / (SD_PHD^2 + mean_PHD)
   prob <- if_else(prob < 0 | prob >= 1, NA_real_, prob, NA_real_)
 
-  l.params <- lst(a = lambda, b = prob,  c = rep(thr_PHD, length(b)), d = Xt)
+  l.params <- lst(a = lambda,
+                  b = prob,
+                  c = rep(thr_PHD, length(.data$b)),
+                  d = Xt)
+
   f.polya <- function(a, b, c, d){
 
     if (!(is.na(a) | is.na(b))){
@@ -141,6 +164,7 @@ cor_yield <- function(Xt, mean_PHD, SD_PHD, thr_PHD){
 
     }
   }
+  }
 
   Xt.pr <- purrr::pmap_dbl(l.params, f.polya)
 
@@ -153,8 +177,37 @@ cor_yield <- function(Xt, mean_PHD, SD_PHD, thr_PHD){
 #' @export
 cor_DT <- function(Xt, deadtime) {
 
+  # Stop execution if threshold = 0 an dterurn Xt
+  if (deadtime == 0){ return(Xt) } else {
+
   Xt.pr <- Xt / (1 - (Xt * deadtime * 10^-9))
 
   return(Xt.pr)
+  }
+}
+
+
+# Function which updates quosures for subsequent tidy evaluation
+quo_updt2 <- function(my_q, txt = NULL){
+
+  # Get expressions
+  old_expr <- get_expr(my_q)
+
+  if(str_detect(old_expr, "[:punct:]")){
+
+    new_chr <- str_split(old_expr, "[:punct:]")[[1]][1]
 
   }
+
+  # Modify expression, turn expr into a character string
+  new_chr <- paste(new_chr, txt, sep = ".")
+
+
+  # New expression from character (remove whitespace)
+  new_expr <- parse_expr(new_chr)
+
+  # Update old quosure
+  set_expr(my_q, new_expr)
+
+}
+

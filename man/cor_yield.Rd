@@ -10,19 +10,20 @@ cor_yield(Xt, mean_PHD, SD_PHD, thr_PHD)
 cor_DT(Xt, deadtime)
 }
 \arguments{
-\item{Xt}{A numeric vector containing raw ion count data}
+\item{Xt}{A numeric vector containing raw ion count data.}
 
-\item{mean_PHD}{A numeric vector coontaining the mean PHD value}
+\item{mean_PHD}{A numeric vector coontaining the mean PHD value.}
 
 \item{SD_PHD}{A numeric vector coontaining the standard deviation of the
-PHD}
+PHD.}
 
 \item{thr_PHD}{A numeric value for the disrcriminator threshold of the EM
-system}
+system.}
 
-\item{deadtime}{A numeric value for the deadtime of the EM system
-
-#' @return A numeric vector with the corrected count rates}
+\item{deadtime}{A numeric value for the deadtime of the EM system.}
+}
+\value{
+A numeric vector with the corrected count rates.
 }
 \description{
 \code{cor_yield} function to correct counting bias related to EM Yield.
@@ -49,5 +50,4 @@ cor_yield(x, mean_PHD = 210, SD_PHD = 60, thr_PHD = 50)
 
 # Corrected count rate for a deadtime of 44 ns
 cor_DT(x, 44)
-
 }

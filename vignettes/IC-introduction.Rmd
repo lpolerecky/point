@@ -1,0 +1,94 @@
+---
+title: "IC-introduction"
+output: 
+  rmarkdown::html_vignette:
+    pandoc_args:  [
+      "--csl", "~/Documents/work/projects/Glendonite_project/common/aquatic-microbial-ecology.csl",
+      "--citation-abbreviations", "~/Documents/work/projects/Glendonite_project/common/abbreviations.json", "--filter", "~/.cabal/bin/pandoc-crossref", "--css", "custom.css" 
+               ]
+bibliography: dependencies.bib               
+vignette: >
+  %\VignetteIndexEntry{IC-introduction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(point)
+```
+
+
+```{r echo=FALSE, message=FALSE}
+# following code for loading and writing the bibtex references for the used 
+# packages is adapted from the blog post: //www.r-bloggers.com/bibliography-with-knitr-cite-your-references-and-packages/,
+# by Michael
+
+library(bibtex)
+
+# required packages
+packages <- c("dplyr", "tidyr", "tibble", "stringr", "readr", "magrittr",
+              "ggplot2", "polyaAeppli", "rlang", "purrr", "devtools", "roxygen2", 
+              "testthat", "knitr", "rmarkdown")    
+
+# load packages
+invisible(lapply(packages, library, character.only = TRUE))
+
+# get the packages version 
+packages_versions <- function(p) {
+  paste(packageDescription(p)$Package, packageDescription(p)$Version, sep = " ")
+}
+
+# get the R reference
+rref <- citation()
+
+# create ref key
+rref$key <- "rversion"
+
+# write the R reference
+write.bib(rref, "rversion.bib")
+
+# get the packages references
+write.bib(packages, "packages.bib")
+
+# The R package book
+bref <-write.bib(
+        bibentry(
+          bibtype = "Book",  
+          key =  "Wickham2015",
+          title = "R packages: organize, test, document, and share your code",
+          author = as.person("Hadley Wickham"),
+          year = "2015",
+          publisher = " O'Reilly Media, Inc."),
+        "book.bib")
+
+
+# merge the R reference and the packages references
+cat(paste("% Automatically generated", Sys.time()), "\n% DO NOT EDIT",
+    { readLines("rversion.bib") %>% 
+      paste(collapse = "\n") },
+    { readLines("packages.bib") %>% 
+      paste(collapse = "\n") },
+    { readLines("book.bib") %>% 
+      paste(collapse = "\n") },
+    file = "dependencies.bib",
+    sep = "\n")
+
+```
+
+The construction of the R [@rversion] package *point* and associated documentation was aided by the packages; *devtools* [@devtools], *roxygen2* [@roxygen2], *testthat* [@testthat], *knitr* [@knitr1 ; @knitr2], *rmarkdown* [@rmarkdown1; @rmarkdown2], and the superb guidance in the book: *R packages: organize, test, document, and share your code*, by @Wickham2015. In addition, this package relies on a set of external packages from the tidyverse universe, including: *dplyr* [@dplyr], *tidyr* [@tidyr], *tibble* [@tibble], *stringr* [@stringr], *readr* [@readr], *magrittr* [@magrittr], *ggplot2* [@ggplot2], *rlang* [@rlang], and *purrr* [@purrr] for internal functioning as well as specialised statistics; *polyaAeppli* [@polyaAeppli].
+
+
+```{r workflow-graph, out.width="100%"}
+
+knitr::include_graphics("workflow.png")
+
+```
+
+# References

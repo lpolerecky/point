@@ -57,6 +57,15 @@ Systematic bias can be introduced by the way secondary ions are generated from p
 library(point) # load package
 ```
 
+The following packages are used in the examples that follow.
+
+```{r additional_packages, message = FALSE}
+library(dplyr) # manipulating data
+library(ggplot2) # manipulating strings
+library(polyaAeppli) # Polya-Aeppli distribution
+library(tibble) # tibble dataframe
+```
+
 ## Analytical bias introduced by electron multipliers
 
 The EM gain is a measure of the electron output current relative to the ion input and the amplification after ion-to-electron conversion. In this process an incident secondary ion triggers the generation of an electron at the first dynode (conversion dynode) of the EM channel; in turn, the resultant secondary electron strikes a consecutive dynode thereby amplifying the signal, where the latter process of secondary electron amplification is repeated multiple times (for the *Cameca NanoSIMS 50L* this generally results in a gain of $10^8$ electrons). 
@@ -74,12 +83,12 @@ The amplitude of EM secondary electron output to EMHV conversion follows the so-
 
 ```{r echo=FALSE, fig.cap=fig$cap("PHD-curve", "An example of a typical PHD distribution. The effect of the discriminator threshold on the EM Yield is examplified by the shaded area underneath the probability density function, which would pertain to the probability of an EM output to be larger than the threshold")}
 
-tb.ex <- tibble::tibble(PHD = 0:700, 
-                        lambda = 14,
-                        prob = 0.93,
-                        density = polyaAeppli::dPolyaAeppli(PHD, 
-                                                            lambda = lambda, 
-                                                            prob = prob))  
+tb.ex <- tibble(PHD = 0:700, 
+                lambda = 14,
+                prob = 0.93,
+                density = dPolyaAeppli(PHD, 
+                                       lambda = lambda, 
+                                       prob = prob))  
   
 ggplot(tb.ex, aes(x = PHD, y = density)) +
   geom_line() +
@@ -156,10 +165,12 @@ For a convenient workflow the functions that correct for EM count biases are wra
 
 
 ```{r}
-# Use point_example() to access the examples bundled with this package in the
-# inst/extdata directory.
+# Use point_example() to access the examples bundled with this package 
 
-# raw data containing 13C and 12C counts on carbonate
+# Carry-out the routine point workflow 
+
+# Carry-out the routine point workflow
+# Raw data containing 13C and 12C counts on carbonate
 tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
 
 # processing raw ion count data
