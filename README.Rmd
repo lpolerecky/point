@@ -4,7 +4,7 @@ output:
         pandoc_args: [
          "--csl", "~/Documents/work/projects/Glendonite_project/common/aquatic-microbial-ecology.csl", 
          "--citation-abbreviations", "~/Documents/work/projects/Glendonite_project/common/abbreviations.json",
-         "--filter", "~/.cabal/bin/pandoc-crossref", "--css", "custom.css"
+         "--filter", "~/.cabal/bin/pandoc-crossref", "--css", "custom.css", "--webtex"
                      ]
 bibliography: dependencies.bib   
 ---
@@ -51,8 +51,8 @@ library(bibtex)
 
 # required packages
 packages <- c("dplyr", "tidyr", "tibble", "stringr", "readr", "magrittr",
-              "ggplot2", "polyaAeppli", "rlang", "purrr", "devtools", "roxygen2", 
-              "testthat", "knitr", "rmarkdown")    
+              "ggplot2", "polyaAeppli", "rlang", "purrr", "devtools", 
+              "roxygen2", "testthat", "knitr", "rmarkdown")    
 
 # load packages
 invisible(lapply(packages, library, character.only = TRUE))
