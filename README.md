@@ -14,19 +14,9 @@ raw count data into ion and isotope ratios of point-sourced
 measurements; and to establish the internal and external precision of,
 respectively, individual analyses and complete series of analyses.
 Access to raw ion count data is useful as it allows detection of
-anomolous values associated with e.g. machine instability or
-heterogeneity of the analysed sample. Upon detection, anomolous values
+anomalous values associated with e.g. machine instability or
+heterogeneity of the analysed sample. Upon detection, anomalous values
 can be omitted or further analysed to delineate the source of variation.
-
-## Installation
-
-You can install the released version of point
-
-``` r
-# Install point rom GitHub:
-# install.packages("devtools")
-devtools::install_github("point")
-```
 
 ## Credits
 
@@ -44,6 +34,16 @@ Wickham 2014), *ggplot2* (Wickham 2016), *rlang* (Henry & Wickham 2020),
 and *purrr* (Henry & Wickham 2019) for internal functioning as well as
 specialised statistics; *polyaAeppli* (Burden 2014).
 
+## Installation
+
+You can install the released version of point
+
+``` r
+# Install point rom GitHub:
+# install.packages("devtools")
+devtools::install_github("point")
+```
+
 ## Usage
 
 Load point with `library`.
@@ -55,8 +55,7 @@ library(point)
 ## The point workflow
 
 A more detailed outline of the general point workflow is given in the
-vignette
-[IC-introduction](https://github.com/MartinSchobben/point/tree/master/vignettes/IC-introduction.html).
+vignette *IC-introduction* (`vignette("IC-introduction")`).
 
 <img src="vignettes/workflow.png" width="100%" />
 
@@ -69,24 +68,37 @@ To read, process and analyse raw ion count data use the functions:
 
 ## Example 1: internal precision of isotope ratios
 
-This is an example of how Cameca NanoSIMS50L raw datafiles can be
+This is an example of how *Cameca NanoSIMS50L* raw data files can be
 extracted, processed and analysed for the <sup>13</sup>C/<sup>12</sup>C
 isotope ratio (![R](https://latex.codecogs.com/png.latex?R "R")). This
-produces a tibble with descriptive and predictive poisson statistics
-(demarcated with an
+produces a [tibble](https://tibble.tidyverse.org/) with descriptive and
+predictive (Poisson) statistics (demarcated with an
 ![\\\\\\hat{\\\\\\phantom{,}}](https://latex.codecogs.com/png.latex?%5C%5C%5Chat%7B%5C%5C%5Cphantom%7B%2C%7D%7D
-"\\\\\\hat{\\\\\\phantom{,}}") ) of the ion count data. This can be done
-for single count blocks in order to obtain internal
-precision.
+"\\\\\\hat{\\\\\\phantom{,}}")) of the ion count data. This can be done
+for single analysis in order to obtain internal precision.
+
+``` r
+library(point)
+library(dplyr) # for data manipulation
+#> 
+#> Attaching package: 'dplyr'
+#> The following objects are masked from 'package:stats':
+#> 
+#>     filter, lag
+#> The following objects are masked from 'package:base':
+#> 
+#>     intersect, setdiff, setequal, union
+library(stringr) # character string manipulation
+```
 
 ``` r
 # Use point_example() to access the examples bundled with this package in the
 # inst/extdata directory.
 
-# raw data containing 13C and 12C counts on carbonate
+# Raw data containing 13C and 12C counts on carbonate
 tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
 
-# processing raw ion count data
+# Processing raw ion count data
 tb.pr <- cor_IC(tb.rw, 
                 N = N.rw, 
                 t = t.rw, 
@@ -94,7 +106,7 @@ tb.pr <- cor_IC(tb.rw,
                 deadtime = 44, 
                 thr_PHD = 50)
 
-# descriptive an predictive statistics for 13C/12C ratios
+# Descriptive an predictive statistics for 13C/12C ratios
 tb.R <- stat_R(tb.pr, 
                Xt = Xt.pr, 
                N = N.pr, 
@@ -118,12 +130,12 @@ tb.R <- stat_R(tb.pr,
 ## Example 2: external precision of isotope ratios
 
 To calculate the external reproducibility of isotope ratios one needs to
-use the total ion count of one block and the block count rate. The
-latter is equivalent to the mean ion count rate, which can be calculated
-with the function `stat_Xt`.
+use the total ion counts and count rate of one analysis. The latter is
+equivalent to the mean ion count rate, which can be calculated with the
+function `stat_Xt`.
 
 ``` r
-# single ion descriptive an predictive statistics for all measured ions
+# Single ion descriptive an predictive statistics for all measured ions
 tb.Xt <- stat_Xt(tb.pr, 
                  Xt = Xt.pr, 
                  N = N.pr, 
@@ -132,7 +144,7 @@ tb.Xt <- stat_Xt(tb.pr,
                  file.nm,
                  latex = FALSE)
 
-# For this particular run a belemnite was used as reference material. 
+# For this particular study a belemnite was used as reference material. 
 tb.R.ext  <- stat_R(tb.Xt, 
                     Xt = M_Xt.pr, 
                     N = Ntot_Xt.pr, 
@@ -147,17 +159,14 @@ tb.R.ext  <- stat_R(tb.Xt,
 | :---------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -----------------------------------------------: | -------------------------------------------------------------------------: | ----------------------------------------------------------------: | --------------------------------------------------------------------------------------------------------------: | ------------------------------------------------------------------------------------------: | ----------------------------------------------------------------------------------------------------------------------------------------: | ------------------------------------------------------------------------------------------: | ----------------------------------------------------------------------------------------------------------------------------------------: | --------------------------------------------------------------------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------: | ------------------------------------------------------------------------------: |
 | Belemnite, Indium | ![\\phantom{,}^{13}](https://latex.codecogs.com/png.latex?%5Cphantom%7B%2C%7D%5E%7B13%7D "\\phantom{,}^{13}")C![\_{}](https://latex.codecogs.com/png.latex?_%7B%7D "_{}")/![\\phantom{,}^{12}](https://latex.codecogs.com/png.latex?%5Cphantom%7B%2C%7D%5E%7B12%7D "\\phantom{,}^{12}")C![\_{}](https://latex.codecogs.com/png.latex?_%7B%7D "_{}") |                                                3 |                                                                      0.011 |                                                          1.55e-05 |                                                                                                            1.41 |                                                                                     8.9e-06 |                                                                                                                                     0.814 |                                                                                     1.3e-05 |                                                                                                                                      1.18 |                                                                                                               7.5e-06 |                                                                                                                                                               0.681 |                                                                            1.43 |
 
-For more detailed
-    information:
+For more detailed information:
 
-  - [IC-read](https://github.com/MartinSchobben/point/tree/master/vignettes/IC-read.html):
-    reading raw ion count data
-    use
-  - [IC-process](https://github.com/MartinSchobben/point/tree/master/vignettes/IC-process.html):
-    processing ion count
-    data  
-  - [IC-precision](https://github.com/MartinSchobben/point/tree/master/vignettes/IC-precision.html):
-    statistics concerning ion count precision
+*IC-read* (`vignette("IC-read")`): reading raw ion count data use  
+*IC-process* (`vignette("IC-process")`): processing ion count data  
+*IC-precision* (`vignette("IC-precision")`): statistics concerning ion
+count precision  
+*IC-diagnostics* (`vignette("IC-diagnostics")`): diagnostics on internal
+variation
 
 # References
 

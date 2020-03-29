@@ -1,11 +1,10 @@
 ---
 output: 
   github_document:
-        pandoc_args: [
+    pandoc_args: [
          "--csl", "~/Documents/work/projects/Glendonite_project/common/aquatic-microbial-ecology.csl", 
          "--citation-abbreviations", "~/Documents/work/projects/Glendonite_project/common/abbreviations.json",
-         "--filter", "~/.cabal/bin/pandoc-crossref", "--css", "custom.css", "--webtex"
-                     ]
+         "--filter", "~/.cabal/bin/pandoc-crossref", "--css", "custom.css", "--webtex"]
 bibliography: dependencies.bib   
 ---
 
@@ -29,17 +28,7 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-This project was originally inspired by the lack of detailed insight in the inner workings of the default software for the *Cameca NanoSIMS50L* (Utrecht University). Hence this project has the objective of processing raw count data into ion and isotope ratios of point-sourced measurements; and to establish the internal and external precision of, respectively, individual analyses and complete series of analyses. Access to raw ion count data is useful as it allows detection of anomolous values associated with e.g. machine instability or heterogeneity of the analysed sample. Upon detection, anomolous values can be omitted or further analysed to delineate the source of variation.
-
-## Installation
-
-You can install the released version of point 
-
-``` r
-# Install point rom GitHub:
-# install.packages("devtools")
-devtools::install_github("point")
-```
+This project was originally inspired by the lack of detailed insight in the inner workings of the default software for the *Cameca NanoSIMS50L* (Utrecht University). Hence this project has the objective of processing raw count data into ion and isotope ratios of point-sourced measurements; and to establish the internal and external precision of, respectively, individual analyses and complete series of analyses. Access to raw ion count data is useful as it allows detection of anomalous values associated with e.g. machine instability or heterogeneity of the analysed sample. Upon detection, anomalous values can be omitted or further analysed to delineate the source of variation.
 
 
 ```{r echo=FALSE, message=FALSE, eval=FALSE}
@@ -103,6 +92,17 @@ cat(paste("% Automatically generated", Sys.time()), "\n% DO NOT EDIT",
 
 The construction of the R [@rversion] package *point* and associated documentation was aided by the packages; *devtools* [@devtools], *roxygen2* [@roxygen2], *testthat* [@testthat], *knitr* [@knitr1 ; @knitr2], *rmarkdown* [@rmarkdown1; @rmarkdown2], and the superb guidance in the book: *R packages: organize, test, document, and share your code*, by @Wickham2015. In addition, this package relies on a set of external packages from the tidyverse universe, including: *dplyr* [@dplyr], *tidyr* [@tidyr], *tibble* [@tibble], *stringr* [@stringr], *readr* [@readr], *magrittr* [@magrittr], *ggplot2* [@ggplot2], *rlang* [@rlang], and *purrr* [@purrr] for internal functioning as well as specialised statistics; *polyaAeppli* [@polyaAeppli].
 
+
+## Installation
+
+You can install the released version of point 
+
+``` r
+# Install point rom GitHub:
+# install.packages("devtools")
+devtools::install_github("point")
+```
+
 ## Usage
 
 Load point with `library`.
@@ -113,7 +113,7 @@ library(point)
 
 ## The point workflow
  
-A more detailed outline of the general point workflow is given in the vignette [IC-introduction](https://github.com/MartinSchobben/point/tree/master/vignettes/IC-introduction.html). 
+A more detailed outline of the general point workflow is given in the vignette *IC-introduction* (`vignette("IC-introduction")`). 
 
 ```{r workflow-graph, out.width="100%", echo=FALSE}
 
@@ -131,22 +131,23 @@ To read, process and analyse raw ion count data use the functions:
 
 ## Example 1: internal precision of isotope ratios
 
-This is an example of how Cameca NanoSIMS50L raw datafiles can be extracted, processed and analysed for the ^13^C/^12^C isotope ratio ($R$). This produces a tibble with descriptive and predictive poisson statistics (demarcated with an $\\\hat{\\\phantom{,}}$ ) of the ion count data. This can be done for single count blocks in order to obtain internal precision.
+This is an example of how *Cameca NanoSIMS50L* raw data files can be extracted, processed and analysed for the ^13^C/^12^C isotope ratio ($R$). This produces a [tibble](https://tibble.tidyverse.org/) with descriptive and predictive (Poisson) statistics (demarcated with an $\\\hat{\\\phantom{,}}$) of the ion count data. This can be done for single analysis in order to obtain internal precision.
 
-```{r setup-point, include=FALSE}
-devtools::load_all(".")
-library(dplyr)
+```{r setup-point}
+library(point)
+library(dplyr) # for data manipulation
+library(stringr) # character string manipulation
 ```
 
 
-```{r example}
+```{r example1}
 # Use point_example() to access the examples bundled with this package in the
 # inst/extdata directory.
 
-# raw data containing 13C and 12C counts on carbonate
+# Raw data containing 13C and 12C counts on carbonate
 tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
 
-# processing raw ion count data
+# Processing raw ion count data
 tb.pr <- cor_IC(tb.rw, 
                 N = N.rw, 
                 t = t.rw, 
@@ -154,7 +155,7 @@ tb.pr <- cor_IC(tb.rw,
                 deadtime = 44, 
                 thr_PHD = 50)
 
-# descriptive an predictive statistics for 13C/12C ratios
+# Descriptive an predictive statistics for 13C/12C ratios
 tb.R <- stat_R(tb.pr, 
                Xt = Xt.pr, 
                N = N.pr, 
@@ -177,10 +178,10 @@ knitr::kable(head(tb.R),
 
 ## Example 2: external precision of isotope ratios
 
-To calculate the external reproducibility of isotope ratios one needs to use the total ion count of one block and the block count rate. The latter is equivalent to the mean ion count rate, which can be calculated with the function `stat_Xt`. 
+To calculate the external reproducibility of isotope ratios one needs to use the total ion counts and count rate of one analysis. The latter is equivalent to the mean ion count rate, which can be calculated with the function `stat_Xt`. 
   
-```{r}
-# single ion descriptive an predictive statistics for all measured ions
+```{r exampl2}
+# Single ion descriptive an predictive statistics for all measured ions
 tb.Xt <- stat_Xt(tb.pr, 
                  Xt = Xt.pr, 
                  N = N.pr, 
@@ -189,7 +190,7 @@ tb.Xt <- stat_Xt(tb.pr,
                  file.nm,
                  latex = FALSE)
 
-# For this particular run a belemnite was used as reference material. 
+# For this particular study a belemnite was used as reference material. 
 tb.R.ext  <- stat_R(tb.Xt, 
                     Xt = M_Xt.pr, 
                     N = Ntot_Xt.pr, 
@@ -210,8 +211,9 @@ knitr::kable(head(tb.R.ext %>%
 
 For more detailed information:
 
-* [IC-read](https://github.com/MartinSchobben/point/tree/master/vignettes/IC-read.html): reading raw ion count data use
-* [IC-process](https://github.com/MartinSchobben/point/tree/master/vignettes/IC-process.html): processing ion count data   
-* [IC-precision](https://github.com/MartinSchobben/point/tree/master/vignettes/IC-precision.html): statistics concerning ion count precision
+*IC-read* (`vignette("IC-read")`): reading raw ion count data use     
+*IC-process* (`vignette("IC-process")`): processing ion count data        
+*IC-precision* (`vignette("IC-precision")`): statistics concerning ion count precision    
+*IC-diagnostics* (`vignette("IC-diagnostics")`): diagnostics on internal variation
 
 # References
