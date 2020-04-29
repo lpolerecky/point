@@ -1,15 +1,11 @@
 ---
 output: 
   github_document:
-    pandoc_args: [
-         "--csl", "~/Documents/work/projects/Glendonite_project/common/aquatic-microbial-ecology.csl", 
-         "--citation-abbreviations", "~/Documents/work/projects/Glendonite_project/common/abbreviations.json",
-         "--filter", "~/.cabal/bin/pandoc-crossref", "--css", "custom.css", "--webtex"]
+    # pandoc_args: --webtex
 bibliography: dependencies.bib   
 ---
 
 <!--  use the --webtex argument in the YAML to render equations -->
-
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
@@ -23,11 +19,13 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Introduction to point
 
 <!-- badges: start -->
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 <!-- badges: end -->
 
+
+# Introduction to point
 This project was originally inspired by the lack of detailed insight in the inner workings of the default software for the *Cameca NanoSIMS50L* (Utrecht University). Hence this project has the objective of processing raw count data into ion and isotope ratios of point-sourced measurements; and to establish the internal and external precision of, respectively, individual analyses and complete series of analyses. Access to raw ion count data is useful as it allows detection of anomalous values associated with e.g. machine instability or heterogeneity of the analysed sample. Upon detection, anomalous values can be omitted or further analysed to delineate the source of variation.
 
 
@@ -98,7 +96,7 @@ The construction of the R [@rversion] package *point* and associated documentati
 You can install the released version of point 
 
 ``` r
-# Install point rom GitHub:
+# Install point from GitHub:
 # install.packages("devtools")
 devtools::install_github("point")
 ```
@@ -133,7 +131,7 @@ To read, process and analyse raw ion count data use the functions:
 
 This is an example of how *Cameca NanoSIMS50L* raw data files can be extracted, processed and analysed for the ^13^C/^12^C isotope ratio ($R$). This produces a [tibble](https://tibble.tidyverse.org/) with descriptive and predictive (Poisson) statistics (demarcated with an $\\\hat{\\\phantom{,}}$) of the ion count data. This can be done for single analysis in order to obtain internal precision.
 
-```{r setup-point}
+```{r setup-point, message=FALSE}
 library(point)
 library(dplyr) # for data manipulation
 library(stringr) # character string manipulation
@@ -168,7 +166,7 @@ tb.R <- stat_R(tb.pr,
 ```
 
 
-```{r echo=FALSE}
+  ```{r echo=FALSE}
 knitr::kable(head(tb.R),
              format.args = list(digits = 3, 
                                 format = "G", 
