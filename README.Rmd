@@ -1,7 +1,7 @@
 ---
 output: 
   github_document:
-    # pandoc_args: --webtex
+    pandoc_args: --webtex=http://chart.apis.google.com/chart?cht=tx&chl=
 bibliography: dependencies.bib   
 ---
 
