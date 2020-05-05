@@ -4,6 +4,7 @@ author: "Martin Schobben"
 output: 
   rmarkdown::html_vignette:
     fig_caption: true
+    pandoc_args: ["--filter", "pandoc-crossref"]
 bibliography: SIMS.bib
 vignette: >
   %\VignetteIndexEntry{IC-precision}

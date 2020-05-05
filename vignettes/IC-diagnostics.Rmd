@@ -4,10 +4,6 @@ author: "Martin Schobben"
 output: 
   rmarkdown::html_vignette:
     fig_caption: true
-    pandoc_args:  [
-      "--csl", "~/Documents/work/projects/Glendonite_project/common/aquatic-microbial-ecology.csl",
-      "--citation-abbreviations", "~/Documents/work/projects/Glendonite_project/common/abbreviations.json", "--filter", "~/.cabal/bin/pandoc-crossref", "--css", "custom.css" 
-               ]
 bibliography: SIMS.bib
 vignette: >
   %\VignetteIndexEntry{IC-diagnostics}
@@ -90,8 +86,8 @@ tb.pr <- cor_IC(tb.rw,
 
 # CAMECA style augmented datafile
 # Vectors of isotope ratios 
-ion1 <-  c("13C", "12C 13C", "13C 14N", "12C 14N", "12C") 
-ion2 <-  c("12C", "12C2", "12C 14N", "40Ca 16O", "40Ca 16O")
+ion1 <-  c("13C", "12C 13C", "13C 14N", "12C") 
+ion2 <-  c("12C", "12C2", "12C 14N", "40Ca 16O")
 
 # Call function Diag_R over all ion ratio combinations  
 tb.aug <- purrr::map2(ion1, ion2, ~(diag_R(tb.pr,
@@ -103,7 +99,9 @@ tb.aug <- purrr::map2(ion1, ion2, ~(diag_R(tb.pr,
                                                          ion2 = .y),
                                            file.nm,
                                            bl.mt) %>%
-                                     filter(flag == "good")))
+                                      filter(flag == "good")
+                                    )
+                      )
                                    
 # Reproduce Cameca stat file: descriptive an predictive statistics for  
 # ratios (blockwise)

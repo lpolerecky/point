@@ -6,6 +6,8 @@
 [![License: GPL
 v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 [![DOI](https://zenodo.org/badge/240023228.svg)](https://zenodo.org/badge/latestdoi/240023228)
+[![Travis build
+status](https://travis-ci.org/MartinSchobben/point.svg?branch=master)](https://travis-ci.org/MartinSchobben/point)
 <!-- badges: end -->
 
 # Introduction to point
@@ -27,7 +29,7 @@ The construction of the R (R Core Team 2020) package *point* and
 associated documentation was aided by the packages; *devtools* (Wickham,
 Hester, and Chang 2019), *roxygen2* (Wickham, Danenberg, et al. 2019),
 *testthat* (Wickham 2011), *knitr* (Xie 2020 , 2015), *rmarkdown*
-(Allaire et al. 2019; Xie, Allaire, and Grolemund 2018), and the superb
+(Allaire et al. 2020; Xie, Allaire, and Grolemund 2018), and the superb
 guidance in the book: *R packages: organize, test, document, and share
 your code*, by Wickham (2015). In addition, this package relies on a set
 of external packages from the tidyverse universe, including: *dplyr*
@@ -172,7 +174,7 @@ variation
 
 Allaire, JJ, Yihui Xie, Jonathan McPherson, Javier Luraschi, Kevin
 Ushey, Aron Atkins, Hadley Wickham, Joe Cheng, Winston Chang, and
-Richard Iannone. 2019. *Rmarkdown: Dynamic Documents for R*.
+Richard Iannone. 2020. *Rmarkdown: Dynamic Documents for R*.
 <https://github.com/rstudio/rmarkdown>.
 
 </div>
