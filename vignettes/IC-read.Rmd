@@ -4,10 +4,6 @@ author: "Martin Schobben"
 output: 
   rmarkdown::html_vignette:
     fig_caption: true
-    pandoc_args: [
-      "--csl", "~/Documents/work/projects/Glendonite_project/common/aquatic-microbial-ecology.csl",
-      "--citation-abbreviations", "~/Documents/work/projects/Glendonite_project/common/abbreviations.json", "--filter", "~/.cabal/bin/pandoc-crossref", "--css", "custom.css" 
-               ]
 bibliography: SIMS.bib
 vignette: >
   %\VignetteIndexEntry{IC-read}
