@@ -245,7 +245,8 @@ stat_R <- function(df, Xt, N, species, ion1, ion2, ..., latex = FALSE,
             species = expr(!! species),
             ion1 = expr(ion1),
             ion2 = expr(ion2),
-            !!! gr_by)
+            !!! gr_by,
+            warn = FALSE)
 
       } else {
 

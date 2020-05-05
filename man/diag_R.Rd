@@ -4,7 +4,7 @@
 \alias{diag_R}
 \title{Diagnostics raw ion count data}
 \usage{
-diag_R(df, method = "standard", args = expr_R(NULL), ...)
+diag_R(df, method = "Cameca", args = expr_R(NULL), ..., output = "flag")
 }
 \arguments{
 \item{df}{A tibble containing processed ion count data.}
@@ -48,7 +48,7 @@ tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
 
 # CAMECA style augmentatio of ion count data for isotope ratios
 tb.aug <- diag_R(tb.pr,
-                 method = "standard",
+                 method = "Cameca",
                  args = expr_R(Xt = "Xt.pr",
                                N = "N.pr",
                                species = "species.nm",
