@@ -29,6 +29,10 @@ Imports:
 Suggests: 
     testthat,
     knitr,
-    rmarkdown
+    rmarkdown,
+    BiocStyle (>= 2.17.0),
+    magick
 RoxygenNote: 7.0.2
 VignetteBuilder: knitr
+Remotes: 
+    Bioconductor/BiocStyle

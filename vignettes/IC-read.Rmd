@@ -1,9 +1,9 @@
 ---
 title: "IC-read"
 author: "Martin Schobben" 
+package: "point"
 output: 
-  rmarkdown::html_vignette:
-    fig_caption: true
+  BiocStyle::html_document:
 bibliography: SIMS.bib
 vignette: >
   %\VignetteIndexEntry{IC-read}
@@ -18,23 +18,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-
-```{r functions, include=FALSE}
-# A function for captioning and referencing images
-fig <- local({
-    i <- 0
-    ref <- list()
-    list(
-        cap=function(refName, text) {
-            i <<- i + 1
-            ref[[refName]] <<- i
-            paste("Figure ", i, ": ", text, sep="")
-        },
-        ref=function(refName) {
-            ref[[refName]]
-        })
-})
-```
 
 # Reading Raw Ion Count Data
 
@@ -138,7 +121,7 @@ In the case of FC usage for ion counting the metadate is complemented with;
 
 Alternatively, one can also only extract the metadata of an analysis to, e.g., assess machine performance over a sequence of analyses. For example, one can assess the Peak Height Distribution (PHD) over a series of analyses.  
 
-```{r fig.width=6, fig.height=6, fig.cap=fig$cap("PHD_example", "The PHD with normalised units on the Y-axis approximated with the Polya-Aeppli density probability function with parameter $\\lambda$ and $p$ for the location and shape of the curve. These parameters can be calculated using the metadata variables mean_PHD (mean) and SD_PHD (variance), which are compiled by the read_meta function.")}
+```{r PHDexample, fig.width=6, fig.height=6, fig.cap="The PHD with normalised units on the Y-axis approximated with the Polya-Aeppli density probability function with parameter $\\lambda$ and $p$ for the location and shape of the curve. These parameters can be calculated using the metadata variables mean_PHD (mean) and SD_PHD (variance), which are compiled by the read_meta function."}
 
 tb.mt <- read_meta(point_example("2018-01-19-GLENDON"))
 
@@ -175,6 +158,6 @@ ggplot(tb.mt, aes(x = PHD, y = density)) +
   theme_classic()
 ```
 
-The compounded Polya-Aeppli density probability function can approximate the peak height distribution  [@Dietz1970; @Dietz1978]. The package `pPolyaAeppli` [@Burden2014] together with the discriminator threshold value (usually 50 V) enables calculating the EM Yield ($Y$) (Fig. `r fig$ref("PHD_example")`). More on this topic can be found in the vignette [IC-process](IC-process.html).
+The compounded Polya-Aeppli density probability function can approximate the peak height distribution  [@Dietz1970; @Dietz1978]. The package `pPolyaAeppli` [@Burden2014] together with the discriminator threshold value (usually 50 V) enables calculating the EM Yield ($Y$) (Fig. \@ref(fig:PHDexample)). More on this topic can be found in the vignette [IC-process](IC-process.html).
 
 # References

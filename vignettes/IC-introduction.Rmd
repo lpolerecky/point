@@ -1,8 +1,10 @@
 ---
 title: "IC-introduction"
 author: "Martin Schobben"
+package: "point"
 output: 
-  rmarkdown::html_vignette:
+  BiocStyle::html_document:
+bibliography: SIMS.bib
 vignette: >
   %\VignetteIndexEntry{IC-introduction}
   %\VignetteEngine{knitr::rmarkdown}
