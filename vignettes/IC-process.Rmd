@@ -5,6 +5,8 @@ output:
   bookdown::html_document2:
     toc: true
 bibliography: SIMS.bib
+pkgdown:
+  as_is: true
 vignette: >
   %\VignetteIndexEntry{IC-process}
   %\VignetteEngine{knitr::rmarkdown}
@@ -54,7 +56,7 @@ The EM gain is a measure of the electron output current relative to the ion inpu
 knitr::include_graphics("EM-channel.png")
 ```
 
-After this phase of successive cascading charge amplification, the signal is converted to voltage (the EM high voltage, or EMHV; see Fig. \@ref(fig:EMdevice), where the voltage is proportional to the EM gain. This last conversion depends on the age of the EM and the EMHV is usually increased with successive age to preserve ion-to-electron efficiency at a suitable sensitivity. 
+After this phase of successive cascading charge amplification, the signal is converted to voltage (the EM high voltage, or EMHV; see Fig. \@ref(fig:EMdevice)), where the voltage is proportional to the EM gain. This last conversion depends on the age of the EM and the EMHV is usually increased with successive age to preserve ion-to-electron efficiency at a suitable sensitivity. 
 
 
 ### Electron Multiplier Yield
