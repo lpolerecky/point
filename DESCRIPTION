@@ -25,7 +25,8 @@ Imports:
     ggplot2 (>= 3.2),
     polyaAeppli (>= 2.0),
     rlang (>= 0.4),
-    purrr (>= 0.3)
+    purrr (>= 0.3),
+    bookdown
 Suggests: 
     testthat,
     knitr,
