@@ -1,10 +1,12 @@
 ---
 title: "IC-diagnostics"
 author: "Martin Schobben" 
-package: "point"
 output: 
-  BiocStyle::html_document:
+  bookdown::html_document2:
+    toc: true
 bibliography: SIMS.bib
+pkgdown:
+  as_is: true
 vignette: >
   %\VignetteIndexEntry{IC-diagnostics}
   %\VignetteEngine{knitr::rmarkdown}

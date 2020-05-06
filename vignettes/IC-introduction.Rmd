@@ -1,9 +1,9 @@
 ---
 title: "IC-introduction"
 author: "Martin Schobben"
-package: "point"
 output: 
-  BiocStyle::html_document:
+  bookdown::html_document2:
+    toc: true
 bibliography: SIMS.bib
 vignette: >
   %\VignetteIndexEntry{IC-introduction}
