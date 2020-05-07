@@ -49,12 +49,9 @@ library(tidyr) # tidyr data
 ```
 
 ## Example dataset
-Two example datasets are bundled with this package:
+One example dataset is bundled with this package: *2018-01-19-GLENDON*.
 
-* 2018-01-19-GLENDON
-* 2020-01-17-TREASURE 
-
-Both datasets are generated with the *Cameca NanoSIMS 50L* at the Department of Earth Sciences at Utrecht University. The dataset with the suffix *GLENDON* contains ion count data on calcium carbonate rock (so-called glendonites) of Jurassic and Cretaceous age. The sampled substrate is a glendonite specimen (an authigenic carbonate) and a in-house reference (a belemnite rostra). Ion detection for 7 individual species was performed solely with electron multipliers (EM) with the main purpose of producing stable carbon isotope ratios (^13^C/^12^C). The dataset with the suffix *TREASURE* consists of ion count data on pyrite minerals collected in the Baltic Sea. These analysis targeted the ^34^S/^32^S composition, where the heavy isotope was collected on an EM and the light isotope on a Faraday Cup (FC).
+The dataset is generated with the *Cameca NanoSIMS 50L* at the Department of Earth Sciences at Utrecht University. The suffix *GLENDON* stands for glendonite an authigenic calcium carbonate seafloor precipitate. The analysed glendonite is of Jurassic and Cretaceous age strata in Spitsbergen and Siberia. An in-house reference (a belemnite rostra) is used to check repeatability/external reproducibility. Ion detection for 7 individual species was performed solely with electron multipliers (EM) with the main purpose of producing stable carbon isotope ratios (^13^C/^12^C). 
 
 The example directories can be accessed with the function `point_example`.
 

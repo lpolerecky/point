@@ -2,9 +2,10 @@ pandoc: 2.3.1
 pkgdown: 1.5.1
 pkgdown_sha: ~
 articles:
-  IC-introduction: IC-introduction.html
-  IC-read: IC-read.html
-  IC-process: IC-process.html
-  IC-precision: IC-precision.html
   IC-diagnostics: IC-diagnostics.html
-last_built: 2020-05-07T06:45Z
+  IC-introduction: IC-introduction.html
+  IC-precision: IC-precision.html
+  IC-process: IC-process.html
+  IC-read: IC-read.html
+last_built: 2020-05-07T08:00Z
+
