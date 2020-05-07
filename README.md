@@ -47,7 +47,7 @@ You can install the released version of point
 ``` r
 # Install point from GitHub:
 # install.packages("devtools")
-devtools::install_github("point")
+devtools::install_github("MartinSchobben/point")
 ```
 
 ## Usage
