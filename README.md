@@ -23,6 +23,9 @@ anomalous values associated with e.g. machine instability or
 heterogeneity of the analysed sample. Upon detection, anomalous values
 can be omitted or further analysed to delineate the source of variation.
 
+The point package is still under development but functioning.
+Functionality is automatically tested with Travis CI.
+
 ## Credits
 
 The construction of the R (R Core Team 2020) package *point* and
