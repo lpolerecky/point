@@ -26,23 +26,15 @@
 #' read_IC(point_example("2018-01-19-GLENDON"))
 read_IC <- function(directory){
 
+# Check validity of directory
   l.c <- read_validator(directory)
 
 # Collecting metadata (stat file)
   tb.meta <- read_meta(directory)
 
-# Function to recreate count blocks
-  fun_bl<- function(x, y) {
-
-    seq <- rep(1: unique(x), each = unique(y))
-    n <- row_number()
-    seq[n]
-
-    }
 
 # Collecting measurement data and metadata
   tb.rw <- left_join(
-
 # Raw count data of measerument
                      purrr::map_df(l.c,
                             ~read_tsv(paste0(directory, "/", .),
@@ -56,26 +48,33 @@ read_IC <- function(directory){
                                                      n.rw[file.nm == .]) + 1) *
                                                      length(unique(species.nm)))
                                      ),
-                            .id = "file.nm") %>%
+                            .id = "file.nm"
+                                   ) %>%
 # Remove old column headers
-                                filter(.data$t.rw != "X",
-                                       .data$N.rw  != "Y") %>%
+                      filter(.data$t.rw != "X",
+                             .data$N.rw  != "Y"
+                             ) %>%
 # Coercion to numeric values
-                                mutate(t.rw = as.numeric(.data$t.rw),
-                                       N.rw = as.numeric(.data$N.rw)) %>%
-                                group_by(.data$file.nm) %>%
-                                mutate(num.mt =
-                                         ntile(n =
-                                                 with(tb.meta,
-                                                      length(unique(
-                                                             species.nm))))) %>%
-                                ungroup(),
-
-                    tb.meta,
-                    by = c("file.nm", "num.mt")) %>%
+                      mutate(t.rw = as.numeric(.data$t.rw),
+                             N.rw = as.numeric(.data$N.rw)
+                             ) %>%
+                              group_by(.data$file.nm) %>%
+                              mutate(num.mt =
+                                       ntile(n =
+                                              with(tb.meta,
+                                                     length(unique(species.nm))
+                                                   )
+                                             )
+                                     ) %>%
+                              ungroup(),
+                     tb.meta,
+                     by = c("file.nm", "num.mt")
+                     ) %>%
 # Clear suffix from filename
-        mutate(file.nm = str_sub(.data$file.nm,
-                                  end = (str_length(.data$file.nm) - 7))) %>%
+    mutate(file.nm = str_sub(.data$file.nm,
+                              end = (str_length(.data$file.nm) - 7)
+                             )
+           ) %>%
 # Add block number
         group_by(.data$file.nm, .data$species.nm) %>%
         mutate(bl.mt = fun_bl(.data$`bl_num.mt`, .data$`meas_bl.mt`)) %>%
@@ -91,187 +90,146 @@ read_meta <- function(directory){
 
 # NA aliases
   NA_aliases <- c("N/A", "none", "None") %>%
-                  purrr::set_names(rep(NA_character_,
-                                       length(.)), nm = .)
+    set_names(rep(NA_character_, length(.)), nm = .)
 
 # Extract stat files with diagnostics of the machine and statistics
-  l.s <- dir(directory,
-             pattern = ".stat$") %>%
+  l.s <- dir(directory, pattern = ".stat$") %>%
 # Set names for subsequent storage
-           purrr::set_names() %>%
+    set_names() %>%
 # Remove transect files
-           purrr::discard(., str_detect(., "transect.stat"))
+    purrr::discard(., str_detect(., "transect.stat"))
 
-  l.p <- dir(directory,
-             pattern = ".chk_is$") %>%
+  l.p <- dir(directory, pattern = ".chk_is$") %>%
 # Set names for subsequent storage
-           purrr::set_names() %>%
+    set_names() %>%
 # Remove transect files
-           purrr::discard(., str_detect(., "transect.chk_is"))
-
+    purrr::discard(., str_detect(., "transect.chk_is"))
+#-------------------------------------------------------------------------------
+# PHD
+#-------------------------------------------------------------------------------
+# Number of PHD measurements
   PHD_n <- lapply(purrr::map(l.p, ~read_lines(paste0(directory, "/", .),
-                                       n_max = 50) ),
-                  str_which, "PHDc(?=\\(Mass)")
+                                              n_max = 50
+                                              )
+                            ),
+                  str_which,
+                  "PHDc(?=\\(Mass)"
+                  )
 
+# List of function arguments for PHD
   l.PHD <- lst(a = l.p,  b = PHD_n, c = lapply(.data$b, length))
 
+# Function for PHD reading
   f.PHD <- function(a, b, c) {
-
-         readr::read_table2(paste0(directory, "/", a),
-
-                            col_names = c("num.mt",
-                                          "mean_PHD",
-                                          "SD_PHD",
-                                          "EMHV"),
-                            col_types = "-cddd",
-                            na = c(mapply(strrep,"X", 1:10, USE.NAMES =  FALSE),
-                                   "1.#R"),
+    readr::read_table2(paste0(directory, "/", a),
+                       col_names = c("num.mt",
+                                     "mean_PHD",
+                                     "SD_PHD",
+                                     "EMHV"
+                                     ),
+                       col_types = "-cddd",
+                       na = c(mapply(strrep,
+                                     "X",
+                                     1:10,
+                                     USE.NAMES = FALSE),
+                              "1.#R"
+                             ),
                             skip = b[1] - 1,
-                            n_max = c)
-  }
+                            n_max = c
+                      )
+    }
 
+# Apply PHD reading function to list of arguments
   tb.PHD <- purrr::pmap_dfr(l.PHD, f.PHD, .id = "file.nm") %>%
-                  mutate(file.nm = str_sub(.data$file.nm,
-                             end = (str_length(.data$file.nm) - 7))) %>%
-                  mutate(num.mt = as.numeric(str_extract(.data$num.mt,
-                                                         "[:digit:]")))
+    mutate(file.nm = str_sub(.data$file.nm,
+                             end = (str_length(.data$file.nm) - 7)
+                             )
+           ) %>%
+    mutate(num.mt = as.numeric(str_extract(.data$num.mt, "[:digit:]")
+                               )
+           )
 
-  min_n <- lapply(purrr::map(l.s, ~read_lines(paste0(directory, "/", .),
-                                       n_max = 50)),
-                  str_which, "#") %>%
-            purrr::map(., 1) %>%
-            purrr::flatten_dbl()
+#-------------------------------------------------------------------------------
+# Ions and MS setup metadata
+#-------------------------------------------------------------------------------
+# Minimum of metadata rows
+   min_n <- lapply(purrr::map(l.s, ~read_lines(paste0(directory, "/", .),
+                                               n_max = 50
+                                               )
+                              ),
+                   str_which,
+                   "#"
+                   ) %>%
+    purrr::map(., 1) %>%
+    purrr::flatten_dbl()
 
+# Maximum of metadata rows
   max_n <- lapply(purrr::map(l.s, ~read_lines(paste0(directory, "/", .),
-                                       n_max = 50)),
-                  str_which, "--") %>%
-            purrr::map(., 1) %>%
-            purrr::flatten_dbl()
+                                              n_max = 50
+                                              )
+                            ),
+                  str_which,
+                  "--") %>%
+    purrr::map(., 1) %>%
+    purrr::flatten_dbl()
 
-# Ions and MS setup
-  l <- lst(a = l.s, b =  min_n  , c = (max_n - 3) - .data$b)
-  f <- function(a, b, c) {
+# List of function arguments for metadat function
+  l.ion <- lst(a = l.s, b =  min_n  , c = (max_n - 3) - .data$b)
 
-        read_table(paste0(directory, "/", a),
-                   skip = b,
-                   n_max = c,
-                   col_names = c("num.mt", "species.nm", "mass.mt", "det.mt",
-                                 "tc.mt", "bfield.mt", "rad.mt"),
-                   col_types = "icdcddd---"
-                   )
+# Function for metadata reading
+  f.ion <- function(a, b, c) {
+    read_table(paste0(directory, "/", a),
+               skip = b,
+               n_max = c,
+               col_names = c("num.mt", "species.nm", "mass.mt", "det.mt",
+                             "tc.mt", "bfield.mt", "rad.mt"),
+               col_types = "icdcddd---"
+              )
+    }
 
-  }
-
-
-  tb.ion <- purrr::pmap_dfr(l, f, .id = "file.nm") %>%
-              mutate(file.nm = str_sub(.data$file.nm,
-                                       end = (str_length(.data$file.nm) - 5)))
-
+# Apply PHD reading function to list of arguments
+  tb.ion <- purrr::pmap_dfr(l.ion, f.ion, .id = "file.nm") %>%
+    mutate(file.nm = str_sub(.data$file.nm,
+                              end = (str_length(.data$file.nm) - 5)
+                             )
+           )
+#-------------------------------------------------------------------------------
 # Primary and secondary ion beam metadata
+#-------------------------------------------------------------------------------
   tb.meas <- purrr::map2_df(l.s, min_n - 1 ,
                             ~(
                               read_lines(paste0(directory, "/", .x),
-                                         n_max = .y)
-                             ) %>%
-                            list() %>%
-                              tibble::enframe(name = NULL),
-                   .id = "file.nm") %>%
-              mutate(file.nm = str_sub(.data$file.nm,
-                                       end = (str_length(.data$file.nm) - 5)))
-
-# Function to make metadate readible
-  str_unfold <-  function(string) {
-
-    string %>%
-# Create tibble from list
-      tibble::enframe(name = NULL) %>%
-# Remove empty rows
-      filter(str_detect(.data$value, ".")) %>%
-# Remove date
-      filter(!str_detect(.data$value, pattern  = "\t\t\t\t\t\t")) %>%
-      tidyr::separate_rows(.data$value, sep = "(/(?=[:blank:])) | =") %>%
-      tidyr::separate(.data$value,
-               into = c("variable", "value"),
-               sep =":(?!\\\\)",
-               extra = "merge") %>%
-      mutate_all(str_trim) %>%
-      distinct(.data$variable, .keep_all = TRUE) %>%
-# Convert NA aliases to NA
-      mutate(value = recode(.data$value, !!!NA_aliases),
-# Remove units behind numerics
-             value = str_replace(.data$value,
-                                 "(?<=[:digit:]|[:blank:])(pA|um|%)|Det1=",
-                                 "")) %>%
-      tidyr::pivot_wider(names_from = .data$variable,
-                         values_from = .data$value) %>%
-# Separate date
-      mutate(date = as.POSIXct(
-        str_replace_all(
-          string[str_detect(string, pattern  = "\t\t\t\t\t\t")],
-          "\\t|\\n", ""),
-             format = c("%d.%m.%y  %H:%M"))) %>%
-      rename(sample.nm = "CAMECA \\ ISOTOPES \\ Sample") %>%
-# Remove extra punct
-      mutate(`Pre Sputtering Time (s)` =
-               str_sub(.data$`Pre Sputtering Time (s)`, end = -2))
-
-  }
-
-# Function for selecting possible meta variables
-  select_IC <- function(df) {
-
-
-    meta.nm <-c ("Pre Sputtering Time (s)",
-                 "Block number",
-                 "Meas. per block",
-                 "Width Horizontal(V)",
-                 "Vertical(V)",
-                 "Primary Current before acq",
-                 "after acq",
-                 "Raster (um)",
-                 "Blanking",
-                 "FC Background before acq",
-                 "FC Background after acq") %>%
-  # The to be used new names for th output
-      set_names(., nm = c("presput.mt",
-                          "bl_num.mt",
-                          "meas_bl.mt",
-                          "width_hor.mt",
-                          "width_ver.mt",
-                          "prim_cur_start.mt",
-                          "prim_cur_after.mt",
-                          "rast_com.mt",
-                          "blank_rast.mt",
-                          "FC_start.mt",
-                          "FC_after.mt"))
-
-    meta.nm <- meta.nm[meta.nm %in% colnames(df)]
-# Add required variables
-    meta.nm <- purrr::prepend(meta.nm, c(file.nm = "file.nm",
-                                         sample.nm = "sample.nm",
-                                         date = "date"))
-# Select variables
-    select(df, !!! meta.nm)
-  }
-
+                                         n_max = .y) %>%
+                                list() %>%
+                                tibble::enframe(name = NULL, value = "meta")
+                              ),
+                            .id = "file.nm"
+                            ) %>%
+    mutate(file.nm = str_sub(.data$file.nm,
+                             end = (str_length(.data$file.nm) - 5)
+                             )
+           )
 
   tb.meas <- tb.meas %>%
-               mutate(value = purrr::map(.data$value, str_unfold)) %>%
-               tidyr::unnest(cols = c(.data$value)) %>%
-               select_IC() %>%
-               mutate_at(vars(contains(".mt")), as.double) %>%
+    mutate(meta= purrr::map(.data$meta, ~str_tidy(.x, NA_aliases))) %>%
+    tidyr::unnest(cols = c(.data$meta)) %>%
+    select_IC() %>%
+    mutate_at(vars(contains(".mt")), as.double) %>%
 # Add measurement number
-               mutate(n.rw = .data$`bl_num.mt` * .data$`meas_bl.mt`) %>%
+    mutate(n.rw = .data$`bl_num.mt` * .data$`meas_bl.mt`) %>%
 # Add electron detector type (EM or FC)
-               mutate(det_type.mt = if_else("FC_start.mt" %in% colnames(.),
-                                            "FC", "EM"))
+    mutate(det_type.mt = if_else("FC_start.mt" %in% colnames(.),
+                                 "FC",
+                                 "EM"
+                                 )
+          )
 
 # Combine PHD, MS and beam metadata
-  tb.meta <- list(tb.ion, tb.meas, tb.PHD) %>%
-               purrr::reduce2(., lst(by = c("file.nm"),
-                                     by = c("file.nm", "num.mt")) ,
-                              left_join) %>%
-               mutate(file.nm = paste0(.data$file.nm, ".is_txt"))
+  tb.meta <- lst(tb.ion, tb.meas, tb.PHD) %>%
+    purrr::reduce2(. , lst(by = c("file.nm"),
+                           by = c("file.nm", "num.mt")),
+                   left_join) %>%
+    mutate(file.nm = paste0(.data$file.nm, ".is_txt"))
 
   return(tb.meta)
   }
@@ -307,50 +265,71 @@ read_validator <- function(directory){
   stopifnot(is.character(directory))
 
 # Extract txt files with count data blocks of each single point measurement
-  l.c <- dir(directory,
-             pattern = ".is_txt") %>%
-    purrr::set_names()
+  l.c <- dir(directory, pattern = ".is_txt") %>%
+    set_names()
 
 # Length check of txt files
-  if (any(purrr::map_dbl(l.c, ~length(read_lines(paste0(directory, "/", .),
-                                                 n_max = 2))) == 0)) {
+  if (
+    any(
+      purrr::map_dbl(l.c,
+                     ~length(
+                       read_lines(
+                         paste0(directory, "/", .),
+                         n_max = 2
+                         )
+                       )
+                     ) == 0
+      )
+    ) {
 
-    good <- purrr::map_dbl(l.c, ~length(read_lines(paste0(directory, "/", .),
-                                                   n_max = 2))) > 0
-
+    good <- purrr::map_dbl(l.c,
+                           ~length(
+                             read_lines(
+                               paste0(directory, "/", .),
+                               n_max = 2
+                               )
+                             )
+                           ) > 0
     l.c <- l.c[good]
-
     warning("empty txt file removed")
-
   }
 
 # Column content check of txt files
-  if (any(purrr::map_dbl(l.c, ~nrow(read_tsv(paste0(directory, "/", .),
-                                             comment = "B",
-                                             skip = 1,
-                                             col_names = c("t", "N"),
-                                             col_types = "-cc",
-                                             n_max = 2) %>%
-                              filter(t != "X", N  != "Y"))) == 0)){
+  if (
+    any(
+      purrr::map_dbl(l.c,
+                     ~nrow(
+                       read_tsv(
+                         paste0(directory, "/", .),
+                         comment = "B",
+                         skip = 1,
+                         col_names = c("t", "N"),
+                         col_types = "-cc",
+                         n_max = 2
+                         ) %>%
+                       filter(t != "X", N  != "Y"))) == 0
+      )
+    ){
 
-    good <- purrr::map_dbl(l.c, ~nrow(read_tsv(paste0(directory, "/", .),
-                                               comment = "B",
-                                               skip = 1,
-                                               col_names = c("X1", "t", "N"),
-                                               col_types = cols(X1 = col_skip(),
-                                                                t = col_character(),
-                                                                N = col_character()),
-                                               n_max = 2) %>%
-                                        filter(t != "X", N  != "Y"))) > 0
-
+    good <- purrr::map_dbl(l.c,
+                           ~nrow(
+                             read_tsv(
+                               paste0(directory, "/", .),
+                               comment = "B",
+                               skip = 1,
+                               col_names = c("X1", "t", "N"),
+                               col_types = cols(X1 = col_skip(),
+                               t = col_character(),
+                               N = col_character()),
+                               n_max = 2
+                               ) %>%
+                              filter(t != "X", N  != "Y")
+                             )
+                           ) > 0
     l.c <- l.c[good]
-
     warning("txt file contains empty columns")
-
   }
-
   return(l.c)
-
 }
 
 # Function for building IDs
@@ -365,3 +344,132 @@ ID_builder <- function(df, species, ...){
   tidyr::unite(col = "ID", !!! gr_by, .data$ID, sep = "/", remove = FALSE)
 }
 
+
+# Function for obtaining xyz coordinates on analytical subsrtate
+str_loc <- function(str_raw) {
+  str_raw %>%
+    filter(variable == "Stage Position") %>%
+    str_split("=+") %>%
+    purrr::as_vector() %>%
+    str_subset("[:digit:]") %>%
+    lapply(parse_number) %>%
+    rlang::flatten_dbl()
+}
+
+# Function to create a tibble of string from readlines output of metadata
+str_tibble <- function(str_raw) {
+  str_raw %>%
+# Create tibble from list
+    tibble::enframe(name = NULL) %>%
+# Remove empty rows
+    filter(str_detect(.data$value, ".")) %>%
+  # Remove date
+    filter(!str_detect(.data$value, pattern  = "\t\t\t\t\t\t")) %>%
+    tidyr::separate_rows(.data$value, sep = "(/(?=[:blank:])) | =") %>%
+    tidyr::separate(.data$value,
+                    into = c("variable", "value"),
+                    sep =":(?!\\\\)",
+                    extra = "merge"
+                    ) %>%
+    mutate_all(str_trim) %>%
+    distinct(.data$variable, .keep_all = TRUE)
+}
+
+# Function for selecting possible meta variables
+select_IC <- function(df) {
+
+
+  meta.nm <-c ("Pre Sputtering Time (s)",
+               "Block number",
+               "Meas. per block",
+               "Width Horizontal(V)",
+               "Vertical(V)",
+               "Primary Current before acq",
+               "after acq",
+               "Raster (um)",
+               "Blanking",
+               "FC Background before acq",
+               "FC Background after acq",
+               "Rejection(sigma)",
+               "x",
+               "y",
+               "z"
+  ) %>%
+    # The to be used new names for the output
+    set_names(., nm = c("presput.mt",
+                        "bl_num.mt",
+                        "meas_bl.mt",
+                        "width_hor.mt",
+                        "width_ver.mt",
+                        "prim_cur_start.mt",
+                        "prim_cur_after.mt",
+                        "rast_com.mt",
+                        "blank_rast.mt",
+                        "FC_start.mt",
+                        "FC_after.mt",
+                        "rejection.mt",
+                        "x.mt",
+                        "y.mt",
+                        "z.mt" )
+    )
+
+  # Select variables present
+  meta.nm <- meta.nm[meta.nm %in% colnames(df)]
+  # Add required variables
+  meta.nm <- purrr::prepend(meta.nm, c(file.nm = "file.nm",
+                                       sample.nm = "sample.nm",
+                                       date = "date"))
+  # Select variables
+  select(df, !!! meta.nm)
+}
+
+
+# Function to make metadate readible
+str_tidy <-  function(str_raw, NA_aliases) {
+
+  str_raw %>%
+    # Create tibble from list
+    str_tibble() %>%
+    # Convert NA aliases to NA
+    mutate(value = recode(.data$value, !!!NA_aliases),
+           # Remove units behind numerics
+           value = str_replace(.data$value,
+                               "(?<=[:digit:]|[:blank:])(pA|um|%)|Det1=",
+                               ""
+                               )
+           ) %>%
+    tidyr::pivot_wider(names_from = .data$variable,
+                       values_from = .data$value) %>%
+    # Separate extraction of date
+    mutate(date = str_date(str_raw)) %>%
+    rename(sample.nm = "CAMECA \\ ISOTOPES \\ Sample") %>%
+    # Separate location of date
+    mutate(x = str_loc(str_tibble(str_raw))[1],
+           y = str_loc(str_tibble(str_raw))[2],
+           z = str_loc(str_tibble(str_raw))[3]) %>%
+    # Remove extra punct
+    mutate(`Pre Sputtering Time (s)` =
+             str_sub(.data$`Pre Sputtering Time (s)`, end = -2))
+
+}
+
+
+# Function for date extraction
+str_date <- function(str_raw) {
+  as.POSIXct(
+    str_replace_all(
+      str_raw[str_detect(str_raw, pattern  = "\t\t\t\t\t\t")],
+      "\\t|\\n", ""
+    ),
+    format = c("%d.%m.%y  %H:%M")
+  )
+}
+
+# Function to recreate count blocks
+fun_bl<- function(x, y) {
+
+  seq <- rep(1: unique(x), each = unique(y))
+  n <- row_number()
+  seq[n]
+
+}
