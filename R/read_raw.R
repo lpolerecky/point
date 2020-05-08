@@ -27,11 +27,10 @@
 read_IC <- function(directory){
 
 # Check validity of directory
-  l.c <- read_validator(directory)
+  l.c <- read_validator(directory)[[1]]
 
 # Collecting metadata (stat file)
   tb.meta <- read_meta(directory)
-
 
 # Collecting measurement data and metadata
   tb.rw <- left_join(
@@ -95,18 +94,11 @@ read_meta <- function(directory){
   NA_aliases <- c("N/A", "none", "None") %>%
     set_names(rep(NA_character_, length(.)), nm = .)
 
-# Extract stat files with diagnostics of the machine and statistics
-  l.s <- dir(directory, pattern = ".stat$") %>%
-# Set names for subsequent storage
-    set_names() %>%
-# Remove transect files
-    purrr::discard(., str_detect(., "transect.stat"))
+# Check validity of directory
+  lst.files <- read_validator(directory)
+  l.s <- lst.files[[2]]
+  l.p <- lst.files[[3]]
 
-  l.p <- dir(directory, pattern = ".chk_is$") %>%
-# Set names for subsequent storage
-    set_names() %>%
-# Remove transect files
-    purrr::discard(., str_detect(., "transect.chk_is"))
 #-------------------------------------------------------------------------------
 # PHD
 #-------------------------------------------------------------------------------
@@ -266,10 +258,48 @@ read_validator <- function(directory){
 
 # Argument class check
   stopifnot(is.character(directory))
+# Check if directory contains files
+    if (is.null(length(dir(directory)))){
+      stop("`directory` does not contain any files", call. = FALSE)
+    }
+# Check if directory contains specified file types
+  l.types <- c(".is_txt$", ".chk_is$", ".stat$")
+    if (!ICdir_chk(directory)){
+      stop("`directory` does not contain required filetypes:
+           .is_txt, .chk_is, and .stat", call. = FALSE)
+      }
 
 # Extract txt files with count data blocks of each single point measurement
-  l.c <- dir(directory, pattern = ".is_txt") %>%
+  l.c <- dir(directory, pattern = ".is_txt$") %>%
+# Set names for subsequent storage
     set_names()
+
+# Extract stat files with diagnostics of the machine and statistics
+  l.s <- dir(directory, pattern = ".stat$") %>%
+# Set names for subsequent storage
+    set_names() %>%
+    # Remove transect files
+    purrr::discard(., str_detect(., "transect.stat$"))
+
+# Extract stat files with diagnostics for optics settings
+  l.p <- dir(directory, pattern = ".chk_is$") %>%
+    # Set names for subsequent storage
+    set_names() %>%
+    # Remove transect files
+    purrr::discard(., str_detect(., "transect.chk_is$"))
+
+# Remove metadata files with diagnostics of the machine and statistics
+  l.c.edited <- map_chr(l.c, ~str_sub(.x, end = (str_length(.x) - 7)))
+  l.s.edited <- map_chr(l.s, ~str_sub(.x, end = (str_length(.x) - 5)))
+  l.p.edited <- map_chr(l.p, ~str_sub(.x, end = (str_length(.x) - 7)))
+
+  if (sapply(lst(l.p, l.s, l.c), length) %>%
+        tidyr::crossing() %>%
+        nrow() > 1){
+    l.s <- l.s[l.s.edited %in% l.c.edited]
+    l.p <- l.p[l.p.edited %in% l.c.edited]
+    warning("some metadata files have no matching data files and are omitted")
+  }
 
 # Length check of txt files
   if (
@@ -332,7 +362,7 @@ read_validator <- function(directory){
     l.c <- l.c[good]
     warning("txt file contains empty columns")
   }
-  return(l.c)
+  return(lst(l.c, l.s, l.p))
 }
 
 # Function for building IDs
@@ -381,7 +411,6 @@ str_tibble <- function(str_raw) {
 # Function for selecting possible meta variables
 select_IC <- function(df) {
 
-
   meta.nm <-c ("Pre Sputtering Time (s)",
                "Block number",
                "Meas. per block",
@@ -397,7 +426,7 @@ select_IC <- function(df) {
                "x",
                "y",
                "z"
-  ) %>%
+               ) %>%
     # The to be used new names for the output
     set_names(., nm = c("presput.mt",
                         "bl_num.mt",
@@ -413,19 +442,21 @@ select_IC <- function(df) {
                         "rejection.mt",
                         "x.mt",
                         "y.mt",
-                        "z.mt" )
-    )
+                        "z.mt"
+                        )
+              )
 
   # Select variables present
   meta.nm <- meta.nm[meta.nm %in% colnames(df)]
   # Add required variables
   meta.nm <- purrr::prepend(meta.nm, c(file.nm = "file.nm",
                                        sample.nm = "sample.nm",
-                                       date = "date"))
+                                       date = "date"
+                                       )
+                            )
   # Select variables
   select(df, !!! meta.nm)
-}
-
+  }
 
 # Function to make metadate readible
 str_tidy <-  function(str_raw, NA_aliases) {
@@ -476,3 +507,11 @@ fun_bl<- function(x, y) {
   seq[n]
 
 }
+
+# Check if directory contains the correct filse necesarry for IC analysis
+ICdir_chk <-function(directory, types = c(".is_txt$", ".chk_is$", ".stat$")){
+
+  map_lgl(types, ~any(str_detect(dir(directory), .x))) %>%
+      all()
+}
+
