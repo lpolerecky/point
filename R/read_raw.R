@@ -289,9 +289,9 @@ read_validator <- function(directory){
     purrr::discard(., str_detect(., "transect.chk_is$"))
 
 # Remove metadata files with diagnostics of the machine and statistics
-  l.c.edited <- map_chr(l.c, ~str_sub(.x, end = (str_length(.x) - 7)))
-  l.s.edited <- map_chr(l.s, ~str_sub(.x, end = (str_length(.x) - 5)))
-  l.p.edited <- map_chr(l.p, ~str_sub(.x, end = (str_length(.x) - 7)))
+  l.c.edited <- purrr::map_chr(l.c, ~str_sub(.x, end = (str_length(.x) - 7)))
+  l.s.edited <- purrr::map_chr(l.s, ~str_sub(.x, end = (str_length(.x) - 5)))
+  l.p.edited <- purrr::map_chr(l.p, ~str_sub(.x, end = (str_length(.x) - 7)))
 
   if (sapply(lst(l.p, l.s, l.c), length) %>%
         tidyr::crossing() %>%
@@ -511,7 +511,7 @@ fun_bl<- function(x, y) {
 # Check if directory contains the correct filse necesarry for IC analysis
 ICdir_chk <-function(directory, types = c(".is_txt$", ".chk_is$", ".stat$")){
 
-  map_lgl(types, ~any(str_detect(dir(directory), .x))) %>%
-      all()
+  purrr::map_lgl(types, ~any(str_detect(dir(directory), .x))) %>%
+    all()
 }
 
