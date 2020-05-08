@@ -15,16 +15,18 @@ status](https://travis-ci.org/MartinSchobben/point.svg?branch=master)](https://t
 This project was originally inspired by the lack of detailed insight in
 the inner workings of the default software for the *Cameca NanoSIMS50L*
 (Utrecht University). Hence this project has the objective of processing
-raw count data into ion and isotope ratios of point-sourced
-measurements; and to establish the internal and external precision of,
-respectively, individual analyses and complete series of analyses.
-Access to raw ion count data is useful as it allows detection of
-anomalous values associated with e.g. machine instability or
-heterogeneity of the analysed sample. Upon detection, anomalous values
-can be omitted or further analysed to delineate the source of variation.
+raw ion count data into ion and isotope ratios of point-sourced
+measurements. Combined with statistics for the internal and external
+precision of, respectively, individual analyses and complete series of
+analyses, this functionality allows for the interrogation of the
+analytical consistency. Access to raw ion count data is, furthermore,
+useful as it allows detection of anomalous values associated with
+e.g. machine instability or heterogeneity of the analysed sample. Upon
+detection, anomalous values can be omitted or further analysed to
+delineate the source of variation.
 
-The point package is still under development but functioning.
-Functionality is automatically tested with Travis CI.
+The point package is still under development but the master branch is
+functioning. Functionality is automatically tested with Travis CI.
 
 ## Credits
 

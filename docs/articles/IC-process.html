@@ -195,7 +195,7 @@ Figure 1.2: An example of a typical PHD distribution. The effect of the discrimi
 
 <span class="co"># processing raw ion count data</span>
 <span class="fu"><a href="https://rdrr.io/r/utils/head.html">head</a></span>(<span class="fu"><a href="../reference/cor_IC.html">cor_IC</a></span>(<span class="no">tb.rw</span>, <span class="no">N.rw</span>, <span class="no">t.rw</span>, <span class="no">det_type.mt</span>))
-<span class="co">#&gt; # A tibble: 6 x 31</span>
+<span class="co">#&gt; # A tibble: 6 x 35</span>
 <span class="co">#&gt;   file.nm  t.rw  N.rw num.mt species.nm mass.mt det.mt tc.mt bfield.mt rad.mt</span>
 <span class="co">#&gt;   &lt;chr&gt;   &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt; &lt;chr&gt;  &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt;</span>
 <span class="co">#&gt; 1 2018-0…  0.54 12040      1 12C             12 Tr1    0.191     1436.   311.</span>
@@ -204,12 +204,12 @@ Figure 1.2: An example of a typical PHD distribution. The effect of the discrimi
 <span class="co">#&gt; 4 2018-0…  2.16 11946      1 12C             12 Tr1    0.191     1436.   311.</span>
 <span class="co">#&gt; 5 2018-0…  2.7  12178      1 12C             12 Tr1    0.191     1436.   311.</span>
 <span class="co">#&gt; 6 2018-0…  3.24 12114      1 12C             12 Tr1    0.191     1436.   311.</span>
-<span class="co">#&gt; # … with 21 more variables: sample.nm &lt;chr&gt;, date &lt;dttm&gt;, presput.mt &lt;dbl&gt;,</span>
+<span class="co">#&gt; # … with 25 more variables: sample.nm &lt;chr&gt;, date &lt;dttm&gt;, presput.mt &lt;dbl&gt;,</span>
 <span class="co">#&gt; #   bl_num.mt &lt;dbl&gt;, meas_bl.mt &lt;dbl&gt;, width_hor.mt &lt;dbl&gt;, width_ver.mt &lt;dbl&gt;,</span>
 <span class="co">#&gt; #   prim_cur_start.mt &lt;dbl&gt;, prim_cur_after.mt &lt;dbl&gt;, rast_com.mt &lt;dbl&gt;,</span>
-<span class="co">#&gt; #   blank_rast.mt &lt;dbl&gt;, n.rw &lt;dbl&gt;, det_type.mt &lt;chr&gt;, mean_PHD &lt;dbl&gt;,</span>
-<span class="co">#&gt; #   SD_PHD &lt;dbl&gt;, EMHV &lt;dbl&gt;, bl.mt &lt;int&gt;, Xt.rw &lt;dbl&gt;, Xt.pr &lt;dbl&gt;,</span>
-<span class="co">#&gt; #   N.pr &lt;dbl&gt;, Xr.pr &lt;dbl&gt;</span></pre></body></html></div>
+<span class="co">#&gt; #   blank_rast.mt &lt;dbl&gt;, rejection.mt &lt;dbl&gt;, x.mt &lt;dbl&gt;, y.mt &lt;dbl&gt;,</span>
+<span class="co">#&gt; #   z.mt &lt;dbl&gt;, n.rw &lt;dbl&gt;, det_type.mt &lt;chr&gt;, mean_PHD &lt;dbl&gt;, SD_PHD &lt;dbl&gt;,</span>
+<span class="co">#&gt; #   EMHV &lt;dbl&gt;, bl.mt &lt;int&gt;, Xt.rw &lt;dbl&gt;, Xt.pr &lt;dbl&gt;, N.pr &lt;dbl&gt;, Xr.pr &lt;dbl&gt;</span></pre></body></html></div>
 <p>The function returns the original tibble but adds the variables: <code>Xt.rw</code>, ion count rates uncorrected for detection device-specific biases; <code>Xt.pr</code>, ion count rates corrected for detection device-specific biases; and <code>N.pr</code>, counts corrected for detection device-specific biases.</p>
 <!-- Next in line is another effect which relates to the source of the secondary ions. The efficiency by which an secondary ion is generated can vary dramatically per matrix, element and even isotope. As a result high secondary ion production can result instances where two ion are arriving simultaneously at the EM as the originate from the same primary ion impacting the substrate. Thereby representing a misrepresentation of the counts and skewed isotope values. This is especially relevant for the major ion in isotope analyses as the efficiency of secondary ion generation is higher, and the low probability of QSA becomes higher. This can be corrected by taking the average number of secondary ions ejected per primary ion, or efficiency (secondary ion generated : primary ions) : $K$, and by assuming Poisson statistics dictates the probability of QSA: -->
 <!-- $$X_i^{***} = X_i^{**} \times (1+fK)$$ -->

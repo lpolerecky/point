@@ -348,7 +348,7 @@ ID_builder <- function(df, species, ...){
 # Function for obtaining xyz coordinates on analytical subsrtate
 str_loc <- function(str_raw) {
   str_raw %>%
-    filter(variable == "Stage Position") %>%
+    filter(.data$variable == "Stage Position") %>%
     str_split("=+") %>%
     purrr::as_vector() %>%
     str_subset("[:digit:]") %>%
