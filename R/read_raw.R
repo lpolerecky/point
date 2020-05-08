@@ -45,8 +45,11 @@ read_IC <- function(directory){
 # n-max is n times number of species
                                       n_max = with(tb.meta,
                                                    (unique(
-                                                     n.rw[file.nm == .]) + 1) *
-                                                     length(unique(species.nm)))
+                                                     n.rw[file.nm == .]) + 1
+                                                    ) *
+                                                     length(unique(species.nm)
+                                                            )
+                                                   )
                                      ),
                             .id = "file.nm"
                                    ) %>%
