@@ -2,13 +2,11 @@
 title: "IC-diagnostics"
 author: "Martin Schobben" 
 output: 
-  rmarkdown::html_vignette:
-    fig_caption: true
-    pandoc_args:  [
-      "--csl", "~/Documents/work/projects/Glendonite_project/common/aquatic-microbial-ecology.csl",
-      "--citation-abbreviations", "~/Documents/work/projects/Glendonite_project/common/abbreviations.json", "--filter", "~/.cabal/bin/pandoc-crossref", "--css", "custom.css" 
-               ]
+  bookdown::html_document2:
+    toc: true
 bibliography: SIMS.bib
+pkgdown:
+  as_is: true
 vignette: >
   %\VignetteIndexEntry{IC-diagnostics}
   %\VignetteEngine{knitr::rmarkdown}
@@ -21,23 +19,6 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-```
-
-```{r functions, include=FALSE}
-# A function for captioning and referencing images
-fig <- local({
-    i <- 0
-    ref <- list()
-    list(
-        cap=function(refName, text) {
-            i <<- i + 1
-            ref[[refName]] <<- i
-            paste("Figure ", i, ": ", text, sep="")
-        },
-        ref=function(refName) {
-            ref[[refName]]
-        })
-})
 ```
 
 # Diagnostics for Ion Count Data
@@ -90,8 +71,8 @@ tb.pr <- cor_IC(tb.rw,
 
 # CAMECA style augmented datafile
 # Vectors of isotope ratios 
-ion1 <-  c("13C", "12C 13C", "13C 14N", "12C 14N", "12C") 
-ion2 <-  c("12C", "12C2", "12C 14N", "40Ca 16O", "40Ca 16O")
+ion1 <-  c("13C", "12C 13C", "13C 14N", "12C") 
+ion2 <-  c("12C", "12C2", "12C 14N", "40Ca 16O")
 
 # Call function Diag_R over all ion ratio combinations  
 tb.aug <- purrr::map2(ion1, ion2, ~(diag_R(tb.pr,
@@ -103,7 +84,9 @@ tb.aug <- purrr::map2(ion1, ion2, ~(diag_R(tb.pr,
                                                          ion2 = .y),
                                            file.nm,
                                            bl.mt) %>%
-                                     filter(flag == "good")))
+                                      filter(flag == "good")
+                                    )
+                      )
                                    
 # Reproduce Cameca stat file: descriptive an predictive statistics for  
 # ratios (blockwise)
@@ -141,7 +124,7 @@ tb.CAMECA <- purrr::pmap_dfr(ls.CAMECA, fun_CAMECA) %>%
 
 
 
-```{r out.width="90%", echo=FALSE, fig.cap=fig$cap("excerpt_cameca","An excerpt of the Cameca stat-file for count block based 2$\\sigma$-rejection and associated blockwise statistics")}
+```{r xcpcameca, out.width="90%", echo=FALSE, fig.cap="An excerpt of the Cameca stat-file for count block based 2$\\sigma$-rejection and associated blockwise statistics"}
 
 knitr::include_graphics("excerpt_stat.png")
 
@@ -149,12 +132,12 @@ knitr::kable(tb.CAMECA[1:13, ],
              format.args = list(digits = 2, 
                                 format = "G", 
                                 flag = "0"),
-              caption = "Table 1: Blockwise statistics for augmented dataset (replication of Fig.1).") 
+              caption = "Blockwise statistics for augmented dataset (replication of Fig.1).") 
 ```
 
-Note, that in the above example of the Cameca diagnostics (Fig. `r fig$ref("excerpt_cameca")`), ratios of none-isotope pairs have been calculated.
+Note, that in the above example of the Cameca diagnostics (Fig. \@ref(fig:xcpcameca)), ratios of none-isotope pairs have been calculated.
 
-```{r fig.width=6, fig.height=4, fig.cap=fig$cap("ion_potential", "The blockwise mean plotted against consecutive blocks. Note that the non-isotope ratios show a decreasing trend over time."), echo=FALSE}
+```{r ion, fig.width=8, fig.height=6, fig.cap="The blockwise mean plotted against consecutive blocks. Note that the non-isotope ratios show a decreasing trend over time.", echo=FALSE}
 
 ggplot(tb.CAMECA, aes(x =`Block#`, y = Mean)) +
   geom_point() +
@@ -164,9 +147,9 @@ ggplot(tb.CAMECA, aes(x =`Block#`, y = Mean)) +
 ```
 
 
-Upon plotting the blockwise mean against the block number (Fig. `r fig$ref("ion_potential")`), it becomes apparent that the none-isotope ratios display a monotonic decreasing trend over the duration of the analysis. This effect likely reflects the differential ionization potentials and trajectories of secondary beam stabilization over the analysis.
+Upon plotting the blockwise mean against the block number (Fig. \@ref(fig:ion)), it becomes apparent that the none-isotope ratios display a monotonic decreasing trend over the duration of the analysis. This effect likely reflects the differential ionization potentials and trajectories of secondary beam stabilization over the analysis.
 
-Based on the Cameca $\sigma$-rejection, it is possible to augment the dataset for each of the analyses by simply removing the anomalous measurements ($N_i$), which pertains to the $N\_rej$ in Fig `r fig$ref("excerpt_cameca")`.   
+Based on the Cameca $\sigma$-rejection, it is possible to augment the dataset for each of the analyses by simply removing the anomalous measurements ($N_i$), which pertains to the $N\_rej$ in Fig. \@ref(fig:xcpcameca).   
 
 ````{r}
 # Augmented descriptive an predictive statistics (global dataset)
@@ -203,29 +186,31 @@ tb.CAMECA_org <- purrr::pmap_dfr(ls.CAMECA, fun_CAMECA_gl)
 
 ```
 
-```{r out.width="90%", echo=FALSE, fig.cap=fig$cap("excerpt_cameca","An excerpt of the Cameca stat-file for count block based 2$\\sigma$-rejection and associated blockwise statistics")}
+```{r xcpcameca2, out.width="90%", echo=FALSE, fig.cap="An excerpt of the Cameca stat-file for count block based 2$\\sigma$-rejection and associated blockwise statistics"}
 
 knitr::include_graphics("excerpt_stat_global.png")
 ```
 
-```{r echo=FALSE}
+```{r aug, echo=FALSE}
 knitr::kable(tb.CAMECA_aug,
              format.args = list(digits = 2, 
                                 format = "G", 
                                 flag = "0"),
-             caption = "Table 2: Summary stats for augmented dataset") 
+             caption = "Summary stats for augmented dataset"
+             ) 
 ```
 
 
-```{r echo=FALSE}
+```{r org,echo=FALSE}
 knitr::kable(tb.CAMECA_org,
              format.args = list(digits = 2, 
                                 format = "G", 
                                 flag = "0"),
-             caption = "Table 3: Summary stats for original dataset") 
+             caption = "Summary stats for original dataset"
+             ) 
 ```
 
-However, when comparing the summary statistics of the augmented dataset (Table 2) with the excerpt from the Cameca stat-file (Fig. `r fig$ref("excerpt_cameca")`) their seems to be a substantial difference. Instead upon comparison with Table 3, which consist of summary statistics calculated on the original dataset (without $\sigma$-rejection of measurements), the replication is surprisingly consistent. This heralds the question whether their might be a mistake in the Cameca software for calculating statistics on ion ratios for complete analyses. Otherwise the blockwise $\sigma$-rejection of measurements seems rather obfuscated, as it does not seem to serve an obvious purpose.
+However, when comparing the summary statistics of the augmented dataset (Table \@ref(tab:aug)) with the excerpt from the Cameca stat-file (Fig. \@ref(fig:xcpcameca2)) their seems to be a substantial difference. Instead upon comparison with Table \@ref(tab:org), which consist of summary statistics calculated on the original dataset (without $\sigma$-rejection of measurements), the replication is surprisingly consistent. This heralds the question whether their might be a mistake in the Cameca software for calculating statistics on ion ratios for complete analyses. Otherwise the blockwise $\sigma$-rejection of measurements seems rather obfuscated, as it does not seem to serve an obvious purpose.
 
 ## Regression diagnostic based count optimization
 This will be included in future release.

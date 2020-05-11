@@ -2,7 +2,11 @@
 title: "IC-introduction"
 author: "Martin Schobben"
 output: 
-  rmarkdown::html_vignette:
+  bookdown::html_document2:
+    toc: true
+bibliography: SIMS.bib
+pkgdown:
+  as_is: true
 vignette: >
   %\VignetteIndexEntry{IC-introduction}
   %\VignetteEngine{knitr::rmarkdown}

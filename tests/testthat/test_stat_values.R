@@ -3,7 +3,6 @@ library(point)
 
 # Test datasets in extdata directory
 sv1 <- point_example("2018-01-19-GLENDON")
-sv2 <- point_example("2020-01-17-TREASURE")
 
 #-------------------------------------------------------------------------------
 # Value checks of raw data output. Cross validation of statistics results with

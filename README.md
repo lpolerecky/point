@@ -6,6 +6,8 @@
 [![License: GPL
 v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 [![DOI](https://zenodo.org/badge/240023228.svg)](https://zenodo.org/badge/latestdoi/240023228)
+[![Travis build
+status](https://travis-ci.org/MartinSchobben/point.svg?branch=master)](https://travis-ci.org/MartinSchobben/point)
 <!-- badges: end -->
 
 # Introduction to point
@@ -13,13 +15,18 @@ v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/
 This project was originally inspired by the lack of detailed insight in
 the inner workings of the default software for the *Cameca NanoSIMS50L*
 (Utrecht University). Hence this project has the objective of processing
-raw count data into ion and isotope ratios of point-sourced
-measurements; and to establish the internal and external precision of,
-respectively, individual analyses and complete series of analyses.
-Access to raw ion count data is useful as it allows detection of
-anomalous values associated with e.g. machine instability or
-heterogeneity of the analysed sample. Upon detection, anomalous values
-can be omitted or further analysed to delineate the source of variation.
+raw ion count data into ion and isotope ratios of point-sourced
+measurements. Combined with statistics for the internal and external
+precision of, respectively, individual analyses and complete series of
+analyses, this functionality allows for the interrogation of the
+analytical consistency. Access to raw ion count data is, furthermore,
+useful as it allows detection of anomalous values associated with
+e.g. machine instability or heterogeneity of the analysed sample. Upon
+detection, anomalous values can be omitted or further analysed to
+delineate the source of variation.
+
+The point package is still under development but the master branch is
+functioning. Functionality is automatically tested with Travis CI.
 
 ## Credits
 
@@ -27,7 +34,7 @@ The construction of the R (R Core Team 2020) package *point* and
 associated documentation was aided by the packages; *devtools* (Wickham,
 Hester, and Chang 2019), *roxygen2* (Wickham, Danenberg, et al. 2019),
 *testthat* (Wickham 2011), *knitr* (Xie 2020 , 2015), *rmarkdown*
-(Allaire et al. 2019; Xie, Allaire, and Grolemund 2018), and the superb
+(Allaire et al. 2020; Xie, Allaire, and Grolemund 2018), and the superb
 guidance in the book: *R packages: organize, test, document, and share
 your code*, by Wickham (2015). In addition, this package relies on a set
 of external packages from the tidyverse universe, including: *dplyr*
@@ -45,7 +52,7 @@ You can install the released version of point
 ``` r
 # Install point from GitHub:
 # install.packages("devtools")
-devtools::install_github("point")
+devtools::install_github("MartinSchobben/point")
 ```
 
 ## Usage
@@ -172,7 +179,7 @@ variation
 
 Allaire, JJ, Yihui Xie, Jonathan McPherson, Javier Luraschi, Kevin
 Ushey, Aron Atkins, Hadley Wickham, Joe Cheng, Winston Chang, and
-Richard Iannone. 2019. *Rmarkdown: Dynamic Documents for R*.
+Richard Iannone. 2020. *Rmarkdown: Dynamic Documents for R*.
 <https://github.com/rstudio/rmarkdown>.
 
 </div>

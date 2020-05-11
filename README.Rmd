@@ -23,11 +23,14 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 [![DOI](https://zenodo.org/badge/240023228.svg)](https://zenodo.org/badge/latestdoi/240023228)
+[![Travis build status](https://travis-ci.org/MartinSchobben/point.svg?branch=master)](https://travis-ci.org/MartinSchobben/point)
 <!-- badges: end -->
 
 
 # Introduction to point
-This project was originally inspired by the lack of detailed insight in the inner workings of the default software for the *Cameca NanoSIMS50L* (Utrecht University). Hence this project has the objective of processing raw count data into ion and isotope ratios of point-sourced measurements; and to establish the internal and external precision of, respectively, individual analyses and complete series of analyses. Access to raw ion count data is useful as it allows detection of anomalous values associated with e.g. machine instability or heterogeneity of the analysed sample. Upon detection, anomalous values can be omitted or further analysed to delineate the source of variation.
+This project was originally inspired by the lack of detailed insight in the inner workings of the default software for the *Cameca NanoSIMS50L* (Utrecht University). Hence this project has the objective of processing raw ion count data into ion and isotope ratios of point-sourced measurements. Combined with statistics for the internal and external precision of, respectively, individual analyses and complete series of analyses, this functionality allows for the interrogation of the analytical consistency. Access to raw ion count data is, furthermore, useful as it allows detection of anomalous values associated with e.g. machine instability or heterogeneity of the analysed sample. Upon detection, anomalous values can be omitted or further analysed to delineate the source of variation.
+
+The point package is still under development but the master branch is functioning. Functionality is automatically tested with Travis CI.
 
 
 ```{r echo=FALSE, message=FALSE, eval=FALSE}
@@ -99,7 +102,7 @@ You can install the released version of point
 ``` r
 # Install point from GitHub:
 # install.packages("devtools")
-devtools::install_github("point")
+devtools::install_github("MartinSchobben/point")
 ```
 
 ## Usage
@@ -202,10 +205,12 @@ tb.R.ext  <- stat_R(tb.Xt,
 
 ```{r echo=FALSE}
 knitr::kable(head(tb.R.ext %>% 
-                    filter(str_detect(sample.nm, "Belemnite"))),
+                    filter(str_detect(sample.nm, "Belemnite"))
+                  ),
              format.args = list(digits = 3, 
                                 format = "G", 
-                                flag = "0")) 
+                                flag = "0")
+             ) 
 ```
 
 For more detailed information:
