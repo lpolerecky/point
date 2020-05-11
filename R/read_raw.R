@@ -250,6 +250,28 @@ point_example <- function(path = NULL) {
   }
 }
 
+
+#' Check if directory is suitable for point
+#'
+#' This function checks whether the necesarry files for the `point` read
+#' functions are included in the directory.
+#'
+#' @param directory A path or connection to a directory containing raw ion count
+#' data files.
+#' @param types Regular expression for the required file extensions. Default
+#' searches for files ending with .is_txt, .chk_is, and .stat
+#'
+#' @return A logical indicating whether the directory is suitable for `point`
+#' @export
+#' @examples
+#' ICdir_chk(point_example("2018-01-19-GLENDON"))
+ICdir_chk <-function(directory, types = c(".is_txt$", ".chk_is$", ".stat$")){
+
+  purrr::map_lgl(types, ~any(str_detect(dir(directory), .x))) %>%
+    all()
+}
+
+
 #-------------------------------------------------------------------------------
 # Function for testing and validation (NOT EXPORTET)
 #-------------------------------------------------------------------------------
@@ -508,10 +530,4 @@ fun_bl<- function(x, y) {
 
 }
 
-# Check if directory contains the correct filse necesarry for IC analysis
-ICdir_chk <-function(directory, types = c(".is_txt$", ".chk_is$", ".stat$")){
-
-  purrr::map_lgl(types, ~any(str_detect(dir(directory), .x))) %>%
-    all()
-}
 
