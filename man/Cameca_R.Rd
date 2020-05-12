@@ -2,10 +2,66 @@
 % Please edit documentation in R/diagnostics_IC.R
 \name{Cameca_R}
 \alias{Cameca_R}
-\title{Cameca style diagnostics}
+\alias{CooksD_R}
+\title{Family of diagnostics functions for isotope count ratios}
 \usage{
 Cameca_R(df, args = expr_R(NULL), ..., output)
+
+CooksD_R(df, args = expr_R(NULL), ..., output)
+}
+\arguments{
+\item{df}{A tibble with ion count data and statistics for ion- and
+isotope-wise statistics.}
+
+\item{args}{A list of quosures pertaining to the variables required for a
+call to stat_R. The function expr_R can be used to simplify setting this
+argument.}
+
+\item{...}{Variables for grouping.}
+
+\item{output}{Character string determing whether the returned values in a
+minimal version `"flag"` (original dataset + diagnostics) or an extended
+version with all the intermediate steps of ion- and isotope-wise summary
+statistics `"complete"`.}
+}
+\value{
+A t\code{\link[tibble:tibble]{tibble}} containing either the original
+dataset with new columns related to the diagnostics or only the diagnostics.
+The flag variable enables convenient filtering of the original tibble for an
+augmentation of the original dataset.
 }
 \description{
-Cameca style diagnostics
+\code{Cameca_R} default CAMECA diagnostics
+\code{CooksD_R} regression diagnostics based on Cook's D
+}
+\details{
+These functions perform a specific set of diagnostics to term anomolous
+values inr raw ion count data of an isotope pair. The wrapper function
+\code{Diag_R} is more convenient as it defines all the ion- and isotope-wise
+statistics required for the diagnostics.
+}
+\examples{
+# Use point_example() to access the examples bundled with this package
+
+# raw data containing 13C and 12C counts on carbonate
+tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
+
+# Processing raw ion count data
+tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
+
+# Descriptive an predictive statistics for 13C/12C ratios (note output
+# argument)
+tb.R <- stat_R(tb.pr, Xt.pr, N.pr, species.nm, ion1 = "13C",
+               ion2 = "12C", file.nm, bl.mt, output = "complete")
+
+# CAMECA style augmentatio of ion count data for isotope ratios
+tb.aug <- Cameca_R(tb.R,
+                   args = expr_R(Xt = "Xt.pr",
+                                 N = "N.pr",
+                                 species = "species.nm",
+                                 ion1 = "13C",
+                                 ion2 = "12C"),
+                  file.nm,
+                  bl.mt,
+                  output = "flag")
 }

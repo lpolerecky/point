@@ -76,7 +76,7 @@ ion2 <-  c("12C", "12C2", "12C 14N", "40Ca 16O")
 
 # Call function Diag_R over all ion ratio combinations  
 tb.aug <- purrr::map2(ion1, ion2, ~(diag_R(tb.pr,
-                                           method = "standard",
+                                           method = "Cameca",
                                            args = expr_R(Xt = "Xt.pr",
                                                          N = "N.pr",
                                                          species = "species.nm",
@@ -213,6 +213,49 @@ knitr::kable(tb.CAMECA_org,
 However, when comparing the summary statistics of the augmented dataset (Table \@ref(tab:aug)) with the excerpt from the Cameca stat-file (Fig. \@ref(fig:xcpcameca2)) their seems to be a substantial difference. Instead upon comparison with Table \@ref(tab:org), which consist of summary statistics calculated on the original dataset (without $\sigma$-rejection of measurements), the replication is surprisingly consistent. This heralds the question whether their might be a mistake in the Cameca software for calculating statistics on ion ratios for complete analyses. Otherwise the blockwise $\sigma$-rejection of measurements seems rather obfuscated, as it does not seem to serve an obvious purpose.
 
 ## Regression diagnostic based count optimization
-This will be included in future release.
+
+Precision monitoring by combined predictive and descriptive statistical analysis informs on errors that reflect on a combination of the random nature of secondary ion generation, purely analytical biases and artifacts resulting from the homogeneity of the analytical substrate. In an isotopically homogeneous analytical substrate the count rates of two isotope from the same element should be dependent on each other. 
+
+
+\begin{equation}
+  E(X_i^b|X_i^a) = R X_i^a \;\;\; \text{where} \;\;\; (X_i^b|X_i^a) \sim P(\lambda)
+  (\#eq:conR)
+\end{equation}
+
+As such, the static conditional mean model applies. Thus it is assumed that the count rate of a species $a$ and $b$ in one count block can be approximated with a population linear regression function.
+
+\begin{equation}
+  E(y_i|x_i) = \beta_0 + \beta_1 X_i + \epsilon_i \;\;\; \text{where} \;\;\; \epsilon_i \sim N(0,\sigma^2)
+    (\#eq:conmean)
+\end{equation}
+
+Instead of using of Ordinary Least Squares (OLS) to obtain estimates for the regression coefficients, the $\beta_1$ can be estimated based on Eq. \@ref(eq:conR). Thus $\bar{R}$ can be used as an approximation of the slope ($\hat{\beta}_1$) of the regression line. It thus follows that $\hat{\beta}_0$ should approximate $0$, as:
+
+\begin{equation}
+  \hat{\beta}_0 = \bar{y} - \hat{\beta}_1 \bar{x}
+  (\#eq:estB0)
+\end{equation}
+
+
+The $\epsilon_i$ in Eq. \@ref(eq:conmean) is a random error term consisting of independent and identicaly distributed random variables which originate from a population with a normal distribution. If the $\bar{R}$ of an analysis is derived from an homogenous subtrate and $N_i$ is sufficiently larger for both species, than $\epsilon_i$ should satisfy the following criterion:
+
+\begin{equation}
+  E(\epsilon_i|x_i) = 0
+  (\#eq:conepsi)
+\end{equation}
+
+```{r eval=FALSE}
+
+
+# raw data containing 13C and 12C counts on carbonate
+tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
+
+# Processing raw ion count data
+tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
+
+
+plot_RDiag(tb.pr, Xt.pr, N.pr, species.nm, "13C", "12C", file.nm)[[2]]
+
+```
 
 # References

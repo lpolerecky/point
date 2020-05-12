@@ -42,7 +42,7 @@ stat_lab <- function(a, b, aug = FALSE){
 #' tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
 #'
 #' # plotting Cook's D diagnostics
-#' plot_RDiag(xcp, Xt.pr, N.pr, species.nm, "13C", "12C", file.nm)
+#' plot_RDiag(tb.pr, Xt.pr, N.pr, species.nm, "13C", "12C", file.nm)
 #'
 #'
 plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device = "png", aug = TRUE , width.out = 20, height.out = 20){
@@ -91,8 +91,10 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
   lb.def <- stat_select(df.def, "original", 2.5, facets_gr = gr_by, aug = FALSE)
 
 # Stat labels for augmented dataset
-  lb.aug <- left_join(df, df.def %>% select(ID, CooksD_lab), by = "ID") %>%
-                filter(CooksD_lab == "non-influential") %>%
+  lb.aug <- left_join(df, df.def %>%
+                        select(ID, flag_CD), by = "ID"
+                      ) %>%
+                filter(flag_CD == "non-influential") %>%
                 stat_R(Xt = !! Xt,
                        N = !! N,
                        species = !! species,
@@ -102,12 +104,14 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
                 stat_select("augmented", 3.6, facets_gr = gr_by, aug = TRUE)
 
 # standard ggplot
-  gg_default <- function(df, stat.def, stat.aug, y, x, z, hat_y, ... ,title, model = FALSE){
+  gg_default <- function(df, stat.def, stat.aug, y, x, z, hat_y, hat_min, hat_max, ... ,title, model = FALSE){
 
     x <- enquo(x)
     y <- enquo(y)
     z <- enquo(z)
     hat_y <- enquo(hat_y)
+    hat_min <- enquo(hat_min)
+    hat_max <- enquo(hat_max)
     gr_by <- enquos(...)
 
     # facets groups
@@ -123,10 +127,22 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
     }
 
 # model
-  if(model == TRUE) {gg.model <- lst(geom_line(aes(y = !!hat_y, x = !!x),
-                                                 color = "green" ,
-                                                 alpha = 0.5,
-                                                 size = 1))
+  if(model == TRUE) {
+    gg.model <- lst(
+      geom_line(aes(y = !!hat_y, x = !!x),
+                color = "green" ,
+                alpha = 0.5,
+                size = 1
+                ),
+      geom_ribbon(aes(ymin = !!hat_min,
+                      ymax = !!hat_max),
+                  fill = "green",
+                  color = "transparent",
+                  alpha = 0.1
+                  )
+
+      )
+
   }else{
     gg.model <- lst(geom_blank())
     }
@@ -136,7 +152,11 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
       scale_color_manual("Cook's D",
                          values = c("non-influential" = ggplotColours(2)[2],
                                     "influential" = ggplotColours(2)[1])) +
-      guides(colour = guide_legend(override.aes = list(alpha = 1, linetype = NULL))) +
+      guides(colour = guide_legend(override.aes = list(alpha = 1,
+                                                       linetype = NULL
+                                                       )
+                                   )
+             ) +
       geom_rug(sides = "tr", alpha = 0.01) +
       gg.model +
       geom_text(data = stat.def,
@@ -166,8 +186,9 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
 
 
   crs <- gg_default(df.def, lb.def, lb.aug,  y = !!Xt1, x = !!Xt2,
-                    hat_y = hat_Y, !!!gr_by,
-                    z = CooksD_lab,
+                    hat_y = hat_Y, hat_min = NULL, hat_max = NULL,
+                    !!!gr_by,
+                    z = flag_CD,
                     title = "Cross plot" , model = TRUE) +
            xlab(substitute(""^a * b ~"(ct/sec)",
                            lst(a = as.numeric(gsub("([0-9]+).*$", "\\1", ion2)),
@@ -176,29 +197,40 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
                            lst(a = as.numeric(gsub("([0-9]+).*$", "\\1", ion1)),
                                b = as.symbol(gsub("^[0-9]+","",ion1)))))
 
+  QQ.norm <- gg_default(df.def, lb.def, lb.aug, y = RQ, x =TQ,
+                        hat_y = hat_RQ, hat_min = hat_RQ_min, hat_max = hat_RQ_max,
+                        !!!gr_by,
+                        z = flag_CD,
+                        title = "Normal QQ plot", model = TRUE) +
+    ylab("Sample quantiles") +
+    xlab("Theoretical quantiles")
+
   rs.fit <- gg_default(df.def, lb.def, lb.aug,  y = E, x = hat_Y,
-                       hat_y = NULL, !!!gr_by,
-                       z = CooksD_lab,
+                       hat_y = hat_Y, hat_min = NULL, hat_max = NULL,
+                       !!!gr_by,
+                       z = flag_CD,
                        title = "Residuals vs Fitted plot" , model = FALSE) +
               ylab(expression("residuals (" * italic(e) * ")"))+
               xlab(expression("fitted value (" * hat(y) * ")"))
 
   sc.loc <- gg_default(df.def, lb.def, lb.aug,  y = studE, x = hat_Y,
-                       hat_y = NULL, !!!gr_by,
-                       z = CooksD_lab,
+                       hat_y = hat_Y, hat_min = NULL, hat_max = NULL,
+                       !!!gr_by,
+                       z = flag_CD,
                        title = "Scale-Location plot" , model = FALSE) +
               ylab(expression("studentized residuals (" * italic(e)^"*" * ")")) +
               xlab(expression("fitted value (" * hat(y) * ")"))
 
   rs.lev <- gg_default(df.def, lb.def, lb.aug,  y = studE, x = hat_Xi,
-                       z = CooksD_lab,
-                       hat_y = NULL, !!!gr_by,
+                       z = flag_CD,
+                       hat_y = hat_Y, hat_min = NULL, hat_max = NULL,
+                       !!!gr_by,
                        title = "Residual vs Leverage plot" , model = FALSE) +
               ylab(expression("studentized residuals (" * italic(e)^"*" * ")")) +
               xlab(expression("hat-values" (italic(h))))
 
 
-  gg.pl <-lst(`1` = crs, `2` = rs.fit, `3`= sc.loc, `4`=rs.lev)
+  gg.pl <-lst(`1` = crs, `2` = QQ.norm , `3` = rs.fit, `4`= sc.loc, `5`=rs.lev)
 
   gg.sa <- function(nm, x, width.out, height.out){
 

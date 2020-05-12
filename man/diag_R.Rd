@@ -2,31 +2,37 @@
 % Please edit documentation in R/diagnostics_IC.R
 \name{diag_R}
 \alias{diag_R}
-\title{Diagnostics raw ion count data}
+\title{Diagnostics isotope count data}
 \usage{
 diag_R(df, method = "Cameca", args = expr_R(NULL), ..., output = "flag")
 }
 \arguments{
 \item{df}{A tibble containing processed ion count data.}
 
-\item{method}{Character string for the type of diagnostics. Currently only
-"standard" is supported, which pertains to the default Cameca software
-setting.}
+\item{method}{Character string for the type of diagnostics. "Cameca" pertains
+to the default Cameca software setting. "CooksD" pertains to global
+regression diagnostics based on Cook's D statistics.}
 
 \item{args}{A list of quosures pertaining to the variables required for a
 call to stat_R. The function expr_R can be used to simplify setting this
 argument.}
 
 \item{...}{Variables for grouping.}
+
+\item{output}{Character string determing whether the returned values in a
+minimal version `"flag"` (original dataset + diagnostics) or an extended
+version with all the intermediate steps of ion- and isotope-wise summary
+statistics `"complete"`.}
 }
 \value{
-A t\code{\link[tibble:tibble]{tibble}} containing the original
-dataset and new columns related to the diagnostics. The flag variable enables
-convenient filtering of the original tibble for an augmentation of the
-original dataset.
+A t\code{\link[tibble:tibble]{tibble}} containing either the original
+dataset with new columns related to the diagnostics an extended version with
+all the intermediate steps of ion- and isotope-wise summary statistics. The
+flag variable enables convenient filtering of the original tibble for an
+augmentation of the original dataset.
 }
 \description{
-\code{diag_R} function for propagation of uncertainty for single ions
+\code{diag_R} wrapper function for diagnostics on isotope count data
 }
 \details{
 The \code{diag_R} function performs an internal call to stat_R to perform
