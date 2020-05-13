@@ -66,9 +66,11 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
                                  N = as_name(N),
                                  species = as_name(species),
                                  ion1 = ion1,
-                                  ion2 = ion2),
+                                 ion2 = ion2
+                                 ),
                    !!! gr_by ,
-                   output = "complete")
+                   output = "complete"
+                   )
 
 
 # Stat labels selection
@@ -79,11 +81,13 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
       transmute(data = label,
                 lb = purrr:: map2(!!quo_updt(Xt, x = "RSeM_R"),
                                   !!quo_updt(Xt, x = "hat_RSeM_R"),
-                                  ~stat_lab(a = .x, b = .y, aug)),
+                                  ~stat_lab(a = .x, b = .y, aug
+                                            )
+                                  ),
                 vjust = pos,
-                file.nm = file.nm) %>%
+                file.nm = file.nm
+                ) %>%
       tidyr::unnest(cols = lb)
-
 
   }
 
@@ -129,17 +133,18 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
 # model
   if(model == TRUE) {
     gg.model <- lst(
-      geom_line(aes(y = !!hat_y, x = !!x),
-                color = "green" ,
-                alpha = 0.5,
-                size = 1
-                ),
+
       geom_ribbon(aes(ymin = !!hat_min,
                       ymax = !!hat_max),
                   fill = "green",
-                  color = "transparent",
+                  color = "black",
+                  linetype = 2,
                   alpha = 0.1
-                  )
+                  ),
+      geom_line(aes(y = !!hat_y, x = !!x),
+                color = "black" ,
+                size = 1
+      )
 
       )
 
@@ -148,6 +153,7 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
     }
 
     ggplot(data = df, aes(y = !!y, x = !!x, color = !!z)) +
+      gg.model +
       geom_point(alpha = 0.05) +
       scale_color_manual("Cook's D",
                          values = c("non-influential" = ggplotColours(2)[2],
@@ -158,7 +164,6 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
                                    )
              ) +
       geom_rug(sides = "tr", alpha = 0.01) +
-      gg.model +
       geom_text(data = stat.def,
                 aes(label = lb,
                     vjust = vjust),
@@ -186,10 +191,11 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
 
 
   crs <- gg_default(df.def, lb.def, lb.aug,  y = !!Xt1, x = !!Xt2,
-                    hat_y = hat_Y, hat_min = NULL, hat_max = NULL,
+                    hat_y = hat_Y, hat_min = hat_Y - 2 * sigma, hat_max =  hat_Y + 2 * sigma,
                     !!!gr_by,
                     z = flag_CD,
                     title = "Cross plot" , model = TRUE) +
+
            xlab(substitute(""^a * b ~"(ct/sec)",
                            lst(a = as.numeric(gsub("([0-9]+).*$", "\\1", ion2)),
                                b = as.symbol(gsub("^[0-9]+","",ion2))))) +

@@ -214,22 +214,22 @@ However, when comparing the summary statistics of the augmented dataset (Table \
 
 ## Regression diagnostic based count optimization
 
-Precision monitoring by combined predictive and descriptive statistical analysis informs on errors that reflect on a combination of the random nature of secondary ion generation, purely analytical biases and artifacts resulting from the homogeneity of the analytical substrate. In an isotopically homogeneous analytical substrate the count rates of two isotope from the same element should be dependent on each other. 
+Precision monitoring by combined predictive and descriptive statistical analysis informs on errors that reflect on a combination of the random nature of secondary ion generation, purely analytical biases and artifacts resulting from the homogeneity of the analytical substrate. In an "ideal" isotopically homogeneous analytical substrate the count rates of two isotope from the same element should be dependent on each other. 
 
 
 \begin{equation}
-  E(X_i^b|X_i^a) = R X_i^a \;\;\; \text{where} \;\;\; (X_i^b|X_i^a) \sim P(\lambda)
+  E(X_i^b|X_i^a) = RX_i^a \;\;\; \text{where} \;\;\; (X_i^b|X_i^a) \sim P(\lambda)
   (\#eq:conR)
 \end{equation}
 
-As such, the static conditional mean model applies. Thus it is assumed that the count rate of a species $a$ and $b$ in one count block can be approximated with a population linear regression function.
+In this ideal relationship the $R$ can be used to calculate the mean count rate of species $a$ at any $i$. And, variation in the count rate is only caused by the random nature of secondary ion generation. which follows a Poisson distribtuion. Thus it is assumed  that the count rate of a species $a$ and $b$ in one count block can be approximated a static conditional mean model .
 
 \begin{equation}
   E(y_i|x_i) = \beta_0 + \beta_1 X_i + \epsilon_i \;\;\; \text{where} \;\;\; \epsilon_i \sim N(0,\sigma^2)
     (\#eq:conmean)
 \end{equation}
 
-Instead of using of Ordinary Least Squares (OLS) to obtain estimates for the regression coefficients, the $\beta_1$ can be estimated based on Eq. \@ref(eq:conR). Thus $\bar{R}$ can be used as an approximation of the slope ($\hat{\beta}_1$) of the regression line. It thus follows that $\hat{\beta}_0$ should approximate $0$, as:
+This formulatiuon is also known as the population linear regression function. Instead of using of Ordinary Least Squares (OLS) to obtain estimates for the regression coefficients, the $\beta_1$ can be approximated with $\bar{R}$ based on Eq. \@ref(eq:conR). Furthermore, Thus can be used as an approximation of the slope ($\hat{\beta}_1$) of the regression line. It thus follows that $\hat{\beta}_0$ should approximate $0$, as:
 
 \begin{equation}
   \hat{\beta}_0 = \bar{y} - \hat{\beta}_1 \bar{x}
@@ -237,25 +237,45 @@ Instead of using of Ordinary Least Squares (OLS) to obtain estimates for the reg
 \end{equation}
 
 
-The $\epsilon_i$ in Eq. \@ref(eq:conmean) is a random error term consisting of independent and identicaly distributed random variables which originate from a population with a normal distribution. If the $\bar{R}$ of an analysis is derived from an homogenous subtrate and $N_i$ is sufficiently larger for both species, than $\epsilon_i$ should satisfy the following criterion:
-
-\begin{equation}
-  E(\epsilon_i|x_i) = 0
-  (\#eq:conepsi)
-\end{equation}
-
-```{r eval=FALSE}
+```{r regression, echo=FALSE,  fig.cap = "Regression",  fig.width=8, fig.height=6}
 
 
 # raw data containing 13C and 12C counts on carbonate
 tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
 
 # Processing raw ion count data
-tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
+tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt) 
+
+# Descriptive an predictive statistics for 13C/12C ratios
+tb.R <- stat_R(tb.pr, Xt.pr, N.pr, species.nm, ion1 = "13C",
+               ion2 = "12C", file.nm, zero = TRUE)
+
+sim_ideal <- sim_R(tb.R, M_R_Xt.pr, n = 3000, N_range = 10 ^ 6, reps = 1, sys = 0.5, type = "ideal") 
+sim_gradient <-sim_R(tb.R, M_R_Xt.pr, n = 3000, N_range = 10 ^ 6, reps = 1, sys = 0.5, type = "gradient")
 
 
-plot_RDiag(tb.pr, Xt.pr, N.pr, species.nm, "13C", "12C", file.nm)[[2]]
+gg.sim.ideal <- plot_RDiag(sim_ideal, Xt, N, species, "13C", "12C", file.nm)
+gg.sim.gradient <- plot_RDiag(sim_gradient, Xt, N, species, "13C", "12C", file.nm)
+
+library(patchwork)
+gg.sim.ideal[[1]] + gg.sim.gradient[[1]]
 
 ```
+
+The $\epsilon_i$ in Eq. \@ref(eq:conmean) is a random error term consisting of independent and identicaly distributed random variables which originate from a population with a normal distribution. 
+
+```{r normres, echo=FALSE, fig.cap = "Quantile-Quantile plot to test normality of residuals",  fig.width=8, fig.height=6}
+
+ls.diags[[2]] 
+
+```
+
+If the $\bar{R}$ of an analysis is derived from an homogenous subtrate and $N_i$ is sufficiently larger for both species, than $\epsilon_i$ should satisfy the following criterion:
+
+\begin{equation}
+  E(\epsilon_i|x_i) = 0
+  (\#eq:conepsi)
+\end{equation}
+
 
 # References

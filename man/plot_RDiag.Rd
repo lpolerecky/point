@@ -51,7 +51,7 @@ tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
 tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
 
 # plotting Cook's D diagnostics
-plot_RDiag(xcp, Xt.pr, N.pr, species.nm, "13C", "12C", file.nm)
+plot_RDiag(tb.pr, Xt.pr, N.pr, species.nm, "13C", "12C", file.nm)
 
 
 }

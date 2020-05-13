@@ -200,6 +200,8 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
                         expr(.data$E),
                         expr(.data$sigma),
                         expr(.data$hat_Y),
+                        expr(.data$hat_Y_min),
+                        expr(.data$hat_Y_max),
                         expr(.data$hat_Xi),
                         expr(.data$studE),
                         expr(.data$CooksD),
@@ -210,7 +212,7 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
                         expr(.data$hat_RQ),
                         expr(.data$hat_RQ_min),
                         expr(.data$hat_RQ_max),
-                        # expr(.data$flag_QQ)
+                        expr(.data$flag_QQ)
                          ),
            complete = call2( "invisible", expr(.)),
     )
@@ -219,40 +221,33 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
   df %>%
     group_by(!!! gr_by) %>%
     mutate(
-# Sum of squared deviation from the mean of x (SSX)
-           SSX = sum((!! quo_updt(my_q = args[["Xt"]],
-                                  txt = as_name(args[["ion2"]])) -
-                      !! quo_updt(my_q = args[["Xt"]],
-                                  txt = as_name(args[["ion2"]]),
-                                  x = "M")) ^ 2),
 # Hat values
-           hat_Xi = purrr::pmap_dbl(
-             list(Xi = !! quo_updt(my_q = args[["Xt"]],
-                                 txt = as_name(args[["ion2"]])),
-                  M_X = !! quo_updt(my_q = args[["Xt"]],
-                                    txt = as_name(args[["ion2"]]),
-                                    x = "M"),
-                  SSX = SSX,
-                  n = !! quo_updt(my_q = args[["Xt"]],
-                                  txt = as_name(args[["ion2"]]),
-                                  x = "n")),
-                                    hat_calc),
+           hat_Xi = stats::hat(!! quo_updt(my_q = args[["Xt"]],
+                                            txt = as_name(args[["ion2"]])
+                                           )
+                               ),
 # modelled Y values
-           hat_Y = purrr::map2_dbl(!! quo_updt(my_q = args[["Xt"]],
-                                               x = "M_R"),
-                                   !! quo_updt(my_q = args[["Xt"]],
-                                               txt = as_name(args[["ion2"]])),
-                                   ~{.x * .y}),
+           hat_Y = !! quo_updt(my_q = args[["Xt"]],
+                               x = "M_R"
+                               ) *
+                   !! quo_updt(my_q = args[["Xt"]],
+                               txt = as_name(args[["ion2"]])
+                               ),
+
 # residuals
-           E = purrr::map2_dbl(!! quo_updt(my_q = args[["Xt"]],
-                                           txt = as_name(args[["ion1"]])),
-                               hat_Y,
-                               ~{.x - .y}),
+           E = !! quo_updt(my_q = args[["Xt"]],
+                           txt = as_name(args[["ion1"]])
+                           ) - hat_Y,
 # Standard error of the regression
            sigma = sigma_calc(E),
+# 95 CI of the regression
+           hat_Y_min = hat_Y - 2 * hat_Y_se(sigma, hat_Xi),
+           hat_Y_max = hat_Y + 2 * hat_Y_se(sigma, hat_Xi),
 # Mean Square Error
            MSE = sum(E ^ 2) / !! quo_updt(my_q = args[["Xt"]],
-                                          x = "n_R")) %>%
+                                          x = "n_R"
+                                          )
+            ) %>%
     tidyr::nest() %>%
     mutate(
 # jackknifed mean R
@@ -323,18 +318,12 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
                                             )
                                 ),
           hat_RQ_min =  hat_RQ - 2 * hat_RQ_se,
-          hat_RQ_max =  hat_RQ + 2 * hat_RQ_se
-          # flag_QQ = purrr::pmap_chr(lst(a = RQ,
-          #                               b = hat_RQ_min,
-          #                               c = hat_RQ_max
-          #                               ),
-          #                          ~function(a = a, b = b, c = c){
-          #                            if_else(between(a, b, c),
-          #                                   "normal",
-          #                                   "non-normal"
-          #                                   )
-          #                           }
-          #                          )
+          hat_RQ_max =  hat_RQ + 2 * hat_RQ_se,
+          flag_QQ = case_when(
+            RQ >= hat_RQ_min & RQ <= hat_RQ_max ~ "normal",
+            RQ > hat_RQ_max ~ "non-normal",
+            RQ < hat_RQ_min ~ "non-normal"
+            )
           ) %>%
     ungroup() %>%
     eval_tidy(expr =  mod_out(output))
@@ -342,38 +331,6 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
 
 
 
-
-
-
-
-#
-# mutate(RQ = hat_E_star)  %>%
-#   # use the formula i - 0.5/ in, for i = 1,..,n
-#   # this is a vector of the n probabilities ( theoretical cumulative distribution function CDF)
-#   mutate(probs = ((1:unique(!!n.Xt2)) - 0.5) / (unique(!!n.Xt2)),
-#          # calculate normal (Theoretical) quantiles using mean and standard deviation from
-#          TQ = qnorm(probs, mean(RQ), sd(RQ)),
-#          # the standard error is calculated with,
-#          hat_RQ = mean(RQ) + sd(RQ) * TQ,
-#          hat_RQ_se = (sd(RQ) / dnorm(TQ)) * sqrt((probs * (1 - probs))/ unique(!!n.Xt2)),
-#          hat_RQ_min =  hat_RQ - 2 * hat_RQ_se,
-#          hat_RQ_max =  hat_RQ + 2 * hat_RQ_se)  %>%
-#   rowwise() %>%
-#   mutate(RQ_lab = if_else(between(RQ, hat_RQ_min, hat_RQ_max),
-#                           "normal", "non-normal")) %>%
-#   ungroup()
-
-
-# use the formula i - 0.5/ in, for i = 1,..,n
-# this is a vector of the n probabilities ( theoretical cumulative distribution function CDF)
-vector_probs <- function(n){
-  ((1:unique(n)) - 0.5) / (unique(n))
-}
-
-# standard error of quantiles model
-hat_QR_se <- function(RQ, TQ, pb, n){
-  (sd(RQ) / dnorm(TQ)) * sqrt((pb * (1 - pb))/ unique(n))
-  }
 #' Create stat_R call quosure
 #'
 #' \code{expr_R} function to generate an quosure that mimics a stat_R call
@@ -412,12 +369,24 @@ expr_R <- function(Xt, N, species, ion1, ion2){
 # Not exportet helper functions
 #-------------------------------------------------------------------------------
 
-# Hat value calculcator
-hat_calc <- function(Xi, M_X, SSX, n) ((Xi - M_X)^2 / SSX) + (1 / n)
+# use the formula i - 0.5/ in, for i = 1,..,n
+# this is a vector of the n probabilities ( theoretical cumulative distribution function CDF)
+vector_probs <- function(n){
+  ((1:unique(n)) - 0.5) / (unique(n))
+}
+
+# standard error of quantiles model
+hat_QR_se <- function(RQ, TQ, pb, n){
+  (sd(RQ) / dnorm(TQ)) * sqrt((pb * (1 - pb))/ unique(n))
+}
+# confidence interval regression model
+hat_Y_se <- function(sigma, hat){
+  sigma * sqrt(hat)
+}
 
 # Standard error of regression calculator
 #' @export
-sigma_calc <- function(res) sqrt(sum(res ^ 2) / (length(res) - 2))
+sigma_calc <- function(res) sqrt(sum((res ^ 2)) / (length(res) - 2))
 
 #' Studentized residuals calculator
 #' @export
@@ -458,4 +427,84 @@ jack_sigma <- function(df, res){
   sigma_i <- c((resample::jackknife(res, sigma_calc))$replicates)
 
 }
+
+
+sim_R <- function(real, R, n = 3000, N_range = 10 ^ 6, reps = 1, sys = 0.1, ion1 = "13C", ion2 = "12C", type = "ideal"){
+
+  R <- enquo(R)
+
+  tibble::tibble(file.nm = paste(type, N_range, sep = "-"),
+                 N = N_range,
+                 n = n
+                 ) %>%
+    tidyr::expand_grid(., rep = c(1:reps), species = c(ion1, ion2)) %>%
+    mutate(file.nm = paste(file.nm, rep, sep = "-")) %>%
+    group_by(file.nm, species) %>%
+    tidyr::nest() %>%
+# random variation (Number generation)
+    mutate(N = purrr::map(data, N_gen)) %>%
+    tidyr::unnest(cols = c(N)) %>%
+    select(-data)  %>%
+# systematic variation
+    #
+    mutate(n.rw = n(),
+           minN = min(N),
+           maxN = max(N),
+           varN = var(N)) %>%
+    mutate(N = scales::rescale(N, to = c(unique(minN) - sys * unique(varN), unique(maxN) + sys * unique(varN)))) %>%
+    ungroup() %>%
+# # Calculate N of abundant isotope species
+    mutate(N = if_else(species == ion2, iso_conv(real, N, !!R, type = type), N)) %>%
+    mutate(Xt = N)
+}
+
+
+# random Poisson ion count generator
+N_gen <- function(df, N, n) {
+
+  N <- df %>% pull(N)
+  n <- df %>% pull(n)
+
+  Nsim <- as.double(
+    rpois(n = n, lambda = N / n)
+    )
+
+  }
+
+# calculate common isotope count from rare isotope
+iso_conv <- function(real, N, R, type) {
+
+  R <- enquo(R)
+
+  sum <- real %>% summarise_at(vars(!! R), c(mean = mean , sd = sd, min = min, max = max))
+
+  if (type == "ideal") R.sel <- rep(sum$mean, length(N))
+  if (type == "gradient") R.sel <-  iso_gradient(length(N), sum$min, sum$max, sum$mean, sum$sd)
+
+
+  N.ev <- N * (1 / R.sel)
+  N.ev <- round(N.ev, digits = 0)
+
+  }
+
+
+
+iso_gradient <- function(n, min, max, mean, sd) {
+  Rsim <- c(
+    truncnorm::rtruncnorm(n / 2,
+                          a = min,
+                          b = max,
+                          mean = mean - sd,
+                          sd = sd / 2
+                          ),
+    truncnorm::rtruncnorm(n / 2,
+                          a = min,
+                          b = max,
+                          mean = mean + sd,
+                          sd = sd / 2
+                       )
+  )
+  }
+
+
 
