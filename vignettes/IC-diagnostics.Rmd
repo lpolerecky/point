@@ -210,29 +210,29 @@ knitr::kable(tb.CAMECA_org,
              ) 
 ```
 
-However, when comparing the summary statistics of the augmented dataset (Table \@ref(tab:aug)) with the excerpt from the Cameca stat-file (Fig. \@ref(fig:xcpcameca2)) their seems to be a substantial difference. Instead upon comparison with Table \@ref(tab:org), which consist of summary statistics calculated on the original dataset (without $\sigma$-rejection of measurements), the replication is surprisingly consistent. This heralds the question whether their might be a mistake in the Cameca software for calculating statistics on ion ratios for complete analyses. Otherwise the blockwise $\sigma$-rejection of measurements seems rather obfuscated, as it does not seem to serve an obvious purpose.
+However, when comparing the summary statistics of the augmented dataset (Table \@ref(tab:aug)) with the excerpt from the Cameca stat-file (Fig. \@ref(fig:xcpcameca2)) their seems to be a substantial difference. Instead upon comparison with Table \@ref(tab:org), which consist of summary statistics calculated on the original dataset (without $\sigma$-rejection of measurements), the replication is surprisingly consistent. This heralds the question whether there might be a mistake in the Cameca software for calculating statistics on ion ratios for complete analyses. Otherwise the blockwise $\sigma$-rejection of measurements seems rather obfuscated, as it does not seem to serve an obvious purpose.
 
 ## Regression diagnostic based count optimization
 
-Precision monitoring by combined predictive and descriptive statistical analysis informs on errors that reflect on a combination of the random nature of secondary ion generation, purely analytical biases and artifacts resulting from the homogeneity of the analytical substrate. In an "ideal" isotopically homogeneous analytical substrate the count rates of two isotope from the same element should be dependent on each other. 
-
+Precision monitoring by combined predictive and descriptive statistical analysis informs on errors that reflect on a combination of the random nature of secondary ion generation, purely analytical biases and artifacts resulting from the homogeneity of the analytical substrate. In an "ideal" isotopically homogeneous analytical substrate the count rates of two isotope from the same element should be dependent on each other. Thus, even though the ionization efficiency might vary within a single analysis, the count rate of an isotope species $b$ can be deduced from the count rate of isotope species $a$ through a linear combination with the isotope ratio $R$:
 
 \begin{equation}
   E(X_i^b|X_i^a) = RX_i^a \;\;\; \text{where} \;\;\; (X_i^b|X_i^a) \sim P(\lambda)
   (\#eq:conR)
 \end{equation}
 
-In this ideal relationship the $R$ can be used to calculate the mean count rate of species $a$ at any $i$. And, variation in the count rate is only caused by the random nature of secondary ion generation. which follows a Poisson distribtuion. Thus it is assumed  that the count rate of a species $a$ and $b$ in one count block can be approximated a static conditional mean model .
+Variation in this linear count rate relationship is then only caused by the random nature of secondary ion generation, which follows a Poisson distribtuion. If, however, $N_i$ is sufficiently larger for both isotope species, the previous linear combination (Eq. \@ref(eq:conR)) should approximate: 
 
 \begin{equation}
-  E(y_i|x_i) = \beta_0 + \beta_1 X_i + \epsilon_i \;\;\; \text{where} \;\;\; \epsilon_i \sim N(0,\sigma^2)
+  E(y_i|x_i) = \beta_0 + \beta_1 x_i + \epsilon_i \;\;\; \text{where} \;\;\; \epsilon_i \sim N(0,\sigma^2)
     (\#eq:conmean)
 \end{equation}
 
-This formulatiuon is also known as the population linear regression function. Instead of using of Ordinary Least Squares (OLS) to obtain estimates for the regression coefficients, the $\beta_1$ can be approximated with $\bar{R}$ based on Eq. \@ref(eq:conR). Furthermore, Thus can be used as an approximation of the slope ($\hat{\beta}_1$) of the regression line. It thus follows that $\hat{\beta}_0$ should approximate $0$, as:
+where, a vector of independent values $x$ and a vector of coefficients ($\beta$) can be used to express the conditional mean of $y$ at any $i$
+This formulatiuon is also known as the population linear regression function. Instead of using of Ordinary Least Squares (OLS) to obtain estimates for the regression coefficients, the $\bar{R}$ can be used as an approximation of $\beta$. Substituting Eq. \@ref(eq:conR) in Eq. \@ref(eq:conmean) suggests that $\hat{\beta}_0$ should approximate $0$:
 
 \begin{equation}
-  \hat{\beta}_0 = \bar{y} - \hat{\beta}_1 \bar{x}
+  \hat{\beta}_0 = \bar{y} - \hat{\beta}_1 \bar{x} = 0
   (\#eq:estB0)
 \end{equation}
 
@@ -250,27 +250,78 @@ tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
 tb.R <- stat_R(tb.pr, Xt.pr, N.pr, species.nm, ion1 = "13C",
                ion2 = "12C", file.nm, zero = TRUE)
 
-sim_ideal <- sim_R(tb.R, M_R_Xt.pr, n = 3000, N_range = 10 ^ 6, reps = 1, sys = 0.5, type = "ideal") 
-sim_gradient <-sim_R(tb.R, M_R_Xt.pr, n = 3000, N_range = 10 ^ 6, reps = 1, sys = 0.5, type = "gradient")
+# types of R variation
+var_R <- c("ideal", "constant", "gradient")
 
+# simulate isotope ion counts
+sim_R <- purrr::map_dfr(var_R, ~sim_R(tb.R, M_R_Xt.pr, ion1 = "13C", ion2 = "12C", sys = 0, type = .x))
+sim_R_sys <- purrr::map_dfr(var_R, ~sim_R(tb.R, M_R_Xt.pr, ion1 = "13C", ion2 = "12C", sys = 0.1, type = .x))
 
-gg.sim.ideal <- plot_RDiag(sim_ideal, Xt, N, species, "13C", "12C", file.nm)
-gg.sim.gradient <- plot_RDiag(sim_gradient, Xt, N, species, "13C", "12C", file.nm)
+# diagnostics and plots of simulations
+gg.sim <- plot_RDiag(sim_R, Xt.pois, N.pois, species, "13C", "12C", file.nm)
+gg.sim_sys <- plot_RDiag(sim_R_sys, Xt.sys, N.sys, species, "13C", "12C", file.nm)
 
 library(patchwork)
-gg.sim.ideal[[1]] + gg.sim.gradient[[1]]
+gg.sim[[1]] / gg.sim_sys[[1]]
+```
+
+
+
+
+```{r gradient, echo=FALSE,  fig.cap = "Regression",  fig.width=8, fig.height=6}
+
+sim.R <- purrr::map_dfr(var_R, ~sim_R(tb.R, M_R_Xt.pr, reps = 100, ion1 = "13C", ion2 = "12C", sys = 0.1, type = .x))
+
+# Diagnostics
+sim.dia <- diag_R(sim.R,
+                     method = "CooksD",
+                     args = expr_R(Xt = "Xt.pois",
+                                   N = "N.pois",
+                                   species = "species",
+                                   ion1 = "13C",
+                                   ion2 = "12C"),
+                     file.nm,
+                     output = "flag")
+
+# Original
+sim.R <- stat_R(sim.R, Xt.pois, N.pois, species, ion1 = "13C",
+                ion2 = "12C", file.nm) 
+
+# Augmentation
+sim.aug <- sim.dia %>%
+  filter(flag_CD == "non-influential") %>%
+  stat_R(., Xt.pois, N.pois, species, ion1 = "13C",
+         ion2 = "12C", file.nm)
+
+sim.trj <- left_join(sim.R, sim.aug, by ="file.nm", suffix = c(".org", ".aug")) %>% 
+  mutate(theta = log(RSeM_R_Xt.pois.org / RSeM_R_Xt.pois.aug),
+         hat_theta = log(hat_RSeM_R_Xt.pois.org / hat_RSeM_R_Xt.pois.aug)) %>%
+  tidyr::separate(file.nm, sep = "-", c("file.nm", "rep", "exp"))
+
+
+xlab <- expression(log(frac(epsilon[bar(R)],epsilon[bar(R)]^"*")))
+ylab <- expression(log(frac(hat(epsilon)[bar(R)], hat(epsilon)[bar(R)]^"*")))
+
+
+ggplot(sim.trj , aes(x = theta, y = hat_theta)) +
+  stat_density_2d(geom = "polygon", aes(alpha = stat(level), fill = file.nm), color = "grey") +
+  geom_point(shape = 3) +
+  scale_y_continuous(trans = "reverse") +
+  theme_classic() +
+  xlab(xlab) + ylab(ylab)+
+  scale_alpha(guide = "none")+
+  ggtitle("simulations")
 
 ```
 
 The $\epsilon_i$ in Eq. \@ref(eq:conmean) is a random error term consisting of independent and identicaly distributed random variables which originate from a population with a normal distribution. 
 
 ```{r normres, echo=FALSE, fig.cap = "Quantile-Quantile plot to test normality of residuals",  fig.width=8, fig.height=6}
-
-ls.diags[[2]] 
+gg.sim[[5]] / gg.sim_sys[[5]]
 
 ```
 
-If the $\bar{R}$ of an analysis is derived from an homogenous subtrate and $N_i$ is sufficiently larger for both species, than $\epsilon_i$ should satisfy the following criterion:
+If the $\bar{R}$ of an analysis is derived from an homogenous subtrate, than $\epsilon_i$ should satisfy the following criterion:
 
 \begin{equation}
   E(\epsilon_i|x_i) = 0

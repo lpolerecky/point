@@ -428,83 +428,106 @@ jack_sigma <- function(df, res){
 
 }
 
+#' @export
+sim_R <- function(real, R.real, n = 3000, N_range = 10 ^ 6, reps = 1, ion1, ion2, sys,type){
 
-sim_R <- function(real, R, n = 3000, N_range = 10 ^ 6, reps = 1, sys = 0.1, ion1 = "13C", ion2 = "12C", type = "ideal"){
+  R.real <- enquo(R.real)
 
-  R <- enquo(R)
+  trend <- as.integer(seq(N_range  / n * (1 - sys), N_range / n * (1 + sys), length.out = n))
+  intercept <- as.integer(N_range / n)
 
   tibble::tibble(file.nm = paste(type, N_range, sep = "-"),
-                 N = N_range,
-                 n = n
+                 n = n,
+                 N = as.integer(N_range)
                  ) %>%
     tidyr::expand_grid(., rep = c(1:reps), species = c(ion1, ion2)) %>%
-    mutate(file.nm = paste(file.nm, rep, sep = "-")) %>%
-    group_by(file.nm, species) %>%
+    mutate(file.nm = paste(.data$file.nm, .data$rep, sep = "-")) %>%
+# Calculate N of abundant isotope species
+    group_by(.data$file.nm, .data$species) %>%
+    tidyr::nest() %>%
+    mutate(R.sim = purrr::map(.data$data, ~R_gen(.x, n, real, !! R.real, type = type))) %>%
+    tidyr::unnest(cols = c(.data$data, .data$R.sim)) %>%
+    mutate(N = if_else(species == ion2, iso_conv(.data$N, .data$R.sim), .data$N)) %>%
     tidyr::nest() %>%
 # random variation (Number generation)
-    mutate(N = purrr::map(data, N_gen)) %>%
-    tidyr::unnest(cols = c(N)) %>%
-    select(-data)  %>%
+    mutate(N.pois = purrr::map(.data$data, ~N_gen(.x, N, n))) %>%
+    tidyr::unnest(cols = c(.data$data, .data$N.pois)) %>%
+
 # systematic variation
-    #
-    mutate(n.rw = n(),
-           minN = min(N),
-           maxN = max(N),
-           varN = var(N)) %>%
-    mutate(N = scales::rescale(N, to = c(unique(minN) - sys * unique(varN), unique(maxN) + sys * unique(varN)))) %>%
+    mutate(diff = trend - intercept,
+           diff = if_else(species == ion2, iso_conv(.data$diff, .data$R.sim), .data$diff),
+           N.sys = .data$N.pois + .data$diff) %>%
     ungroup() %>%
-# # Calculate N of abundant isotope species
-    mutate(N = if_else(species == ion2, iso_conv(real, N, !!R, type = type), N)) %>%
-    mutate(Xt = N)
+    mutate(N.pois = as.double(.data$N.pois),
+           N.sys = as.double(.data$N.sys),
+           Xt.pois = .data$N.pois,
+           Xt.sys = .data$N.sys)
 }
 
-
+#
 # random Poisson ion count generator
 N_gen <- function(df, N, n) {
+  N <- enquo(N)
+  n <- enquo(n)
 
-  N <- df %>% pull(N)
-  n <- df %>% pull(n)
+  N <- df %>% pull(!! N)
+  n <- df %>% pull(!! n)
 
-  Nsim <- as.double(
-    rpois(n = n, lambda = N / n)
-    )
+  Nsim <- rpois(n = n, lambda = N / n)
 
   }
 
 # calculate common isotope count from rare isotope
-iso_conv <- function(real, N, R, type) {
+iso_conv <- function(N, R.sim)  as.integer(N * (1 / R.sim))
 
+R_gen <- function(df, n, real, R, type) {
+  n <- enquo(n)
   R <- enquo(R)
+
+  n <- df %>% pull(!! n)
 
   sum <- real %>% summarise_at(vars(!! R), c(mean = mean , sd = sd, min = min, max = max))
 
-  if (type == "ideal") R.sel <- rep(sum$mean, length(N))
-  if (type == "gradient") R.sel <-  iso_gradient(length(N), sum$min, sum$max, sum$mean, sum$sd)
+  if (type == "ideal") {
+    R.sim <- rep(0.0107, n)
+    return(R.sim)
+    }
+
+  if (type == "constant"){
+
+    R.sim <- approx(c(1, 5 * n /6, n),
+                    c(0.0107, 0.0111, 0.0111),
+                    n = n ,
+                    method = "constant")$y
+    return(R.sim)
+    }
+
+  if (type == "gradient") {
 
 
-  N.ev <- N * (1 / R.sel)
-  N.ev <- round(N.ev, digits = 0)
+    R.sim <- approx(c(1, n),
+                    c(0.0111, 0.0107),
+                    n = n ,
+                    method = "linear")$y
 
+   # R.sim <- c(
+   #   truncnorm::rtruncnorm(n / 2,
+   #                         a = sum$min,
+   #                         b = sum$max,
+   #                         mean = sum$mean - sum$sd,
+   #                         sd = sum$sd / 2
+   #                         ),
+   #   truncnorm::rtruncnorm(n / 2,
+   #                         a = sum$min,
+   #                         b = sum$max,
+   #                         mean = sum$mean + sum$sd,
+   #                         sd = sum$sd / 2
+   #                         )
+   #            )
+   return(R.sim)
+    }
   }
 
-
-
-iso_gradient <- function(n, min, max, mean, sd) {
-  Rsim <- c(
-    truncnorm::rtruncnorm(n / 2,
-                          a = min,
-                          b = max,
-                          mean = mean - sd,
-                          sd = sd / 2
-                          ),
-    truncnorm::rtruncnorm(n / 2,
-                          a = min,
-                          b = max,
-                          mean = mean + sd,
-                          sd = sd / 2
-                       )
-  )
-  }
 
 
 

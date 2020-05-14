@@ -85,7 +85,7 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
                                             )
                                   ),
                 vjust = pos,
-                file.nm = file.nm
+                !!! facets_gr
                 ) %>%
       tidyr::unnest(cols = lb)
 
@@ -236,7 +236,7 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
               xlab(expression("hat-values" (italic(h))))
 
 
-  gg.pl <-lst(`1` = crs, `2` = QQ.norm , `3` = rs.fit, `4`= sc.loc, `5`=rs.lev)
+  gg.pl <-lst(`1` = crs, `2` = QQ.norm , `3` = rs.fit, `4`= sc.loc, `5` = rs.lev, data = lst(lb.def, lb.aug))
 
   gg.sa <- function(nm, x, width.out, height.out){
 
