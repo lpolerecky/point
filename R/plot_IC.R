@@ -96,9 +96,9 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
 
 # Stat labels for augmented dataset
   lb.aug <- left_join(df, df.def %>%
-                        select(ID, flag_CD), by = "ID"
+                        select(ID, flag), by = "ID"
                       ) %>%
-                filter(flag_CD == "non-influential") %>%
+                filter(flag == "non-influential") %>%
                 stat_R(Xt = !! Xt,
                        N = !! N,
                        species = !! species,
@@ -193,7 +193,7 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
   crs <- gg_default(df.def, lb.def, lb.aug,  y = !!Xt1, x = !!Xt2,
                     hat_y = hat_Y, hat_min = hat_Y - 2 * sigma, hat_max =  hat_Y + 2 * sigma,
                     !!!gr_by,
-                    z = flag_CD,
+                    z = flag,
                     title = "Cross plot" , model = TRUE) +
 
            xlab(substitute(""^a * b ~"(ct/sec)",
@@ -206,7 +206,7 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
   QQ.norm <- gg_default(df.def, lb.def, lb.aug, y = RQ, x =TQ,
                         hat_y = hat_RQ, hat_min = hat_RQ_min, hat_max = hat_RQ_max,
                         !!!gr_by,
-                        z = flag_CD,
+                        z = flag,
                         title = "Normal QQ plot", model = TRUE) +
     ylab("Sample quantiles") +
     xlab("Theoretical quantiles")
@@ -214,7 +214,7 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
   rs.fit <- gg_default(df.def, lb.def, lb.aug,  y = E, x = hat_Y,
                        hat_y = hat_Y, hat_min = NULL, hat_max = NULL,
                        !!!gr_by,
-                       z = flag_CD,
+                       z = flag,
                        title = "Residuals vs Fitted plot" , model = FALSE) +
               ylab(expression("residuals (" * italic(e) * ")"))+
               xlab(expression("fitted value (" * hat(y) * ")"))
@@ -222,13 +222,13 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
   sc.loc <- gg_default(df.def, lb.def, lb.aug,  y = studE, x = hat_Y,
                        hat_y = hat_Y, hat_min = NULL, hat_max = NULL,
                        !!!gr_by,
-                       z = flag_CD,
+                       z = flag,
                        title = "Scale-Location plot" , model = FALSE) +
               ylab(expression("studentized residuals (" * italic(e)^"*" * ")")) +
               xlab(expression("fitted value (" * hat(y) * ")"))
 
   rs.lev <- gg_default(df.def, lb.def, lb.aug,  y = studE, x = hat_Xi,
-                       z = flag_CD,
+                       z = flag,
                        hat_y = hat_Y, hat_min = NULL, hat_max = NULL,
                        !!!gr_by,
                        title = "Residual vs Leverage plot" , model = FALSE) +

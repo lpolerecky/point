@@ -176,8 +176,8 @@ Cameca_R <- function(df, args = expr_R(NULL), ..., output){
              between(!! quo_updt(my_q = args[["Xt"]], x = "R"),
                      unique(.data$lower),  # mean - 2SD
                      unique(.data$upper)), # mean + 2SD
-             "good",
-             "bad"
+             "non-influential",
+             "influential"
              )
            ) %>%
     ungroup() %>%
@@ -206,7 +206,7 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
                         expr(.data$studE),
                         expr(.data$CooksD),
                         expr(.data$CooksD_cf),
-                        expr(.data$flag_CD),
+                        expr(.data$flag),
                         expr(.data$RQ),
                         expr(.data$TQ),
                         expr(.data$hat_RQ),
@@ -293,7 +293,7 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
                                                   ),
                                       cooksD_cut_calc
                                       ),
-           flag_CD = if_else(CooksD > CooksD_cf, "influential", "non-influential")
+           flag = if_else(CooksD > CooksD_cf, "influential", "non-influential")
           ) %>%
 # normality test
     mutate(RQ = studE) %>%
@@ -429,39 +429,59 @@ jack_sigma <- function(df, res){
 }
 
 #' @export
-sim_R <- function(real, R.real, n = 3000, N_range = 10 ^ 6, reps = 1, ion1, ion2, sys,type){
+sim_R <- function(n = 3000, N_range = 10 ^ 6, reps = 1, ion1, ion2, sys, type, baseR = NULL, offsetR = NULL){
 
-  R.real <- enquo(R.real)
+  average_n <- N_range / n
+  start_n <- n
 
-  trend <- as.integer(seq(N_range  / n * (1 - sys), N_range / n * (1 + sys), length.out = n))
-  intercept <- as.integer(N_range / n)
-
-  tibble::tibble(file.nm = paste(type, N_range, sep = "-"),
-                 n = n,
-                 N = as.integer(N_range)
-                 ) %>%
-    tidyr::expand_grid(., rep = c(1:reps), species = c(ion1, ion2)) %>%
-    mutate(file.nm = paste(.data$file.nm, .data$rep, sep = "-")) %>%
+  ls.sim <- lst(
+    a = tibble::tibble(simulation = type,
+                       n = n,
+                       N = as.integer(N_range),
+                       R.input = R_gen(start_n,
+                                       baseR,
+                                       offsetR,
+                                       input = "delta",
+                                       type = type
+                                       ),
+                       drift = seq(average_n * (1 - sys), average_n * (1 + sys),
+                                   length.out = start_n
+                                   ),
+                       intercept = average_n
+                       ) %>%
+      tidyr::expand_grid(., rep = c(1:reps), species = c(ion1, ion2)) %>%
+      mutate(simulation = paste(.data$simulation, .data$rep, sep = "-")) %>%
+# convert common isotope N
+      mutate(N = if_else(species == ion2, iso_conv(.data$N, .data$R.input), .data$N)) %>%
 # Calculate N of abundant isotope species
-    group_by(.data$file.nm, .data$species) %>%
-    tidyr::nest() %>%
-    mutate(R.sim = purrr::map(.data$data, ~R_gen(.x, n, real, !! R.real, type = type))) %>%
-    tidyr::unnest(cols = c(.data$data, .data$R.sim)) %>%
-    mutate(N = if_else(species == ion2, iso_conv(.data$N, .data$R.sim), .data$N)) %>%
-    tidyr::nest() %>%
+      group_by(.data$simulation, .data$species) %>%
+      tidyr::nest() %>%
 # random variation (Number generation)
-    mutate(N.pois = purrr::map(.data$data, ~N_gen(.x, N, n))) %>%
-    tidyr::unnest(cols = c(.data$data, .data$N.pois)) %>%
+      mutate(N.sim= purrr::map(.data$data, ~N_gen(.x, N, n))) %>%
+      tidyr::unnest(cols = c(.data$data, .data$N.sim)) %>%
+      ungroup() %>%
+      mutate(Xt.sim = .data$N.sim,
+             trend = "no linear trend"),
 
+    b = a %>%
 # systematic variation
-    mutate(diff = trend - intercept,
-           diff = if_else(species == ion2, iso_conv(.data$diff, .data$R.sim), .data$diff),
-           N.sys = .data$N.pois + .data$diff) %>%
-    ungroup() %>%
-    mutate(N.pois = as.double(.data$N.pois),
-           N.sys = as.double(.data$N.sys),
-           Xt.pois = .data$N.pois,
-           Xt.sys = .data$N.sys)
+      mutate(diff = .data$drift - .data$intercept,
+             diff = if_else(species == ion2,
+                            as.double(iso_conv(.data$diff,
+                                               .data$R.input
+                                               )
+                                      ),
+                            .data$diff
+                            ),
+             N.sim= .data$N.sim + .data$diff,
+             Xt.sim = .data$N.sim,
+             trend = paste0("linear trend (var: ", sys, ")")
+             ) %>%
+      select(-diff)
+    )
+
+  purrr::reduce(ls.sim, bind_rows) %>%
+    select(-c(drift, intercept))
 }
 
 #
@@ -473,31 +493,37 @@ N_gen <- function(df, N, n) {
   N <- df %>% pull(!! N)
   n <- df %>% pull(!! n)
 
-  Nsim <- rpois(n = n, lambda = N / n)
+  Nsim <- as.double(rpois(n = n, lambda = N / n))
 
   }
 
 # calculate common isotope count from rare isotope
 iso_conv <- function(N, R.sim)  as.integer(N * (1 / R.sim))
 
-R_gen <- function(df, n, real, R, type) {
-  n <- enquo(n)
-  R <- enquo(R)
+R_gen <- function(reps, baseR, offsetR, input = "delta", type) {
 
-  n <- df %>% pull(!! n)
+  baseR <- calib_R(baseR,
+                   standard = "VPDB",
+                   type = "composition",
+                   input = input,
+                   output = "R")
 
-  sum <- real %>% summarise_at(vars(!! R), c(mean = mean , sd = sd, min = min, max = max))
+  offsetR <- calib_R(offsetR,
+                    standard = "VPDB",
+                    type = "composition",
+                    input = input,
+                    output = "R")
 
   if (type == "ideal") {
-    R.sim <- rep(0.0107, n)
+    R.sim <- rep(baseR, reps)
     return(R.sim)
     }
 
   if (type == "constant"){
 
-    R.sim <- approx(c(1, 5 * n /6, n),
-                    c(0.0107, 0.0111, 0.0111),
-                    n = n ,
+    R.sim <- approx(c(1, 5 * reps /6, reps),
+                    c(baseR, offsetR, offsetR),
+                    n = reps ,
                     method = "constant")$y
     return(R.sim)
     }
@@ -505,25 +531,11 @@ R_gen <- function(df, n, real, R, type) {
   if (type == "gradient") {
 
 
-    R.sim <- approx(c(1, n),
-                    c(0.0111, 0.0107),
-                    n = n ,
+    R.sim <- approx(c(1, reps),
+                    c(offsetR, baseR),
+                    n = reps ,
                     method = "linear")$y
 
-   # R.sim <- c(
-   #   truncnorm::rtruncnorm(n / 2,
-   #                         a = sum$min,
-   #                         b = sum$max,
-   #                         mean = sum$mean - sum$sd,
-   #                         sd = sum$sd / 2
-   #                         ),
-   #   truncnorm::rtruncnorm(n / 2,
-   #                         a = sum$min,
-   #                         b = sum$max,
-   #                         mean = sum$mean + sum$sd,
-   #                         sd = sum$sd / 2
-   #                         )
-   #            )
    return(R.sim)
     }
   }

@@ -81,10 +81,12 @@ tb.aug <- purrr::map2(ion1, ion2, ~(diag_R(tb.pr,
                                                          N = "N.pr",
                                                          species = "species.nm",
                                                          ion1 = .x,
-                                                         ion2 = .y),
+                                                         ion2 = .y
+                                                         ),
                                            file.nm,
-                                           bl.mt) %>%
-                                      filter(flag == "good")
+                                           bl.mt
+                                           ) %>%
+                                      filter(flag == "non-influential")
                                     )
                       )
                                    
@@ -98,14 +100,19 @@ ls.CAMECA <- lst(df = tb.aug, a = ion1, b = ion2)
 fun_CAMECA <-function(df, a, b){
   
                df <- stat_R(df, Xt.pr, N.pr, species.nm, 
-                                            a, b, file.nm, bl.mt,
-                                            output = "complete") %>%   
+                            a, 
+                            b, 
+                            file.nm, 
+                            bl.mt,
+                            output = "complete"
+                            ) %>%   
                        filter(file.nm == "2018-01-19-GLENDON_1_1") %>% 
                        distinct(bl.mt, .keep_all = TRUE) %>% 
                        mutate_at(vars(contains("meas_bl.mt")), ~(. - n_R_Xt.pr)) %>% 
                        mutate(`Err_mean (%)` = RSeM_R_Xt.pr / 10,
                               `Poisson (%)` = hat_RSeM_R_Xt.pr / 10,
-                              `Ratio#` = paste(a, b, sep = "/")) %>% 
+                              `Ratio#` = paste(a, b, sep = "/")
+                              ) %>% 
                        select(`Block#` = bl.mt, 
                               `Ratio#` , 
                               "Mean" = M_R_Xt.pr, 
@@ -113,8 +120,9 @@ fun_CAMECA <-function(df, a, b){
                               N_rej = contains("meas_bl.mt")[1], 
                               `Err_mean (%)`,
                               `Poisson (%)`,
-                              "Khi2" = chi2_R_Xt.pr)
-}
+                              "Khi2" = chi2_R_Xt.pr
+                       )
+               }
 
 # Call the function
 tb.CAMECA <- purrr::pmap_dfr(ls.CAMECA, fun_CAMECA) %>% 
@@ -214,7 +222,61 @@ However, when comparing the summary statistics of the augmented dataset (Table \
 
 ## Regression diagnostic based count optimization
 
-Precision monitoring by combined predictive and descriptive statistical analysis informs on errors that reflect on a combination of the random nature of secondary ion generation, purely analytical biases and artifacts resulting from the homogeneity of the analytical substrate. In an "ideal" isotopically homogeneous analytical substrate the count rates of two isotope from the same element should be dependent on each other. Thus, even though the ionization efficiency might vary within a single analysis, the count rate of an isotope species $b$ can be deduced from the count rate of isotope species $a$ through a linear combination with the isotope ratio $R$:
+Precision monitoring by combined predictive and descriptive statistical analysis informs on errors that reflect on a combination of the random nature of secondary ion generation, purely analytical biases and artifacts resulting from the homogeneity of the analytical substrate. What now if we analyse for example a material that has heterogenity in isotope values at smaller sclaes than the beam size. 
+
+The solution seems straightforward, just compare the $R$ values of the individual measurements and see whether they are significantly different at some point during the analysis. However the situation is much more complex as I will illustrate with the following example. For this example I simulated count rates for three types of materials; 1) a substrate with a compeltely homogenous comp[osition "ideal material", 2) a subsrate with a gradient spanning the whole depth of the measurement and 3) a substrate with a sudden offset in isotope composition. In the example the total variation in two heterogenous samples spans 60 per mille, which is large for most naterual systems. Superimposed on this I also imposed a linear trend in the ionization potential, which as discussed before afflicts both isotope speceies in a similar fashion. 
+
+
+```{r plot_defaults, echo=FALSE}
+# Default ggplot theme
+theme_set(theme_classic())
+theme_replace(axis.title = element_text(size = 7),
+              axis.text = element_text(size = 8),
+              plot.background = element_rect(fill = "transparent",
+                                             color = NA),
+              panel.background = element_rect(fill = "transparent",
+                                              color = NA),
+              legend.background = element_rect(fill = "transparent",
+                                               color = NA)
+              )
+ 
+```
+
+
+
+
+```{r simulation, fig.width=12, fig.height=6}
+
+# types of R variation
+var_R <- c("ideal", "constant", "gradient")
+
+# simulate isotope ion counts with 60 per mill off set in case of variation in R
+sim_R <- purrr::map_dfr(var_R, 
+                        ~sim_R(ion1 = "13C", 
+                               ion2 = "12C", 
+                               sys = 0.1, 
+                               type = .x, 
+                               baseR = 5, 
+                               offsetR = -55
+                               )
+                          ) %>%
+  tidyr::separate(simulation, sep = "-", c("simulation", "repetition"))
+
+
+tb.R <- sim_R %>% 
+  stat_R(Xt.sim, N.sim, species, "13C", "12C", simulation, trend, R.input, output = "complete") %>% 
+  select(simulation, trend, R.input, R.output = R_Xt.sim) %>% 
+  tidyr::pivot_longer(c(R.input, R.output), names_to = "source", values_to = "R")
+
+ggplot(tb.R, aes(R, fill = source)) +
+  geom_histogram(alpha = 0.4, binwidth = 0.0001) +
+  facet_grid(cols = vars(simulation), rows = vars(trend))
+
+```
+
+
+
+In an "ideal" isotopically homogeneous analytical substrate the count rates of two isotope from the same element should be dependent on each other. Thus, even though the ionization efficiency might vary within a single analysis, the count rate of an isotope species $b$ can be deduced from the count rate of isotope species $a$ through a linear combination with the isotope ratio $R$:
 
 \begin{equation}
   E(X_i^b|X_i^a) = RX_i^a \;\;\; \text{where} \;\;\; (X_i^b|X_i^a) \sim P(\lambda)
@@ -228,96 +290,128 @@ Variation in this linear count rate relationship is then only caused by the rand
     (\#eq:conmean)
 \end{equation}
 
-where, a vector of independent values $x$ and a vector of coefficients ($\beta$) can be used to express the conditional mean of $y$ at any $i$
-This formulatiuon is also known as the population linear regression function. Instead of using of Ordinary Least Squares (OLS) to obtain estimates for the regression coefficients, the $\bar{R}$ can be used as an approximation of $\beta$. Substituting Eq. \@ref(eq:conR) in Eq. \@ref(eq:conmean) suggests that $\hat{\beta}_0$ should approximate $0$:
+where, a vector of independent values $x$ and a vector of coefficients ($\beta$) can be used to express the conditional mean of $y$ at any $i$. This formulatiuon is also known as the population linear regression function. Instead of using of Ordinary Least Squares (OLS) to obtain estimates for the regression coefficients, the $\bar{R}$ can be used as an approximation of $\beta$. Substituting Eq. \@ref(eq:conR) in Eq. \@ref(eq:conmean) suggests that $\hat{\beta}_0$ should approximate $0$:
 
 \begin{equation}
   \hat{\beta}_0 = \bar{y} - \hat{\beta}_1 \bar{x} = 0
   (\#eq:estB0)
 \end{equation}
 
+And thus the following model is adopted
 
-```{r regression, echo=FALSE,  fig.cap = "Regression",  fig.width=8, fig.height=6}
+\begin{equation}
+  X_i^b = \bar{R}X_i^a + \hat{e}_i \;\;\; \text{where} \;\;\; (\epsilon_i) \sim N(0,\sigma^2)  \;\;\; \text{if} \;\;\; X_i^a, X_i^b >
+\end{equation}
 
 
-# raw data containing 13C and 12C counts on carbonate
-tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
-
-# Processing raw ion count data
-tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt) 
-
-# Descriptive an predictive statistics for 13C/12C ratios
-tb.R <- stat_R(tb.pr, Xt.pr, N.pr, species.nm, ion1 = "13C",
-               ion2 = "12C", file.nm, zero = TRUE)
-
-# types of R variation
-var_R <- c("ideal", "constant", "gradient")
-
-# simulate isotope ion counts
-sim_R <- purrr::map_dfr(var_R, ~sim_R(tb.R, M_R_Xt.pr, ion1 = "13C", ion2 = "12C", sys = 0, type = .x))
-sim_R_sys <- purrr::map_dfr(var_R, ~sim_R(tb.R, M_R_Xt.pr, ion1 = "13C", ion2 = "12C", sys = 0.1, type = .x))
+```{r regression, echo=FALSE,  fig.cap = "Cross plotted ^13^C and ^12^C count rates and the regression line following equation", fig.width=12, fig.height=6}
 
 # diagnostics and plots of simulations
-gg.sim <- plot_RDiag(sim_R, Xt.pois, N.pois, species, "13C", "12C", file.nm)
-gg.sim_sys <- plot_RDiag(sim_R_sys, Xt.sys, N.sys, species, "13C", "12C", file.nm)
+gg.sim <- plot_RDiag(sim_R, Xt.sim, N.sim, species, "13C", "12C", simulation, trend)
 
-library(patchwork)
-gg.sim[[1]] / gg.sim_sys[[1]]
+gg.sim[[1]] 
 ```
 
 
 
 
-```{r gradient, echo=FALSE,  fig.cap = "Regression",  fig.width=8, fig.height=6}
+```{r gradient, eval= FALSE, echo=FALSE,  fig.cap = "Regression",  fig.width=12, fig.height=6}
 
-sim.R <- purrr::map_dfr(var_R, ~sim_R(tb.R, M_R_Xt.pr, reps = 100, ion1 = "13C", ion2 = "12C", sys = 0.1, type = .x))
+sim_R <- purrr::map_dfr(var_R, 
+                        ~sim_R(
+                               reps = 20,
+                               ion1 = "13C", 
+                               ion2 = "12C", 
+                               sys = 0.1, 
+                               type = .x, 
+                               baseR = 5, 
+                               offsetR = -55
+                               )
+                          ) 
+
+# comparison of methods
+methods_vc <- c("Cameca", "CooksD") %>% set_names()
 
 # Diagnostics
-sim.dia <- diag_R(sim.R,
-                     method = "CooksD",
-                     args = expr_R(Xt = "Xt.pois",
-                                   N = "N.pois",
-                                   species = "species",
-                                   ion1 = "13C",
-                                   ion2 = "12C"),
-                     file.nm,
-                     output = "flag")
+tb.dia <- purrr::map_dfr(methods_vc,
+                        ~diag_R(sim_R,
+                                method = .x,
+                                args = expr_R(Xt = "Xt.sim",
+                                              N = "N.sim",
+                                              species = "species",
+                                              ion1 = "13C",
+                                              ion2 = "12C"
+                                              ),
+                               simulation,
+                               trend,
+                               output = "flag"
+                               ),
+                        .id = "methods_vc"
+                        )
 
 # Original
-sim.R <- stat_R(sim.R, Xt.pois, N.pois, species, ion1 = "13C",
-                ion2 = "12C", file.nm) 
+tb.R <- stat_R(sim_R, 
+               Xt.sim, 
+               N.sim, 
+               species, 
+               ion1 = "13C",
+               ion2 = "12C", 
+               simulation,
+               trend
+               ) 
 
 # Augmentation
-sim.aug <- sim.dia %>%
-  filter(flag_CD == "non-influential") %>%
-  stat_R(., Xt.pois, N.pois, species, ion1 = "13C",
-         ion2 = "12C", file.nm)
+tb.aug <- tb.dia %>%
+  filter(flag == "non-influential") %>%
+  stat_R(., 
+         Xt.sim, 
+         N.sim, 
+         species, 
+         ion1 = "13C",
+         ion2 = "12C",
+         methods_vc,
+         simulation,
+         trend
+        ) 
 
-sim.trj <- left_join(sim.R, sim.aug, by ="file.nm", suffix = c(".org", ".aug")) %>% 
-  mutate(theta = log(RSeM_R_Xt.pois.org / RSeM_R_Xt.pois.aug),
-         hat_theta = log(hat_RSeM_R_Xt.pois.org / hat_RSeM_R_Xt.pois.aug)) %>%
-  tidyr::separate(file.nm, sep = "-", c("file.nm", "rep", "exp"))
+tb.trj <- left_join(tb.aug, 
+                    tb.R, 
+                    by = c("simulation", "trend"), 
+                    suffix = c(".aug", ".org")
+                    ) %>% 
+  mutate(th_real = log(RSeM_R_Xt.sim.org / 
+                       RSeM_R_Xt.sim.aug
+                       ),
+         th_pois = log(hat_RSeM_R_Xt.sim.org / 
+                       hat_RSeM_R_Xt.sim.aug
+                       )
+         ) %>%
+  tidyr::separate(simulation, sep = "-", c("simulation", "repetition"))
 
 
 xlab <- expression(log(frac(epsilon[bar(R)],epsilon[bar(R)]^"*")))
 ylab <- expression(log(frac(hat(epsilon)[bar(R)], hat(epsilon)[bar(R)]^"*")))
 
 
-ggplot(sim.trj , aes(x = theta, y = hat_theta)) +
-  stat_density_2d(geom = "polygon", aes(alpha = stat(level), fill = file.nm), color = "grey") +
+ggplot(tb.trj , aes(x = th_real, y = th_pois)) +
+  stat_density_2d(geom = "polygon", 
+                  aes(alpha = stat(level), 
+                      fill = simulation), 
+                  color = "grey") +
   geom_point(shape = 3) +
   scale_y_continuous(trans = "reverse") +
-  theme_classic() +
-  xlab(xlab) + ylab(ylab)+
+  xlab(xlab) + 
+  ylab(ylab)+
   scale_alpha(guide = "none")+
+  facet_grid(rows = vars(trend), cols = vars(methods_vc))+
   ggtitle("simulations")
 
 ```
 
 The $\epsilon_i$ in Eq. \@ref(eq:conmean) is a random error term consisting of independent and identicaly distributed random variables which originate from a population with a normal distribution. 
 
-```{r normres, echo=FALSE, fig.cap = "Quantile-Quantile plot to test normality of residuals",  fig.width=8, fig.height=6}
-gg.sim[[5]] / gg.sim_sys[[5]]
+```{r normres, eval= FALSE, echo=FALSE, fig.cap = "Quantile-Quantile plot to test normality of residuals",  fig.width=8, fig.height=6}
+
 
 ```
 
@@ -327,6 +421,24 @@ If the $\bar{R}$ of an analysis is derived from an homogenous subtrate, than $\e
   E(\epsilon_i|x_i) = 0
   (\#eq:conepsi)
 \end{equation}
+
+
+
+Given that the ideal situation satifies these conditions, the regression diagnostics on the estimated $\hat{\epsilon}}$ can be used to assess deivations from this "ideal" model. From the previous examples it becomes apparent that even largeky heterogenous substrates cause only minimial deviation in the internal precision. This could be interperted that their is perhaps a lot of hidden variation in the nominal SIMS isotope analysis, which skews $\bar{R}$ but leaves precision untouched.
+
+```{r tableofRandepsilondeviationssimulations}
+
+```
+
+
+However when comparing large numbers of it can be shown that isotopically heteregenous follow specific trajectories upon comparison of predicted and descriptive statistics. In other words the amount of $N_i$ removed in specific domains will cause a case specific shift.
+
+
+
+
+
+
+
 
 
 # References
