@@ -17,7 +17,8 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  cache = TRUE
 )
 ```
 
@@ -36,6 +37,19 @@ library(dplyr) # manipulating data
 library(ggplot2) # graphics
 ```
 
+```{r plot_defaults, echo=FALSE}
+# Default ggplot theme
+theme_set(theme_classic())
+theme_replace(axis.title = element_text(size = 11),
+              axis.text = element_text(size = 9),
+              plot.background = element_rect(fill = "transparent",
+                                             color = NA),
+              panel.background = element_rect(fill = "transparent",
+                                              color = NA),
+              legend.background = element_rect(fill = "transparent",
+                                               color = NA)
+              )
+```
 
 ## Nomenclature
 
@@ -49,7 +63,7 @@ library(ggplot2) # graphics
 ## Isotope ratios: A special case
 Isotopes of the same element should have more-or-less the same ionization efficiency [@Fitzsimons2000a]. It thus follows, that in an isotopically homogeneous analytical substrate the count rates of two isotope from the same element should be dependent on each. From this it can be deduced that large deviations in count rate ratios of an isotope system between consecutive measurements indicate a potential discrepancy (e.g., sample heterogeneity and instrument instability).  
 
-## Count block based count optimization (Default Cameca software procedure)
+### Count block based count optimization (Default Cameca software procedure)
 The default method to account for these discrepancies as incorporated in the Cameca software entails a blockwise check for variability. If values fall outside of a pre-defined range of variance (for example two standard deviations; named $\sigma$ in the Cameca software), the measurement will be rejected.  
 
 
@@ -149,9 +163,7 @@ Note, that in the above example of the Cameca diagnostics (Fig. \@ref(fig:xcpcam
 
 ggplot(tb.CAMECA, aes(x =`Block#`, y = Mean)) +
   geom_point() +
-  facet_wrap(vars(`Ratio#`), scales = "free") +
-  theme_classic()
-
+  facet_wrap(vars(`Ratio#`), scales = "free")
 ```
 
 
@@ -220,37 +232,19 @@ knitr::kable(tb.CAMECA_org,
 
 However, when comparing the summary statistics of the augmented dataset (Table \@ref(tab:aug)) with the excerpt from the Cameca stat-file (Fig. \@ref(fig:xcpcameca2)) their seems to be a substantial difference. Instead upon comparison with Table \@ref(tab:org), which consist of summary statistics calculated on the original dataset (without $\sigma$-rejection of measurements), the replication is surprisingly consistent. This heralds the question whether there might be a mistake in the Cameca software for calculating statistics on ion ratios for complete analyses. Otherwise the blockwise $\sigma$-rejection of measurements seems rather obfuscated, as it does not seem to serve an obvious purpose.
 
-## Regression diagnostic based count optimization
+### Regression diagnostic based count optimization
 
-Precision monitoring by combined predictive and descriptive statistical analysis informs on errors that reflect on a combination of the random nature of secondary ion generation, purely analytical biases and artifacts resulting from the homogeneity of the analytical substrate. What now if we analyse for example a material that has heterogenity in isotope values at smaller sclaes than the beam size. 
+Precision monitoring by combined predictive and descriptive statistical analysis informs on errors that reflect on a combination of the random nature of secondary ion generation, purely analytical biases and artifacts resulting from the homogeneity of the analytical substrate. But what now if the analysed material contains heterogenity in it's isotopic composition at a smaller scale than the beam size, could we detect this? 
 
-The solution seems straightforward, just compare the $R$ values of the individual measurements and see whether they are significantly different at some point during the analysis. However the situation is much more complex as I will illustrate with the following example. For this example I simulated count rates for three types of materials; 1) a substrate with a compeltely homogenous comp[osition "ideal material", 2) a subsrate with a gradient spanning the whole depth of the measurement and 3) a substrate with a sudden offset in isotope composition. In the example the total variation in two heterogenous samples spans 60 per mille, which is large for most naterual systems. Superimposed on this I also imposed a linear trend in the ionization potential, which as discussed before afflicts both isotope speceies in a similar fashion. 
-
-
-```{r plot_defaults, echo=FALSE}
-# Default ggplot theme
-theme_set(theme_classic())
-theme_replace(axis.title = element_text(size = 7),
-              axis.text = element_text(size = 8),
-              plot.background = element_rect(fill = "transparent",
-                                             color = NA),
-              panel.background = element_rect(fill = "transparent",
-                                              color = NA),
-              legend.background = element_rect(fill = "transparent",
-                                               color = NA)
-              )
- 
-```
+The solution seems straightforward, just compare the $R$ values of the individual measurements of an $n$-series analysis ($N_{(i)}$), and see whether there are significant deviations at some points during the analysis. However, the situation is more complex than that, as illustrated with the following example. For this example, the simulated count rates for three hypothetical types of materials are presented; 1) a substrate with a completely homogenous composition (an "ideal material"); 2) a substrate with a gradient spanning the whole depth covered by the analysis; and 3) a substrate with a sudden offset in isotope composition at a specific depth. In this example the total variation in the two heterogenous simulations spans a range of 60‰, which is large for most natarul isotope systems. A linear trend has been superimposed on the count rates of both isotope species, which is an often encountered phenomenan and relates to changes in the ionization potential, and, as discussed before, as this afflicts both isotope species to a similar degree thereby not changing the $R$ [see @Fitzsimons2000a]. 
 
 
+```{r simulations, fig.width=12, fig.height=6, fig.cap="Histograms comparing input and output $R$ values for simulations of an ideal isotopically homogenous material, a gradual gradient in $R$ (gradient), and a sudden shift in $R$ (constant)"}
 
-
-```{r simulation, fig.width=12, fig.height=6}
-
-# types of R variation
+# Types of R variation
 var_R <- c("ideal", "constant", "gradient")
 
-# simulate isotope ion counts with 60 per mill off set in case of variation in R
+# Simulate isotope ion counts with 60 per mill off set in case of variation in R
 sim_R <- purrr::map_dfr(var_R, 
                         ~sim_R(ion1 = "13C", 
                                ion2 = "12C", 
@@ -262,19 +256,23 @@ sim_R <- purrr::map_dfr(var_R,
                           ) %>%
   tidyr::separate(simulation, sep = "-", c("simulation", "repetition"))
 
-
+# Compare input value of R with output 
 tb.R <- sim_R %>% 
-  stat_R(Xt.sim, N.sim, species, "13C", "12C", simulation, trend, R.input, output = "complete") %>% 
-  select(simulation, trend, R.input, R.output = R_Xt.sim) %>% 
+  stat_R(Xt.sim, N.sim, species, "13C", "12C", simulation, trend, output = "complete") 
+
+com.R <- tb.R %>% 
+  select(simulation, trend, R.input = R.input.13C, R.output = R_Xt.sim) %>% 
   tidyr::pivot_longer(c(R.input, R.output), names_to = "source", values_to = "R")
 
-ggplot(tb.R, aes(R, fill = source)) +
-  geom_histogram(alpha = 0.4, binwidth = 0.0001) +
+ggplot(com.R, aes(x = R, fill = source)) +
+  geom_histogram(aes(y =  stat(ncount)), position = "identity", alpha = 0.4, binwidth = 0.0001) +
   facet_grid(cols = vars(simulation), rows = vars(trend))
 
 ```
 
+It becomes evident from Figure \@ref(fig:simulations) that the real variation in $R$ (input R; red) is indistinguisable in the $R$ derived from the ion counts (output R; blue). This is an effect of the relative large random variation induced by the ionization. So, even for these large variations in isotopic composition, it cannot be confidently said whether the measured $R$ is representative for the analysed site, or just some averaged value of an otherwise isoptically variable substrate. This effect is, furthermore, hardly observable in the precision of the data, where the $\epsilon_R$ of the simulation *constant* is `r tb.R %>% filter(simulation == "constant", trend == "linear trend (var: 0.1)") %>% pull(RSeM_R_Xt.sim) %>% unique() %>% round(2)`‰, whereas the *ideal* simulation has only a marginally better precision of `r tb.R %>% filter(simulation == "ideal", trend == "linear trend (var: 0.1)") %>% pull(RSeM_R_Xt.sim) %>% unique() %>% round(2)`‰. This univariate approach will, however, distinguish these analyses based on mean (*constant* simulation: `r tb.R %>% filter(simulation == "constant", trend == "linear trend (var: 0.1)") %>% pull(M_R_Xt.sim) %>% unique() %>% calib_R(standard = "VPDB", type = "composition", input = "R", output = "delta") %>% round(2)`‰ and *ideal* simulation: `r tb.R %>% filter(simulation == "ideal", trend == "linear trend (var: 0.1)") %>% pull(M_R_Xt.sim) %>% unique() %>% calib_R(standard = "VPDB", type = "composition", input = "R", output = "delta") %>% round(2)`‰), even though, an average values is not really representative for the former case as the original population of $R$ is highly variable and skewed. So, clearly, a different approach must be adopted to identify these highly variable substrates.
 
+#### Isotope data viewed as bivariate ion counts
 
 In an "ideal" isotopically homogeneous analytical substrate the count rates of two isotope from the same element should be dependent on each other. Thus, even though the ionization efficiency might vary within a single analysis, the count rate of an isotope species $b$ can be deduced from the count rate of isotope species $a$ through a linear combination with the isotope ratio $R$:
 
@@ -290,27 +288,90 @@ Variation in this linear count rate relationship is then only caused by the rand
     (\#eq:conmean)
 \end{equation}
 
-where, a vector of independent values $x$ and a vector of coefficients ($\beta$) can be used to express the conditional mean of $y$ at any $i$. This formulatiuon is also known as the population linear regression function. Instead of using of Ordinary Least Squares (OLS) to obtain estimates for the regression coefficients, the $\bar{R}$ can be used as an approximation of $\beta$. Substituting Eq. \@ref(eq:conR) in Eq. \@ref(eq:conmean) suggests that $\hat{\beta}_0$ should approximate $0$:
+where, a vector of independent values $x$ and a vector of coefficients ($\beta$) can be used to express the conditional mean of $y$ at any $i$. This formulatiuon is also known as the population linear regression function. Instead of using of Ordinary Least Squares (OLS) to obtain estimates for the regression coefficients, the $\bar{R}$ can be used as an approximation of $\beta$. Substituting Eq. \@ref(eq:conR) in Eq. \@ref(eq:conmean) further suggests that $\hat{\beta}_0$ should approximate:
 
 \begin{equation}
   \hat{\beta}_0 = \bar{y} - \hat{\beta}_1 \bar{x} = 0
   (\#eq:estB0)
 \end{equation}
 
-And thus the following model is adopted
+And thus the following measure can be adopted to assess the performance of this ideal linear combination of 
 
 \begin{equation}
-  X_i^b = \bar{R}X_i^a + \hat{e}_i \;\;\; \text{where} \;\;\; (\epsilon_i) \sim N(0,\sigma^2)  \;\;\; \text{if} \;\;\; X_i^a, X_i^b >
+ \hat{e}_i =  X_i^b - \bar{R}X_i^a + \;\;\; \text{where} \;\;\; \epsilon_i \sim N(0,\sigma^2)  \;\;\; \text{if} \;\;\; X_i^a, X_i^b \gg 0
+  (\#eq:este)
 \end{equation}
 
 
-```{r regression, echo=FALSE,  fig.cap = "Cross plotted ^13^C and ^12^C count rates and the regression line following equation", fig.width=12, fig.height=6}
+```{r regression, echo=FALSE,  fig.cap = "Cross plotted ^13^C and ^12^C count rates and the regression line following equation, where the line represents $\bar{R}$^12^C and the green area encompasses the 2 times the standard error of the regression.", fig.width=12, fig.height=6}
 
 # diagnostics and plots of simulations
 gg.sim <- plot_RDiag(sim_R, Xt.sim, N.sim, species, "13C", "12C", simulation, trend)
 
 gg.sim[[1]] 
 ```
+
+
+The simulated scenarios in \@ref(fig:regression) visualise the comparison of the model following Eq \@ref(eq:este) and hypothetical bivariate ^13^C-^12^C ion count rates. A greater random spread about the model can be seen in the scenarios of isotopically heterogenous substrates.
+
+
+
+The $\epsilon_i$ in Eq. \@ref(eq:conmean) is a random error term consisting of independent and identicaly distributed random variables which originate from a population with a normal distribution. 
+
+```{r normres, eval= FALSE, echo=FALSE, fig.cap = "Quantile-Quantile plot to test normality of residuals",  fig.width=8, fig.height=6}
+
+gg.sim[[2]] 
+```
+
+If the $\bar{R}$ of an analysis is derived from an homogenous subtrate, than $\epsilon_i$ should satisfy the following criterion:
+
+\begin{equation}
+  E(\epsilon_i|x_i) = 0
+  (\#eq:conepsi)
+\end{equation}
+
+A t-test of the simulated data comfirms this relationship
+
+Given that the ideal situation satifies these conditions, the regression diagnostics on the estimated $\hat{\epsilon}}$ can be used to assess deivations from this "ideal" model. From the previous examples it becomes apparent that even largeky heterogenous substrates cause only minimial deviation in the internal precision. This could be interperted that their is perhaps a lot of hidden variation in the nominal SIMS isotope analysis, which skews $\bar{R}$ but leaves precision untouched.
+
+
+#### Influence of variance on the regression model
+
+Residual analysis can help identify unusual date points which are problematic for linear models. As for a homogeneous analytical substrate and stable analysis a linear model should approximate the resulting co-variance between $X^{b}$ (e.g. ^13^C) and $X^{a}$ (e.g. ^12^C), failure might indicate heterogeneity of the analytical substrate or fluctuating stability of the analytical setup during the measurement. The goal of residual analysis is to identify the influence of the coefficient; in this case the influence on $\bar{R}$ and by determining the leverage and discrepance (outlyingness) of a data-point (Influence on data-points = Leverage + Discrepancy).
+
+
+Having determined the outlyingess and leverage of data-points (with @eq:lev) it is possible to determine the influence data-points have on the regression model. This influence can be quantified with *Cook's Distance* (or *Cook's D*), where the data-point is removed from the regression model to make inferences about its impact on the regression model. Having established that high leverage does not necessarily require the data-point to be influential, Cook's D combines the hat-values (@eq:lev) with studentized residuals (@eq:student.res) (visualized in a *Residuals vs Leverage plot*: Fig. \@ref(fig:rslev)) in a new equation:
+
+$$D_i = \frac{e_{i}^{*}\phantom{}^2}{k + 1} \times \frac{h_i}{1- h_i} $$ {#eq:CD}
+
+, where the $k$ stands for the number of coefficients in the regression model. To quantify whether a $D_i$ is substantially larger then the rest of the sample a cut-off value is defined as 
+
+$$ D_c =4/ (n-k-1)$$ {#eq:CD.cut}
+
+In Figure \@ref(fig:rslev) the blue dots demarcate values with Cook's D values that might significantly influence the regression model [@Bruce2017]. High numbers of high Cook's D values occur in analyses  and warrant precaution. Again, for some of the analyses this is not obvious from the descriptive and predictive statistics.  
+
+
+
+
+### A comparison of methods
+
+The regression diagnostics of several of the analyses seem to indicate that internal precision of some of the analyses seems to be compromised. Regression diagnostic based count optimization can help detect anomolous....
+For a systematic evaluation of the results of the regression diagnostics, descriptive and predicted standard errors of the mean have been recalculated by omitting the count measurements that did not conform to normality (Fig. \@ref(fig:QQnorm)), and those values have demarcated with an asterisk ($e_\bar{x}^*$ and $\hat{e}_\bar{x}^*$) in Figures \@ref(fig:Cross), \@ref(fig:ResFit), \@ref(fig:ScLoc), \@ref(fig:QQnorm) and \@ref(fig:rslev).
+
+To assess the effect of these adjustments between the analysis, the following two parameters are defined:
+
+$$ \theta_{x_R} = \log{\left( \frac{e_{\bar{x}_{R}}}{e_{\bar{x}_{R}}^{*}}\right)} $$ {#eq:opt.t}
+
+$$ \theta_{\hat{x}_R} = \log{\left( \frac{\hat{e}_{\bar{x}_{R}}}{\hat{e}_{\bar{x}_{R}}^{*}}\right)} $$ {#eq:opt.that}
+
+, where  internal precision is compared for the augmented (based on *Cook's D*) and original datasets, by recalculating the descriptive and predictive statistics of the standard error of the mean.
+
+
+
+Random number simulation is performed to asses systematic relationships between the predicted and descriptive measures on the augmented and original datasets counterparts (Fig. \@ref(fig:CDadj)). This approach suggest that there are defined trajectories based on analyte heterogeneity (varying $R$) and machine instability (reduced $N$). In all cases the actual precision ($e_{\bar{x}}$) is improved after omission of influential data-points (based on Cook's D). This could suggest that the error measured by the descriptive $e_{\bar{x}}$ can be entirely related to random nature of secondary ion generation in most cases, and as the $e_{\bar{x}}$ improves, the $\hat{e}_{\bar{x}}$ deteriorates because of reduced cumulative numbers of $N_i$. In the future these results will be used to monitor analyte heterogeneity (varying $R$) and machine instability (reduced $N$).
+
+
+However when comparing large numbers of it can be shown that isotopically heteregenous follow specific trajectories upon comparison of predicted and descriptive statistics. In other words the amount of $N_i$ removed in specific domains will cause a case specific shift.
 
 
 
@@ -407,36 +468,6 @@ ggplot(tb.trj , aes(x = th_real, y = th_pois)) +
   ggtitle("simulations")
 
 ```
-
-The $\epsilon_i$ in Eq. \@ref(eq:conmean) is a random error term consisting of independent and identicaly distributed random variables which originate from a population with a normal distribution. 
-
-```{r normres, eval= FALSE, echo=FALSE, fig.cap = "Quantile-Quantile plot to test normality of residuals",  fig.width=8, fig.height=6}
-
-
-```
-
-If the $\bar{R}$ of an analysis is derived from an homogenous subtrate, than $\epsilon_i$ should satisfy the following criterion:
-
-\begin{equation}
-  E(\epsilon_i|x_i) = 0
-  (\#eq:conepsi)
-\end{equation}
-
-
-
-Given that the ideal situation satifies these conditions, the regression diagnostics on the estimated $\hat{\epsilon}}$ can be used to assess deivations from this "ideal" model. From the previous examples it becomes apparent that even largeky heterogenous substrates cause only minimial deviation in the internal precision. This could be interperted that their is perhaps a lot of hidden variation in the nominal SIMS isotope analysis, which skews $\bar{R}$ but leaves precision untouched.
-
-```{r tableofRandepsilondeviationssimulations}
-
-```
-
-
-However when comparing large numbers of it can be shown that isotopically heteregenous follow specific trajectories upon comparison of predicted and descriptive statistics. In other words the amount of $N_i$ removed in specific domains will cause a case specific shift.
-
-
-
-
-
 
 
 
