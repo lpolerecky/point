@@ -212,7 +212,12 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
                         expr(.data$hat_RQ),
                         expr(.data$hat_RQ_min),
                         expr(.data$hat_RQ_max),
-                        expr(.data$flag_QQ)
+                        expr(.data$flag_QQ),
+                        expr(.data$flag_CM),
+                        expr(.data$R2),
+                        expr(.data$SE_beta),
+                        expr(.data$Chi_R2),
+                        expr(.data$flag_CV)
                          ),
            complete = call2( "invisible", expr(.)),
     )
@@ -296,15 +301,16 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
            flag = if_else(CooksD > CooksD_cf, "influential", "non-influential")
           ) %>%
 # normality test
-    mutate(RQ = studE) %>%
-    arrange(RQ) %>%
-# use the formula i - 0.5/ in, for i = 1,..,n
+    # mutate(RQ = studE) %>%
+    # arrange(RQ) %>%
+# use the formula i - 0.5/ in, for i = 1,..,n for probs
 # this is a vector of the n probabilities ( theoretical cumulative distribution function CDF)
-    mutate(prob_vc = vector_probs(!! quo_updt(my_q = args[["Xt"]],
+   mutate(prob_vc =  vector_probs(!! quo_updt(my_q = args[["Xt"]],
                                               txt = as_name(args[["ion2"]]),
                                               x = "n"
                                               )
-                                  ),
+                                   ),
+          RQ = unname(quantile(studE, probs = prob_vc)),
 # calculate normal (Theoretical) quantiles using mean and standard deviation from
           TQ = qnorm(prob_vc, mean(RQ), sd(RQ)),
 # the standard error is calculated with,
@@ -319,12 +325,57 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
                                 ),
           hat_RQ_min =  hat_RQ - 2 * hat_RQ_se,
           hat_RQ_max =  hat_RQ + 2 * hat_RQ_se,
-          flag_QQ = case_when(
-            RQ >= hat_RQ_min & RQ <= hat_RQ_max ~ "normal",
-            RQ > hat_RQ_max ~ "non-normal",
-            RQ < hat_RQ_min ~ "non-normal"
-            )
-          ) %>%
+          flag_QQ = if_else(
+            (nortest::ad.test(studE))$p.value < 0.05,
+            "Ha (non-normal)",
+            "H0 (normal)"
+            ),
+# t-test flag for mu0 (aka the conditional mean of epsilon) being zero
+          flag_CM = if_else((t.test(studE, mu = 0))$p.value  < 0.05,
+                            "Ha (mu0 is not zero)",
+                            "H0 (mu0 is zero)"
+                            )
+          ) %>% #,
+# hetroscadasticity test (Breusch Pagan test)(level of confidence 95%;
+# cut-off 0.05 for H0 rejection),
+    tidyr::nest() %>%
+    mutate(
+          res_lm = purrr::map(data, ~lm_res(.x, args =args)),
+          # res_lm = !!quo(lm(!!quo_updt(args[["Xt"]],
+          #                                      txt = as_name(args[["ion2"]]),
+          #                                      x = "studE",
+          #                                      sepfun = "~")
+          #                           )
+          #                 ),
+          # R2 = summary(res_lm)$r.squared,
+          R2 = purrr::map(res_lm, ~(summary(.x)$r.squared)),
+          SE_beta = purrr::map(res_lm, ~(unname(summary(.x)$coefficients[2,2])))
+          # Chi_R2 = R2  * !! quo_updt(my_q = args[["Xt"]],
+          #                               txt = as_name(args[["ion2"]]),
+          #                               x = "n"
+          #                               ),
+          # flag_CV = if_else(Chi_R2 >
+          #                   qchisq(.95, df = 1),
+          #                   "heteroskedasticity",
+          #                   "homoskedasticity"
+          #                   )
+            ) %>%
+    tidyr::unnest(cols = c(data,
+                           R2,
+                           SE_beta#,
+                           # Chi_R2,
+                           # flag_CV
+                           )
+                  ) %>%
+    mutate(Chi_R2 = R2  * !! quo_updt(my_q = args[["Xt"]],
+                                      txt = as_name(args[["ion2"]]),
+                                      x = "n"
+                                      ),
+           flag_CV = if_else(Chi_R2 >
+                        qchisq(.95, df = 1),
+                        "Ha (heteroskedasticity)",
+                        "H0 (homoskedasticity)"
+                        )) %>%
     ungroup() %>%
     eval_tidy(expr =  mod_out(output))
 }
@@ -368,6 +419,14 @@ expr_R <- function(Xt, N, species, ion1, ion2){
 #-------------------------------------------------------------------------------
 # Not exportet helper functions
 #-------------------------------------------------------------------------------
+
+# lm residuals
+
+lm_res <- function(data, args){
+  call_lm <- parse_expr(paste0("data$studE~data$", as_name(args[["Xt"]]), ".", as_name(args[["ion2"]])))
+  eval_tidy(call2("lm", call_lm))
+
+}
 
 # use the formula i - 0.5/ in, for i = 1,..,n
 # this is a vector of the n probabilities ( theoretical cumulative distribution function CDF)
@@ -429,20 +488,20 @@ jack_sigma <- function(df, res){
 }
 
 #' @export
-sim_R <- function(n = 3000, N_range = 10 ^ 6, reps = 1, ion1, ion2, sys, type, baseR = NULL, offsetR = NULL){
+sim_R <- function(n = 3000, N_range = 10 ^ 6, reps = 1, ion1, ion2, sys, type, baseR = NULL, offsetR = NULL, seed){
 
   average_n <- N_range / n
   start_n <- n
 
-  ls.sim <- lst(
-    a = tibble::tibble(simulation = type,
+  tibble::tibble(simulation = type,
                        n = n,
                        N = as.integer(N_range),
                        R.input = R_gen(start_n,
                                        baseR,
                                        offsetR,
                                        input = "delta",
-                                       type = type
+                                       type = type,
+                                       seed = seed
                                        ),
                        drift = seq(average_n * (1 - sys), average_n * (1 + sys),
                                    length.out = start_n
@@ -459,11 +518,6 @@ sim_R <- function(n = 3000, N_range = 10 ^ 6, reps = 1, ion1, ion2, sys, type, b
 # random variation (Number generation)
       mutate(N.sim= purrr::map(.data$data, ~N_gen(.x, N, n))) %>%
       tidyr::unnest(cols = c(.data$data, .data$N.sim)) %>%
-      ungroup() %>%
-      mutate(Xt.sim = .data$N.sim,
-             trend = "no linear trend"),
-
-    b = a %>%
 # systematic variation
       mutate(diff = .data$drift - .data$intercept,
              diff = if_else(species == ion2,
@@ -477,11 +531,9 @@ sim_R <- function(n = 3000, N_range = 10 ^ 6, reps = 1, ion1, ion2, sys, type, b
              Xt.sim = .data$N.sim,
              trend = paste0("linear trend (var: ", sys, ")")
              ) %>%
-      select(-diff)
-    )
+      ungroup() %>%
+      select(-c(drift, intercept, diff))
 
-  purrr::reduce(ls.sim, bind_rows) %>%
-    select(-c(drift, intercept))
 }
 
 #
@@ -500,7 +552,9 @@ N_gen <- function(df, N, n) {
 # calculate common isotope count from rare isotope
 iso_conv <- function(N, R.sim)  as.integer(N * (1 / R.sim))
 
-R_gen <- function(reps, baseR, offsetR, input = "delta", type) {
+R_gen <- function(reps, baseR, offsetR, input = "delta", type, seed) {
+
+  set.seed(seed)
 
   baseR <- calib_R(baseR,
                    standard = "VPDB",

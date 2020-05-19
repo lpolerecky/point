@@ -17,8 +17,7 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>",
-  cache = TRUE
+  comment = "#>"
 )
 ```
 
@@ -27,6 +26,7 @@ The random nature of secondary ions emitted from a sample is described by Poisso
 
 ```{r setup}
 library(point)
+devtools::load_all(".")
 ```
 
 The following packages are used in the examples that follow.
@@ -234,9 +234,15 @@ However, when comparing the summary statistics of the augmented dataset (Table \
 
 ### Regression diagnostic based count optimization
 
-Precision monitoring by combined predictive and descriptive statistical analysis informs on errors that reflect on a combination of the random nature of secondary ion generation, purely analytical biases and artifacts resulting from the homogeneity of the analytical substrate. But what now if the analysed material contains heterogenity in it's isotopic composition at a smaller scale than the beam size, could we detect this? 
+Precision monitoring by combined predictive and descriptive statistical analysis informs on errors that reflect on a combination of the random nature of secondary ion generation, purely analytical biases and artifacts resulting from the homogeneity of the analytical substrate. But what now if the analysed material contains isotopic heterogeneity at a smaller scale than the beam size, could this be detected? 
 
-The solution seems straightforward, just compare the $R$ values of the individual measurements of an $n$-series analysis ($N_{(i)}$), and see whether there are significant deviations at some points during the analysis. However, the situation is more complex than that, as illustrated with the following example. For this example, the simulated count rates for three hypothetical types of materials are presented; 1) a substrate with a completely homogenous composition (an "ideal material"); 2) a substrate with a gradient spanning the whole depth covered by the analysis; and 3) a substrate with a sudden offset in isotope composition at a specific depth. In this example the total variation in the two heterogenous simulations spans a range of 60‰, which is large for most natarul isotope systems. A linear trend has been superimposed on the count rates of both isotope species, which is an often encountered phenomenan and relates to changes in the ionization potential, and, as discussed before, as this afflicts both isotope species to a similar degree thereby not changing the $R$ [see @Fitzsimons2000a]. 
+The solution seems straightforward, just compare the $R$ values of the individual measurements of an $n$-series analysis ($N_{(i)}$), and see whether there are significant deviations at some points during the analysis. However, the situation is more complex than that, as illustrated with the following example. For this example, the simulated count rates for three hypothetical types of materials are presented; 
+
+1) a substrate with a completely homogenous composition (an "ideal material") 
+2) a substrate with a gradient spanning the whole depth covered by the analysis 
+3) a substrate with a sudden offset in isotope composition at a specific depth  
+
+In the two simulations with heterogenous isotope composition the total span is set to 60‰, which is a large variance for most natarul isotope systems. A linear trend has been superimposed on the count rates of both isotope species, which is an often encountered phenomenan and relates to changes in the ionization potential, and, as discussed before, this effect afflicts both isotope species to a similar degree thereby not changing the $R$ [see @Fitzsimons2000a]. 
 
 
 ```{r simulations, fig.width=12, fig.height=6, fig.cap="Histograms comparing input and output $R$ values for simulations of an ideal isotopically homogenous material, a gradual gradient in $R$ (gradient), and a sudden shift in $R$ (constant)"}
@@ -244,17 +250,27 @@ The solution seems straightforward, just compare the $R$ values of the individua
 # Types of R variation
 var_R <- c("ideal", "constant", "gradient")
 
-# Simulate isotope ion counts with 60 per mill off set in case of variation in R
-sim_R <- purrr::map_dfr(var_R, 
-                        ~sim_R(ion1 = "13C", 
-                               ion2 = "12C", 
-                               sys = 0.1, 
-                               type = .x, 
-                               baseR = 5, 
-                               offsetR = -55
-                               )
-                          ) %>%
+# Varying linear trends in the ionization efficieny
+var_T <- seq(0, 0.5, length.out = 11)
+
+sim_R.ext <- tidyr::crossing(sys = var_T, type = var_R) %>% 
+  transmute(sim_R = purrr::map2(sys, type,
+                                ~sim_R(ion1 = "13C", 
+                                       ion2 = "12C", 
+                                       sys = .x, 
+                                       type = .y, 
+                                       baseR = 5, 
+                                       offsetR = -55,
+                                       seed = 44
+                                       )
+                              )
+            )%>%
+  tidyr::unnest(cols = sim_R) %>% 
   tidyr::separate(simulation, sep = "-", c("simulation", "repetition"))
+
+# limited dataset
+sim_R <- sim_R.ext %>% 
+  filter(trend == "linear trend (var: 0)" | trend == "linear trend (var: 0.5)")
 
 # Compare input value of R with output 
 tb.R <- sim_R %>% 
@@ -270,7 +286,10 @@ ggplot(com.R, aes(x = R, fill = source)) +
 
 ```
 
-It becomes evident from Figure \@ref(fig:simulations) that the real variation in $R$ (input R; red) is indistinguisable in the $R$ derived from the ion counts (output R; blue). This is an effect of the relative large random variation induced by the ionization. So, even for these large variations in isotopic composition, it cannot be confidently said whether the measured $R$ is representative for the analysed site, or just some averaged value of an otherwise isoptically variable substrate. This effect is, furthermore, hardly observable in the precision of the data, where the $\epsilon_R$ of the simulation *constant* is `r tb.R %>% filter(simulation == "constant", trend == "linear trend (var: 0.1)") %>% pull(RSeM_R_Xt.sim) %>% unique() %>% round(2)`‰, whereas the *ideal* simulation has only a marginally better precision of `r tb.R %>% filter(simulation == "ideal", trend == "linear trend (var: 0.1)") %>% pull(RSeM_R_Xt.sim) %>% unique() %>% round(2)`‰. This univariate approach will, however, distinguish these analyses based on mean (*constant* simulation: `r tb.R %>% filter(simulation == "constant", trend == "linear trend (var: 0.1)") %>% pull(M_R_Xt.sim) %>% unique() %>% calib_R(standard = "VPDB", type = "composition", input = "R", output = "delta") %>% round(2)`‰ and *ideal* simulation: `r tb.R %>% filter(simulation == "ideal", trend == "linear trend (var: 0.1)") %>% pull(M_R_Xt.sim) %>% unique() %>% calib_R(standard = "VPDB", type = "composition", input = "R", output = "delta") %>% round(2)`‰), even though, an average values is not really representative for the former case as the original population of $R$ is highly variable and skewed. So, clearly, a different approach must be adopted to identify these highly variable substrates.
+It becomes evident from Figure \@ref(fig:simulations) that the real variation in $R$ (input R; red) is indistinguisable in the $R$ derived from the ion counts (output R; blue). This is an effect of the relative large random variation induced by the ionization. So, even for these large variations in isotopic composition, it cannot be confidently said whether the measured $R$ is representative for the analysed site, or just some averaged value of an otherwise isoptically variable substrate. This effect is, furthermore, hardly observable in the precision of the data, where the $\epsilon_R$ of the simulation dubbed *constant* is `r tb.R %>% filter(simulation == "constant", trend == "linear trend (var: 0.1)") %>% pull(RSeM_R_Xt.sim) %>% unique() %>% round(2)`‰, whereas the *ideal* simulation has only a marginally better precision of `r tb.R %>% filter(simulation == "ideal", trend == "linear trend (var: 0.1)") %>% pull(RSeM_R_Xt.sim) %>% unique() %>% round(2)`‰. This univariate approach will, however, distinguish these analyses based on the mean (*constant* simulation: `r tb.R %>% filter(simulation == "constant", trend == "linear trend (var: 0.1)") %>% pull(M_R_Xt.sim) %>% unique() %>% calib_R(standard = "VPDB", type = "composition", input = "R", output = "delta") %>% round(2)`‰ and *ideal* simulation: `r tb.R %>% filter(simulation == "ideal", trend == "linear trend (var: 0.1)") %>% pull(M_R_Xt.sim) %>% unique() %>% calib_R(standard = "VPDB", type = "composition", input = "R", output = "delta") %>% round(2)`‰), even though, an average values is not really representative for the former case as the original population of $R$ is highly variable and skewed. So, clearly, a different approach must be adopted to identify these isopically highly variable substrates.
+
+
+<!--  From the previous examples it becomes apparent that even largeky heterogenous substrates cause only minimial deviation in the internal precision. This could be interperted that their is perhaps a lot of hidden variation in the nominal SIMS isotope analysis, which skews $\bar{R}$ but leaves precision untouched. -->
 
 #### Isotope data viewed as bivariate ion counts
 
@@ -281,29 +300,37 @@ In an "ideal" isotopically homogeneous analytical substrate the count rates of t
   (\#eq:conR)
 \end{equation}
 
-Variation in this linear count rate relationship is then only caused by the random nature of secondary ion generation, which follows a Poisson distribtuion. If, however, $N_i$ is sufficiently larger for both isotope species, the previous linear combination (Eq. \@ref(eq:conR)) should approximate: 
+Variation in this linear count rate relationship is then only caused by the random nature of secondary ion generation, which follows a Poisson distribution. If, however, $N_i$ is sufficiently larger for both isotope species, the previous linear combination (Eq. \@ref(eq:conR)) should approximate: 
 
 \begin{equation}
-  E(y_i|x_i) = \beta_0 + \beta_1 x_i + \epsilon_i \;\;\; \text{where} \;\;\; \epsilon_i \sim N(0,\sigma^2)
+  E(y_i|x_i) = \beta_0 + \beta_1 x_i + \epsilon_i \;\;\; \text{where} \;\;\; \epsilon_i \sim N(0,\sigma^2) \;\;\; \text{with} \;\;\; E(\epsilon_i|x_i) = 0
     (\#eq:conmean)
 \end{equation}
 
-where, a vector of independent values $x$ and a vector of coefficients ($\beta$) can be used to express the conditional mean of $y$ at any $i$. This formulatiuon is also known as the population linear regression function. Instead of using of Ordinary Least Squares (OLS) to obtain estimates for the regression coefficients, the $\bar{R}$ can be used as an approximation of $\beta$. Substituting Eq. \@ref(eq:conR) in Eq. \@ref(eq:conmean) further suggests that $\hat{\beta}_0$ should approximate:
+where, a vector of independent values $x$ and a vector of coefficients ($\beta$) can be used to express the conditional mean of $y$ at any $i$. This formulation is also known as the population linear regression function. Instead of using Ordinary Least Squares (OLS) to obtain estimates for the regression coefficients, the $\bar{R}$ can be used as an approximation of $\beta$. Substituting Eq. \@ref(eq:conR) in Eq. \@ref(eq:conmean) further suggests that $\hat{\beta}_0$ should then approximate:
 
 \begin{equation}
   \hat{\beta}_0 = \bar{y} - \hat{\beta}_1 \bar{x} = 0
   (\#eq:estB0)
 \end{equation}
 
-And thus the following measure can be adopted to assess the performance of this ideal linear combination of 
+Adopting this linear combination of parameters, the ideal model for isotope count data is as follows; 
 
 \begin{equation}
- \hat{e}_i =  X_i^b - \bar{R}X_i^a + \;\;\; \text{where} \;\;\; \epsilon_i \sim N(0,\sigma^2)  \;\;\; \text{if} \;\;\; X_i^a, X_i^b \gg 0
-  (\#eq:este)
+ \hat{X}_i^b = \bar{R}X_i^a +  \epsilon_i \;\;\; \text{where} \;\;\; \epsilon_i \sim N(0,\sigma^2)  \;\;\; \text{if} \;\;\; X_i^a, X_i^b \gg 0
+  (\#eq:linmodR)
+\end{equation}
+
+And, thus the following measure can be adopted to assess the performance of this "ideal" linear model: 
+
+\begin{equation}
+ \hat{\epsilon}_i =  X_i^b - \bar{R}X_i^a  
+  (\#eq:resR)
 \end{equation}
 
 
-```{r regression, echo=FALSE,  fig.cap = "Cross plotted ^13^C and ^12^C count rates and the regression line following equation, where the line represents $\bar{R}$^12^C and the green area encompasses the 2 times the standard error of the regression.", fig.width=12, fig.height=6}
+```{r regression, echo=FALSE,  fig.cap = "Cross plotted ^13^C and ^12^C count rates and the regression line following equation, based on the linear function of Eq. \\@ref(eq:linmodR) and with a 2 times the standard error of the regression represented by the green area.", fig.width=12, fig.height=6}
+
 
 # diagnostics and plots of simulations
 gg.sim <- plot_RDiag(sim_R, Xt.sim, N.sim, species, "13C", "12C", simulation, trend)
@@ -312,35 +339,182 @@ gg.sim[[1]]
 ```
 
 
-The simulated scenarios in \@ref(fig:regression) visualise the comparison of the model following Eq \@ref(eq:este) and hypothetical bivariate ^13^C-^12^C ion count rates. A greater random spread about the model can be seen in the scenarios of isotopically heterogenous substrates.
+The simulated scenarios in Fig. \@ref(fig:regression) visualise the comparison of the model following Eq. \@ref(eq:eq:linmodR) and hypothetical bivariate ^13^C-^12^C ion count rates. A greater random spread about the model can already be observed in the simulations of isotopically heterogenous substrates. 
+
+The acquired $\hat{\epsilon}_i$ can be used to validate three important assumptions of the previously adopted model (Eq. \@ref(eq:conmean)):
+
+1) $\hat{\epsilon}_i$ should vary independtly from the predicted value (e.g. constant variance)
+2) $\hat{\epsilon}_i$ should be approximately normally distributed with a mean of zero (e.g. normality of residuals)
+3) $\hat{\epsilon}_i$ should be independent random variables over time (e.g. independence of residuals)
+
+To over come scale dependence of the residuals, the residuals will first be normalized. This can be done by using the *studentized* residuals ($\hat{\epsilon}_{i}^*$). A studentized residual is obtained by dividing the residual by an independent estimate of the standard deviation of the  residuals. To ensure independence, the standard deviation of the residuals is calculated by leaving the residual of the $i$-th observation out:
+
+\begin{equation}
+  \hat{\epsilon}_i^* = \frac{\hat{\epsilon}_i}{S_{\hat{\epsilon}_{(-i)}} \sqrt(1-h_i)}
+  (\#eq:studres)
+\end{equation}
+
+, where the standard error of the regression is calculated by leaving the $i$-th residual out:
+
+\begin{equation}
+  S_{\hat{\epsilon}_{(-i)}} = \sqrt{\frac{1}{n-k-1} \sum_{i = 1}^{n}\hat{\epsilon}_i^2}
+  (\#eq:SEminusi)
+\end{equation}  
+  
+In Eq. \@ref(eq:studres) $h_i$ represents the leverage of a data-point, or *hat-value*. The hat-value measures the distance from the mean of the independent variable $X_i$:
+
+\begin{equation}
+ h_i = \frac{1}{n} + \frac{ \left( X_i^a - \bar{x}_a \right)^2 }{\sum_{j=1}^n \left(X_j^a -  \bar{x}_a \right)^2}
+ (\#eq:hatvalue)
+\end{equation}
+
+** Assumption 1: Constant variance**
+
+The studentized residuals provide a more effective means of detecting the outliers and the equal variance assumption, as can be seen in the *scale location plot* (Fig. \@ref(fig:ScLoc)). In this plot $\hat{\epsilon}_i^*$ values of above 3.5 can be considered as outliers.
+
+
+```{r ScLoc, echo=FALSE, fig.cap = "Scale-Location plot, can be used to check for systematic relationships between $\\hat{\\epsilon}_i^*$ and the independent value ^13^C (Heteroscedasticity) or the homogeneity of variance (Homoscedasticity). Blue dots demarcate data-points that can be considered outliers based on $\\hat{\\epsilon}_i^*$  < -3.5 and 3.5 > $\\hat{\\epsilon}_i^*$. The dashed line and green area denotes the ideal value and spread for studentized residuals.",  fig.width=8, fig.height=4.5}
+
+# Filtering ideal simulation for model validation
+sim_R <-sim_R %>% filter(simulation == "ideal")
+
+# diagnostics and plots of simulations
+gg.sim <- plot_RDiag(sim_R, Xt.sim, N.sim, species, "13C", "12C", simulation, trend)
+
+gg.sim[[4]] 
+
+```
+
+Patterns in the homogeneity of variance on the *scale-location* plot can test whether the linear model suffers from systematic variations in the residuals that are dependent on the depedent variable ($X^b$), termed heteroscedasticity. When an heteroscedastic error occurs the estimates of coefficient can be compromised, and might suggest that a linear model does not fit the data. By plotting a linear least square model on the location-scale plots the systematic relation between $\hat{Y}_i$ and $\hat{\epsilon}_i^*$ can be further analysed.  This method can be further formalized with a hypothesis test known as the *Breusch Pagan test*. 
+
+```{r bptest, echo=FALSE, fig.cap="Breusch Pagan $\\chi^2$ values for the ideal simulation for several linear trends in the ionization efficiency."}
+
+Chi_R2 <- diag_R(sim_R.ext %>% filter(simulation == "ideal"), 
+                 method = "CooksD", 
+                 args = expr_R(Xt = "Xt.sim", 
+                               N = "N.sim", 
+                               species = "species", 
+                               ion1 = "13C", 
+                               ion2 = "12C"
+                               ),
+                 simulation, 
+                 trend,
+                 output = "complete"
+                 ) %>% 
+  # select(simulation, trend, `variance of residuals` = flag_CV, Chi_R2) %>%  
+  distinct(trend, .keep_all = TRUE)
+
+df <- 1
+upper <- 10
+# curve
+df_den <- tibble::tibble(vec_den = seq(0.1, upper))
+
+#find upper  95% of distribution
+upper95 <- qchisq(.95, df)
+
+
+ggplot(df_den, aes(x=vec_den)) +
+  stat_function(fun = dchisq, args = list(df = df)) +
+  stat_function(fun = dchisq, 
+                      args = list(df = df),
+                      xlim = c(upper95, upper),
+                      geom = "area",
+                      alpha = 0.2) +
+  geom_vline(xintercept = upper95 , linetype = 2)+
+  geom_point(data = Chi_R2, aes(x = Chi_R2, y = dchisq(Chi_R2, df = df),
+                                color = trend
+                                )
+             ) +
+  annotate("text", label = "95% confidence limit", x = upper95 * 1.2, 
+           y = 0.5, angle = 90
+           ) +
+  xlab(expression(chi^2)) +
+  ylab("probability-density")
+
+```
+
+The output of this test has a $\chi^2$-distribution of 1 degrees of freedom so that a 95% confidence level for $H0$ rejection can be choosen (see Fig. \@ref(fig:bptest)). Performing this test on the studentized residuals and fitted values suggests homogeneity of variance for the ideal model for most situations, unless no linear trend in ionization efficiency is evident. However, the correlation between $\chi^2$ probability and the linear ionization trend seems spurious, and is likely an artefact related to the relative large uncertainty in the OLS estimate which is an effect of the small variation in the independent variable ($X^a$)(see Fig. \@ref(fig:coeftest)). So, for the ion count originating from the *ideal* simulation, it can be concluded that there no strong reason to reject the $H0$ of homoscedasticity, and the assumption of **constant variance** holds. 
+
+```{r coeftest, echo=FALSE, fig.cap="Comparison of the standard error of the $\\beta_1$ coefficient of an OLS for estimating the studentized residuals and the variation in the dependent variable $S[X^b]$ for several linear trends in the ionization efficiency."}
+
+ggplot(Chi_R2, aes(y = SE_beta , x = S_Xt.sim.12C, color = trend)) +
+  geom_point() +
+  xlab(expression(S[""^12*C])) +
+  ylab(expression(S[beta[1]]))
+
+```
 
 
 
-The $\epsilon_i$ in Eq. \@ref(eq:conmean) is a random error term consisting of independent and identicaly distributed random variables which originate from a population with a normal distribution. 
+<!-- In the future I will test what the lower limit of n is so that this assumption is violated -->
 
-```{r normres, eval= FALSE, echo=FALSE, fig.cap = "Quantile-Quantile plot to test normality of residuals",  fig.width=8, fig.height=6}
+**Assumption 2: Normality of residuals**
+
+A second test validates the assumption of normality of the $\hat{\epsilon}_i^*$. This can be achieved by means of a Quantile-Quantile comparison plot (QQ normality plot; Fig. \@ref(fig:QQnorm)), where the empirical sample distribution is compared with a theoretical distribution. The theoretical cumulative distribution function $P(x)$ (or CDF) is used to compare the empirical sample distribution with, so that $Pr(X \le x) = P(x)$. To achieve this the studentized residuals are ordered from smallest to largest, denoted $\hat{\epsilon}_1^*$, $\hat{\epsilon}_2^*$, ..., $\hat{\epsilon}_i^*$. The cumulative probabilites of the empirical sample distribution for the $i$-th follows:
+
+\begin{equation}
+  P_i = \frac{i - \frac{1}{2}}{n} 
+  (\#eq:probs)
+\end{equation}  
+
+And by inverting the CDF we can find the theoretical quantiles $z_i$ (from $\mathrm{N}(0,1)$) that correspond with the cumulative probability, by using:
+
+\begin{equation}
+  z_i = P^{-1} \left( \frac{i - \frac{1}{2}}{n} \right)
+  (\#eq:quant)
+\end{equation}
+
+The obtained $z_i$ values are plotted as horizontal coordinates against the ordered $\hat{\epsilon}_i^*$ values in Figure \@ref(fig:QQnorm) (QQ normality plot). Here $P^{-1}$ is the inverse CDF. The straight line in the plot is a model estimate for $\hat{\epsilon}_i^*$ for comparison because if the residuals were a normal sample, the observations should lie on a straight line:
+
+\begin{equation}
+ \hat{\eta}_i = \hat{\mu} + \hat{\sigma}z_i 
+ (\#eq:predQQ) 
+\end{equation}
+
+, where $\hat{\mu}$ and $\hat{\sigma}$ can be calculated from the mean and standard deviation of $\hat{\epsilon}_i^*$. As there is an expected departure from this line because of sampling variation, a standard error for the order statistic $\eta_{i}$ is required:
+
+\begin{equation}
+  S_{\eta_i} = \frac{\hat{\sigma}}{\Phi(z_i)} \times \sqrt{\frac{P_i(1- P_i)}{n}} 
+  (\#eq:seQQ)
+\end{equation}
+
+where $\Phi$ is a density of $\mathrm{N}(0,1)$, so with the appropriate standard error being:
+
+\begin{equation}
+  \hat{\eta}_i \pm 2 \times S_{\eta_i}
+  (\#eq:seQQ2)
+\end{equation}
+
+Thereby providing a means to distinguish $\hat{\epsilon}_i^*$ that deviate significantly from the normal assumption (Fig. \@ref(fig:QQnorm)). The differences between the emperical and theoretical quantiles can be formalized hypothesis test, where the *Kolmogorov-Smirnov test* is one example of such test. Based on this test, there is no reason to reject the $H0$ of normality in the case of an "ideal" analysis.    
+
+```{r QQnorm, echo=FALSE, fig.cap = "QQ normality plot, comparing the sample quantiles with the theoretical quantiles of a density distribution with N(0,1). Blue dots denote data-points that fall outside the 95% confidence range of the predicted relationship between the theoretical and sample quantiles", fig.width=8, fig.height=4.5}
 
 gg.sim[[2]] 
 ```
 
-If the $\bar{R}$ of an analysis is derived from an homogenous subtrate, than $\epsilon_i$ should satisfy the following criterion:
 
-\begin{equation}
-  E(\epsilon_i|x_i) = 0
-  (\#eq:conepsi)
-\end{equation}
+One can further deduce from Fig. \@ref(fig:QQnorm)), that the variance around the linear line centers around zero with most datat spread in an area encompassing the 95% confidence of this regression line. This can be further confirmed by a two sided one-sample t-test on the studentized result with  $H0$: $\mu_0 = 0$, and  $Ha$: $\mu_0 \neq 0$. The assumption of **normality of residuals** with a conditional mean of zero (Eq. \@ref(eq:eq:linmodR)) seems to be valid for the "ideal" simulation.  
 
-A t-test of the simulated data comfirms this relationship
 
-Given that the ideal situation satifies these conditions, the regression diagnostics on the estimated $\hat{\epsilon}}$ can be used to assess deivations from this "ideal" model. From the previous examples it becomes apparent that even largeky heterogenous substrates cause only minimial deviation in the internal precision. This could be interperted that their is perhaps a lot of hidden variation in the nominal SIMS isotope analysis, which skews $\bar{R}$ but leaves precision untouched.
+
+**Assumption 3: Independence of residuals**
+
+
+
+
+
 
 
 #### Influence of variance on the regression model
 
-Residual analysis can help identify unusual date points which are problematic for linear models. As for a homogeneous analytical substrate and stable analysis a linear model should approximate the resulting co-variance between $X^{b}$ (e.g. ^13^C) and $X^{a}$ (e.g. ^12^C), failure might indicate heterogeneity of the analytical substrate or fluctuating stability of the analytical setup during the measurement. The goal of residual analysis is to identify the influence of the coefficient; in this case the influence on $\bar{R}$ and by determining the leverage and discrepance (outlyingness) of a data-point (Influence on data-points = Leverage + Discrepancy).
+Given that the ideal situation satifies the conditions as initially set for the linear model Eq \@ref(), the estimated $\hat{\epsilon}}$ can be used to assess deivations from this "ideal" linear model, and thereby help estabelish how representative the $\bar{R}$ is for the sampled spot. Deviations from this "ideal" linear model might indicate heterogeneity of the analytical substrate or fluctuating stability of the analytical setup during the measurement. The goal of residual analysis would therefore be to identify the influence of the coefficient; in this case the influence on $\bar{R}$ by determining the leverage and discrepance (outlyingness) of variable $X^a$, such that:
 
+\begin{equation}
+  \text{Influence} = Leverage + Discrepancy.
+    (\#eq:influence)
+\end{equation}
 
-Having determined the outlyingess and leverage of data-points (with @eq:lev) it is possible to determine the influence data-points have on the regression model. This influence can be quantified with *Cook's Distance* (or *Cook's D*), where the data-point is removed from the regression model to make inferences about its impact on the regression model. Having established that high leverage does not necessarily require the data-point to be influential, Cook's D combines the hat-values (@eq:lev) with studentized residuals (@eq:student.res) (visualized in a *Residuals vs Leverage plot*: Fig. \@ref(fig:rslev)) in a new equation:
+Having already determined the outlyingess, as the studentized residuals, and the leverage, as hat-values, of the indendent variable (with @eq:lev) it is possible to determine the influence of $X^a$ have on the linear model (Eq. \@ref(eq:influence)). This influence can be quantified with *Cook's Distance* (or *Cook's D*) to make inferences about the impact of outliers on the regression model. Having established that high leverage does not necessarily require the data-point to be influential (Eq. ), Cook's D combines the hat-values (@eq:lev) with studentized residuals (@eq:student.res), as visualized in a *Residuals vs Leverage plot* (Fig. \@ref(fig:cooksD)), in a new equation:
 
 $$D_i = \frac{e_{i}^{*}\phantom{}^2}{k + 1} \times \frac{h_i}{1- h_i} $$ {#eq:CD}
 
@@ -350,7 +524,10 @@ $$ D_c =4/ (n-k-1)$$ {#eq:CD.cut}
 
 In Figure \@ref(fig:rslev) the blue dots demarcate values with Cook's D values that might significantly influence the regression model [@Bruce2017]. High numbers of high Cook's D values occur in analyses  and warrant precaution. Again, for some of the analyses this is not obvious from the descriptive and predictive statistics.  
 
+```{r cooksD, echo=FALSE,  fig.cap = "Residuals vs Leverage plot, comparing the  hat-values (leverage) with the studentized residuals (outlyingness). Blue dots denote data-points that have Cook's D values (@eq:CD that fall above the cut-off value (@eq:CD.cut)",  fig.width=12, fig.height=6}
 
+gg.sim[[5]] 
+```
 
 
 ### A comparison of methods

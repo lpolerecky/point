@@ -45,7 +45,9 @@ stat_lab <- function(a, b, aug = FALSE){
 #' plot_RDiag(tb.pr, Xt.pr, N.pr, species.nm, "13C", "12C", file.nm)
 #'
 #'
-plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device = "png", aug = TRUE , width.out = 20, height.out = 20){
+plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL,
+                       device = "png", aug = TRUE , width.out = 20,
+                       height.out = 20){
 
   Xt <- enquo(Xt)
   N <- enquo(N)
@@ -104,11 +106,13 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
                        species = !! species,
                        ion1 = ion1,
                        ion2 = ion2,
-                       !!! gr_by) %>%
+                       !!! gr_by
+                       ) %>%
                 stat_select("augmented", 3.6, facets_gr = gr_by, aug = TRUE)
 
 # standard ggplot
-  gg_default <- function(df, stat.def, stat.aug, y, x, z, hat_y, hat_min, hat_max, ... ,title, model = FALSE){
+  gg_default <- function(df, stat.def, stat.aug, y, x, z,
+                         hat_y, hat_min, hat_max, ...,title, model = FALSE){
 
     x <- enquo(x)
     y <- enquo(y)
@@ -137,20 +141,20 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
       geom_ribbon(aes(ymin = !!hat_min,
                       ymax = !!hat_max),
                   fill = "green",
-                  color = "black",
-                  linetype = 2,
+                  color = "transparent",
                   alpha = 0.1
                   ),
-      geom_line(aes(y = !!hat_y, x = !!x),
-                color = "black" ,
-                size = 1
-      )
-
+      geom_line(aes(y = !!hat_y,
+                    x = !!x),
+                color = "black",
+                linetype = 2,
+                size = 0.5
+                )
       )
 
   }else{
     gg.model <- lst(geom_blank())
-    }
+  }
 
     ggplot(data = df, aes(y = !!y, x = !!x, color = !!z)) +
       gg.model +
@@ -189,43 +193,72 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL, device 
 
   }
 
-
   crs <- gg_default(df.def, lb.def, lb.aug,  y = !!Xt1, x = !!Xt2,
-                    hat_y = hat_Y, hat_min = hat_Y - 2 * sigma, hat_max =  hat_Y + 2 * sigma,
+                    hat_y = hat_Y,
+                    hat_min = hat_Y - 2 * sigma,
+                    hat_max =  hat_Y + 2 * sigma,
                     !!!gr_by,
                     z = flag,
-                    title = "Cross plot" , model = TRUE) +
-
-           xlab(substitute(""^a * b ~"(ct/sec)",
-                           lst(a = as.numeric(gsub("([0-9]+).*$", "\\1", ion2)),
-                               b = as.symbol(gsub("^[0-9]+","",ion2))))) +
-           ylab(substitute(""^a * b ~"(ct/sec)",
-                           lst(a = as.numeric(gsub("([0-9]+).*$", "\\1", ion1)),
-                               b = as.symbol(gsub("^[0-9]+","",ion1)))))
+                    title = "Cross plot" ,
+                    model = TRUE
+                    ) +
+    xlab(substitute(""^a * b ~"(ct/sec)",
+                    lst(a = as.numeric(gsub("([0-9]+).*$", "\\1", ion2)),
+                        b = as.symbol(gsub("^[0-9]+","",ion2))
+                        )
+                    )
+         ) +
+    ylab(substitute(""^a * b ~"(ct/sec)",
+                    lst(a = as.numeric(gsub("([0-9]+).*$", "\\1", ion1)),
+                        b = as.symbol(gsub("^[0-9]+","",ion1))
+                        )
+                    )
+         )
 
   QQ.norm <- gg_default(df.def, lb.def, lb.aug, y = RQ, x =TQ,
-                        hat_y = hat_RQ, hat_min = hat_RQ_min, hat_max = hat_RQ_max,
+                        hat_y = hat_RQ,
+                        hat_min = hat_RQ_min,
+                        hat_max = hat_RQ_max,
                         !!!gr_by,
                         z = flag,
-                        title = "Normal QQ plot", model = TRUE) +
-    ylab("Sample quantiles") +
+                        title = "Normal QQ plot",
+                        model = TRUE
+                        ) +
+    geom_point(shape = 21, alpha = 0.2) +
+    ylab(expression("studentized residuals (" * italic(e)^"*" * ")")) +
     xlab("Theoretical quantiles")
 
   rs.fit <- gg_default(df.def, lb.def, lb.aug,  y = E, x = hat_Y,
                        hat_y = hat_Y, hat_min = NULL, hat_max = NULL,
                        !!!gr_by,
                        z = flag,
-                       title = "Residuals vs Fitted plot" , model = FALSE) +
-              ylab(expression("residuals (" * italic(e) * ")"))+
-              xlab(expression("fitted value (" * hat(y) * ")"))
+                       title = "Residuals vs Fitted plot",
+                       model = FALSE
+                       ) +
+    ylab(expression("residuals (" * italic(e) * ")"))+
+    xlab(substitute("fitted value (" * hat(""^a * b) * ")",
+                    lst(a = as.numeric(gsub("([0-9]+).*$", "\\1", ion1)),
+                        b = as.symbol(gsub("^[0-9]+","",ion1))
+                    )
+    )
+    )
 
   sc.loc <- gg_default(df.def, lb.def, lb.aug,  y = studE, x = hat_Y,
-                       hat_y = hat_Y, hat_min = NULL, hat_max = NULL,
+                       hat_y = 0, hat_min = -3.5, hat_max = 3.5,
                        !!!gr_by,
                        z = flag,
-                       title = "Scale-Location plot" , model = FALSE) +
-              ylab(expression("studentized residuals (" * italic(e)^"*" * ")")) +
-              xlab(expression("fitted value (" * hat(y) * ")"))
+                       title = "Scale-Location plot",
+                       model = TRUE
+                       ) +
+    ylim(-5, 5) +
+    ylab(expression("studentized residuals (" * italic(e)^"*" * ")")) +
+    xlab(substitute("fitted value (" * hat(""^a * b) * ")",
+                    lst(a = as.numeric(gsub("([0-9]+).*$", "\\1", ion1)),
+                        b = as.symbol(gsub("^[0-9]+","",ion1))
+                    )
+    )
+    )
+
 
   rs.lev <- gg_default(df.def, lb.def, lb.aug,  y = studE, x = hat_Xi,
                        z = flag,
