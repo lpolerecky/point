@@ -260,7 +260,7 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL,
     )
 
 
-  rs.lev <- gg_default(df.def, lb.def, lb.aug,  y = studE, x = hat_Xi,
+  rs.lev <- gg_default(df.def, lb.def, lb.aug,y = studE, x = hat_Xi,
                        z = flag,
                        hat_y = hat_Y, hat_min = NULL, hat_max = NULL,
                        !!!gr_by,
@@ -269,7 +269,24 @@ plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL,
               xlab(expression("hat-values" (italic(h))))
 
 
-  gg.pl <-lst(`1` = crs, `2` = QQ.norm , `3` = rs.fit, `4`= sc.loc, `5` = rs.lev, data = lst(lb.def, lb.aug))
+  df.acf <- df.def %>%
+    group_by(!!! gr_by) %>%
+    select(!!! gr_by, ACF) %>%
+    tidyr::unnest(cols = c(ACF)) %>%
+    ungroup() %>%
+    tidyr::unite(facet_gr, !!!gr_by)
+
+  acf <- ggplot(df.acf, mapping = aes(x = lag, y = acf)) +
+    geom_hline(aes(yintercept = 0)) +
+    geom_segment(mapping = aes(xend = lag, yend = 0)) +
+    geom_hline(aes(yintercept = ci_upper), color = "darkblue") +
+    geom_hline(aes(yintercept = ci_lower), color = "darkblue") +
+    facet_wrap(~facet_gr, scales = "free") +
+    ggtitle("ACF plot") +
+    theme_classic()
+
+
+  gg.pl <-lst(`1` = crs, `2` = QQ.norm , `3` = rs.fit, `4`= sc.loc, `5` = rs.lev, `6` = acf,  data = lst(lb.def, lb.aug))
 
   gg.sa <- function(nm, x, width.out, height.out){
 

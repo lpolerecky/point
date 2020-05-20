@@ -64,15 +64,15 @@ diag_R <- function(df, method = "Cameca", args = expr_R(NULL), ...,
            )
   }
 
-# Remove zeros
-  df <- zeroCt(df,
-               !! args[["N"]],
-               !! args[["species"]],
-               as_name(args[["ion1"]]),
-               as_name(args[["ion2"]]),
-               !!! gr_by,
-               warn = FALSE
-               )
+# # Remove zeros
+#   df <- zeroCt(df,
+#                !! args[["N"]],
+#                !! args[["species"]],
+#                as_name(args[["ion1"]]),
+#                as_name(args[["ion2"]]),
+#                !!! gr_by,
+#                warn = FALSE
+#                )
 
 # Descriptive an predictive statistics for ion ratios
   tb.aug <- stat_R(df,
@@ -83,7 +83,7 @@ diag_R <- function(df, method = "Cameca", args = expr_R(NULL), ...,
                    ion2 = as_name(args[["ion2"]]),
                    !!! gr_by,
                    output = "complete",
-                   zero = TRUE
+                   zero = FALSE
                    ) %>%
               eval_tidy(expr = diag_method(method))
 
@@ -217,7 +217,8 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
                         expr(.data$R2),
                         expr(.data$SE_beta),
                         expr(.data$Chi_R2),
-                        expr(.data$flag_CV)
+                        expr(.data$flag_CV),
+                        expr(.data$ACF)
                          ),
            complete = call2( "invisible", expr(.)),
     )
@@ -349,7 +350,9 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
           #                 ),
           # R2 = summary(res_lm)$r.squared,
           R2 = purrr::map(res_lm, ~(summary(.x)$r.squared)),
-          SE_beta = purrr::map(res_lm, ~(unname(summary(.x)$coefficients[2,2])))
+          SE_beta = purrr::map(res_lm, ~(unname(summary(.x)$coefficients[2,2]))),
+# acf test
+          ACF = purrr::map(data, acf_calc)
           # Chi_R2 = R2  * !! quo_updt(my_q = args[["Xt"]],
           #                               txt = as_name(args[["ion2"]]),
           #                               x = "n"
@@ -443,6 +446,17 @@ hat_Y_se <- function(sigma, hat){
   sigma * sqrt(hat)
 }
 
+acf_calc <- function(data){
+  acf  <- acf(data$studE, plot = FALSE)
+  ci <- qnorm((1 - 0.95) / 2) / sqrt(length(data$studE))
+  df.acf <- tibble(lag =  as.vector(acf$lag)[-1],
+                   acf =  as.vector(acf$acf)[-1],
+                   ci_upper = ci,
+                   ci_lower = -ci
+                 ) }
+
+
+
 # Standard error of regression calculator
 #' @export
 sigma_calc <- function(res) sqrt(sum((res ^ 2)) / (length(res) - 2))
@@ -488,10 +502,11 @@ jack_sigma <- function(df, res){
 }
 
 #' @export
-sim_R <- function(n = 3000, N_range = 10 ^ 6, reps = 1, ion1, ion2, sys, type, baseR = NULL, offsetR = NULL, seed){
+sim_R <- function(n = 3000, N_range = 10 ^ 6, reps = 1, ion1, ion2, sys, type, baseR = NULL, offsetR = NULL, seed, ...){
 
   average_n <- N_range / n
   start_n <- n
+
 
   tibble::tibble(simulation = type,
                        n = n,
@@ -500,8 +515,7 @@ sim_R <- function(n = 3000, N_range = 10 ^ 6, reps = 1, ion1, ion2, sys, type, b
                                        baseR,
                                        offsetR,
                                        input = "delta",
-                                       type = type,
-                                       seed = seed
+                                       type = type
                                        ),
                        drift = seq(average_n * (1 - sys), average_n * (1 + sys),
                                    length.out = start_n
@@ -509,14 +523,16 @@ sim_R <- function(n = 3000, N_range = 10 ^ 6, reps = 1, ion1, ion2, sys, type, b
                        intercept = average_n
                        ) %>%
       tidyr::expand_grid(., rep = c(1:reps), species = c(ion1, ion2)) %>%
-      mutate(simulation = paste(.data$simulation, .data$rep, sep = "-")) %>%
+      mutate(simulation = paste(.data$simulation, .data$rep, sep = "-"),
+             seed = seed * rep
+             ) %>%
 # convert common isotope N
       mutate(N = if_else(species == ion2, iso_conv(.data$N, .data$R.input), .data$N)) %>%
 # Calculate N of abundant isotope species
       group_by(.data$simulation, .data$species) %>%
       tidyr::nest() %>%
 # random variation (Number generation)
-      mutate(N.sim= purrr::map(.data$data, ~N_gen(.x, N, n))) %>%
+      mutate(N.sim= purrr::map(.data$data, ~N_gen(.x, N, n, seed))) %>%
       tidyr::unnest(cols = c(.data$data, .data$N.sim)) %>%
 # systematic variation
       mutate(diff = .data$drift - .data$intercept,
@@ -538,12 +554,18 @@ sim_R <- function(n = 3000, N_range = 10 ^ 6, reps = 1, ion1, ion2, sys, type, b
 
 #
 # random Poisson ion count generator
-N_gen <- function(df, N, n) {
+N_gen <- function(df, N, n, seed) {
+
+
   N <- enquo(N)
   n <- enquo(n)
+  seed <- enquo(seed)
 
   N <- df %>% pull(!! N)
   n <- df %>% pull(!! n)
+  seed <- df %>% pull(!! seed)
+
+  set.seed(seed)
 
   Nsim <- as.double(rpois(n = n, lambda = N / n))
 
@@ -552,21 +574,23 @@ N_gen <- function(df, N, n) {
 # calculate common isotope count from rare isotope
 iso_conv <- function(N, R.sim)  as.integer(N * (1 / R.sim))
 
-R_gen <- function(reps, baseR, offsetR, input = "delta", type, seed) {
+R_gen <- function(reps, baseR, offsetR, input = "delta", type) {
 
-  set.seed(seed)
+
 
   baseR <- calib_R(baseR,
                    standard = "VPDB",
                    type = "composition",
                    input = input,
-                   output = "R")
+                   output = "R"
+                   )
 
   offsetR <- calib_R(offsetR,
                     standard = "VPDB",
                     type = "composition",
                     input = input,
-                    output = "R")
+                    output = "R"
+                    )
 
   if (type == "ideal") {
     R.sim <- rep(baseR, reps)
@@ -578,7 +602,8 @@ R_gen <- function(reps, baseR, offsetR, input = "delta", type, seed) {
     R.sim <- approx(c(1, 5 * reps /6, reps),
                     c(baseR, offsetR, offsetR),
                     n = reps ,
-                    method = "constant")$y
+                    method = "constant"
+                    )$y
     return(R.sim)
     }
 
@@ -588,7 +613,8 @@ R_gen <- function(reps, baseR, offsetR, input = "delta", type, seed) {
     R.sim <- approx(c(1, reps),
                     c(offsetR, baseR),
                     n = reps ,
-                    method = "linear")$y
+                    method = "linear"
+                    )$y
 
    return(R.sim)
     }
