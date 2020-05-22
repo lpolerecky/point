@@ -64,15 +64,15 @@ diag_R <- function(df, method = "Cameca", args = expr_R(NULL), ...,
            )
   }
 
-# # Remove zeros
-#   df <- zeroCt(df,
-#                !! args[["N"]],
-#                !! args[["species"]],
-#                as_name(args[["ion1"]]),
-#                as_name(args[["ion2"]]),
-#                !!! gr_by,
-#                warn = FALSE
-#                )
+# Remove zeros
+  df <- zeroCt(df,
+               !! args[["N"]],
+               !! args[["species"]],
+               as_name(args[["ion1"]]),
+               as_name(args[["ion2"]]),
+               !!! gr_by,
+               warn = FALSE
+               )
 
 # Descriptive an predictive statistics for ion ratios
   tb.aug <- stat_R(df,
@@ -83,7 +83,7 @@ diag_R <- function(df, method = "Cameca", args = expr_R(NULL), ...,
                    ion2 = as_name(args[["ion2"]]),
                    !!! gr_by,
                    output = "complete",
-                   zero = FALSE
+                   zero = TRUE,
                    ) %>%
               eval_tidy(expr = diag_method(method))
 
@@ -200,6 +200,7 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
                         expr(.data$E),
                         expr(.data$sigma),
                         expr(.data$hat_Y),
+                        expr(.data$hat_R2),
                         expr(.data$hat_Y_min),
                         expr(.data$hat_Y_max),
                         expr(.data$hat_Xi),
@@ -239,6 +240,21 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
                    !! quo_updt(my_q = args[["Xt"]],
                                txt = as_name(args[["ion2"]])
                                ),
+           hat_R2 = (sd(hat_Y) ^ 2 *
+                     !! quo_updt(my_q = args[["Xt"]],
+                                   x = "n_R"
+                                 )
+                     ) / ((!! quo_updt(my_q = args[["Xt"]],
+                                       txt = as_name(args[["ion2"]]),
+                                       x = "S"
+                                       )
+                            ) ^ 2 * !! quo_updt(my_q = args[["Xt"]],
+                                              x = "n_R"
+                                               )
+                          ),
+           # hat_Chi2 =  hat_R2 * !! quo_updt(my_q = args[["Xt"]],
+           #                                  x = "n_R"
+           #                                  ),
 
 # residuals
            E = !! quo_updt(my_q = args[["Xt"]],
@@ -307,8 +323,7 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
 # use the formula i - 0.5/ in, for i = 1,..,n for probs
 # this is a vector of the n probabilities ( theoretical cumulative distribution function CDF)
    mutate(prob_vc =  vector_probs(!! quo_updt(my_q = args[["Xt"]],
-                                              txt = as_name(args[["ion2"]]),
-                                              x = "n"
+                                              x = "n_R"
                                               )
                                    ),
           RQ = unname(quantile(studE, probs = prob_vc)),
@@ -423,8 +438,10 @@ expr_R <- function(Xt, N, species, ion1, ion2){
 # Not exportet helper functions
 #-------------------------------------------------------------------------------
 
-# lm residuals
 
+
+
+# lm residuals
 lm_res <- function(data, args){
   call_lm <- parse_expr(paste0("data$studE~data$", as_name(args[["Xt"]]), ".", as_name(args[["ion2"]])))
   eval_tidy(call2("lm", call_lm))
@@ -500,125 +517,6 @@ jack_sigma <- function(df, res){
   sigma_i <- c((resample::jackknife(res, sigma_calc))$replicates)
 
 }
-
-#' @export
-sim_R <- function(n = 3000, N_range = 10 ^ 6, reps = 1, ion1, ion2, sys, type, baseR = NULL, offsetR = NULL, seed, ...){
-
-  average_n <- N_range / n
-  start_n <- n
-
-
-  tibble::tibble(simulation = type,
-                       n = n,
-                       N = as.integer(N_range),
-                       R.input = R_gen(start_n,
-                                       baseR,
-                                       offsetR,
-                                       input = "delta",
-                                       type = type
-                                       ),
-                       drift = seq(average_n * (1 - sys), average_n * (1 + sys),
-                                   length.out = start_n
-                                   ),
-                       intercept = average_n
-                       ) %>%
-      tidyr::expand_grid(., rep = c(1:reps), species = c(ion1, ion2)) %>%
-      mutate(simulation = paste(.data$simulation, .data$rep, sep = "-"),
-             seed = seed * rep
-             ) %>%
-# convert common isotope N
-      mutate(N = if_else(species == ion2, iso_conv(.data$N, .data$R.input), .data$N)) %>%
-# Calculate N of abundant isotope species
-      group_by(.data$simulation, .data$species) %>%
-      tidyr::nest() %>%
-# random variation (Number generation)
-      mutate(N.sim= purrr::map(.data$data, ~N_gen(.x, N, n, seed))) %>%
-      tidyr::unnest(cols = c(.data$data, .data$N.sim)) %>%
-# systematic variation
-      mutate(diff = .data$drift - .data$intercept,
-             diff = if_else(species == ion2,
-                            as.double(iso_conv(.data$diff,
-                                               .data$R.input
-                                               )
-                                      ),
-                            .data$diff
-                            ),
-             N.sim= .data$N.sim + .data$diff,
-             Xt.sim = .data$N.sim,
-             trend = paste0("linear trend (var: ", sys, ")")
-             ) %>%
-      ungroup() %>%
-      select(-c(drift, intercept, diff))
-
-}
-
-#
-# random Poisson ion count generator
-N_gen <- function(df, N, n, seed) {
-
-
-  N <- enquo(N)
-  n <- enquo(n)
-  seed <- enquo(seed)
-
-  N <- df %>% pull(!! N)
-  n <- df %>% pull(!! n)
-  seed <- df %>% pull(!! seed)
-
-  set.seed(seed)
-
-  Nsim <- as.double(rpois(n = n, lambda = N / n))
-
-  }
-
-# calculate common isotope count from rare isotope
-iso_conv <- function(N, R.sim)  as.integer(N * (1 / R.sim))
-
-R_gen <- function(reps, baseR, offsetR, input = "delta", type) {
-
-
-
-  baseR <- calib_R(baseR,
-                   standard = "VPDB",
-                   type = "composition",
-                   input = input,
-                   output = "R"
-                   )
-
-  offsetR <- calib_R(offsetR,
-                    standard = "VPDB",
-                    type = "composition",
-                    input = input,
-                    output = "R"
-                    )
-
-  if (type == "ideal") {
-    R.sim <- rep(baseR, reps)
-    return(R.sim)
-    }
-
-  if (type == "constant"){
-
-    R.sim <- approx(c(1, 5 * reps /6, reps),
-                    c(baseR, offsetR, offsetR),
-                    n = reps ,
-                    method = "constant"
-                    )$y
-    return(R.sim)
-    }
-
-  if (type == "gradient") {
-
-
-    R.sim <- approx(c(1, reps),
-                    c(offsetR, baseR),
-                    n = reps ,
-                    method = "linear"
-                    )$y
-
-   return(R.sim)
-    }
-  }
 
 
 
