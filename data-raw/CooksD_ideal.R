@@ -1,5 +1,6 @@
 ## code to prepare `CooksD_ideal` dataset
 
+
 CooksD_ideal <- filter(sim_IC, simulation == "ideal" & rep < 4) %>%
   diag_R(method = "CooksD",
          args = expr_R(Xt = "Xt.sim",
@@ -12,7 +13,7 @@ CooksD_ideal <- filter(sim_IC, simulation == "ideal" & rep < 4) %>%
         trend,
         repetition,
         output = "complete"
-        )%>%
+        ) %>%
   group_by(trend) %>%
   summarise(Chi_R2 = mean(Chi_R2),
             SE_beta = mean(SE_beta ),
@@ -20,3 +21,5 @@ CooksD_ideal <- filter(sim_IC, simulation == "ideal" & rep < 4) %>%
             )
 
 usethis::use_data(CooksD_ideal, overwrite = TRUE)
+
+file.remove("data/sim_IC.rda")
