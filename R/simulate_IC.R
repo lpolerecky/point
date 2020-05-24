@@ -16,35 +16,35 @@ sim_R <- function(n = 3000,
   average_n <- N_range / n
   start_n <- n
 
-
   tibble::tibble(simulation = type,
                  n = n,
-                 N = as.integer(N_range),
+                 bl = rep(1:(n/50), each = 50),
+                 N.input = as.integer(N_range),
                  R.input = R_gen(start_n,
                                  baseR,
                                  offsetR,
                                  input = "delta",
                                  type = type
                  ),
-                 drift = seq(average_n * (1 - sys), average_n * (1 + sys),
+                 drift = seq(average_n * (1 - sys),
+                             average_n * (1 + sys),
                              length.out = start_n
                  ),
                  intercept = average_n
-  ) %>%
-    tidyr::expand_grid(., rep = c(1:reps), species = c(ion1, ion2)) %>%
-    mutate(simulation = paste(.data$simulation, .data$rep, sep = "-"),
-           seed = seed * rep
-    ) %>%
+                 ) %>%
+    tidyr::expand_grid(., repetition = c(1:reps), species = c(ion1, ion2)) %>%
+    mutate(seed = seed * repetition) %>%
 # Convert common isotope N
-    mutate(N = if_else(species == ion2, iso_conv(.data$N,
-                                                 .data$R.input), .data$N
-                       )
+    mutate(N.input = if_else(species == ion2,
+                             iso_conv(.data$N.input,
+                                      .data$R.input),
+                             .data$N.input)
            ) %>%
 # Calculate N of abundant isotope species
     group_by(.data$simulation, .data$species) %>%
     tidyr::nest() %>%
 # Random variation (Number generation)
-    mutate(N.sim= purrr::map(.data$data, ~N_gen(.x, N, n, seed))) %>%
+    mutate(N.sim= purrr::map(.data$data, ~N_gen(.x, N.input, n, seed))) %>%
     tidyr::unnest(cols = c(.data$data, .data$N.sim)) %>%
 # Systematic variation
     mutate(diff = .data$drift - .data$intercept,
@@ -60,7 +60,7 @@ sim_R <- function(n = 3000,
            trend = paste0("linear trend (var: ", sys, ")")
     ) %>%
     ungroup() %>%
-    select(-c(drift, intercept, diff))
+    select(-c(drift, intercept, diff, seed))
 
 }
 
@@ -68,7 +68,6 @@ sim_R <- function(n = 3000,
 # Random Poisson ion count generator
 #-------------------------------------------------------------------------------
 N_gen <- function(df, N, n, seed) {
-
 
   N <- enquo(N)
   n <- enquo(n)
@@ -88,7 +87,6 @@ N_gen <- function(df, N, n, seed) {
 # Calculate common isotope count from rare isotope
 #-------------------------------------------------------------------------------
 iso_conv <- function(N, R.sim)  as.integer(N * (1 / R.sim))
-
 
 #-------------------------------------------------------------------------------
 # Create isotopic gradients and offsets
@@ -114,7 +112,7 @@ R_gen <- function(reps, baseR, offsetR, input = "delta", type) {
     return(R.sim)
   }
 
-  if (type == "constant"){
+  if (type == "asymmetric"){
 
     R.sim <- approx(c(1, 5 * reps /6, reps),
                     c(baseR, offsetR, offsetR),
@@ -124,8 +122,7 @@ R_gen <- function(reps, baseR, offsetR, input = "delta", type) {
     return(R.sim)
   }
 
-  if (type == "gradient") {
-
+  if (type == "symmetric") {
 
     R.sim <- approx(c(1, reps),
                     c(offsetR, baseR),

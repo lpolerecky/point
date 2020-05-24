@@ -26,7 +26,8 @@ Imports:
     polyaAeppli (>= 2.0),
     rlang (>= 0.4),
     purrr (>= 0.3),
-    bookdown
+    bookdown,
+    mgcv
 Suggests: 
     testthat,
     knitr,

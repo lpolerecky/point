@@ -65,7 +65,9 @@ diag_R <- function(df, method = "Cameca", args = expr_R(NULL), ...,
   }
 
 # Remove zeros
-  df <- zeroCt(df,
+  if (method == "CooksD"){
+
+    df <- zeroCt(df,
                !! args[["N"]],
                !! args[["species"]],
                as_name(args[["ion1"]]),
@@ -73,19 +75,23 @@ diag_R <- function(df, method = "Cameca", args = expr_R(NULL), ...,
                !!! gr_by,
                warn = FALSE
                )
+  }
 
+  if (method == "CooksD" | method == "Cameca"){
 # Descriptive an predictive statistics for ion ratios
-  tb.aug <- stat_R(df,
-                   Xt = !! args[["Xt"]],
-                   N =!! args[["N"]],
-                   species = !! args[["species"]],
-                   ion1 = as_name(args[["ion1"]]),
-                   ion2 = as_name(args[["ion2"]]),
-                   !!! gr_by,
-                   output = "complete",
-                   zero = TRUE,
-                   ) %>%
-              eval_tidy(expr = diag_method(method))
+    tb.aug <- stat_R(df,
+                     Xt = !! args[["Xt"]],
+                     N =!! args[["N"]],
+                     species = !! args[["species"]],
+                     ion1 = as_name(args[["ion1"]]),
+                     ion2 = as_name(args[["ion2"]]),
+                     !!! gr_by,
+                     output = "complete",
+                    # zero = TRUE,
+                    ) %>%
+               eval_tidy(expr = diag_method(method))
+  }
+
 
 # Datafile with flag values associated to diagnostics
   if (output == "flag"){
@@ -219,7 +225,8 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
                         expr(.data$SE_beta),
                         expr(.data$Chi_R2),
                         expr(.data$flag_CV),
-                        expr(.data$ACF)
+                        expr(.data$ACF),
+                        expr(.data$flag_IR)
                          ),
            complete = call2( "invisible", expr(.)),
     )
@@ -240,18 +247,22 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
                    !! quo_updt(my_q = args[["Xt"]],
                                txt = as_name(args[["ion2"]])
                                ),
-           hat_R2 = (sd(hat_Y) ^ 2 *
-                     !! quo_updt(my_q = args[["Xt"]],
-                                   x = "n_R"
-                                 )
-                     ) / ((!! quo_updt(my_q = args[["Xt"]],
-                                       txt = as_name(args[["ion2"]]),
-                                       x = "S"
-                                       )
-                            ) ^ 2 * !! quo_updt(my_q = args[["Xt"]],
+           # hat_R2 = (sd(hat_Y) ^ 2 *
+           #           !! quo_updt(my_q = args[["Xt"]],
+           #                         x = "n_R"
+           #                       )
+           #           ) / ((!! quo_updt(my_q = args[["Xt"]],
+           #                             txt = as_name(args[["ion2"]]),
+           #                             x = "S"
+           #                             )
+           #                  ) ^ 2 * !! quo_updt(my_q = args[["Xt"]],
+           #                                    x = "n_R"
+           #                                     )
+           #                ),
+           ESS = (sd(hat_Y) ^ 2 * !! quo_updt(my_q = args[["Xt"]],
                                               x = "n_R"
-                                               )
-                          ),
+                                              )
+                  ),
            # hat_Chi2 =  hat_R2 * !! quo_updt(my_q = args[["Xt"]],
            #                                  x = "n_R"
            #                                  ),
@@ -265,10 +276,11 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
 # 95 CI of the regression
            hat_Y_min = hat_Y - 2 * hat_Y_se(sigma, hat_Xi),
            hat_Y_max = hat_Y + 2 * hat_Y_se(sigma, hat_Xi),
-# Mean Square Error
-           MSE = sum(E ^ 2) / !! quo_updt(my_q = args[["Xt"]],
-                                          x = "n_R"
-                                          )
+# sum of Square residuals
+           SSR = sum(E ^ 2),
+# coeffecient of determination
+           hat_R2 =  1 - (SSR/(ESS + SSR))
+
             ) %>%
     tidyr::nest() %>%
     mutate(
@@ -316,7 +328,7 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
                                       cooksD_cut_calc
                                       ),
            flag = if_else(CooksD > CooksD_cf, "influential", "non-influential")
-          ) %>%
+           ) %>%
 # normality test
     # mutate(RQ = studE) %>%
     # arrange(RQ) %>%
@@ -368,6 +380,8 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
           SE_beta = purrr::map(res_lm, ~(unname(summary(.x)$coefficients[2,2]))),
 # acf test
           ACF = purrr::map(data, acf_calc)
+
+
           # Chi_R2 = R2  * !! quo_updt(my_q = args[["Xt"]],
           #                               txt = as_name(args[["ion2"]]),
           #                               x = "n"
@@ -393,11 +407,16 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
                         qchisq(.95, df = 1),
                         "Ha (heteroskedasticity)",
                         "H0 (homoskedasticity)"
-                        )) %>%
+                        ),
+           LB_test = stats::Box.test(studE, type = "Ljung-Box")$p.value,
+           flag_IR = if_else(LB_test < 0.05,
+                             "Ha (dependence of residuals)",
+                             "H0 (independence of residuals)"
+                             )
+           ) %>%
     ungroup() %>%
     eval_tidy(expr =  mod_out(output))
 }
-
 
 
 #' Create stat_R call quosure
@@ -438,15 +457,14 @@ expr_R <- function(Xt, N, species, ion1, ion2){
 # Not exportet helper functions
 #-------------------------------------------------------------------------------
 
-
-
-
 # lm residuals
 lm_res <- function(data, args){
   call_lm <- parse_expr(paste0("data$studE~data$", as_name(args[["Xt"]]), ".", as_name(args[["ion2"]])))
   eval_tidy(call2("lm", call_lm))
 
 }
+
+
 
 # use the formula i - 0.5/ in, for i = 1,..,n
 # this is a vector of the n probabilities ( theoretical cumulative distribution function CDF)
@@ -519,5 +537,55 @@ jack_sigma <- function(df, res){
 }
 
 
+#' ion
+#' @export
+ion <- function(df, args = expr_ion(NULL), ...){
 
+  gr_by <- enquos(...)
+
+
+  df %>%
+    group_by(!!! gr_by, !! args[["species"]]) %>%
+    mutate(n = length(!!args[["t"]])) %>%
+# Predicted values
+    tidyr::nest() %>%
+    mutate(pt = purrr::map(data, ~gam_fun(.x, args = args, n = n))) %>%
+    tidyr::unnest(cols = c(data, pt)) %>%
+# Detrended series
+    mutate(!! quo_updt(args[["Xt"]], "detrended") :=
+             mean(!! quo_updt(args[["Xt"]], "model")) +
+             (!! args[["Xt"]] - !! quo_updt(args[["Xt"]], "model")),
+           !! quo_updt(args[["N"]], "detrended") := !! quo_updt(args[["Xt"]], "detrended") *
+             min(!!args[["t"]]) - .data$tc.mt
+           ) %>%
+    ungroup()
+  }
+
+
+expr_ion <- function(Xt, N, species, t){
+
+  as_quosures(lst(Xt = parse_expr(Xt),
+                  N = parse_expr(N),
+                  t = parse_expr(t),
+                  species = parse_expr(species)
+                  ),
+              env = caller_env())
+
+}
+
+
+
+gam_fun <- function(data, args, n){
+
+
+  s_call <- call2("s", get_expr(args[["t"]]))
+  form_gam <- new_formula(get_expr(args[["Xt"]]), s_call, env = caller_env())
+
+  gam_call <- call2("gam", get_expr(form_gam), method = "REML", data = expr(data))
+
+  model <- eval_tidy(expr = gam_call)
+
+  tidymv::get_gam_predictions(model, get_expr(args[["t"]]), series_length = n) %>%
+    rename(!! quo_updt(args[["Xt"]], "model") := !! args[["Xt"]])
+  }
 
