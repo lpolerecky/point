@@ -18,6 +18,7 @@
 #' @importFrom stats cov sd
 #' @import stringr
 #' @import ggplot2
+#' @import mgcv
 #'
 #' @docType package
 #' @name point

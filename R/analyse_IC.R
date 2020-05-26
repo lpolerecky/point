@@ -279,7 +279,8 @@ stat_R <- function(df, Xt, N, species, ion1, ion2, ..., latex = FALSE,
             mutate(R.nm = latex_parser(ion1, ion2)) %>%
             select(!!! tb_names,
                    R = "R.nm",
-                   !!! ls.latex)
+                   !!! ls.latex
+                   )
 
     return(df)
 

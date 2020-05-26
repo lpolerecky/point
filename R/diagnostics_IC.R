@@ -230,7 +230,12 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
                          ),
            complete = call2( "invisible", expr(.)),
     )
-    }
+  }
+
+# update ion names to match stat_R output in case of space seperation
+  args[["ion1"]] <- str_replace_all(as_name(args[["ion1"]]), " ", "")
+  args[["ion2"]] <- str_replace_all(as_name(args[["ion2"]]), " ", "")
+
 
   df %>%
     group_by(!!! gr_by) %>%
@@ -421,13 +426,13 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
 
 #' Create stat_R call quosure
 #'
-#' \code{expr_R} function to generate an quosure that mimics a stat_R call
-#' for subsequent usage in dia_R
+#' \code{expr_R} and \code{expr_cor} functions generate an quosure that mimics a
+#' stat_R call or cor_IC call for subsequent usage in dia_R
 #'
-#' The \code{diag_R} function performs an internal call to stat_R to perform diagnostics
-#' on the influence of individial measurements on the blockwise or
-#' global (i.e., a complete analysis) stastics. This function provides a
-#' convenient way to enter this call as an quosure into the argument
+#' The \code{diag_R} function performs an internal call to stat_R or cor_IC call
+#' to perform diagnostics on the influence of individial measurements on the
+#' blockwise or global (i.e., a complete analysis) stastics. This function
+#' provides a convenient way to enter this call as an quosure into the argument
 #' \code{args} of \code{diag_R}.
 #'
 #' @param Xt A character string constituting the ion count rate.
@@ -435,6 +440,7 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
 #' @param species A character string constituting the species analysed.
 #' @param ion1 A character string constituting the heavy isotope ("13C").
 #' @param ion2 A character string constituting the light isotope ("12C").
+#' @param t A character string constituting the time increment of measurement.
 #'
 #' @return A list containing the input arguments as a
 #' \code{\link[rlang:quosure]{quosure}}.
@@ -448,11 +454,25 @@ expr_R <- function(Xt, N, species, ion1, ion2){
                   N = parse_expr(N),
                   species = parse_expr(species),
                   ion1 = ion1,
-                  ion2 = ion2),
-              env = caller_env())
+                  ion2 = ion2
+                  ),
+              env = caller_env()
+              )
 
 }
+#' @rdname expr_R
+#'
+#' @export
+expr_cor <- function(Xt, N, species, t){
 
+  as_quosures(lst(Xt = parse_expr(Xt),
+                  N = parse_expr(N),
+                  t = parse_expr(t),
+                  species = parse_expr(species)
+  ),
+  env = caller_env())
+
+}
 #-------------------------------------------------------------------------------
 # Not exportet helper functions
 #-------------------------------------------------------------------------------
@@ -536,56 +556,4 @@ jack_sigma <- function(df, res){
 
 }
 
-
-#' ion
-#' @export
-ion <- function(df, args = expr_ion(NULL), ...){
-
-  gr_by <- enquos(...)
-
-
-  df %>%
-    group_by(!!! gr_by, !! args[["species"]]) %>%
-    mutate(n = length(!!args[["t"]])) %>%
-# Predicted values
-    tidyr::nest() %>%
-    mutate(pt = purrr::map(data, ~gam_fun(.x, args = args, n = n))) %>%
-    tidyr::unnest(cols = c(data, pt)) %>%
-# Detrended series
-    mutate(!! quo_updt(args[["Xt"]], "detrended") :=
-             mean(!! quo_updt(args[["Xt"]], "model")) +
-             (!! args[["Xt"]] - !! quo_updt(args[["Xt"]], "model")),
-           !! quo_updt(args[["N"]], "detrended") := !! quo_updt(args[["Xt"]], "detrended") *
-             min(!!args[["t"]]) - .data$tc.mt
-           ) %>%
-    ungroup()
-  }
-
-
-expr_ion <- function(Xt, N, species, t){
-
-  as_quosures(lst(Xt = parse_expr(Xt),
-                  N = parse_expr(N),
-                  t = parse_expr(t),
-                  species = parse_expr(species)
-                  ),
-              env = caller_env())
-
-}
-
-
-
-gam_fun <- function(data, args, n){
-
-
-  s_call <- call2("s", get_expr(args[["t"]]))
-  form_gam <- new_formula(get_expr(args[["Xt"]]), s_call, env = caller_env())
-
-  gam_call <- call2("gam", get_expr(form_gam), method = "REML", data = expr(data))
-
-  model <- eval_tidy(expr = gam_call)
-
-  tidymv::get_gam_predictions(model, get_expr(args[["t"]]), series_length = n) %>%
-    rename(!! quo_updt(args[["Xt"]], "model") := !! args[["Xt"]])
-  }
 

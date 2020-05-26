@@ -211,3 +211,51 @@ quo_updt2 <- function(my_q, txt = NULL){
 
 }
 
+#' Predicting trends in ionization efficiency
+#' @export
+predict_ionize <- function(df, Xt, N, t, species, ...){
+
+  gr_by <- enquos(...)
+  species <- enquo(species)
+  Xt <- enquo(Xt)
+  N <- enquo(N)
+  t <- enquo(t)
+
+  # new quosures
+  Xt.model <- quo_updt(Xt, "model")
+  Xt.l0 <- quo_updt(Xt, "l0")
+  N.l0 <-  quo_updt(N, "l0")
+
+
+  df %>%
+    group_by(!!! gr_by, !! species) %>%
+    mutate(n = length(!! t)) %>%
+    # Predicted values
+    tidyr::nest() %>%
+    mutate(!! Xt.model  := purrr::map(data, ~gam_fun(.x, Xt = !!Xt, t = !!t, n = !!n))) %>%
+    tidyr::unnest(cols = c(data, !! Xt.model)) %>%
+    # Detrended series
+    mutate(!! Xt.l0 := mean(!! Xt.model) + (!! Xt - !! Xt.model),
+           !! N.l0  := !! Xt.l0 * (min(!! t) - .data$tc.mt)
+           ) %>%
+    ungroup()
+}
+
+
+gam_fun <- function(data, Xt, t, n){
+
+  Xt <- enquo(Xt)
+  t <- enquo(t)
+  n <- enquo(n)
+
+  s_call <- call2("s", get_expr(t))
+  form_gam <- new_formula(get_expr(Xt), s_call, env = caller_env())
+
+  gam_call <- call2("gam", get_expr(form_gam), method = "REML", data = expr(data))
+
+  model <- eval_tidy(expr = gam_call)
+
+  unname(predict(model))
+
+}
+

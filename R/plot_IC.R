@@ -45,9 +45,9 @@ stat_lab <- function(a, b, aug = FALSE){
 #' plot_RDiag(tb.pr, Xt.pr, N.pr, species.nm, "13C", "12C", file.nm)
 #'
 #'
-plot_RDiag <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL,
-                       device = "png", aug = TRUE , width.out = 20,
-                       height.out = 20){
+plot_diag_R <- function(df, Xt, N, species, ion1, ion2, ..., path = NULL,
+                        device = "png", aug = TRUE , width.out = 20,
+                        height.out = 20){
 
   Xt <- enquo(Xt)
   N <- enquo(N)

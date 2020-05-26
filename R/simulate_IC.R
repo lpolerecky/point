@@ -25,15 +25,15 @@ sim_R <- function(n = 3000,
                                  offsetR,
                                  input = "delta",
                                  type = type
-                 ),
+                                 ),
                  drift = seq(average_n * (1 - sys),
                              average_n * (1 + sys),
                              length.out = start_n
-                 ),
+                             ),
                  intercept = average_n
                  ) %>%
     tidyr::expand_grid(., repetition = c(1:reps), species = c(ion1, ion2)) %>%
-    mutate(seed = seed * repetition) %>%
+    mutate(seed = seed + repetition + row_number(repetition)) %>%
 # Convert common isotope N
     mutate(N.input = if_else(species == ion2,
                              iso_conv(.data$N.input,
@@ -42,23 +42,24 @@ sim_R <- function(n = 3000,
            ) %>%
 # Calculate N of abundant isotope species
     group_by(.data$simulation, .data$species) %>%
-    tidyr::nest() %>%
+    # tidyr::nest() %>%
 # Random variation (Number generation)
-    mutate(N.sim= purrr::map(.data$data, ~N_gen(.x, N.input, n, seed))) %>%
-    tidyr::unnest(cols = c(.data$data, .data$N.sim)) %>%
+    mutate(N.sim = purrr::pmap_dbl(list(N = .data$N.input, n = .data$n, seed = .data$seed), N_gen)) %>%
+    # mutate(N.sim= purrr::map(.data$data, ~N_gen(.x, N.input, n, seed))) %>%
+    # tidyr::unnest(cols = c(.data$data, .data$N.sim)) %>%
 # Systematic variation
     mutate(diff = .data$drift - .data$intercept,
            diff = if_else(species == ion2,
                           as.double(iso_conv(.data$diff,
                                              .data$R.input
-                          )
-                          ),
+                                            )
+                                   ),
                           .data$diff
-           ),
+                          ),
            N.sim= .data$N.sim + .data$diff,
            Xt.sim = .data$N.sim,
            trend = paste0("linear trend (var: ", sys, ")")
-    ) %>%
+           ) %>%
     ungroup() %>%
     select(-c(drift, intercept, diff, seed))
 
@@ -67,19 +68,19 @@ sim_R <- function(n = 3000,
 #-------------------------------------------------------------------------------
 # Random Poisson ion count generator
 #-------------------------------------------------------------------------------
-N_gen <- function(df, N, n, seed) {
-
-  N <- enquo(N)
-  n <- enquo(n)
-  seed <- enquo(seed)
-
-  N <- df %>% pull(!! N)
-  n <- df %>% pull(!! n)
-  seed <- df %>% pull(!! seed)
+# N_gen <- function(df, N, n, seed) {
+N_gen <- function(N, n, seed) {
+  # N <- enquo(N)
+  # n <- enquo(n)
+  # seed <- enquo(seed)
+  #
+  # N <- df %>% pull(!! N)
+  # n <- df %>% pull(!! n)
+  # seed <- df %>% pull(!! seed)
 
   set.seed(seed)
 
-  Nsim <- as.double(rpois(n = n, lambda = N / n))
+  Nsim <- as.double(rpois(n = 1, lambda = N / n))
 
 }
 

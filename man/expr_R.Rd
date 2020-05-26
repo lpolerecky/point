@@ -2,9 +2,12 @@
 % Please edit documentation in R/diagnostics_IC.R
 \name{expr_R}
 \alias{expr_R}
+\alias{expr_cor}
 \title{Create stat_R call quosure}
 \usage{
 expr_R(Xt, N, species, ion1, ion2)
+
+expr_cor(Xt, N, species, t)
 }
 \arguments{
 \item{Xt}{A character string constituting the ion count rate.}
@@ -16,20 +19,22 @@ expr_R(Xt, N, species, ion1, ion2)
 \item{ion1}{A character string constituting the heavy isotope ("13C").}
 
 \item{ion2}{A character string constituting the light isotope ("12C").}
+
+\item{t}{A character string constituting the time increment of measurement.}
 }
 \value{
 A list containing the input arguments as a
 \code{\link[rlang:quosure]{quosure}}.
 }
 \description{
-\code{expr_R} function to generate an quosure that mimics a stat_R call
-for subsequent usage in dia_R
+\code{expr_R} and \code{expr_cor} functions generate an quosure that mimics a
+stat_R call or cor_IC call for subsequent usage in dia_R
 }
 \details{
-The \code{diag_R} function performs an internal call to stat_R to perform diagnostics
-on the influence of individial measurements on the blockwise or
-global (i.e., a complete analysis) stastics. This function provides a
-convenient way to enter this call as an quosure into the argument
+The \code{diag_R} function performs an internal call to stat_R or cor_IC call
+to perform diagnostics on the influence of individial measurements on the
+blockwise or global (i.e., a complete analysis) stastics. This function
+provides a convenient way to enter this call as an quosure into the argument
 \code{args} of \code{diag_R}.
 }
 \examples{
