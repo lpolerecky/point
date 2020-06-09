@@ -102,6 +102,45 @@ diag_R <- function(df, method = "Cameca", args = expr_R(NULL), ...,
    }
   }
 
+#' Evaluate effect size of diagnostics
+#' @export
+eval_diag <- function(df, SR, n, execution, ...){
+
+  SR <- enquo(SR)
+  n <- enquo(n)
+  filter_gr <- enquo(execution)
+  gr_by <- enquos(...)
+
+  SSO <- filter(df, !!filter_gr == 1) %>% mutate(SSO = (!! SR) ^ 2 * !! n) %>% select(!!!  gr_by, n1  = !!n, SR1 = !!SR, SSO)
+
+  df <- left_join(df, SSO, by = sapply(gr_by, as_name))
+
+  df %>%
+    group_by(!!! gr_by) %>%
+    arrange(desc(!! filter_gr)) %>%
+    transmute(execution = !! filter_gr,
+              n1 = n1,
+              nz = !! n,
+              diff_n = c(diff(!! n, 1), NA),
+              SR1 = SR1,
+              SRz = !!SR,
+              diff_SR =  c(diff(!! SR, 1), NA),
+              SSD = diff_n * diff_SR^2,
+              SSO = SSO,
+              SSO_z =  (!! SR)^2 *!! n,
+              n2_t = ((SR1 - SRz)^2 * (n1 - nz))  / SSO,
+              n2_p = SSD / SSO_z,
+              chi_nt2 = n2_t * n1,
+              chi_np2 = n2_p * nz
+              )
+
+
+  }
+
+
+
+
+
 #' Family of diagnostics functions for isotope count ratios
 #'
 #' \code{Cameca_R} default CAMECA diagnostics
@@ -373,7 +412,7 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
 # cut-off 0.05 for H0 rejection),
     tidyr::nest() %>%
     mutate(
-          res_lm = purrr::map(data, ~lm_res(.x, args =args)),
+          res_lm = purrr::map(data, ~lm_res(.x, args = args)),
           # res_lm = !!quo(lm(!!quo_updt(args[["Xt"]],
           #                                      txt = as_name(args[["ion2"]]),
           #                                      x = "studE",

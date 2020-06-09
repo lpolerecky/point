@@ -312,7 +312,7 @@ And, thus the following measure can be adopted to assess the performance of this
 ```{r regression, echo=FALSE,  fig.cap = "Cross plotted ^13^C and ^12^C count rates and the regression line following equation, based on the linear function of Eq. \\@ref(eq:linmodR) and with 2 times the standard error of the regression represented as the green area.", fig.width=12, fig.height=6}
 
 # Diagnostics and plots of simulations
-gg.sim.ex <- plot_RDiag(sim_IC_extremes, Xt.sim, N.sim, species, "13C", "12C", simulation, trend)
+gg.sim.ex <- plot_diag_R(sim_IC_extremes, Xt.sim, N.sim, species, "13C", "12C", simulation, trend)
 
 gg.sim.ex[[1]] 
 ```
@@ -357,7 +357,7 @@ The studentized residuals provide a more effective means of detecting the outlie
 ```{r ScLoc, echo=FALSE, fig.cap = "Scale-Location plot, can be used to check for systematic relationships between $\\hat{\\epsilon}_i^*$ and the independent value ^13^C (Heteroscedasticity) or the homogeneity of variance (Homoscedasticity). Blue dots demarcate data-points that can be considered outliers based on $\\hat{\\epsilon}_i^*$  < -3.5 and 3.5 > $\\hat{\\epsilon}_i^*$. The dashed line and green area denotes the value and spread for studentized residuals if Homoscedasticity exists.",  fig.width=8, fig.height=4}
 
 # diagnostics and plots of simulations (load SIM_IC_ideal)
-gg.sim <- plot_RDiag(sim_IC_ideal, Xt.sim, N.sim, species, "13C", "12C", simulation, trend)
+gg.sim <- plot_diag_R(sim_IC_ideal, Xt.sim, N.sim, species, "13C", "12C", simulation, trend)
 
 gg.sim[[4]] 
 
@@ -566,48 +566,95 @@ ggplot(tb.trj , aes(x = var_R, y = diff_n, color = simulation)) +
 
 ```
 
-Effect size can be unified in a single measure, the explained variance $\eta^2$, obtained from the sum of squared deviations from the $\bar{R}$ explained by the augmentation ($SSA$) divided by the $SST$ of $R$. 
+Effect size can be unified in a single measure, the explained variance $\eta^2$, obtained from the sum of squared deviations from the $\bar{R}$ explained by the augmentated model ($SSA$) divided by the $SST$ of $R$. Here $SSE$ is the variance by the following hypotehtical  model as follows
 
-\begin{equation} 
-  \eta^2 = \frac{SSA}{SST} = \frac{n'\hat{S}_R^2}{\sum_{i=1}^n (R - \bar{R})^2}
+\begin{equation}
+  \hat{\epsilon}_i' = \hat{\epsilon}_i -  \epsilon_i^* = \left( X_i^b - \bar{R}X_i^a \right) - \left(X_i^b^* -  \bar{R}X_i^a^* \right) = X_i^b' - \bar{R}'X_i^a'
 \end{equation} 
 
-This variance function can be converted to a $\chi^2$ goodness of fit test with 1 degree of freedom. The $H0$ is that the augmentation brings about no change in the variance of the ion count data. In other words if the $H0$ is not rejected there is no reason to assume that the data would originate from a substrate with a heterogenous isotopic composition.  
+The variance $\hat{\epsilon}^2$ in this formulation is only accounted by the change in $\bar{R}$ throught the augmentation, giving
+
+\begin{equation}
+ SST = SSA + SSE
+\end{equation}
+
+\begin{equation} 
+  \eta^2 = \frac{SSE}{SST} = 1 - \frac{SSA}{SST} = 1 - \frac{n*\hat{S}_R*^2}{\sum_{i=1}^n (R - \bar{R})^2}
+\end{equation} 
+
+This yields a variance function qhich can be converted to a $\chi^2$ goodness of fit test, where the coefficient $\bar{R}'$ can divised as a hypothesis with $H0 : \bar{R}' = 0$ and $Ha: \bar{R}' \ne 0 $. This test has 1 degree of freedom, as er 2 relations $r$ used to calculate the coefficient ($\bar{R}$ from species $a$ and $b$) for the estimate derived based on the linear model ($df = r -1 $ for goodness of fit).  In other words , the $H0$ suggest that the augmentation brings about no change in the variance of the ion count data, so that if the $H0$ is rejected there is reason to assume that the data originates from a substrate with a heterogenous isotopic composition.  
 
   
 ```{r echo=FALSE, fig.width=8, fig.height=4}
 
-CD_ini <- filter(CooksD_stepwise, execution == 2)
 
+CD_eval <- CD_eval  %>% filter(execution  == 2)
+
+
+fx <- function(x) { 
+  0.5 * dchisq(x, df = 1) + 
+    0.5 * dnorm(x,
+                pull(filter(null_cdf, name == "mean"), value) , 
+                pull(filter(null_cdf, name == "sd"), value)
+                )
+}
+
+df <- 1
+y_star = 3
+      
 ggplot(df_den, aes(x=vec_den)) +
-  stat_function(fun = dchisq, args = list(df = df)) +
+  stat_function(fun = fx, linetype = 2 ) +
+  stat_function(fun = dchisq, args = list(df = df), linetype = 3) +
   stat_function(fun = dchisq, 
-                      args = list(df = df),
-                      xlim = c(upper95, upper),
-                      geom = "area",
-                      alpha = 0.2) +
-  geom_vline(xintercept = upper95 , linetype = 2)+
+                args = list(df = df),
+                xlim = c(upper95, upper),
+                geom = "area",
+                alpha = 0.2
+                ) +
+  geom_vline(xintercept = upper95, linetype = 3) +
+  geom_vline(xintercept = y_star, linetype = 2) +
   geom_point(position = jitter,
-             data = CD_ini, 
-             aes(x = Chi_w2, y = dchisq(Chi_w2, df = df),
-             color = simulation,
-             alpha = 0.2
-             
-             )
-             )+
+             data = CD_eval, 
+             aes(x = chi_np2 , y = dchisq(chi_np2 , df = df),
+                 color = simulation, alpha = 0.2
+                 )
+             ) +
   scale_alpha(guide = "none") + 
-  annotate("text", label = "95% confidence limit", x = upper95 * 1.2, 
-           y = 0.5, angle = 90
+  annotate("text", label = "95% confidence limit \n mixture distribution", 
+           x = y_star * 1.2, y = 0.5, angle = 90
+           ) +
+  annotate("text", label = "95% confidence limit \n Chi distribution", 
+           x = upper95 * 1.2, y = 0.5, angle = 90, color = "lightgrey"
            ) +
   xlab(substitute(chi^2~"(df = "*a*")", lst(a = df))) +
   ylab("probability-density") +
   facet_grid(cols = vars(trend))
+
+
+```
+
+```{r}
+SimCorrMix::plot_simpdf_theory(sim_y = mix_dist$Y_mix[, 1], ylower = 0, yupper = 10, 
+                   title = "PDF of Mixture of Normal Distributions", fx = fx, lower = -Inf, 
+                   upper = Inf)
+
 ```
 
 
+```{r}
+
+SimMultiCorrData::plot_sim_cdf(sim_y = mix_dist$Y_mix[, 1], calc_cprob = TRUE, delta = y_star)
+
+```
+
+```{r}
+
+CD_ini %>% filter(trend == "linear trend (var: 0)", chi_np2 < y_star) %>% group_by(simulation) %>% count()
+
+```
 
 
-To conclude the here-designed $\eta^2$ metric for isotope ion counts can be used to assess the probality of the measured spot represent an isotopic composite or a truly homogenous isotopic substrate. In the case of an isopic gradient traversing the whole analysing, which cause variation that is equally balanced about the the "ideal linear model" (Eq \@ref(eq:linmodR)) the method is not able to detect the heterogeneity. So, any variation but this highly symetric (and probably rare instances of) variation in isotopic composition will cause a shift to higher $\eta^2$ values. Nevertheless the symetric variation could be recognised by evaluating the the evlationg of the assumption of normally distributed, constant and independent residuals (see \@ref(table:)), where in the case of the residuals more than 1 violations is suspected based on the above outlined hypothesis tests.
+To conclude the here-designed $\eta^2$ metric for isotope ion counts can be used to assess the probality of the measured spot represent an isotopic composite or a truly homogenous isotopic substrate. The $\eta^2$ can be converted to a reduced $chi^2$ by muliplying with $N$, based on Monte Carlo simulated data; a $chi^2$ of LOWER than `r y_star` is with 95% confidence to results from   homogenous isotopic substrate. In the case of an isopic gradient traversing the whole analysing, which cause variation that is equally balanced about the the "ideal linear model" (Eq \@ref(eq:linmodR)) the method is not able to detect the heterogeneity. So, any variation but this highly symetric (and probably rare instances of) variation in isotopic composition will cause a shift to higher $\eta^2$ values. Nevertheless the symetric variation could be recognised by evaluating the the evlationg of the assumption of normally distributed, constant and independent residuals (see \@ref(table:)), where in the case of the residuals more than 1 violations is suspected based on the above outlined hypothesis tests.
 
 
 ```{r flags, echo=FALSE}
@@ -693,70 +740,58 @@ The univariate method does not allow separation of the simulated data. To conclu
 
 ## None-isotope ratios: Trends in ionization efficiency  
 
-Note, that in the above example of the Cameca diagnostics (Fig. \@ref(fig:xcpcameca)), ratios of none-isotope pairs have been calculated.
+This will follow later.
 
-```{r ion, fig.width=8, fig.height=6, fig.cap="The blockwise mean plotted against consecutive blocks. Note that the none-isotope ratios show a decreasing trend over time representing differential change in the ionization potential.", echo=FALSE}
+<!-- Sicne isotopes of the same element should have more-or-less the same ionization efficiency, the variation caused by this bias is effectively cancelled out when propogating the errors of the individual ion counts (see Eq. of the vignette: [IC-precision](IC-precision.html)). This is not the case for ratios of ion counts of different elements, where differential ionization efficiency causes a relative large error, as the co-variate term of the equation reduced towards zero. The augmentation as introduced in the vignette: [IC-process](IC-process.html) provides a means to deal with this variance by detrending the ion counts with the function `predict_ionize`. -->
 
-ggplot(tb.CAMECA, aes(x =`Block#`, y = Mean)) +
-  geom_point() +
-  facet_wrap(vars(`Ratio#`), scales = "free")
+<!-- Similarly as for the isotope ion count ratios -->
+
+```{r eval=FALSE}
+
+
+# Processing raw ion count data
+tb.pr <- tb.pr %>% 
+  filter(file.nm == "2018-01-19-GLENDON_1_1")
+
+
+tb.mod <-predict_ionize(df = tb.pr, 
+                        Xt = Xt.pr, 
+                        N = N.pr, 
+                        t = t.rw, 
+                        species = species.nm, 
+                        file.nm
+                        ) 
+
+ls.diag <- plot_diag_R(tb.pr,
+                       Xt = Xt.pr, 
+                       N = Xt.pr, 
+                       species = species.nm, 
+                       ion1 = "12C", 
+                       ion2 = "40Ca 16O",
+                       file.nm
+                       )
+                    
+
+ls.diag.l0 <- plot_diag_R(tb.mod,
+                          Xt = Xt.pr.l0, 
+                          N = Xt.pr.l0, 
+                          species = species.nm, 
+                          ion1 = "12C", 
+                          ion2 = "40Ca 16O",
+                          file.nm
+                          )
+
+ls.diag
+
+
 ```
 
 
-Upon plotting the blockwise mean against the block number (Fig. \@ref(fig:ion)), it becomes apparent that the none-isotope ratios display a monotonic decreasing trend over the duration of the analysis. This effect likely reflects the differential ionization potentials and trajectories of secondary beam stabilization over the analysis (as explained above).
-
-Structural trends of a variable (geochemical proxies) based on the independent variable time. Two families of approaches can roughly be divided *global* and *local* regression.  The simplest case is the traditional linear regression model:
-
-$$ y_t = \beta_0 + \beta_1x_t + \epsilon_t$$
-
-The General Additive Model (GAM) is an extension of this model with addition of a smoothing function replacing the linear term of the previous function:
-
-$$ y_t = \beta_0 + f(x_1) + \epsilon_t$$
-
-I have used the package `mgcv`, which has the function `s()`, to define the smooth in the function `gam`. For these first set of global models I extract the goodness of fit as it explain how well the specific model type can explain the variance in the timeseries
+```{r eval=FALSE}
 
 
-```{r}
-
-ion1 <-  c("13C", "12C 13C", "13C 14N", "12C 14N", "12C")
-ion2 <-  c("12C", "12C2", "12C 14N", "40Ca 16O", "40Ca 16O")
-
-# Call function Diag_R over all ion ratio combinations  
-tb.zero <- purrr::map2_dfr(ion1, 
-                           ion2, 
-                           ~zeroCt(tb.pr, 
-                                   N.pr, 
-                                   species.nm, 
-                                   .x, 
-                                   .y, 
-                                   file.nm, 
-                                   warn = FALSE
-                                   )
-                           )
-
-
-tb.mod <-ion(df = tb.zero, args = expr_ion(Xt = "Xt.pr", N = "N.pr", t = "t.rw", species = "species.nm"), file.nm) 
-
-
-tb.R.mod <- stat_R(tb.mod, 
-                                  Xt.pr.detrended,
-                                  N.pr.detrended,
-                                  species.nm, 
-                                  "12C", 
-                                   "40Ca 16O", 
-                                   file.nm, 
-                                  bl.mt
-                                   ) %>%   
-                       filter(file.nm == "2018-01-19-GLENDON_1_2")
-                           
-
-
-ggplot(tb.R.mod, aes(x =bl.mt, y = M_R_Xt.pr.detrended)) +
-  geom_point() +
-  facet_wrap(vars(R.nm), scales = "free")
- 
+ls.diag.l0
 ```
-
 
 
 

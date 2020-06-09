@@ -1,5 +1,8 @@
 #' Simulate ion count data
 #'
+#'
+#' @param sys Systematic component as relative standard deviation of the major/minor single ion in per mille
+#'
 #' @export
 sim_R <- function(n = 3000,
                   N_range = 10 ^ 6,
@@ -11,7 +14,8 @@ sim_R <- function(n = 3000,
                   baseR = NULL,
                   offsetR = NULL,
                   seed,
-                  ...){
+                  ...
+                  ){
 
   average_n <- N_range / n
   start_n <- n
@@ -26,8 +30,8 @@ sim_R <- function(n = 3000,
                                  input = "delta",
                                  type = type
                                  ),
-                 drift = seq(average_n * (1 - sys),
-                             average_n * (1 + sys),
+                 drift = seq(average_n * (1 - (sys / 1000)),
+                             average_n * (1 + (sys / 1000)),
                              length.out = start_n
                              ),
                  intercept = average_n
@@ -119,7 +123,7 @@ R_gen <- function(reps, baseR, offsetR, input = "delta", type) {
                     c(baseR, offsetR, offsetR),
                     n = reps ,
                     method = "constant"
-    )$y
+                    )$y
     return(R.sim)
   }
 
@@ -129,7 +133,7 @@ R_gen <- function(reps, baseR, offsetR, input = "delta", type) {
                     c(offsetR, baseR),
                     n = reps ,
                     method = "linear"
-    )$y
+                    )$y
 
     return(R.sim)
   }

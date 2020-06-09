@@ -1,7 +1,8 @@
 ## code to prepare `CooksD_ideal` dataset
 
+sim <- sim_IC
 
-CooksD_ideal <- filter(sim_IC, simulation == "ideal" & rep < 4) %>%
+CooksD_ideal <- filter(sim, simulation == "ideal" & rep < 4) %>%
   diag_R(method = "CooksD",
          args = expr_R(Xt = "Xt.sim",
                        N = "N.sim",
@@ -20,6 +21,8 @@ CooksD_ideal <- filter(sim_IC, simulation == "ideal" & rep < 4) %>%
             S_Xt.sim.12C = mean(S_Xt.sim.12C)
             )
 
-usethis::use_data(CooksD_ideal, overwrite = TRUE)
-
-file.remove("data/sim_IC.rda")
+usethis::use_data(CooksD_ideal, overwrite = TRUE, compress = "xz")
+# remove large simulation dataset
+use_directory("data")
+paths <- fs::path("data", sim, ext = "rda")
+file.remove(paths)
