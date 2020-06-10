@@ -68,6 +68,9 @@ stat_Xt <- function(df, Xt, N, species, ... , latex = FALSE, output = "sum"){
     quo(mean(!! Xt)),
     # standard deviation (SD) count rate
     quo(sd(!! Xt)),
+    # RSD ion count rate
+    quo((!!quo_updt(my_q = Xt , x = "S") /
+         !!quo_updt(my_q = Xt , x = "M")) * 1000),
     # standard error of the mean (SE) count rate
     quo(sd(!! Xt) / sqrt(n())),
     # predicted SD count rate
@@ -76,7 +79,7 @@ stat_Xt <- function(df, Xt, N, species, ... , latex = FALSE, output = "sum"){
     quo(sqrt(sum(!!N) / n())))
 
 # The statistic names (depend on user-supplied expression)
-  ls.names <-paste0(c("n_", "Ntot_", "M_", "S_", "SeM_", "hat_S_", "hat_SeM_"),
+  ls.names <-paste0(c("n_", "Ntot_", "M_", "S_", "RS_", "SeM_", "hat_S_", "hat_SeM_"),
                     as_name(Xt))
 
 # To render nice latex variable names in Rmarkdown/Latex
@@ -84,6 +87,7 @@ stat_Xt <- function(df, Xt, N, species, ... , latex = FALSE, output = "sum"){
                                         "$N_{tot}$",
                                         "$\\bar{X}$",
                                         "$s_X$",
+                                        "$\\epsilon_X \\,$ (\u2030)",
                                         "$s_\\bar{X}$",
                                         "$\\hat{s}_N$",
                                         "$\\hat{s}_\\bar{N}$"))
