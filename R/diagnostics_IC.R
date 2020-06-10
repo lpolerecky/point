@@ -45,11 +45,74 @@
 #'                                N = "N.pr",
 #'                                species = "species.nm",
 #'                                ion1 = "13C",
-#'                                ion2 = "12C"),
+#'                                ion2 = "12C"
+#'                                ),
+#'                  reps = 3,
 #'                  file.nm,
-#'                  bl.mt)
-diag_R <- function(df, method = "Cameca", args = expr_R(NULL), ...,
+#'                  bl.mt
+#'                  )
+#'
+diag_R <- function(df, method = "Cameca", args = expr_R(NULL), reps = 2, ...,
                    output = "flag"){
+
+  gr_by <- enquos(...)
+
+# empty list for iteration storage
+  ls.tb <- rlang::rep_named(vctrs::vec_cast(1:reps, character()), lst())
+
+# set initial dataset
+  ls.tb[[1]] <- lst(df = df, results = NULL)
+
+# Execute repeated cycles of augmentation
+  ls.tb <- ls.tb  %>%
+    purrr::accumulate(rerun_diag_R,
+                      method = method,
+                      args = args,
+                      output = output,
+                      !!! gr_by
+                      )
+
+}
+
+#' @export
+rerun_diag_R <- function(out, input, method = "Cameca",
+                         args = expr_R(NULL), ...,
+                         output = "flag"){
+
+  gr_by <- enquos(...)
+
+  # variables to be saved
+  results_vars <- set_names(colnames(out$df))
+  variables <- parse_exprs(results_vars[!results_vars  %in%
+                                        sapply(gr_by, as_name)]
+                           )
+
+  out <- diag_R_exec(out$df,
+                     method = method,
+                     args = args,
+                     !!! gr_by,
+                     output = output
+                     )
+
+  # save augmented dataframe for next cycle
+  df.aug <- out %>%
+    filter(flag == "non-influential") %>%
+    select(!!!gr_by, !!!variables)
+
+  # save results with ID for executo
+  results <- select(out, -c(!!!variables)) %>%
+    mutate(execution = input) %>%
+    distinct(!!! gr_by, .keep_all = TRUE)
+
+  out <- lst(df = df.aug, results = results)
+
+  return(out)
+
+}
+
+#' @export
+diag_R_exec <- function(df, method = "Cameca", args = expr_R(NULL), ...,
+                        output = "flag"){
 
   gr_by <- enquos(...)
 
