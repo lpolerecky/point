@@ -52,15 +52,36 @@
 #'                  bl.mt
 #'                  )
 #'
-diag_R <- function(df, method = "Cameca", args = expr_R(NULL), reps = 2, ...,
+diag_R <- function(df, method = "Cameca", args = expr_R(NULL), reps = 1, ...,
                    output = "flag"){
 
   gr_by <- enquos(...)
 
-# empty list for iteration storage
-  ls.tb <- rlang::rep_named(vctrs::vec_cast(1:reps, character()), lst())
+  max <- reps + 1
 
+# empty list for iteration storage
+  ls.tb <- rlang::rep_named(vctrs::vec_cast(1:max, character()), lst())
+
+# Remove zeros
+  if (method == "CooksD"){
+
+    df <- zeroCt(df,
+                 !! args[["N"]],
+                 !! args[["species"]],
+                 as_name(args[["ion1"]]),
+                 as_name(args[["ion2"]]),
+                 !!! gr_by,
+                 warn = FALSE
+    )
+  }
+
+# ID for connecting flag to original dataframe
+  df <- ID_builder(df, !! args[["species"]], !!! gr_by)
 # set initial dataset
+  df <- filter(df,
+               !! args[["species"]] == !! args[["ion1"]] |
+               !! args[["species"]] == !! args[["ion2"]]
+               )
   ls.tb[[1]] <- lst(df = df, results = NULL)
 
 # Execute repeated cycles of augmentation
@@ -83,9 +104,11 @@ rerun_diag_R <- function(out, input, method = "Cameca",
 
   # variables to be saved
   results_vars <- set_names(colnames(out$df))
-  variables <- parse_exprs(results_vars[!results_vars  %in%
-                                        sapply(gr_by, as_name)]
-                           )
+  deselect_vars <- results_vars  %in% "ID"
+
+    # append(sapply(gr_by, as_name), "ID")
+  variables <- parse_exprs(results_vars[!deselect_vars])
+
 
   out <- diag_R_exec(out$df,
                      method = method,
@@ -95,14 +118,15 @@ rerun_diag_R <- function(out, input, method = "Cameca",
                      )
 
   # save augmented dataframe for next cycle
-  df.aug <- out %>%
-    filter(flag == "non-influential") %>%
-    select(!!!gr_by, !!!variables)
+  df.aug <- filter(out, flag == "non-influential") %>%
+    select(.data$ID, !!!gr_by, !!!variables)
 
-  # save results with ID for executo
-  results <- select(out, -c(!!!variables)) %>%
-    mutate(execution = input) %>%
-    distinct(!!! gr_by, .keep_all = TRUE)
+  # save results; flag ad statistics
+
+  results <- select(out, -c(!!!variables))
+
+    # mutate(execution = input) %>%
+    # distinct(!!! gr_by, .keep_all = TRUE)
 
   out <- lst(df = df.aug, results = results)
 
@@ -116,9 +140,6 @@ diag_R_exec <- function(df, method = "Cameca", args = expr_R(NULL), ...,
 
   gr_by <- enquos(...)
 
-# ID for connecting flag to original dataframe
-  df <- ID_builder(df, !! args[["species"]], !!! gr_by)
-
 # Method selection
   diag_method <- function(method){
     switch(method,
@@ -127,18 +148,6 @@ diag_R_exec <- function(df, method = "Cameca", args = expr_R(NULL), ...,
            )
   }
 
-# Remove zeros
-  if (method == "CooksD"){
-
-    df <- zeroCt(df,
-               !! args[["N"]],
-               !! args[["species"]],
-               as_name(args[["ion1"]]),
-               as_name(args[["ion2"]]),
-               !!! gr_by,
-               warn = FALSE
-               )
-  }
 
   if (method == "CooksD" | method == "Cameca"){
 # Descriptive an predictive statistics for ion ratios
@@ -158,7 +167,8 @@ diag_R_exec <- function(df, method = "Cameca", args = expr_R(NULL), ...,
 
 # Datafile with flag values associated to diagnostics
   if (output == "flag"){
-    return(left_join(df, tb.aug, by = "ID") %>% select(-.data$ID))
+    return(left_join(df, tb.aug, by = "ID"))
+           # %>% select(-.data$ID))
     }
    if (output == "complete"){
      return(tb.aug)
@@ -166,6 +176,7 @@ diag_R_exec <- function(df, method = "Cameca", args = expr_R(NULL), ...,
   }
 
 #' Evaluate effect size of diagnostics
+#'
 #' @export
 eval_diag <- function(df, SR, n, execution, ...){
 
