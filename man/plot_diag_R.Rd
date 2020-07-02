@@ -6,11 +6,7 @@
 \usage{
 plot_diag_R(
   df,
-  Xt,
-  N,
-  species,
-  ion1,
-  ion2,
+  args = expr_R(NULL),
   ...,
   path = NULL,
   device = "png",
@@ -22,15 +18,15 @@ plot_diag_R(
 \arguments{
 \item{df}{A tibble containing processed ion count data.}
 
+\item{args}{A list of quosures pertaining to the variables required for a
+call to stat_R. The function expr_R can be used to simplify setting this
+argument.}
+
 \item{...}{Variables for grouping.}
 
 \item{method}{Character string for the type of diagnostics. Currently only
 "standard" is supported, which pertains to the default Cameca software
 setting.}
-
-\item{args}{A list of quosures pertaining to the variables required for a
-call to stat_R. The function expr_R can be used to simplify setting this
-argument.}
 }
 \value{
 A t\code{\link[ggplot2:ggplot]{ggplot}}
@@ -50,8 +46,23 @@ tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
 # Processing raw ion count data
 tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
 
-# plotting Cook's D diagnostics
-plot_RDiag(tb.pr, Xt.pr, N.pr, species.nm, "13C", "12C", file.nm)
+# expression for R_stat()
+expr_R_stat <- expr_R(Xt = "Xt.pr",
+                      N = "N.pr",
+                      species = "species.nm",
+                      ion1 = "13C",
+                      ion2 = "12C"
+                      )
 
+# diagnostics ion count data for isotope ratios
+tb.aug <- diag_R(tb.pr,
+                 method = "CooksD",
+                 args = expr_R_stat,
+                 reps = 2,
+                 file.nm
+                 )
+
+# plotting Cook's D diagnostics
+plot_diag_R(tb.aug, args = expr_R_stat, file.nm)
 
 }

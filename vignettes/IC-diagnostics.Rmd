@@ -17,12 +17,13 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  warning = FALSE
 )
 ```
 
 # Diagnostics for Ion Count Data
-The random nature of secondary ions emitted from a sample is described by Poisson statistics, which can be used to predict the precision of SIMS measurements under ideal circumstances (e.g., the predicted standard error can be deduced from the total counts of secondary ions). However, besides this fundamental source of imprecision, real SIMS measurements are additionally affected by other factors such as sample heterogeneity, instrument instability, the development and geometry of the sputter pit, and sample charging. Although some of these biases can be avoided by proper instrument tuning and sample documentation (e.g. T/SEM to characterise the textural properties of a rock sample) prior to SIMS measurement, factors such as instrument instability or sample heterogeneity can never be fully eliminated. In this vignette, diagnostic tools are showcased which can help evaluate the potential impact of such factors on the precision of ion count data.
+The random nature of secondary ions emitted from a sample is described by Poisson statistics, and can be used to predict the precision of SIMS measurements under ideal circumstances (e.g., the predicted standard error can be deduced from the total counts of secondary ions). However, besides this fundamental source of imprecision, real SIMS measurements are additionally affected by other factors such as sample heterogeneity, instrument instability, the development and geometry of the sputter pit, and sample charging. Although some of these biases can be avoided by proper instrument tuning and sample documentation (e.g. T/SEM to characterise the textural properties of a rock sample) prior to SIMS measurement, factors such as instrument instability or sample heterogeneity can never be fully eliminated. In this vignette, diagnostic tools are showcased which can help evaluate the potential impact of such factors on the precision of ion count data.
 
 ```{r setup}
 library(point)
@@ -62,7 +63,7 @@ theme_replace(axis.title = element_text(size = 11),
 
 
 ## Basic functionality
-The function `diag_R()` is designed to be a flexible wrapper for both isotope and none-isotope diagnostics. The function requires the following arguments: `df`, which is a [tibble](https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html) containing the processed ion count data. The argument `method` enables selection of two methods for diagnostics of isotope ratios; `"Cameca"`, encompasses the default *univariate* procedure of the Cameca software with blockwise augmentation based on standard deviations calculated per block, and; `"CooksD"`, which refers to a *bivariate* method based on regression diagnostics. Details about the methods follow in the remainder of the vignette. The `args` argument requires an expression that mimics a call to the desired method for calculating precision (see vignette: [IC-precision](IC-precision.html)). The function `expr_R` provides an easy functionality to create the expression for argument `args` in case of isotope ratios. The dots `...` should be used to define a grouping variable for an analysis (below defined as the file-names and block numers required to recreate the Cameca functionality). In addition, it is possible to choose whether to create a `tibble` with the original dataset and the diagnostics by setting `output` to `"flag"`, or a `tibble` with the original data, statistics and diagnostics included when set to `"complete"`. 
+The function `diag_R()` is designed to be a flexible wrapper for both isotope and none-isotope diagnostics. The function requires the following arguments: `df`, which is a [tibble](https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html) containing the processed ion count data. The argument `method` enables selection of two methods for diagnostics of isotope ratios; `"Cameca"`, encompasses the default *univariate* procedure of the Cameca software with blockwise augmentation based on standard deviations calculated per block, and; `"CooksD"`, which refers to a *bivariate* method based on regression diagnostics. Details about the methods follow in the remainder of the vignette. The `args` argument requires an expression that mimics a call to the desired method for calculating precision (see vignette: [IC-precision](IC-precision.html)). The function `expr_R` provides an easy functionality to create the expression for argument `args` in case of isotope ratios. The `reps` argument determines the number of cycles of diagnostic calculation and subsequent augmentation of the data set. The dots `...` should be used to define a grouping variable for an analysis (below defined as the file-names and block numbers required to recreate the Cameca functionality). 
 
 ```{r warning=FALSE}
 
@@ -96,18 +97,22 @@ tb.aug <- purrr::map2(ion1,
                                              ion1 = .x,
                                              ion2 = .y
                                              ),
+                               reps = 1,
                                file.nm,
                                bl.mt
                                ) %>%
-                        filter(flag == "non-influential")
+                        purrr::transpose() %>%
+                        purrr::pluck("df") %>%
+                        purrr::pluck("2")
                         )
-                      )
+                      ) 
+
 ```
 
-The `flag` variable in the output `tibble` takes up two values `"non-influential"` and `"influential"`, for convenient augmentation of the original data with `dplyr::filter()`. The other output variables depedent on the choosen method, and are delineated below.
+The output consist of a list with two `tibbles` for each element; the `"df"` tibble contains the dataset belonging to the `"results"` tibble, and the list length is determined by the `reps` argument (reps + 1). The specific diagnostics included in the `"results"` tibble depend on the chosen method, and are delineated below.
 
 ## Isotope ratios: A special case
-Isotopes of the same element should have more-or-less the same ionization efficiency [@Fitzsimons2000a]. It thus follows, that in an isotopically homogeneous analytical substrate the count rates of two isotope from the same element should be dependent on each. From this it can be deduced that large deviations in count rate ratios of an isotope system between consecutive measurements indicate a potential discrepancy (e.g., sample heterogeneity and instrument instability). This unique property enables the detection of situations in which the analysed substrate contains isotopic heterogeneity at a smaller scale than the beam size, or where machine instability causes a discrepance in count rates between detectors.
+Isotopes of the same element should have more-or-less the same ionization efficiency [@Fitzsimons2000a]. It thus follows, that in an isotopically homogeneous analytical substrate the count rates of two isotope from the same element should be dependent on each. From this it can be deduced that large deviations in count rate ratios of an isotope system between consecutive measurements indicate a potential discrepancy (e.g., sample heterogeneity and instrument instability). This unique property enables the detection of situations in which the analysed substrate contains isotopic heterogeneity at a smaller scale than the beam size, or where machine instability causes a discrepancy in count rates between detectors.
 
 ### Count block based diagnostics (Default Cameca software procedure)
 The default method to account for such discrepancies, as incorporated in the Cameca software, entails a blockwise check for variability. If values fall outside of a pre-defined range of variance (for example two standard deviations, referred to as $\sigma$ in the Cameca software), the measurement will be rejected ($N\_rej$ in Fig. \@ref(fig:xcpcameca)).  
@@ -123,30 +128,26 @@ ls.CAMECA <- lst(df = tb.aug, a = ion1, b = ion2)
 # Function to transform to calculate block wise and produce CAMECA output style
 fun_CAMECA <-function(df, a, b){
   
-               df <- stat_R(df, Xt.pr, N.pr, species.nm, 
-                            a, 
-                            b, 
-                            file.nm, 
-                            bl.mt,
-                            output = "complete"
-                            ) %>%   
-                       filter(file.nm == "2018-01-19-GLENDON_1_1") %>% 
-                       distinct(bl.mt, .keep_all = TRUE) %>% 
-                       mutate_at(vars(contains("meas_bl.mt")), ~(. - n_R_Xt.pr)) %>% 
-                       mutate(`Err_mean (%)` = RSeM_R_Xt.pr / 10,
-                              `Poisson (%)` = hat_RSeM_R_Xt.pr / 10,
-                              `Ratio#` = paste(a, b, sep = "/")
-                              ) %>% 
-                       select(`Block#` = bl.mt, 
-                              `Ratio#` , 
-                              "Mean" = M_R_Xt.pr, 
-                              "SD" = S_R_Xt.pr, 
-                              N_rej = contains("meas_bl.mt")[1], 
-                              `Err_mean (%)`,
-                              `Poisson (%)`,
-                              "Khi2" = chi2_R_Xt.pr
-                       )
-               }
+  stat_R(df, Xt.pr, N.pr, species.nm, a, b, 
+         file.nm, bl.mt, output = "complete"
+         ) %>%   
+    filter(file.nm == "2018-01-19-GLENDON_1_1") %>% 
+    distinct(bl.mt, .keep_all = TRUE) %>% 
+    mutate_at(vars(contains("meas_bl.mt")), ~(. - n_R_Xt.pr)) %>% 
+    mutate(`Err_mean (%)` = RSeM_R_Xt.pr / 10,
+           `Poisson (%)` = hat_RSeM_R_Xt.pr / 10,
+           `Ratio#` = paste(a, b, sep = "/")
+           ) %>% 
+    select(`Block#` = bl.mt, 
+           `Ratio#`, 
+           "Mean" = M_R_Xt.pr, 
+           "SD" = S_R_Xt.pr, 
+           N_rej = contains("meas_bl.mt")[1], 
+           `Err_mean (%)`,
+           `Poisson (%)`,
+           "Khi2" = chi2_R_Xt.pr
+    )
+  }
 
 # Call the function
 tb.CAMECA <- purrr::pmap_dfr(ls.CAMECA, fun_CAMECA) %>% 
@@ -178,28 +179,24 @@ Based on the Cameca $\sigma$-rejection, it is possible to augment the dataset fo
 
 # Function to transform to calculate block wise and produce CAMECA output style
 fun_CAMECA_gl <-function(df, a, b){
-  
-               df <- stat_R(df, Xt.pr, N.pr, species.nm, 
-                                            a, b, file.nm, 
-                                            output = "complete"
-                            ) %>%   
-                       filter(file.nm == "2018-01-19-GLENDON_1_1") %>%
-                       
-                       mutate(`Err_mean (%)` = RSeM_R_Xt.pr / 10,
-                              `Poisson (%)` = hat_RSeM_R_Xt.pr / 10,
-                              `Ratio#` = paste(a, b, sep = "/"),
-                              SD_bl = sd(R_Xt.pr) /
-                                      mean(R_Xt.pr) * 100
-                              ) %>% 
-                       distinct(file.nm, .keep_all = TRUE) %>% 
-                       select(`Ratio#` , 
-                              "Ratios" = M_R_Xt.pr, 
-                              `Poisson (%)`,
-                              `Err_mean (%)`,
-                              "Khi2" = chi2_R_Xt.pr,
-                              `SD_Block(%)`= SD_bl
-                              )
-}
+  stat_R(df, Xt.pr, N.pr, species.nm, a, b, 
+         file.nm, output = "complete"
+         ) %>%   
+    filter(file.nm == "2018-01-19-GLENDON_1_1") %>%
+    mutate(`Err_mean (%)` = RSeM_R_Xt.pr / 10,
+           `Poisson (%)` = hat_RSeM_R_Xt.pr / 10,
+           `Ratio#` = paste(a, b, sep = "/"),
+           SD_bl = sd(R_Xt.pr) / mean(R_Xt.pr) * 100
+           ) %>% 
+    distinct(file.nm, .keep_all = TRUE) %>% 
+    select(`Ratio#` , 
+           "Ratios" = M_R_Xt.pr, 
+           `Poisson (%)`,
+           `Err_mean (%)`,
+           "Khi2" = chi2_R_Xt.pr,
+           `SD_Block(%)`= SD_bl
+    )
+  }
 
 # Call the function
 tb.CAMECA_aug <- purrr::pmap_dfr(ls.CAMECA, fun_CAMECA_gl)
@@ -243,14 +240,14 @@ An univariate solution such as provided by the Cameca software seems straightfor
 
 For these examples, count rates have been simulated for three hypothetical types of materials (Fig. \@ref(fig:simulations) ). 
 
-1) The **"ideal" substrate** with a completely homogenous composition  
-2) A **substrate with a "symmetric gradient"** which has a gradient spanning the whole depth covered by the analysis 
-3) A **substrate with an "asymmetric gradient"** which has a sudden offset in isotope composition at a specific depth  
+1) The **"ideal"** substrate with a completely homogeneous composition  
+2) A substrate with a **"symmetric gradient"** which has a gradient spanning the whole depth covered by the analysis 
+3) A substrate with an **"asymmetric gradient"** which has a sudden offset in isotope composition at a specific depth  
 
-In the two simulations with a heterogeneous isotope composition the total span is set to 60‰, this variance is large for most natural isotope systems. A linear trend has been superimposed on the count rates of both isotope species, which is an often encountered phenomenan and relates to changes in the ionization potential, and, as discussed before, this effect afflicts both isotope species to a similar degree thereby not changing the $R$ [see @Fitzsimons2000a]. 
+In the two simulations with a heterogeneous isotope composition the total span is set to 60‰. The same simulations have been repeated with a linear trend superimposed on the count rates of both isotope species, which is an often encountered phenomenon and relates to changes in the ionization potential, and, as discussed before (see vignette: [IC-process](IC-process.html)), this effect afflicts both isotope species to a similar degree thereby leaving the $R$ unaltered [see @Fitzsimons2000a]. This ionization effect does, however, effect regression diagnostics. 
 
 
-```{r simulations, echo=FALSE, fig.width=12, fig.height=6, fig.cap="Histograms comparing input and output $R$ values for simulations of an ideal isotopically homogenous material, a gradual gradient in $R$ (symmetric gradient), and a sudden shift in $R$ (asymmetric gradient)"}
+```{r simulations, echo=FALSE, fig.width=12, fig.height=6, fig.cap="Histograms comparing input and output $R$ values for simulations of an ideal isotopically homogenous material, a gradual gradient in $R$ (symmetric gradient), and a sudden shift in $R$ (asymmetric gradient). Note, that the linear ionization trend is measured as the relative deviation of the major ion as parts per mille."}
 
 # Compare input value of R with output (load dataset SIM_IC_range)
 tb.R <- sim_IC_extremes %>% 
@@ -266,10 +263,10 @@ ggplot(com.R, aes(x = R, fill = source)) +
 
 ```
 
-It becomes evident from Figure \@ref(fig:simulations) that the real variation in $R$ (input R; red) is indistinguisable in the $R$ derived from the ion counts (output R; blue). This is an effect of the relative large random variation induced by the ionization. So, even for these large variations in isotopic composition, it cannot be confidently said whether the measured $R$ is representative for the analysed site, or just some averaged value of an otherwise isoptically variable substrate. This effect is, furthermore, hardly observable in the precision of the data, where the $\epsilon_R$ of the simulation dubbed *asymmetric* is `r tb.R %>% filter(simulation == "asymmetric", trend == "linear trend (var: 0.1)") %>% pull(RSeM_R_Xt.sim) %>% unique() %>% round(2)`‰, whereas the *ideal* simulation has only a marginally better precision of `r tb.R %>% filter(simulation == "ideal", trend == "linear trend (var: 0.1)") %>% pull(RSeM_R_Xt.sim) %>% unique() %>% round(2)`‰. This univariate approach will, however, distinguish these analyses based on the mean (*asymmetric* simulation: `r tb.R %>% filter(simulation == "asymmetric", trend == "linear trend (var: 0.1)") %>% pull(M_R_Xt.sim) %>% unique() %>% calib_R(standard = "VPDB", type = "composition", input = "R", output = "delta") %>% round(2)`‰ and *ideal* simulation: `r tb.R %>% filter(simulation == "ideal", trend == "linear trend (var: 0.1)") %>% pull(M_R_Xt.sim) %>% unique() %>% calib_R(standard = "VPDB", type = "composition", input = "R", output = "delta") %>% round(2)`‰), even though, an average values is not really representative for the former case as the original population of $R$ is highly variable and skewed. So, clearly, a different approach must be adopted to identify these isopically highly variable substrates.
+From Figure \@ref(fig:simulations) is is directly evident that the real variation in $R$ (input R; red) is indistinguishable in the $R$ derived from the ion counts (output R; blue). This is an effect related to the relative large random variation induced by the ionization of the substrate. So, even for these large variations in isotopic composition, it cannot be confidently said whether the measured $R$ is representative for the analysed site, or just some averaged value of an otherwise isotopically variable substrate. This effect is, furthermore, hardly observable in the precision of the data, where the $\epsilon_R$ of the simulation dubbed *asymmetric* is `r tb.R %>% filter(simulation == "asymmetric", trend == "linear trend (var: 0)") %>% pull(RSeM_R_Xt.sim) %>% unique() %>% round(2)`‰, whereas the *ideal* simulation has only a marginally better precision of `r tb.R %>% filter(simulation == "ideal", trend == "linear trend (var: 0)") %>% pull(RSeM_R_Xt.sim) %>% unique() %>% round(2)`‰. This univariate approach will, however, allow distinguishing these analyses based on the mean (*asymmetric* simulation: `r tb.R %>% filter(simulation == "asymmetric", trend == "linear trend (var: 0)") %>% pull(M_R_Xt.sim) %>% unique() %>% calib_R(standard = "VPDB", type = "composition", input = "R", output = "delta") %>% round(2)`‰ and *ideal* simulation: `r tb.R %>% filter(simulation == "ideal", trend == "linear trend (var: 0)") %>% pull(M_R_Xt.sim) %>% unique() %>% calib_R(standard = "VPDB", type = "composition", input = "R", output = "delta") %>% round(2)`‰), even though, an average values is not really representative for the former case as the original population of $R$ is highly variable and skewed. So, clearly, a different approach must be adopted to identify these isotopically highly variable substrates.
 
 
-<!--  From the previous examples it becomes apparent that even largeky heterogenous substrates cause only minimial deviation in the internal precision. This could be interperted that their is perhaps a lot of hidden variation in the nominal SIMS isotope analysis, which skews $\bar{R}$ but leaves precision untouched. -->
+<!--  From the previous examples it becomes apparent that even largely heterogeneous substrates cause only minimal deviation in the internal precision. This could be interpreted that their is perhaps a lot of hidden variation in the nominal SIMS isotope analysis, which skews $\bar{R}$ but leaves precision untouched. -->
 
 #### Isotope data viewed as bivariate ion counts
 
@@ -283,7 +280,7 @@ In an "ideal" isotopically homogeneous substrate the count rates of two isotope 
 Variation in this linear count rate relationship is then only caused by the random nature of secondary ion generation, which follows a Poisson distribution. If, however, $N_i$ is sufficiently larger for both isotope species, the previous linear combination (Eq. \@ref(eq:conR)) should approximate: 
 
 \begin{equation}
-  E(y_i|x_i) = \beta_0 + \beta_1 x_i + \epsilon_i \;\;\; \text{where} \;\;\; \epsilon_i \sim N(0,\sigma^2) \;\;\; \text{with} \;\;\; E(\epsilon_i|x_i) = 0
+  E(y_i|x_i) = \beta_0 + \beta_1 x_i + e_i \;\;\; \text{where} \;\;\; e_i \sim N(0,\sigma^2) \;\;\; \text{with} \;\;\; E(e_i|x_i) = 0
     (\#eq:conmean)
 \end{equation}
 
@@ -297,22 +294,38 @@ where, a vector of independent values $x$ and a vector of coefficients ($\beta$)
 Adopting this linear combination of parameters, the ideal model for isotope count data is as follows; 
 
 \begin{equation}
- \hat{X}_i^b = \bar{R}X_i^a +  \epsilon_i \;\;\; \text{where} \;\;\; \epsilon_i \sim N(0,\sigma^2) ;\;\; \text{with} \;\;\; E(\epsilon_i|x_i) = 0 \;\;\; \text{if} \;\;\; X_i^a, X_i^b \gg 0
+ \hat{X}_i^b = \bar{R}X_i^a +  e_i \;\;\; \text{where} \;\;\; e_i \sim N(0,\sigma^2) ;\;\; \text{with} \;\;\; E(e_i|x_i) = 0 \;\;\; \text{if} \;\;\; X_i^a, X_i^b \gg 0
   (\#eq:linmodR)
 \end{equation}
 
 And, thus the following measure can be adopted to assess the performance of this "ideal linear model": 
 
 \begin{equation}
- \hat{\epsilon}_i =  X_i^b - \bar{R}X_i^a  
+ \hat{e}_i =  X_i^b - \bar{R}X_i^a  
   (\#eq:resR)
 \end{equation}
 
 
 ```{r regression, echo=FALSE,  fig.cap = "Cross plotted ^13^C and ^12^C count rates and the regression line following equation, based on the linear function of Eq. \\@ref(eq:linmodR) and with 2 times the standard error of the regression represented as the green area.", fig.width=12, fig.height=6}
 
+# expression of stat_R()
+expr_R_stat <- expr_R(Xt = "Xt.sim",
+                      N = "N.sim",
+                      species = "species",
+                      ion1 = "13C",
+                      ion2 = "12C"
+                      )
+
 # Diagnostics and plots of simulations
-gg.sim.ex <- plot_diag_R(sim_IC_extremes, Xt.sim, N.sim, species, "13C", "12C", simulation, trend)
+ls.sim <- diag_R(sim_IC_extremes,
+                 method = "CooksD",
+                 args = expr_R_stat,
+                 reps = 1,
+                 simulation,
+                 trend
+                 )
+
+gg.sim.ex <- plot_diag_R(ls.sim, args = expr_R_stat, simulation, trend)
 
 gg.sim.ex[[1]] 
 ```
@@ -320,27 +333,27 @@ gg.sim.ex[[1]]
 
 The simulated scenarios in Fig. \@ref(fig:regression) visualise the comparison of the model following Eq. \@ref(eq:linmodR) and hypothetical bivariate ^13^C-^12^C ion count rates. A greater random spread about the model can already be observed in the simulations of isotopically heterogeneous substrates. 
 
-The error estimate $\hat{\epsilon}_i$ can be used to validate three important assumptions of the previously adopted model (Eq. \@ref(eq:linmodR)):
+The error estimate $\hat{e}_i$ can be used to validate three important assumptions of the previously adopted model (Eq. \@ref(eq:linmodR)):
 
-1) $\hat{\epsilon}_i$ should vary independtly from the predicted value (e.g. constant variance)
-2) $\hat{\epsilon}_i$ should be approximately normally distributed with a mean of zero (e.g. normality of residuals)
-3) $\hat{\epsilon}_i$ should be independent random variables over time (e.g. independence of residuals)
+1) $\hat{e}_i$ should vary independently from the predicted value (e.g. constant variance)
+2) $\hat{e}_i$ should be approximately normally distributed with a mean of zero (e.g. normality of residuals)
+3) $\hat{e}_i$ should be independent random variables over time (e.g. independence of residuals)
 
-To over come scale-dependence of the residuals, the residuals will first be normalized. This can be done by using the *studentized* residuals ($\hat{\epsilon}_{i}^*$). A studentized residual is obtained by dividing the residual by an independent estimate of the standard deviation of the  residuals. To ensure independence, the standard deviation of the residuals is calculated by leaving the residual of the $i$-th observation out:
+To over come scale-dependence of the residuals, the residuals will first be normalized. This can be done by using the *studentized* residuals ($\hat{e}_{i}^*$). A studentized residual is obtained by dividing the residual by an independent estimate of the standard deviation of the  residuals. To ensure independence, the standard deviation of the residuals is calculated by leaving the residual of the $i$-th observation out:
 
 \begin{equation}
-  \hat{\epsilon}_i^* = \frac{\hat{\epsilon}_i}{S_{\hat{\epsilon}_{(-i)}} \sqrt(1-h_i)}
+  \hat{e}_i^* = \frac{\hat{e}_i}{S_{\hat{e}_{(-i)}} \sqrt(1-h_i)}
   (\#eq:studres)
 \end{equation}
 
 , where the standard error of the regression (standard deviation of the residuals) is also calculated by leaving the $i$-th residual out:
 
 \begin{equation}
-  S_{\hat{\epsilon}_{(-i)}} = \sqrt{\frac{1}{n-k-1} \sum_{i = 1}^{n}\hat{\epsilon}_i^2}
+  S_{\hat{e}_{(-i)}} = \sqrt{\frac{1}{n-k-1} \sum_{i = 1}^{n}\hat{e}_i^2}
   (\#eq:SEminusi)
 \end{equation}  
   
-In Eq. \@ref(eq:studres) $h_i$ represents the leverage of the indepedent variable ($X^a$), or *hat-value*. The hat-value measures the distance from the mean of the independent variable $X_i^a$:
+In Eq. \@ref(eq:studres) $h_i$ represents the leverage of the independent variable ($X^a$), or *hat-value*. The hat-value measures the distance from the mean of the independent variable $X_i^a$:
 
 \begin{equation}
  h_i = \frac{1}{n} + \frac{ \left( X_i^a - \bar{X}_a \right)^2 }{\sum_{j=1}^n \left(X_j^a -  \bar{X}_a \right)^2}
@@ -351,31 +364,56 @@ The larger the deviation $X_i^a$ from the mean ($\bar{X}_a$) the more leverage t
 
 **Assumption 1: Constant variance**
 
-The studentized residuals provide a more effective means of detecting the outliers and provide a means to validate the first assumption of equal variance. This has been graphically visualized in a *scale location plot* (Fig. \@ref(fig:ScLoc)) of $\hat{\epsilon}_i^*$, where values of above 3.5 can be considered as outliers ("the green band").
+The studentized residuals provide a more effective means of detecting the outliers and provide a means to validate the first assumption of equal variance. This has been graphically visualized in a *scale location plot* (Fig. \@ref(fig:ScLoc)) of $\hat{e}_i^*$, where values of above 3.5 can be considered as outliers ("the green band").
 
 
-```{r ScLoc, echo=FALSE, fig.cap = "Scale-Location plot, can be used to check for systematic relationships between $\\hat{\\epsilon}_i^*$ and the independent value ^13^C (Heteroscedasticity) or the homogeneity of variance (Homoscedasticity). Blue dots demarcate data-points that can be considered outliers based on $\\hat{\\epsilon}_i^*$  < -3.5 and 3.5 > $\\hat{\\epsilon}_i^*$. The dashed line and green area denotes the value and spread for studentized residuals if Homoscedasticity exists.",  fig.width=8, fig.height=4}
+```{r ScLoc, echo=FALSE, fig.cap = "Scale-Location plot, can be used to check for systematic relationships between $\\hat{e}_i^*$ and the independent value ^13^C (Heteroscedasticity) or the homogeneity of variance (Homoscedasticity). Blue dots demarcate data-points that can be considered outliers based on $\\hat{e}_i^*$  < -3.5 and 3.5 > $\\hat{e}_i^*$. The dashed line and green area denotes the value and spread for studentized residuals if Homoscedasticity exists.",  fig.width=8, fig.height=4}
 
-# diagnostics and plots of simulations (load SIM_IC_ideal)
-gg.sim <- plot_diag_R(sim_IC_ideal, Xt.sim, N.sim, species, "13C", "12C", simulation, trend)
+# Diagnostics and plots of simulations (load SIM_IC_ideal)
+ls.sim2 <- diag_R(sim_IC_ideal,
+                 method = "CooksD",
+                 args = expr_R_stat,
+                 reps = 2,
+                 simulation,
+                 trend
+                 )
 
-gg.sim[[4]] 
+gg.sim <- plot_diag_R(ls.sim2, args = expr_R_stat, simulation, trend)
+
+gg.sim[[3]] 
 
 ```
 
-Patterns in the homogeneity of variance on the *scale-location* plot can indicate whether the linear model suffers from systematic variations in the residuals that are dependent on the fitted variable ($\hat{X}^b$), termed heteroscedasticity. When an heteroscedastic error occurs the estimates of coefficient can be compromised, and might suggest that a linear model does not fit the data. By plotting a linear least square model on the location-scale plots the systematic relation between $\hat{Y}_i$ and $\hat{\epsilon}_i$ (Eq. \@ref(eq:conmean)) can be further analysed.  This method can be further formalized with a hypothesis test known as the *Breusch-Pagan test*. 
+Patterns in the homogeneity of variance on the *scale-location* plot can indicate whether the linear model suffers from systematic variations in the residuals that are dependent on the fitted variable ($\hat{X}^b$), termed heteroscedasticity. When an heteroscedastic error occurs the estimates of coefficient can be compromised, and might suggest that a linear model does not fit the data. By plotting a linear least square model on the location-scale plots the systematic relation between $\hat{Y}_i$ and $\hat{e}_i$ (Eq. \@ref(eq:conmean)) can be further analysed.  This method can be further formalized with a hypothesis test known as the *Breusch-Pagan test*. 
 
 ```{r bptest, echo=FALSE, fig.cap="Breusch Pagan $\\chi^2$ values for the ideal simulation for several linear trends in the ionization efficiency.", fig.width=6, fig.height=4}
 
 df <- 1
 upper <- 10
 # curve
-df_den <- tibble::tibble(vec_den = seq(0.1, upper))
+df_den <- tibble::tibble(vec_den = seq(0.001, upper, by = 0.001))
 
 #find upper  95% of distribution
 upper95 <- qchisq(.95, df)
 
 jitter <- position_jitter(width = 0, height = 0.1)
+
+# factor
+vc_lvls <-  c("linear trend (var: 0)",
+              "linear trend (var: 50)",
+              "linear trend (var: 100)", 
+              "linear trend (var: 150)", 
+              "linear trend (var: 200)",
+              "linear trend (var: 250)",
+              "linear trend (var: 300)", 
+              "linear trend (var: 350)", 
+              "linear trend (var: 400)", 
+              "linear trend (var: 450)",  
+              "linear trend (var: 500)"
+              )
+
+CD_ideal <- CD_ideal %>% 
+  mutate(trend = factor(trend, levels = vc_lvls, order = TRUE)) 
 
 ggplot(df_den, aes(x=vec_den)) +
   stat_function(fun = dchisq, args = list(df = df)) +
@@ -386,7 +424,7 @@ ggplot(df_den, aes(x=vec_den)) +
                       alpha = 0.2
                 ) +
   geom_vline(xintercept = upper95 , linetype = 2)+
-  geom_point(data = CooksD_ideal, 
+  geom_point(data = CD_ideal, 
              aes(x = Chi_R2, y = dchisq(Chi_R2, df = df),
                  color = trend
                  )
@@ -394,18 +432,20 @@ ggplot(df_den, aes(x=vec_den)) +
   annotate("text", label = "95% confidence limit", x = upper95 * 1.2, 
            y = 0.7, angle = 90
            ) +
+  ylim(0, 1) +
+  xlim(0, 10) +
   xlab(expression(chi^2~"(df =1)")) +
   ylab("probability-density")
 
 ```
 
-The output of this test has a $\chi^2$-distribution of 1 degrees of freedom so that a 95% confidence level for $H0$ rejection can be choosen from the $\chi^2$-distribution (see Fig. \@ref(fig:bptest)). Performing this test on the studentized residuals and fitted values suggests homogeneity of variance for the ideal model for most situations, unless when no linear trend in ionization efficiency is evident. However, the correlation between $\chi^2$ probability and the linear ionization trend seems spurious, and is likely an artefact related to the relative large uncertainty in the OLS estimate which is an effect of the small variation in the independent variable ($X^a$)(see Fig. \@ref(fig:coeftest)). So, for the ion count originating from the *ideal* simulation, it can be concluded that there no strong reason to reject the $H0$ of homoscedasticity, and the assumption of **constant variance** holds. 
+The output of this test has a $\chi^2$-distribution of 1 degrees of freedom so that a 95% confidence level for $H0$ rejection can be chosen from the $\chi^2$-distribution (see Fig. \@ref(fig:bptest)). Performing this test on the studentized residuals and fitted values suggests homogeneity of variance for the ideal model for most situations, unless when no linear trend in ionization efficiency is evident. However, the correlation between $\chi^2$ probability and the linear ionization trend seems spurious, and is likely an artefact related to the relative large uncertainty in the OLS estimate which is an effect of the small variation in the independent variable ($X^a$)(see Fig. \@ref(fig:coeftest)). So, for the ion count originating from the *ideal* simulation, it can be concluded that there no strong reason to reject the $H0$ of homoscedasticity, and the assumption of **constant variance** holds. 
 
 ```{r coeftest, echo=FALSE, fig.cap="Comparison of the standard error of the $\\beta_1$ coefficient of an OLS for estimating the studentized residuals and the variation in the dependent variable $S_{X^b}$ for several linear trends in the ionization efficiency.", fig.width=6, fig.height=4}
 
-ggplot(CooksD_ideal, aes(y = SE_beta , x = S_Xt.sim.12C, color = trend)) +
+ggplot(CD_ideal, aes(y = SE_beta , x = parse_number(as.character(trend)), color = trend)) +
   geom_point() +
-  xlab(expression(S[""^12*C])) +
+  xlab(expression(epsilon[""^12*C]~"(\u2030)")) +
   ylab(expression(S[beta[1]]))
 
 ```
@@ -415,7 +455,7 @@ ggplot(CooksD_ideal, aes(y = SE_beta , x = S_Xt.sim.12C, color = trend)) +
 
 **Assumption 2: Normality of residuals**
 
-A second test validates the assumption of normality of the $\hat{\epsilon}_i^*$. This can be achieved by means of a Quantile-Quantile comparison plot (QQ normality plot; Fig. \@ref(fig:QQnorm)), where the empirical sample distribution is compared with a theoretical distribution. The theoretical cumulative distribution function $P(x)$ (or CDF) is used to compare the empirical sample distribution with, so that $Pr(X \le x) = P(x)$. To achieve this the studentized residuals are ordered from smallest to largest, denoted $\hat{\epsilon}_1^*$, $\hat{\epsilon}_2^*$, ..., $\hat{\epsilon}_i^*$. The cumulative probabilites of the empirical sample distribution for the $i$-th follows:
+A second test validates the assumption of normality of the $\hat{e}_i^*$. This can be achieved by means of a Quantile-Quantile comparison plot (QQ normality plot; Fig. \@ref(fig:QQnorm)), where the empirical sample distribution is compared with a theoretical distribution. The theoretical cumulative distribution function $P(x)$ (or CDF) is used to compare the empirical sample distribution with, so that $Pr(X \le x) = P(x)$. To achieve this the studentized residuals are ordered from smallest to largest, denoted $\hat{e}_1^*$, $\hat{e}_2^*$, ..., $\hat{e}_i^*$. The cumulative probabilities of the empirical sample distribution for the $i$-th follows:
 
 \begin{equation}
   P_i = \frac{i - \frac{1}{2}}{n} 
@@ -429,14 +469,14 @@ And by inverting the CDF we can find the theoretical quantiles $z_i$ (from $\mat
   (\#eq:quant)
 \end{equation}
 
-The obtained $z_i$ values are plotted as horizontal coordinates against the ordered $\hat{\epsilon}_i^*$ values in Figure \@ref(fig:QQnorm) (QQ normality plot). Here $P^{-1}$ is the inverse CDF. The straight line in the plot is a model estimate for $\hat{\epsilon}_i^*$ for comparison because if the residuals were a normal sample, the observations should lie on a straight line:
+The obtained $z_i$ values are plotted as horizontal coordinates against the ordered $\hat{e}_i^*$ values in Figure \@ref(fig:QQnorm) (QQ normality plot). Here $P^{-1}$ is the inverse CDF. The straight line in the plot is a model estimate for $\hat{e}_i^*$ for comparison because if the residuals were a normal sample, the observations should lie on a straight line:
 
 \begin{equation}
  \hat{\eta}_i = \hat{\mu} + \hat{\sigma}z_i 
  (\#eq:predQQ) 
 \end{equation}
 
-, where $\hat{\mu}$ and $\hat{\sigma}$ can be calculated from the mean and standard deviation of $\hat{\epsilon}_i^*$. As there is an expected departure from this line because of sampling variation, a standard error for the order statistic $\eta_{i}$ is required:
+, where $\hat{\mu}$ and $\hat{\sigma}$ can be calculated from the mean and standard deviation of $\hat{e}_i^*$. As there is an expected departure from this line because of sampling variation, a standard error for the order statistic $\eta_{i}$ is required:
 
 \begin{equation}
   S_{\eta_i} = \frac{\hat{\sigma}}{\Phi(z_i)} \times \sqrt{\frac{P_i(1- P_i)}{n}} 
@@ -450,7 +490,7 @@ where $\Phi$ is a density of $\mathrm{N}(0,1)$, so with the appropriate standard
   (\#eq:seQQ2)
 \end{equation}
 
-Thereby providing a means to distinguish $\hat{\epsilon}_i^*$ that deviate significantly from the normal assumption (Fig. \@ref(fig:QQnorm)). The differences between the emperical and theoretical quantiles can also be formalized as an hypothesis test, where the *Anderson-Darling test* is one example of such test. Based on this test, there is no reason to reject the $H0$ of normality in the case of an "ideal" analysis.    
+Thereby providing a means to distinguish $\hat{e}_i^*$ that deviate significantly from the normal assumption (Fig. \@ref(fig:QQnorm)). The differences between the empirical and theoretical quantiles can also be formalized as an hypothesis test, where the *Anderson-Darling test* is one example of such test. Based on this test, there is no reason to reject the $H0$ of normality in the case of an "ideal" analysis.    
 
 ```{r QQnorm, echo=FALSE, fig.cap = "QQ normality plot, comparing the sample quantiles with the theoretical quantiles of a density distribution with N(0,1). Blue dots denote data-points that fall outside the 95% confidence range of the predicted relationship between the theoretical and sample quantiles", fig.width=8, fig.height=4}
 
@@ -462,27 +502,27 @@ One can further deduce from Figure \@ref(fig:QQnorm), that the variance around t
 
 **Assumption 3: Independence of residuals**
 
-Count data from one measurement to another should be truly independent distributions, thus without machine bias and sample heterogeneity the difference between consective measurements (differencing) should be uncorrelated (autocorrelation). Autocorrelation can be expressed as the relatrive strength of the co-variance of a variable with it's own time $k$-lagged time series ($T$) over the total variance in that variable:
+Count data from one measurement to another should be truly independent distributions, thus without machine bias and sample heterogeneity the difference between consecutive measurements (differencing) should be uncorrelated (autocorrelation). Autocorrelation can be expressed as the relative strength of the co-variance of a variable with it's own $k$-lagged time series ($T$) over the total variance in that variable:
 
 \begin{equation}
   r_k = \frac{ \sum_{t=k+1}^T \left(x_t-\bar{x} \right)\left(x_{t-k}-\bar{x} \right)}{\sum_{t=1}^T \left(x_t - \bar{x} \right)^2} 
   (\#eq:auto)
 \end{equation}
 
-This measure takes upon values between $+1$; indicating strong autocorrelation, and $-1$; sugesting weak autocorrelation. This can be graphically displayed as a correlogram (see Fig. \@ref(fig:acf)) with the horizontal blues indicating whether the $r_k$ is significantly differen from ero. In addition, this graph can be extended to encompass not only differencing with one lag ($k = 1$) but also the next and the one thereafter (see Fig. \@ref(fig:acf)). 
+This measure takes upon values between $+1$; indicating strong autocorrelation, and $-1$; suggesting weak autocorrelation. This can be graphically displayed as a correlogram (see Fig. \@ref(fig:acf)) with the horizontal blues indicating whether the $r_k$ is significantly different from the average. In addition, this graph can be extended to encompass not only differencing with one lag ($k = 1$) but also the next and the one thereafter (see Fig. \@ref(fig:acf)). 
 
 
 ```{r acf, echo=FALSE, fig.cap = "The ACF plot of the studentized residuals.", fig.width=8, fig.height=4} 
 
-gg.sim[[6]] 
+gg.sim[[5]] 
 ```
 
-Foa a white noise time series we expect that about 95% of the spikes in the correlogram fall within the area demarcated with the blue horizontal lines in Figure \@ref(fig:acf). This approach can be formalized with a *Ljung-Box Q test*, where the $H0$ is a white noise series (i.e. no autocorrelation). This supports the last of the three assumptions, and suggests that the residuals appear to be truly independent (*independence of residuals*) from one to the next observation in the "ideal" simulation.
+For a white noise time series we expect that about 95% of the spikes in the correlogram fall within the area demarcated with the blue horizontal lines in Figure \@ref(fig:acf). This approach can be formalized with a *Ljung-Box Q test*, where the $H0$ is a white noise series (i.e. no autocorrelation). This supports the last of the three assumptions, and suggests that the residuals appear to be truly independent (*independence of residuals*) from one to the next observation in the "ideal" simulation.
 
 
 #### Influence of variance on the regression model
 
-Given that the "ideal" simulation satifies the conditions as initially described for the linear model Eq. \@ref(eq:linmodR), the estimated $\hat{\epsilon}}$ can be used to assess deviations from this "ideal linear model", and thereby provide a bivariate measure of how representative the $\bar{R}$ is for the sampled spot. The goal of residual analysis would therefore be to identify the influence of the coefficient; in this case the influence on $\bar{R}$, by determining the leverage and discrepance (outlyingness) of variable $X^a$, such that:
+Given that the "ideal" simulation satisfies the conditions as initially described for the linear model Eq. \@ref(eq:linmodR), the estimated $\hat{e}}$ can be used to assess deviations from this "ideal linear model", and thereby provide a bivariate measure of how representative the $\bar{R}$ is for the sampled spot. The goal of residual analysis would therefore be to identify the influence of the coefficient; in this case the influence on $\bar{R}$, by determining the leverage and discrepance (outlyingness) of variable $X^a$, such that:
 
 \begin{equation}
   \text{Influence} = \text{Leverage} + \text{Discrepancy}
@@ -507,103 +547,131 @@ This can also be visualized in a *Residuals vs Leverage plot* (Fig. \@ref(fig:co
 
 ```{r cooksD, echo=FALSE,  fig.cap = "Residuals vs Leverage plot, comparing the  hat-values (leverage) with the studentized residuals (outlyingness). Red dots denote data-points that have Cook's D values (Eq. \\@ref(eq:CD)) that fall above the cut-off value (Eq. \\@ref(eq:CDcut))", fig.width=8, fig.height=4}
 
-gg.sim[[5]] 
+gg.sim[[4]] 
 ```
 
 #### Measuring performance
 
-The goodness of fit with the coefficient of determination ($r^2$) allow for a systematic evaluation of the results of the regression diagnostics. The $r^2$ is defined as the fraction of sample variance that can be explained with the dependent variable (e.g. ion count of isotope species $a$ with the model Eq. \@ref(eq:linmodR)). This can be expressed as the ratio of the sum of squared deviations from the explaind value ($SSE$) and the total sum of sqaures ($SST$):
+<!-- The goodness of fit with the coefficient of determination ($r^2$) allow for a systematic evaluation of the results of the regression diagnostics. The $r^2$ is defined as the fraction of sample variance that can be explained with the dependent variable (e.g. ion count of isotope species $a$ with the model Eq. \@ref(eq:linmodR)). This can be expressed as the ratio of the sum of squared deviations from the explains value ($SSE$) and the total sum of squares ($SST$): -->
+
+<!-- \begin{equation} -->
+<!--   r^2 = \frac{\sum_{i=1}^n \left( \hat{X}_i^b - \bar{X}^b \right)}{\sum_{i=1}^n \left( X_i^b  - \bar{X}^b \right)} = \frac{SSE}{SST} -->
+<!--   (\#eq:R2) -->
+<!--  \end{equation} -->
+
+<!-- The augmentation procedure can be applied multiple times to the dataset, with every iteration $t$ removing the portion of the data that is substantially different from the mean model (Eq. \@ref(eq:linmodR)). And, with each $t$-th iteration, the resultant SSE will change relative to the SST, thereby alteraing the $r^2$ (Fig \@ref(fig:R2improvement). -->
+
+
+<!-- ```{r R2improvement, echo=FALSE,  fig.cap = "The goodness of fit of the regression analysis according to Eq. \\@ref(eq:linmodR) over several iterations ($t$).",fig.width=6, fig.height=4} -->
+
+<!-- # Plot goodness of fit performance -->
+<!-- ggplot(CooksD_results, aes(x = execution -1, y = hat_R2, color = simulation)) + -->
+<!--   geom_point(alpha = 0.1 ) + -->
+<!--   facet_grid(rows = vars(trend), scales = "free") + -->
+<!--   xlab(expression("t"^"th"~"iteration")) + -->
+<!--   ylab(expression(r^"2")) -->
+
+<!-- ``` -->
+
+<!-- From Figure \@ref(fig:R2improvement) it is evident that for analysis that have a linear inozation trend the model performs better with subsequent iterations. in contrast the results for the models without a linear ionization trend the effect can be variable, with no improvement for the "ideal" simulation and a decrease for the "constant" simulatiobn.  -->
+
+The effectiveness of recognising and differentiating the "ideal" substrate from compromised samples with Cook's D; the so-called "effect size", can now be calculated by assessing the variability reduction in the augmentation of the original dataset. This can be achieved by combining two measures which are sensitive to the changes brought about by the *Cooks D* augmentation. The first being the change in $n' = n - n^*$ required to reduce the variance of the ion count data, and, secondly, the variance of $R_i$ around the mean $\bar{R}$ explained by the augmentation. This can be gauged with the $\epsilon_R^2$, as it is a measure of variance independent from changes in the mean. 
 
 \begin{equation}
-  r^2 = \frac{\sum_{i=1}^n \left( \hat{X}_i^b - \bar{X}^b \right)}{\sum_{i=1}^n \left( X_i^b  - \bar{X}^b \right)} = \frac{SSE}{SST}
-  (\#eq:R2)
- \end{equation}
-
-The augmentation procedure can be applied multiple times to the dataset, with every iteration $t$ removing the portion of the data that is substantially different from the mean model (Eq. \@ref(eq:linmodR)). And, with each $t$-th iteration, the resultant SSE will change relative to the SST, thereby alteraing the $r^2$ (Fig \@ref(fig:R2improvement).
-
-
-```{r R2improvement, echo=FALSE,  fig.cap = "The goodness of fit of the regression analysis according to Eq. \\@ref(eq:linmodR) over several iterations ($t$).",fig.width=6, fig.height=4}
-
-# Plot goodness of fit performance
-ggplot(CooksD_results, aes(x = execution -1, y = hat_R2, color = simulation)) +
-  geom_point(alpha = 0.1 ) +
-  facet_grid(rows = vars(trend), scales = "free") +
-  xlab(expression("t"^"th"~"iteration")) +
-  ylab(expression(r^"2"))
-
-```
-
-From Figure \@ref(fig:R2improvement) it is evident that for analysis that have a linear inozation trend the model performs better with subsequent iterations. in contrast the results for the models without a linear ionization trend the effect can be variable, with no improvement for the "ideal" simulation and a decrease for the "constant" simulatiobn. 
-
-The latter does, however, not imply that the method shoudl be discarded because the more important question regards to the effectivenes of recognising and differtiating the "ideal" subtrates from compomised samples; the so-called "effect size". The effect size can be measured by  combining two measures which are sensitive to the changes brought about by the augmentation based on *Cooks D*. The first being the change in $n' = n - n^*$ required to reduce the variance of the ion count data, and, secondly, the variance of $R_i$ around the mean $\bar{R}$ explained by the augmentation. 
-
-\begin{equation}
-   \hat{S}_R^2 = \frac{1}{n} \sum_{i=1}^n \left( R - \bar{R} \right)^2  - \frac{1}{n^* } \sum_{i=1}^{n^*} \left( R^{*} - \bar{R}^{*} \right)^2 
+   \epsilon_{R}^{2\,'} = \epsilon_{R}^{2}   - \epsilon_{R}^{2\,*}
    (\#eq:varExp)
 \end{equation}  
 
   
-This has been illustrated in Figure \@ref(fig:effectsize), which show the change along these two measures over subsequent iterations ($t = 1, 2, ..., T$).
+This has been illustrated in Figure \@ref(fig:effectsize), which show the change along these two measures over subsequent iterations ($z = 1, 2, ..., Z$).
 
-```{r effectsize, echo=FALSE, fig.width=8, fig.height=6, fig.cap="The trjactories of the simulated ion coun data over multiple augmentation cycles according to the difference in $n$ and the explained variance Eq. \\@ref(eq:varExp). Here, the variance is given as a relative measure ($\\epsilon$) as part per thousand."}
+```{r effectsize, echo=FALSE, fig.width=8, fig.height=6, fig.cap="The trjactories of the simulated ion coun data over multiple augmentation cycles according to the difference in $n$ and the explained variance Eq. \\@ref(eq:varExp)."}
 
-tb.trj <- CooksD_stepwise  %>% ungroup() %>% 
-  filter(execution == 2 | execution == 3 | execution == 8) %>% 
-  mutate(execution =  factor(execution, labels = c(bquote(1^"st"~"iteration"),
-                                                   bquote(2^"nd"~"iteration"),
-                                                   bquote(8^"th"~"iteration")
-                                                   )
+tb.trj <- CD_eval %>% 
+  filter(execution == 2 | execution == 3 | execution == 6) %>% 
+  mutate(execution =  factor(execution, 
+                             labels = c(bquote(1^"st"~"iteration"),
+                                        bquote(2^"nd"~"iteration"),
+                                        bquote(7^"th"~"iteration")
+                                        )
                              )
-  )
+        )
 
-ggplot(tb.trj , aes(x = var_R, y = diff_n, color = simulation)) +
+ggplot(tb.trj , aes(x = diff_RS, y = diff_n, color = simulation)) +
   geom_point(alpha = 0.3) +
   scale_alpha(guide = "none") + 
-  facet_grid(cols = vars(trend), rows = vars(execution), labeller = labeller(execution = label_parsed))+
-  ggtitle("simulations") +
+  facet_grid(cols = vars(trend), 
+             rows = vars(execution), 
+             labeller = labeller(execution = label_parsed)
+             )+
+  ggtitle("Cook's D") +
   ylab("n'") +
-  xlab(expression(hat(epsilon)[R]^2~"\u2030"))
+  xlab(expression(epsilon[R]^2*""^"`"~"\u2030"))
 
 ```
 
-Effect size can be unified in a single measure, the explained variance $\eta^2$, obtained from the sum of squared deviations from the $\bar{R}$ explained by the augmentated model ($SSA$) divided by the $SST$ of $R$. Here $SSE$ is the variance by the following hypotehtical  model as follows
+This effect size (Fig. \@ref(fig:effectsize)) can be unified in a single measure, the explained variance $\eta^2$, where the sum of squared relative deviations from the $\bar{R}$, or RST; constitutes:
 
 \begin{equation}
-  \hat{\epsilon}_i' = \hat{\epsilon}_i -  \epsilon_i^* = \left( X_i^b - \bar{R}X_i^a \right) - \left(X_i^b^* -  \bar{R}X_i^a^* \right) = X_i^b' - \bar{R}'X_i^a'
-\end{equation} 
-
-The variance $\hat{\epsilon}^2$ in this formulation is only accounted by the change in $\bar{R}$ throught the augmentation, giving
-
-\begin{equation}
- SST = SSA + SSE
+  RST = \epsilon_{R}^{2} \times n
+  (\#eq:RST)
 \end{equation}
 
+where the augmentation effectively splits the variability in the dataset, as follows:
+
+\begin{equation}
+ RST = RSA + RSE = \epsilon_{R}^{2*} \times n^{*} + \epsilon_{R}^{2`} \times n^{`}
+ (\#eq:RSA)
+\end{equation}
+
+
+<!-- obtained from the  explained by the augmentated model ($SSA$) divided by the $SST$ of $R$. Here $SSE$ is the variance by the following hypothetical  model as follows -->
+
+The division of variability among RSA ad RSE by the *Cooks D* augmentation yields an effect size measure: 
+
 \begin{equation} 
-  \eta^2 = \frac{SSE}{SST} = 1 - \frac{SSA}{SST} = 1 - \frac{n*\hat{S}_R*^2}{\sum_{i=1}^n (R - \bar{R})^2}
+  \eta^2 = \frac{RSE}{RSA} = \frac{RST}{RSA} - 1 =  \frac{\epsilon_{R}^{2'} \times n^{'}}{\epsilon_{R}^{2*} \times n^{*}}
+  (\#eq:eta)
 \end{equation} 
 
-This yields a variance function qhich can be converted to a $\chi^2$ goodness of fit test, where the coefficient $\bar{R}'$ can divised as a hypothesis with $H0 : \bar{R}' = 0$ and $Ha: \bar{R}' \ne 0 $. This test has 1 degree of freedom, as er 2 relations $r$ used to calculate the coefficient ($\bar{R}$ from species $a$ and $b$) for the estimate derived based on the linear model ($df = r -1 $ for goodness of fit).  In other words , the $H0$ suggest that the augmentation brings about no change in the variance of the ion count data, so that if the $H0$ is rejected there is reason to assume that the data originates from a substrate with a heterogenous isotopic composition.  
+This yields a variance function which can be converted to a $\chi^2$ goodness of fit test, where the coefficient $\bar{R}'$ can divided as a hypothesis with $H0 : \bar{R}' = 0$ and $Ha : \bar{R}' \ne 0$. This test has 1 degree of freedom, as there are 2 relations ($r$) used to calculate the coefficient estimate ($\bar{R}$ from species $a$ and $b$) of the linear model ($df = r - 1$ for goodness of fit).  In other words, the $H0$ suggest that the augmentation brings about no change in the variability of the ion count data, so that if the $H0$ is rejected there is reason to assume that the data originates from a substrate with a heterogeneous isotopic composition.  
 
   
-```{r echo=FALSE, fig.width=8, fig.height=4}
+```{r mixmodel, echo=FALSE, fig.cap="The $\\chi^2$ values for the Cook's D augmentation, based on the variance function Eq. \\@ref(eq:eta) for all three simulations and for two types of linear trends in the ionization efficiency. Note that the dotted lines represents the $\\chi^2$ distribution with 1 df and 95% confidence interval, and the dashed line represents a mixture distribution combining the $\\chi^2$ distribution with the null (\"ideal\") distribution based on Monte Carlo simulations.", fig.width=8, fig.height=4}
 
 
-CD_eval <- CD_eval  %>% filter(execution  == 2)
+tb.xrp <- CD_eval %>% 
+  filter(execution == 2)
 
 
-fx <- function(x) { 
+fx <- function(x, var = 0) { 
+  
+  dist <- filter(null_dist, trend == paste0("linear trend (var: ", var, ")"))
+  
   0.5 * dchisq(x, df = 1) + 
     0.5 * dnorm(x,
-                pull(filter(null_cdf, name == "mean"), value) , 
-                pull(filter(null_cdf, name == "sd"), value)
-                )
-}
+                dist %>% pull(mean_emp) , 
+                dist %>% pull(sd_emp)
+  )
+  }
 
 df <- 1
 y_star = 3
+
+fx_dist <-lst(
+              a <- df_den %>% 
+                mutate(probs = fx(vec_den, var = 0),
+                       trend = paste0("linear trend (var: ", 0, ")")
+                       ),
+              b <- df_den %>% 
+                mutate(probs = fx(vec_den, var = 500),
+                       trend = paste0("linear trend (var: ", 500, ")")
+                       )
+              ) %>% 
+  reduce(bind_rows)
       
-ggplot(df_den, aes(x=vec_den)) +
-  stat_function(fun = fx, linetype = 2 ) +
+ggplot(df_den, aes(x = vec_den)) +
+  geom_line(data = fx_dist, aes(x = vec_den, y = probs), linetype = 2) +
   stat_function(fun = dchisq, args = list(df = df), linetype = 3) +
   stat_function(fun = dchisq, 
                 args = list(df = df),
@@ -613,64 +681,44 @@ ggplot(df_den, aes(x=vec_den)) +
                 ) +
   geom_vline(xintercept = upper95, linetype = 3) +
   geom_vline(xintercept = y_star, linetype = 2) +
-  geom_point(position = jitter,
-             data = CD_eval, 
-             aes(x = chi_np2 , y = dchisq(chi_np2 , df = df),
-                 color = simulation, alpha = 0.2
-                 )
+  geom_point(data = tb.xrp, 
+             aes(x = chi_n2 , 
+                 y = dchisq(chi_n2 , df = df),
+                 color = simulation, 
+                 alpha = 0.2
+                 ),
+             position = jitter
              ) +
   scale_alpha(guide = "none") + 
   annotate("text", label = "95% confidence limit \n mixture distribution", 
-           x = y_star * 1.2, y = 0.5, angle = 90
+           x = y_star * 1.1, y = 0.5, angle = 90, size = 3
            ) +
   annotate("text", label = "95% confidence limit \n Chi distribution", 
-           x = upper95 * 1.2, y = 0.5, angle = 90, color = "lightgrey"
+           x = upper95 * 1.1, y = 0.5, angle = 90, size = 3, 
+           color = "lightgrey"
            ) +
   xlab(substitute(chi^2~"(df = "*a*")", lst(a = df))) +
+  ylim(0, 1.2) +
   ylab("probability-density") +
   facet_grid(cols = vars(trend))
 
 
 ```
 
-```{r}
-SimCorrMix::plot_simpdf_theory(sim_y = mix_dist$Y_mix[, 1], ylower = 0, yupper = 10, 
-                   title = "PDF of Mixture of Normal Distributions", fx = fx, lower = -Inf, 
-                   upper = Inf)
-
-```
+Based on the simulated data in Figure \@ref(fig:mixmodel) it is evident that the "ideal" model can clearly be differentiated from symmetric and asymmetric isotope variability, although the test is less sensitive to symmetric isotope variation with an increasing linear trend caused by the ionization efficiency. The Monte Carlo simulation of the "ideal" data-set can be used to increase the sensitivity of the model. This yields a mixture model with two additive components; an $\chi^2$ distribution with 1 df and a null distribution (based on the "ideal" data set). The $\eta^2$ metric for isotope ion counts can thus be used to assess the probability of a measured spot representing an isotopic composite, or a truly homogeneous isotopic substrate. 
 
 
-```{r}
-
-SimMultiCorrData::plot_sim_cdf(sim_y = mix_dist$Y_mix[, 1], calc_cprob = TRUE, delta = y_star)
-
-```
-
-```{r}
-
-CD_ini %>% filter(trend == "linear trend (var: 0)", chi_np2 < y_star) %>% group_by(simulation) %>% count()
-
-```
-
-
-To conclude the here-designed $\eta^2$ metric for isotope ion counts can be used to assess the probality of the measured spot represent an isotopic composite or a truly homogenous isotopic substrate. The $\eta^2$ can be converted to a reduced $chi^2$ by muliplying with $N$, based on Monte Carlo simulated data; a $chi^2$ of LOWER than `r y_star` is with 95% confidence to results from   homogenous isotopic substrate. In the case of an isopic gradient traversing the whole analysing, which cause variation that is equally balanced about the the "ideal linear model" (Eq \@ref(eq:linmodR)) the method is not able to detect the heterogeneity. So, any variation but this highly symetric (and probably rare instances of) variation in isotopic composition will cause a shift to higher $\eta^2$ values. Nevertheless the symetric variation could be recognised by evaluating the the evlationg of the assumption of normally distributed, constant and independent residuals (see \@ref(table:)), where in the case of the residuals more than 1 violations is suspected based on the above outlined hypothesis tests.
-
-
-```{r flags, echo=FALSE}
+```{r flags, echo=FALSE, eval=FALSE}
 
  diag_R(sim_IC_extremes, 
         method = "CooksD",
-        args = expr_R(Xt = "Xt.sim",
-                      N = "N.sim",
-                      species = "species",
-                      ion1 = "13C",
-                      ion2 = "12C"
-                      ),
+        args = expr_R_stat,
+        reps = 1,
         simulation, 
         trend, 
         output = "flag"
         ) %>% 
+  reduce_diag(type = "results") %>% 
   distinct(simulation, trend, .keep_all = TRUE) %>% 
   select(simulation, trend, `Assumption 1` = flag_CV, `Assumption 2` = flag_QQ, `Assumption 3` = flag_IR) %>% 
   knitr::kable(caption = "Results of hypothesis test on the studentized residuals")
@@ -680,33 +728,35 @@ To conclude the here-designed $\eta^2$ metric for isotope ion counts can be used
 
 ### A comparison of methods
 
-Conveniently the same effect size measure can be applied to the univariate method (the default block-wise procedure of the Cameca software), so that a comparsion of methods is attainable. Figure \@ref(fig:effectsize2) show the variance of $R_i$ around the mean $\bar{R}$ explained by the augmentation as well as the $n'$, based on the Cameca procedure. More variation is captured by the augmentation under the "ideal" simulation than when an actual variance in $R$ exist.
+Conveniently the same effect size measure can be applied to the univariate method (the default block-wise procedure of the Cameca software), so that a comparison of methods is attainable. Figure \@ref(fig:effectsize2) show the $\epsilon_{R}^{2'}$ and the $n'$ explained by the augmentation, based on the Cameca procedure. 
 
-```{r effectsize2, echo=FALSE, fig.width=8, fig.height=6, fig.cap="The trjactories of the simulated ion coun data over multiple augmentation cycles according to the difference in $n$ and the explained variance by the univariate Cameca method. Here, the variance is given as a relative measure ($\\epsilon$) as part per thousand."}
+```{r effectsize2, echo=FALSE, fig.width=8, fig.height=6, fig.cap="The trajectories of the simulated ion count data over multiple augmentation cycles according to the difference in $n$ and the explained variance by the univariate Cameca method."}
 
-tb.trj <- Cameca_stepwise  %>% ungroup() %>% 
-  filter(execution == 2 | execution == 3 | execution == 8) %>% 
-  mutate(execution =  factor(execution, labels = c(bquote(1^"st"~"iteration"),
-                                                   bquote(2^"nd"~"iteration"),
-                                                   bquote(8^"th"~"iteration")
-                                                   )
+tb.trj <- CM_eval %>% 
+  filter(execution == 2 | execution == 3 | execution == 7) %>% 
+  mutate(execution =  factor(execution, 
+                             labels = c(bquote(1^"st"~"iteration"),
+                                        bquote(2^"nd"~"iteration"),
+                                        bquote(8^"th"~"iteration")
+                                        )
                              )
          )
 
-ggplot(tb.trj , aes(x = var_R, y = diff_n, color = simulation)) +
-  geom_point(shape = 3) +
+ggplot(tb.trj , aes(x = diff_RS, y = diff_n, color = simulation)) +
+  geom_point(alpha = 0.3) +
   scale_alpha(guide = "none") + 
   facet_grid(cols = vars(trend), rows = vars(execution), labeller = labeller(execution = label_parsed))+
-  ggtitle("simulations") +
+  ggtitle("Cameca") +
   ylab("n'") +
-  xlab(expression(hat(epsilon)[R]^2~"\u2030"))
+  xlab(expression(hat(epsilon)[R]^2*""^"`"~"\u2030"))
 
 ```
 
+Converting the $\eta^2$ of this method to $\chi^2$ (as before)(Fig \@ref(fig:CamChi)) shows that this univariate approach is not able to identify the isotopic variable simulations (Fig. \@ref(fig:CamChi)). Moreover, in the case of a linear trend induced by ionization variance yields an differentiation opposite of the desired effect. Thereby once more showing the problems associated with this method.  
 
-```{r echo=FALSE, fig.width=8, fig.height=4}
+```{r CamChi, echo=FALSE, fig.cap="The $\\chi^2$ values for the Cameca-style augmentation, based on the variance function Eq. \\@ref(eq:eta) for all three simulations and for two types of linear trends in the ionization efficiency.", fig.width=8, fig.height=4}
 
-CM_ini <- filter(Cameca_stepwise, execution == 2)
+tr.xrp2 <- filter(CM_eval, execution == 2)
 
 ggplot(df_den, aes(x=vec_den)) +
   stat_function(fun = dchisq, args = list(df = df)) +
@@ -716,19 +766,20 @@ ggplot(df_den, aes(x=vec_den)) +
                       geom = "area",
                       alpha = 0.2) +
   geom_vline(xintercept = upper95 , linetype = 2)+
-  geom_point(position = jitter,
-             data = CM_ini, 
-             aes(x = Chi_w2, y = dchisq(Chi_w2, df = df),
-             color = simulation,
-             alpha = 0.2
-             
-             )
+  geom_point(data = tr.xrp2, 
+             aes(x = chi_n2, 
+                 y = dchisq(chi_n2, df = df),
+                 color = simulation,
+                 alpha = 0.2
+                 ),
+             position = jitter
              ) +
   scale_alpha(guide = "none") + 
 
   annotate("text", label = "95% confidence limit", x = upper95 * 1.2, 
            y = 0.5, angle = 90
            ) +
+  ylim(0, 1.2) +
   xlab(substitute(chi^2~"(df = "*a*")", lst(a = df))) +
   ylab("probability-density") +
   facet_grid(cols = vars(trend))
@@ -736,7 +787,7 @@ ggplot(df_den, aes(x=vec_den)) +
 
 ```
 
-The univariate method does not allow separation of the simulated data. To conclude, the bivariate *Regression diagnostic* approach is more sensitive and can flag problematic analyses even if this is not obvious from the descriptive and predictive statistics alone.  
+The univariate method does not allow separation of the simulated data. To conclude, the bivariate *regression diagnostics* is the more sensitive test and can flag problematic analyses, even if this is not obvious from the descriptive and predictive statistics alone.  
 
 ## None-isotope ratios: Trends in ionization efficiency  
 
@@ -746,52 +797,6 @@ This will follow later.
 
 <!-- Similarly as for the isotope ion count ratios -->
 
-```{r eval=FALSE}
-
-
-# Processing raw ion count data
-tb.pr <- tb.pr %>% 
-  filter(file.nm == "2018-01-19-GLENDON_1_1")
-
-
-tb.mod <-predict_ionize(df = tb.pr, 
-                        Xt = Xt.pr, 
-                        N = N.pr, 
-                        t = t.rw, 
-                        species = species.nm, 
-                        file.nm
-                        ) 
-
-ls.diag <- plot_diag_R(tb.pr,
-                       Xt = Xt.pr, 
-                       N = Xt.pr, 
-                       species = species.nm, 
-                       ion1 = "12C", 
-                       ion2 = "40Ca 16O",
-                       file.nm
-                       )
-                    
-
-ls.diag.l0 <- plot_diag_R(tb.mod,
-                          Xt = Xt.pr.l0, 
-                          N = Xt.pr.l0, 
-                          species = species.nm, 
-                          ion1 = "12C", 
-                          ion2 = "40Ca 16O",
-                          file.nm
-                          )
-
-ls.diag
-
-
-```
-
-
-```{r eval=FALSE}
-
-
-ls.diag.l0
-```
 
 
 

@@ -4,7 +4,7 @@
 \alias{predict_ionize}
 \title{Predicting trends in ionization efficiency}
 \usage{
-predict_ionize(df, Xt, N, t, species, ..., zero = TRUE)
+predict_ionize(df, Xt, N, t, species, ...)
 }
 \description{
 Predicting trends in ionization efficiency

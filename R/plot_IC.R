@@ -24,24 +24,29 @@
 #' # Processing raw ion count data
 #' tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
 #'
+#' # expression for R_stat()
+#' expr_R_stat <- expr_R(Xt = "Xt.pr",
+#'                       N = "N.pr",
+#'                       species = "species.nm",
+#'                       ion1 = "13C",
+#'                       ion2 = "12C"
+#'                       )
+#'
 #' # diagnostics ion count data for isotope ratios
 #' tb.aug <- diag_R(tb.pr,
 #'                  method = "CooksD",
-#'                  args = expr_R(Xt = "Xt.pr",
-#'                                N = "N.pr",
-#'                                species = "species.nm",
-#'                                ion1 = "13C",
-#'                                ion2 = "12C"
-#'                                ),
+#'                  args = expr_R_stat,
 #'                  reps = 2,
 #'                  file.nm
 #'                  )
 #'
 #' # plotting Cook's D diagnostics
-#' plot_diag_R(tb.aug, Xt.pr, N.pr, species.nm, "13C", "12C", file.nm)
+#' plot_diag_R(tb.aug, args = expr_R_stat, file.nm)
 #'
 
-plot_diag_R <- function(df, Xt, N, species, ion1, ion2, ...,
+plot_diag_R <- function(df,
+                        args = expr_R(NULL),
+                        ...,
                         path = NULL,
                         device = "png",
                         aug = TRUE ,
@@ -49,47 +54,43 @@ plot_diag_R <- function(df, Xt, N, species, ion1, ion2, ...,
                         height.out = 20
                         ){
 
-  Xt <- enquo(Xt)
-  N <- enquo(N)
-  species <- enquo(species)
+  # Xt <- enquo(Xt)
+  # N <- enquo(N)
+  # species <- enquo(species)
   gr_by <- enquos(...)
 
 # heavy isotope
-  Xt1 <- quo_updt(Xt, ion1)
+  Xt1 <- quo_updt(args[["Xt"]], as_name(args[["ion1"]]))
 # light isotope
-  Xt2 <- quo_updt(Xt, ion2)
+  Xt2 <- quo_updt(args[["Xt"]], as_name(args[["ion2"]]))
 
 # labels for point statistics
-  stat <- df  %>%
-    purrr::transpose() %>%
-    purrr::pluck("df") %>%
-    purrr::map_dfr(~stat_R(df= .x,
-                           Xt = !! Xt,
-                           N = !! N,
-                           species = !! species,
-                           ion1 = ion1,
-                           ion2 = ion2,
-                           !!! gr_by
-                           ),
-                   .id = "execution"
-                  ) %>%
+  stat <- reduce_diag(df, type = "df", args = args, !!! gr_by) %>%
     group_by(execution) %>%
     tidyr::nest() %>%
     mutate(labels = purrr::map2(data, execution,
-                ~stat_select(.x, .y, Xt = !!Xt, facets_gr = quos(!!!gr_by))
+                ~stat_select(.x, .y, Xt = !!args[["Xt"]], facets_gr = quos(!!!gr_by))
                                 )
            ) %>%
-    tidyr::unnest(cols=labels) %>%
+    tidyr::unnest(cols = labels) %>%
     ungroup() %>%
     select(-c(execution, data))
 
+# strip grouping
+  results <- select(df[[2]]$results, -c(!!!gr_by))
+
 # data with diagnostics
-  df.def <-  cov_R(df[[1]]$df, species= !!species, ion1, ion2,
-                   !!!gr_by, preserve = TRUE
+  df.def <-  cov_R(df[[1]]$df,
+                   species = !!args[["species"]],
+                   ion1 = as_name(args[["ion1"]]),
+                   ion2 = as_name(args[["ion2"]]),
+                   !!! gr_by,
+                   preserve = TRUE
                    ) %>%
-    left_join(., df[[2]]$results, by = "ID")
+    left_join(., results, by = "ID")
 
-
+  ion1 <- as_name(args[["ion1"]])
+  ion2 <- as_name(args[["ion2"]])
 
   crs <- gg_default(df.def,
                     stat,
@@ -105,7 +106,7 @@ plot_diag_R <- function(df, Xt, N, species, ion1, ion2, ...,
                     ) +
     xlab(substitute(""^a * b ~"(ct/sec)",
                     lst(a = as.numeric(gsub("([0-9]+).*$", "\\1", ion2)),
-                        b = as.symbol(gsub("^[0-9]+","",ion2))
+                        b = as.symbol(gsub("^[0-9]+","", ion2))
                         )
                     )
          ) +
@@ -173,6 +174,7 @@ plot_diag_R <- function(df, Xt, N, species, ion1, ion2, ...,
   df.acf <- df.def %>%
     group_by(!!! gr_by) %>%
     select(!!! gr_by, ACF) %>%
+    # distinct(!!! gr_by) %>%
     tidyr::unnest(cols = c(ACF)) %>%
     ungroup() %>%
     tidyr::unite(facet_gr, !!!gr_by)

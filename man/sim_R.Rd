@@ -18,6 +18,9 @@ sim_R(
   ...
 )
 }
+\arguments{
+\item{sys}{Systematic component as relative standard deviation of the major/minor single ion in per mille}
+}
 \description{
 Simulate ion count data
 }

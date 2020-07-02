@@ -4,7 +4,14 @@
 \alias{diag_R}
 \title{Diagnostics isotope count data}
 \usage{
-diag_R(df, method = "Cameca", args = expr_R(NULL), ..., output = "flag")
+diag_R(
+  df,
+  method = "Cameca",
+  args = expr_R(NULL),
+  reps = 1,
+  ...,
+  output = "flag"
+)
 }
 \arguments{
 \item{df}{A tibble containing processed ion count data.}
@@ -52,14 +59,35 @@ tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
 # Processing raw ion count data
 tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
 
-# CAMECA style augmentatio of ion count data for isotope ratios
-tb.aug <- diag_R(tb.pr,
-                 method = "Cameca",
-                 args = expr_R(Xt = "Xt.pr",
-                               N = "N.pr",
-                               species = "species.nm",
-                               ion1 = "13C",
-                               ion2 = "12C"),
-                 file.nm,
-                 bl.mt)
+# estimate strength of ionization trend as variation in major ion in per mille
+tb.var12C <- predict_var(tb.pr, Xt.pr, N.pr, t.rw, species.nm, "12C", file.nm)
+
+# expression for R_stat()
+expr_R_stat <- expr_R(Xt = "Xt.pr",
+                      N = "N.pr",
+                      species = "species.nm",
+                      ion1 = "13C",
+                      ion2 = "12C"
+                      )
+
+# CAMECA style augmentation of ion count data for isotope ratios; 3 repeats
+ls.diag <- diag_R(tb.pr,
+                  method = "Cameca",
+                  args = expr_R_stat,
+                  reps = 3,
+                  file.nm,
+                  bl.mt
+                  )
+
+# evaluation of diagnostics
+tb.eval <- eval_diag(ls.diag,
+                     args = expr_R_stat,
+                     tb.var12C,
+                     RS_Xt.pr.12C,
+                     n_R_Xt.pr,
+                     file.nm,
+                     bl.mt,
+                     output = "sum"
+                     )
+
 }

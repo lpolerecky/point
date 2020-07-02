@@ -1,7 +1,7 @@
 ## code to prepare `simulated_IC` dataset
 
 # repetition
-reps <- 5
+reps <- 100
 
 # Types of R variation
 var_R <- c("ideal", "symmetric", "asymmetric")

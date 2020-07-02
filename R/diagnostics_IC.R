@@ -38,29 +38,51 @@
 #' # Processing raw ion count data
 #' tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
 #'
-#' # CAMECA style augmentatio of ion count data for isotope ratios
-#' tb.aug <- diag_R(tb.pr,
-#'                  method = "Cameca",
-#'                  args = expr_R(Xt = "Xt.pr",
-#'                                N = "N.pr",
-#'                                species = "species.nm",
-#'                                ion1 = "13C",
-#'                                ion2 = "12C"
-#'                                ),
-#'                  reps = 3,
-#'                  file.nm,
-#'                  bl.mt
-#'                  )
+#' # estimate strength of ionization trend as variation in major ion in per mille
+#' tb.var12C <- predict_var(tb.pr, Xt.pr, N.pr, t.rw, species.nm, "12C", file.nm)
 #'
-diag_R <- function(df, method = "Cameca", args = expr_R(NULL), reps = 1, ...,
-                   output = "flag"){
+#' # expression for R_stat()
+#' expr_R_stat <- expr_R(Xt = "Xt.pr",
+#'                       N = "N.pr",
+#'                       species = "species.nm",
+#'                       ion1 = "13C",
+#'                       ion2 = "12C"
+#'                       )
+#'
+#' # CAMECA style augmentation of ion count data for isotope ratios; 3 repeats
+#' ls.diag <- diag_R(tb.pr,
+#'                   method = "Cameca",
+#'                   args = expr_R_stat,
+#'                   reps = 3,
+#'                   file.nm,
+#'                   bl.mt
+#'                   )
+#'
+#' # evaluation of diagnostics
+#' tb.eval <- eval_diag(ls.diag,
+#'                      args = expr_R_stat,
+#'                      tb.var12C,
+#'                      RS_Xt.pr.12C,
+#'                      n_R_Xt.pr,
+#'                      file.nm,
+#'                      bl.mt,
+#'                      output = "sum"
+#'                      )
+#'
+diag_R <- function(df,
+                   method = "Cameca",
+                   args = expr_R(NULL),
+                   reps = 1,
+                   ...,
+                   output = "flag"
+                   ){
 
   gr_by <- enquos(...)
 
   max <- reps + 1
 
 # empty list for iteration storage
-  ls.tb <- rlang::rep_named(vctrs::vec_cast(1:max, character()), lst())
+  ls.tb <- rlang::rep_named(as.character(1:max), lst())
 
 # Remove zeros
   if (method == "CooksD"){
@@ -96,17 +118,20 @@ diag_R <- function(df, method = "Cameca", args = expr_R(NULL), reps = 1, ...,
 }
 
 #' @export
-rerun_diag_R <- function(out, input, method = "Cameca",
-                         args = expr_R(NULL), ...,
-                         output = "flag"){
+rerun_diag_R <- function(out,
+                         input,
+                         method = "Cameca",
+                         args = expr_R(NULL),
+                         ...,
+                         output = "flag"
+                         ){
 
   gr_by <- enquos(...)
 
   # variables to be saved
   results_vars <- set_names(colnames(out$df))
-  deselect_vars <- results_vars  %in% "ID"
+  deselect_vars <- results_vars  %in% append(sapply(gr_by, as_name), "ID")
 
-    # append(sapply(gr_by, as_name), "ID")
   variables <- parse_exprs(results_vars[!deselect_vars])
 
 
@@ -122,11 +147,8 @@ rerun_diag_R <- function(out, input, method = "Cameca",
     select(.data$ID, !!!gr_by, !!!variables)
 
   # save results; flag ad statistics
-
   results <- select(out, -c(!!!variables))
 
-    # mutate(execution = input) %>%
-    # distinct(!!! gr_by, .keep_all = TRUE)
 
   out <- lst(df = df.aug, results = results)
 
@@ -135,8 +157,12 @@ rerun_diag_R <- function(out, input, method = "Cameca",
 }
 
 #' @export
-diag_R_exec <- function(df, method = "Cameca", args = expr_R(NULL), ...,
-                        output = "flag"){
+diag_R_exec <- function(df,
+                        method = "Cameca",
+                        args = expr_R(NULL),
+                        ...,
+                        output = "flag"
+                        ){
 
   gr_by <- enquos(...)
 
@@ -145,9 +171,8 @@ diag_R_exec <- function(df, method = "Cameca", args = expr_R(NULL), ...,
     switch(method,
            Cameca = call2("Cameca_R", expr(.), args, !!!gr_by, output = output),
            CooksD = call2("CooksD_R", expr(.), args, !!!gr_by, output = output)
-           )
-  }
-
+    )
+    }
 
   if (method == "CooksD" | method == "Cameca"){
 # Descriptive an predictive statistics for ion ratios
@@ -158,9 +183,8 @@ diag_R_exec <- function(df, method = "Cameca", args = expr_R(NULL), ...,
                      ion1 = as_name(args[["ion1"]]),
                      ion2 = as_name(args[["ion2"]]),
                      !!! gr_by,
-                     output = "complete",
-                    # zero = TRUE,
-                    ) %>%
+                     output = "complete"
+                     ) %>%
                eval_tidy(expr = diag_method(method))
   }
 
@@ -178,41 +202,109 @@ diag_R_exec <- function(df, method = "Cameca", args = expr_R(NULL), ...,
 #' Evaluate effect size of diagnostics
 #'
 #' @export
-eval_diag <- function(df, SR, n, execution, ...){
+eval_diag <- function(df,
+                      args,
+                      df2,
+                      RSXt,
+                      n,
+                      ...,
+                      output = "sum"
+                      ){
 
-  SR <- enquo(SR)
+  RSR <- quo_updt(args[["Xt"]], x = "RS_R")
+  RSXt <- enquo(RSXt)
   n <- enquo(n)
-  filter_gr <- enquo(execution)
   gr_by <- enquos(...)
 
-  SSO <- filter(df, !!filter_gr == 1) %>% mutate(SSO = (!! SR) ^ 2 * !! n) %>% select(!!!  gr_by, n1  = !!n, SR1 = !!SR, SSO)
+# connecting the
+  gr_vc <- sapply(gr_by, as_name)
+# connecting the single ion variable
+  uni_gr <- gr_vc[gr_vc %in% colnames(df2)]
 
-  df <- left_join(df, SSO, by = sapply(gr_by, as_name))
+  df  <- reduce_diag(df,
+                     type = "df",
+                     args = args,
+                     !!! gr_by
+                     )
 
-  df %>%
-    group_by(!!! gr_by) %>%
-    arrange(desc(!! filter_gr)) %>%
-    transmute(execution = !! filter_gr,
-              n1 = n1,
-              nz = !! n,
-              diff_n = c(diff(!! n, 1), NA),
-              SR1 = SR1,
-              SRz = !!SR,
-              diff_SR =  c(diff(!! SR, 1), NA),
-              SSD = diff_n * diff_SR^2,
-              SSO = SSO,
-              SSO_z =  (!! SR)^2 *!! n,
-              n2_t = ((SR1 - SRz)^2 * (n1 - nz))  / SSO,
-              n2_p = SSD / SSO_z,
-              chi_nt2 = n2_t * n1,
-              chi_np2 = n2_p * nz
-              )
+
+  ls.trans <- lst(
+    quo(!! n),
+    quo(c(diff(!! n, 1), NA)),
+    quo(c(diff(!! RSR, 1), NA)),
+    quo(diff_RS ^ 2 * diff_n),
+    quo((!! RSR) ^ 2 * !! n),
+    quo(SSD / SSA),
+    quo(n2 * nz)
+    )
+
+# Names of parameters for diagnostic evaluation
+  ls.names <- c("nz", "diff_n", "diff_RS", "SSD", "SSA", "n2", "chi_n2")
+
+# Set names
+  ls.trans <- set_names(ls.trans, nm = ls.names)
+
+
+# Switch output complete dataset, stats or summary stats
+  mod_cal <- function(type) {
+    switch(type,
+           complete = call2( "mutate", expr(.), !!! ls.trans),
+           sum = call2( "transmute",  expr(.), !!! ls.trans)
+    )
+  }
+
+  ls.preserve <-lst(
+    quo(sum(n2, na.rm = TRUE)),
+    quo(sum(chi_n2, na.rm = TRUE))
+    )
+
+# Names to be preserved
+  ls.names2 <- c("n2", "chi_n2")
+
+# Set names
+  ls.preserve <- set_names(ls.preserve, nm = ls.names2)
+
+# Switch to determine what extend of the data is preserved
+  filter_cal <- function(type) {
+    switch(type,
+           complete = call2("select",
+                            expr(.),
+                            expr(-c(ls.names[!ls.names %in% ls.names2]))
+                            ),
+           sum = call2("summarise",
+                       expr(.),
+                       !!! ls.preserve
+                       )
+    )
+    }
+
+
+# Evaluate expressions and calls
+    df_eval <- df %>%
+      group_by(!!! gr_by) %>%
+      arrange(desc(execution)) %>%
+      eval_tidy(expr = mod_cal(output)) %>%
+      eval_tidy(expr = filter_cal(output))
+
+    if (output == "sum") {
+      df <- lst(filter(df, execution == 1), df_eval, df2) %>%
+        purrr::reduce2(lst(gr_vc, uni_gr), left_join) %>%
+        mutate(crit_val = purrr::map_dbl(!! RSXt, crit_size),
+               flag = if_else(.data$chi_n2 > crit_val, "variable", "non-variable")
+               )
+      return(df)
+    }
+
+    if (output == "complete") {
+      df <- left_join(df_eval, df2, by = uni_gr) %>%
+        mutate(crit_val = purrr::map_dbl(!! RSXt, crit_size),
+               flag = if_else(.data$chi_n2 > crit_val, "variable", "non-variable")
+               )
+      return(df)
+    }
 
 
   }
-
-
-
 
 
 #' Family of diagnostics functions for isotope count ratios
@@ -586,6 +678,47 @@ expr_cor <- function(Xt, N, species, t){
   env = caller_env())
 
 }
+
+
+#' Reduce diagnostis
+#'
+#' @export
+reduce_diag <- function(ls, type = "df", args = expr_R(NULL), ...){
+
+  gr_by <- quos(...)
+
+  type_reduction <- function(type){
+    switch(type,
+           results = call2("reduce",
+                           expr(.),
+                           expr(bind_rows),
+                           .ns = "purrr"),
+           df = call2("map_dfr",
+                      expr(.),
+                      expr(~stat_R(df = .x,
+                                   Xt = !! args[["Xt"]],
+                                   N = !! args[["N"]],
+                                   species = !! args[["species"]],
+                                   ion1 = as_name(args[["ion1"]]),
+                                   ion2 = as_name(args[["ion2"]]),
+                                   !!! gr_by
+                                   )
+                           ),
+                      .id = "execution",
+                      .ns = "purrr"
+                      )
+    )
+    }
+
+# Reduce the results to a single dataframe
+ls %>%
+  purrr::transpose() %>%
+  purrr::pluck(type) %>%
+  eval_tidy(expr = type_reduction(type))
+
+
+}
+
 #-------------------------------------------------------------------------------
 # Not exportet helper functions
 #-------------------------------------------------------------------------------
@@ -669,4 +802,12 @@ jack_sigma <- function(df, res){
 
 }
 
+crit_size <- function(RS_Xt.ion2){
+
+  null_dist <- null_dist %>%
+    mutate(min.val = abs(RS_Xt.ion2 - parse_number(trend))) %>%
+    filter(min.val == min(.data$min.val)) %>%
+    pull(y_star)
+
+}
 

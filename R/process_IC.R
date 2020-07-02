@@ -202,7 +202,6 @@ quo_updt2 <- function(my_q, txt = NULL){
   # Modify expression, turn expr into a character string
   new_chr <- paste(new_chr, txt, sep = ".")
 
-
   # New expression from character (remove whitespace)
   new_expr <- parse_expr(new_chr)
 
@@ -240,6 +239,38 @@ predict_ionize <- function(df, Xt, N, t, species, ...){
            ) %>%
     ungroup()
 }
+
+#' Predicting variation in ion based on ionization trend
+#' @export
+predict_var <- function(df, Xt, N, t, species, ion, ...){
+
+  Xt <- enquo(Xt)
+  N <- enquo(N)
+  t <- enquo(t)
+  species <- enquo(species)
+  gr_by <- enquos(...)
+
+  df.ion <- filter(df, !!species == ion)
+  df.l0 <- predict_ionize(df.ion, !!Xt, !!N, !!t, !!species, !!!gr_by)
+
+  Xt.l0 <- quo_updt(Xt, "l0")
+  N.l0 <- quo_updt(N, "l0")
+
+  tb.Xt <- stat_Xt(df.ion, !!Xt, !!N, !!species, !!!gr_by)
+  tb.Xt.l0 <- stat_Xt(df.l0, !!Xt.l0, !!N.l0, !!species, !!!gr_by)
+
+  RS_Xt <- transmute(tb.Xt,
+                     !!!gr_by,
+                     !!quo_updt(Xt, ion, x = "RS") :=
+                     !!quo_updt(Xt, x = "RS") -
+                       pull(tb.Xt.l0, !!quo_updt(Xt.l0, x = "RS")
+                            )
+                     )
+
+  }
+
+
+
 
 
 gam_fun <- function(data, Xt, t, n){

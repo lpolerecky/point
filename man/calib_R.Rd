@@ -6,17 +6,17 @@
 \usage{
 calib_R(
   x,
-  y,
+  y = NULL,
   standard,
   type = c("composition", "enrichment"),
-  input = c("R", "F", "delta"),
-  output = c("R", "F", "delta")
+  input = c("R", "F", "delta", "delta_alpha"),
+  output = c("R", "F", "delta", "alpha")
 )
 }
 \arguments{
 \item{x}{A numeric value or vector.}
 
-\item{y}{A numeric value or vector when calculating enrichments (`type = enrichment`).}
+\item{y}{A numeric value or vector of product when calculating enrichments (`type = enrichment`).}
 
 \item{standard}{A character or numeric value or vector.}
 

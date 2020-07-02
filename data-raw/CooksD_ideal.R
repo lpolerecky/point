@@ -1,28 +1,30 @@
-## code to prepare `CooksD_ideal` dataset
+  ## code to prepare `CooksD_ideal` dataset
 
-sim <- sim_IC
+  CD_ideal <- filter(sim_IC, simulation == "ideal" & repetition < 4) %>%
+    diag_R(df = .,
+           method = "CooksD",
+           args = expr_R(Xt = "Xt.sim",
+                         N = "N.sim",
+                         species = "species",
+                         ion1 = "13C",
+                         ion2 = "12C"
+                         ),
+          reps = 1,
+          simulation,
+          trend,
+          repetition
+          ) %>%
+    purrr::transpose() %>%
+    purrr::pluck("results") %>%
+    purrr::pluck("2") %>%
+    group_by(trend) %>%
+    summarise(Chi_R2 = mean(Chi_R2),
+              SE_beta = mean(SE_beta )
+              # ,
+              # S_Xt.sim.12C = mean(S_Xt.sim.12C)
+              )
 
-CooksD_ideal <- filter(sim, simulation == "ideal" & rep < 4) %>%
-  diag_R(method = "CooksD",
-         args = expr_R(Xt = "Xt.sim",
-                       N = "N.sim",
-                       species = "species",
-                       ion1 = "13C",
-                       ion2 = "12C"
-                       ),
-        simulation,
-        trend,
-        repetition,
-        output = "complete"
-        ) %>%
-  group_by(trend) %>%
-  summarise(Chi_R2 = mean(Chi_R2),
-            SE_beta = mean(SE_beta ),
-            S_Xt.sim.12C = mean(S_Xt.sim.12C)
-            )
+  usethis::use_data(CD_ideal, overwrite = TRUE, compress = "xz")
 
-usethis::use_data(CooksD_ideal, overwrite = TRUE, compress = "xz")
-# remove large simulation dataset
-use_directory("data")
-paths <- fs::path("data", sim, ext = "rda")
-file.remove(paths)
+  # remove large simulation dataset
+  file.remove("data/sim_IC.rda")

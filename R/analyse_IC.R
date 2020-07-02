@@ -157,7 +157,7 @@ stat_R <- function(df, Xt, N, species, ion1, ion2, ..., latex = FALSE,
   Yt2 <- quo_updt(N, ion2) # counts
 
 # The statistics
-  args <- list(
+  args <- lst(
     # number of measurements
     quo(n()),
     # mean isotope ratio
@@ -182,12 +182,14 @@ stat_R <- function(df, Xt, N, species, ion1, ion2, ..., latex = FALSE,
          !!quo_updt(my_q = Xt , x = "M_R")) * 1000),
     # predictive SD isotope ratio
     quo(stat_hSDprop(M_R = !!quo_updt(my_q = Xt , x = "M_R"),
-                    ion1 = !!Xt1,
-                    ion2 = !!Xt2,
-                    N_ion1 = !!Yt1,
-                    N_ion2 = !!Yt2,
-                    n = !!quo_updt(my_q = Xt , x = "n_R"),
-                    type = "sd")),
+                     ion1 = !!Xt1,
+                     ion2 = !!Xt2,
+                     N_ion1 = !!Yt1,
+                     N_ion2 = !!Yt2,
+                     n = !!quo_updt(my_q = Xt , x = "n_R"),
+                     type = "sd"
+                     )
+        ),
     # predictive RSD isotope ratio
     quo((!!quo_updt(my_q = Xt , x = "hat_S_R") /
          !!quo_updt(my_q = Xt , x = "M_R")) * 1000),
@@ -199,12 +201,17 @@ stat_R <- function(df, Xt, N, species, ion1, ion2, ..., latex = FALSE,
     # reduced chi squared
     quo((!!quo_updt(my_q = Xt , x = "SeM_R") /
          !!quo_updt(my_q = Xt , x = "hat_SeM_R")) ^ 2)
-  )
+    )
 
 # The statistic names (depend on user-supplied expression)
   ls.names <-paste(c("n", "M", "S", "RS", "SeM", "RSeM",
                      "hat_S", "hat_RS", "hat_SeM", "hat_RSeM",
-                     "chi2"), "R", as_name(Xt), sep = "_")
+                     "chi2"
+                     ),
+                   "R",
+                   as_name(Xt),
+                   sep = "_"
+                   )
 
 # To render nice latex variable names in Rmarkdown/Latex
   nm <- c("$n$",
@@ -217,7 +224,8 @@ stat_R <- function(df, Xt, N, species, ion1, ion2, ..., latex = FALSE,
            "$\\hat{\\epsilon}_{R} \\,$ (\u2030)",
            "$\\hat{s}_{\\bar{R}}$",
            "$\\hat{\\epsilon}_{\\bar{R}} \\,$ (\u2030)",
-           "$\\chi^{2}$")
+           "$\\chi^{2}$"
+          )
 
   ls.latex <- set_names(ls.names, nm = nm)
 
@@ -235,8 +243,8 @@ stat_R <- function(df, Xt, N, species, ion1, ion2, ..., latex = FALSE,
            complete = call2( "mutate", expr(.), !!! args2),
            stat = call2( "transmute",  expr(.), !!! args2),
            sum = call2("summarize", expr(.),  !!! args),
-           )
-  }
+    )
+    }
 
 # Call specific to removal of zero count measurements with ZeroCt
   zeroCt_cal <- function(zero_arg){
@@ -546,6 +554,7 @@ latex_parser <- function(ion1, ion2 = NULL){
 # Helper functions for parsing, testing and validation
 #-------------------------------------------------------------------------------
 # Function for covariate convertion of isotope systems
+#' @export
 cov_R <- function(df, species, ion1, ion2, ..., preserve = FALSE){
 
   gr_by <- enquos(...)
