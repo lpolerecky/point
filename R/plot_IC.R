@@ -47,16 +47,10 @@
 plot_diag_R <- function(df,
                         args = expr_R(NULL),
                         ...,
-                        path = NULL,
-                        device = "png",
-                        aug = TRUE ,
-                        width.out = 20,
-                        height.out = 20
+                        type,
+                        aug = TRUE
                         ){
 
-  # Xt <- enquo(Xt)
-  # N <- enquo(N)
-  # species <- enquo(species)
   gr_by <- enquos(...)
 
 # heavy isotope
@@ -92,138 +86,124 @@ plot_diag_R <- function(df,
   ion1 <- as_name(args[["ion1"]])
   ion2 <- as_name(args[["ion2"]])
 
-  crs <- gg_default(df.def,
-                    stat,
-                    y = !!Xt1,
-                    x = !!Xt2,
-                    hat_y = hat_Y,
-                    hat_min = hat_Y - 2 * sigma,
-                    hat_max =  hat_Y + 2 * sigma,
-                    !!!gr_by,
-                    z = flag,
-                    title = "Cross plot" ,
-                    model = TRUE
-                    ) +
-    xlab(substitute(""^a * b ~"(ct/sec)",
-                    lst(a = as.numeric(gsub("([0-9]+).*$", "\\1", ion2)),
-                        b = as.symbol(gsub("^[0-9]+","", ion2))
-                        )
-                    )
-         ) +
-    ylab(substitute(""^a * b ~"(ct/sec)",
-                    lst(a = as.numeric(gsub("([0-9]+).*$", "\\1", ion1)),
-                        b = as.symbol(gsub("^[0-9]+","",ion1))
-                       )
-                    )
-         )
+  plot_names <- c("Rm" = "Linear R model",
+                  "norm_E" = "Residual vs. Leverage"
+                  )
 
-  QQ.norm <- gg_default(df.def,
-                        stat,
-                        y = RQ,
-                        x =TQ,
-                        hat_y = hat_RQ,
-                        hat_min = hat_RQ_min,
-                        hat_max = hat_RQ_max,
-                        !!! gr_by,
-                        z = flag,
-                        title = "Normal QQ plot",
-                        model = TRUE
-                        ) +
-    geom_point(shape = 21, alpha = 0.2) +
-    ylab(expression("studentized residuals (" * italic(e)^"*" * ")")) +
-    xlab("Theoretical quantiles")
+  axis_lab_updater <- function(method, axis){
 
-  sc.loc <- gg_default(df.def,
-                       stat,
-                       y = studE,
-                       x = hat_Y,
-                       hat_y = 0,
-                       hat_min = -3.5,
-                       hat_max = 3.5,
-                       !!!gr_by,
-                       z = flag,
-                       title = "Scale-Location plot",
-                       model = TRUE
-                       ) +
-    ylim(-5, 5) +
-    ylab(expression("studentized residuals (" * italic(e)^"*" * ")")) +
-    xlab(substitute("fitted value (" * hat(""^a * b) * ")",
-                    lst(a = as.numeric(gsub("([0-9]+).*$", "\\1", ion1)),
-                        b = as.symbol(gsub("^[0-9]+","",ion1))
-                    )
-    )
-    )
+    method <- paste(method, axis, sep = "_")
 
+    switch(method,
+           Rm_x = plot_labs(type = method, ion2),
+           Rm_y = plot_labs(type = method, ion1),
+           norm_E_x = plot_labs(type = method),
+           norm_E_y = plot_labs(type = method)
 
-  rs.lev <- gg_default(df.def,
-                       stat,
-                       y = studE,
-                       x = hat_Xi,
-                       z = flag,
-                       hat_y = hat_Y,
-                       hat_min = NULL,
-                       hat_max = NULL,
-                       !!!gr_by,
-                       title = "Residual vs Leverage plot" ,
-                       model = FALSE
-                       ) +
-    ylab(expression("studentized residuals (" * italic(e)^"*" * ")")) +
-    xlab(expression("hat-values" (italic(h))))
-
-
-  df.acf <- df.def %>%
-    group_by(!!! gr_by) %>%
-    select(!!! gr_by, ACF) %>%
-    # distinct(!!! gr_by) %>%
-    tidyr::unnest(cols = c(ACF)) %>%
-    ungroup() %>%
-    tidyr::unite(facet_gr, !!!gr_by)
-
-  acf <- ggplot(df.acf, mapping = aes(x = lag, y = acf)) +
-    geom_hline(aes(yintercept = 0)) +
-    geom_segment(mapping = aes(xend = lag, yend = 0)) +
-    geom_hline(aes(yintercept = ci_upper), color = "darkblue") +
-    geom_hline(aes(yintercept = ci_lower), color = "darkblue") +
-    facet_wrap(~facet_gr, scales = "free") +
-    ggtitle("ACF plot") +
-    theme_classic()
-
-
-  gg.pl <-lst(`1` = crs,
-              `2` = QQ.norm,
-              `3` = sc.loc,
-              `4` = rs.lev,
-              `5` = acf
-              )
-
-  gg.sa <- function(nm, x, width.out, height.out){
-
-    ggsave(filename = paste0(path,"Figure", nm ,".", device),
-           plot = x,
-           height = height.out,
-           width = width.out,
-           units = "cm"
            )
+
   }
 
-  if (is.null(path)){
 
-    return(gg.pl)
-
-  }else{
-
-    invisible(mapply(gg.sa,
-                     names(gg.pl),
-                     gg.pl,
-                     width.out = width.out,
-                     height.out = height.out
-                     )
-              )
-    return(gg.pl)
-
-    }
+  gg_default(df.def,
+             stat,
+             y = !!Xt1,
+             x = !!Xt2,
+             hat_y = hat_Y,
+             hat_min = hat_min,
+             hat_max =  hat_max,
+             !!! gr_by,
+             z = flag,
+             title = plot_names[type],
+             model = F
+             ) +
+    xlab(plot_labs(type, ion2)) +
+    ylab(plot_labs(type, ion1))
 
 }
+
+
+plot_labs <- function(type, ion = NULL){
+
+  if (str_detect(type, "Rm")) type <- str_split("Rm_x", "_")[[1]][1]
+  if (type == "CV_y" & type == "norm_E_y") type <- QQ_y
+
+  switch(type,
+         Rm = substitute(""^a * b ~"(ct/sec)",
+                         lst(a = as.numeric(gsub("([0-9]+).*$", "\\1", ion)),
+                             b = as.symbol(gsub("^[0-9]+","",ion))
+                             )
+                         ),
+         QQ_y = expression("studentized residuals (" * italic(e)^"*" * ")"),
+         QQ_x = "Theoretical quantiles",
+         CV_x = substitute("fitted value (" * hat(""^a * b) * ")",
+                           lst(a = as.numeric(gsub("([0-9]+).*$", "\\1", ion)),
+                               b = as.symbol(gsub("^[0-9]+","",ion))
+                               )
+                           ),
+         norm_E_x = expression("hat-values" (italic(h)))
+         )
+         }
+
+
+
+
+
+
+
+  # df.acf <- df.def %>%
+  #   group_by(!!! gr_by) %>%
+  #   select(!!! gr_by, ACF) %>%
+  #   # distinct(!!! gr_by) %>%
+  #   tidyr::unnest(cols = c(ACF)) %>%
+  #   ungroup() %>%
+  #   tidyr::unite(facet_gr, !!!gr_by)
+  #
+  # acf <- ggplot(df.acf, mapping = aes(x = lag, y = acf)) +
+  #   geom_hline(aes(yintercept = 0)) +
+  #   geom_segment(mapping = aes(xend = lag, yend = 0)) +
+  #   geom_hline(aes(yintercept = ci_upper), color = "darkblue") +
+  #   geom_hline(aes(yintercept = ci_lower), color = "darkblue") +
+  #   facet_wrap(~facet_gr, scales = "free") +
+  #   ggtitle("ACF plot") +
+  #   theme_classic()
+
+
+  # gg.pl <-lst(`1` = crs,
+  #             `2` = QQ.norm,
+  #             `3` = sc.loc,
+  #             `4` = rs.lev,
+  #             `5` = acf
+  #             )
+
+  # gg.sa <- function(nm, x, width.out, height.out){
+  #
+  #   ggsave(filename = paste0(path,"Figure", nm ,".", device),
+  #          plot = x,
+  #          height = height.out,
+  #          width = width.out,
+  #          units = "cm"
+  #          )
+  # }
+  #
+  # if (is.null(path)){
+  #
+  #   return(gg.pl)
+  #
+  # }else{
+  #
+  #   invisible(mapply(gg.sa,
+  #                    names(gg.pl),
+  #                    gg.pl,
+  #                    width.out = width.out,
+  #                    height.out = height.out
+  #                    )
+  #             )
+  #   return(gg.pl)
+  #
+  #   }
+  #
+
 
 
 #-------------------------------------------------------------------------------
@@ -336,14 +316,17 @@ gg_default <- function(df,
   ggplot(data = df, aes(y = !!y, x = !!x, color = !!z)) +
     gg.model +
     geom_point(alpha = 0.05) +
-    scale_color_manual("Cook's D",
-                       values = c("non-influential" = ggplotColours(2)[2],
-                                  "influential" = ggplotColours(2)[1])) +
-    guides(colour = guide_legend(override.aes = list(alpha = 1,
-                                                     linetype = NULL
-    )
-    )
-    ) +
+    scale_color_manual("",
+                       values = c(
+                         "good" = ggplotColours(2)[2],
+                         "bad" = ggplotColours(2)[1]
+                                 ),
+                        ) +
+    # guides(colour =
+    #        guide_legend(override.aes =
+    #                     list(alpha = 1, linetype = NULL)
+    #                     )
+    #        ) +
     geom_rug(sides = "tr", alpha = 0.01) +
     geom_text(data = stat,
               aes(label = lb,
@@ -357,16 +340,8 @@ gg_default <- function(df,
               inherit.aes = FALSE,
               parse = TRUE
               ) +
-    # geom_text(data = stat.aug,
-    #           aes(label = lb,
-    #               vjust = vjust),
-    #           x = Inf,
-    #           y = Inf,
-    #           hjust = 1,
-    #           size = 2,
-    #           inherit.aes = FALSE,
-    #           parse = TRUE) +
     facet_wrap(~facet_gr, scales = "free") +
     ggtitle(title) +
-    theme_classic()
+    theme_classic() +
+    theme(legend.position = "none")
 }
