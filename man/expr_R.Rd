@@ -2,12 +2,9 @@
 % Please edit documentation in R/diagnostics_IC.R
 \name{expr_R}
 \alias{expr_R}
-\alias{expr_cor}
 \title{Create stat_R call quosure}
 \usage{
 expr_R(Xt, N, species, ion1, ion2)
-
-expr_cor(Xt, N, species, t)
 }
 \arguments{
 \item{Xt}{A character string constituting the ion count rate.}

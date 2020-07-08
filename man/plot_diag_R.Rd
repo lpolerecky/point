@@ -8,11 +8,9 @@ plot_diag_R(
   df,
   args = expr_R(NULL),
   ...,
-  path = NULL,
-  device = "png",
-  aug = TRUE,
-  width.out = 20,
-  height.out = 20
+  plot_title,
+  type = "static",
+  rep = "1"
 )
 }
 \arguments{

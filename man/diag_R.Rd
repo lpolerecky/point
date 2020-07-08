@@ -10,7 +10,8 @@ diag_R(
   args = expr_R(NULL),
   reps = 1,
   ...,
-  output = "flag"
+  plot = TRUE,
+  plot_type = "interactive"
 )
 }
 \arguments{
@@ -24,19 +25,22 @@ regression diagnostics based on Cook's D statistics.}
 call to stat_R. The function expr_R can be used to simplify setting this
 argument.}
 
+\item{reps}{The number of iterations of diagnostic-augmentation cycles.}
+
 \item{...}{Variables for grouping.}
 
-\item{output}{Character string determing whether the returned values in a
-minimal version `"flag"` (original dataset + diagnostics) or an extended
-version with all the intermediate steps of ion- and isotope-wise summary
-statistics `"complete"`.}
+\item{plot}{Logical indicating whether plot is produced, if FALSE a list of
+tibbles with length `reps` is produced.}
+
+\item{Character}{string determing whether the returned a \code{"static"} plot
+or an \code{"interactive"} plot with \code{\link[plotly:ggplotly]{ggplotly}}.}
 }
 \value{
-A t\code{\link[tibble:tibble]{tibble}} containing either the original
-dataset with new columns related to the diagnostics an extended version with
-all the intermediate steps of ion- and isotope-wise summary statistics. The
-flag variable enables convenient filtering of the original tibble for an
-augmentation of the original dataset.
+A list containing several \code{\link[tibble:tibble]{tibble}} the
+elements named df contain the original dataset and augmented versions from
+element number 2 onward. The elements named results contain the flag
+variable for outlier detection as well as associated statistics of the
+selected procedure.
 }
 \description{
 \code{diag_R} wrapper function for diagnostics on isotope count data
@@ -51,43 +55,22 @@ original dataset to improve the precision. See
 on how to use the function, and possible methods for diagnostics.
 }
 \examples{
-# Use point_example() to access the examples bundled with this package
-
-# raw data containing 13C and 12C counts on carbonate
-tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
-
-# Processing raw ion count data
-tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
-
-# estimate strength of ionization trend as variation in major ion in per mille
-tb.var12C <- predict_var(tb.pr, Xt.pr, N.pr, t.rw, species.nm, "12C", file.nm)
-
-# expression for R_stat()
-expr_R_stat <- expr_R(Xt = "Xt.pr",
-                      N = "N.pr",
-                      species = "species.nm",
+# Modelled ion count dataset
+# Create expression for mimicking R_stat() call
+expr_R_stat <- expr_R(Xt = "Xt.sim",
+                      N = "N.sim",
+                      species = "species",
                       ion1 = "13C",
                       ion2 = "12C"
                       )
 
-# CAMECA style augmentation of ion count data for isotope ratios; 3 repeats
-ls.diag <- diag_R(tb.pr,
-                  method = "Cameca",
-                  args = expr_R_stat,
-                  reps = 3,
-                  file.nm,
-                  bl.mt
-                  )
-
-# evaluation of diagnostics
-tb.eval <- eval_diag(ls.diag,
-                     args = expr_R_stat,
-                     tb.var12C,
-                     RS_Xt.pr.12C,
-                     n_R_Xt.pr,
-                     file.nm,
-                     bl.mt,
-                     output = "sum"
-                     )
-
+# Cook's D style diagnostic-augmentation of ion count data for
+# isotope ratios; 3 repeats
+diag_R(sim_IC_extremes,
+       method = "CooksD",
+       args = expr_R_stat,
+       reps = 3,
+       simulation,
+       trend
+       )
 }

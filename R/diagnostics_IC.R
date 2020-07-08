@@ -156,16 +156,28 @@ diag_R_exec <- function(df,
   gr_by <- enquos(...)
 
 # Method selection
-  diag_method <- function(method){
-    switch(method,
-           Cameca = call2("Cameca_R", expr(.), args, !!! gr_by, output = output),
-           CooksD = call2("CooksD_R", expr(.), args, !!! gr_by, output = output),
-           norm_E = call2("norm_E", expr(.), args, !!! gr_by, output = output),
-           Rm = call2("Rm", expr(.), args, !!! gr_by, output = output),
-           QQ = call2("QQ", expr(.), args, !!! gr_by, output = output)
+  # diag_method <- function(method){
+  #   switch(method,
+  #          Cameca = call2("Cameca_R", expr(.), args, !!! gr_by, output = output),
+  #          CooksD = call2("CooksD_R", expr(.), args, !!! gr_by, output = output),
+  #          norm_E = call2("norm_E", expr(.), args, !!! gr_by, output = output),
+  #          Rm = call2("Rm", expr(.), args, !!! gr_by, output = output),
+  #          QQ = call2("QQ", expr(.), args, !!! gr_by, output = output),
+  #          CV = call2("CV", expr(.), args, !!! gr_by, output = output)
+  #
+  #   )
+  #   }
 
-    )
-    }
+# Try this lateron
+  diag_vc <- c("Cameca_R", "CooksD_R", "Rm", "CV", "QQ","norm_E")
+  diag_method <- purrr::map(diag_vc,
+                            call2,
+                            expr(.),
+                            expr(args),
+                            !!!gr_by,
+                            output = expr(output)
+                            ) %>%
+    set_names(nm = diag_vc)
 
   # if (method == "CooksD" | method == "Cameca"){
 # Descriptive an predictive statistics for ion ratios
@@ -178,7 +190,7 @@ diag_R_exec <- function(df,
                      !!! gr_by,
                      output = "complete"
                      ) %>%
-               eval_tidy(expr = diag_method(method))
+               eval_tidy(expr = diag_method[[method]])
   # }
 
 
@@ -645,20 +657,7 @@ lm_res <- function(data, args){
 
 
 
-# use the formula i - 0.5/ in, for i = 1,..,n
-# this is a vector of the n probabilities ( theoretical cumulative distribution function CDF)
-vector_probs <- function(n){
-  ((1:unique(n)) - 0.5) / (unique(n))
-}
 
-# standard error of quantiles model
-hat_QR_se <- function(RQ, TQ, pb, n){
-  (sd(RQ) / dnorm(TQ)) * sqrt((pb * (1 - pb))/ unique(n))
-}
-# confidence interval regression model
-hat_Y_se <- function(sigma, hat_Xi){
-  sigma * sqrt(hat_Xi)
-}
 
 acf_calc <- function(data){
   acf  <- acf(data$studE, plot = FALSE)

@@ -4,7 +4,7 @@
 \alias{reduce_diag}
 \title{Reduce diagnostis}
 \usage{
-reduce_diag(ls, type = "df", args = expr_R(NULL), ...)
+reduce_diag(ls, type = "df", args = expr_R(NULL), ..., output = "sum")
 }
 \description{
 Reduce diagnostis
