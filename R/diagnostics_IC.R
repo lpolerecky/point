@@ -3,12 +3,11 @@
 #' \code{diag_R} wrapper function for diagnostics on isotope count data
 #'
 #' The \code{diag_R} function performs an internal call to stat_R to perform
-#' diagnostics on the influence of individial measurements on the blockwise or
-#' global (i.e., a complete analysis) stastics. It identifies potentially
-#' influential measurements that can subsequentally be filtered from the
-#' original dataset to improve the precision. See
-#' \code{vignette("IC-diagnostics", package = "point")} for more information
-#' on how to use the function, and possible methods for diagnostics.
+#' diagnostics on the influence of individual measurements on the blockwise or
+#' global (i.e., a complete analysis) statistics. It identifies potentially
+#' influential measurements that indicate heterogeneity in the analytical
+#' substrate. See \code{vignette("IC-diagnostics", package = "point")} for more
+#' information on how to use the function, and possible methods for diagnostics.
 #'
 #' @param df A tibble containing processed ion count data.
 #' @param method Character string for the type of diagnostics. "Cameca" pertains
@@ -21,14 +20,22 @@
 #' @param ... Variables for grouping.
 #' @param plot Logical indicating whether plot is produced, if FALSE a list of
 #' tibbles with length `reps` is produced.
-#' @param Character string determing whether the returned a \code{"static"} plot
-#' or an \code{"interactive"} plot with \code{\link[plotly:ggplotly]{ggplotly}}.
+#' @param plot_type Character string determining whether the returned a
+#' \code{"static"} plot or an \code{"interactive"} plot with
+#' \code{\link[plotly:ggplotly]{ggplotly}}.
+#' @param iso Logical indicating whether the R value should be converted to the
+#' delta scale.
+#' @param isoscale If the argument \code{iso} is set to TRUE, a character string
+#' (e.g. \code{"VPDB"}) for the delta conversion should be given. See
+#' \code{?calib_R()} for options.
 #'
-#' @return A list containing several \code{\link[tibble:tibble]{tibble}} the
-#' elements named df contain the original dataset and augmented versions from
-#' element number 2 onward. The elements named results contain the flag
-#' variable for outlier detection as well as associated statistics of the
-#' selected procedure.
+#' @return A dynamic plot or static plot. If the argument plot is \code{FALSE},
+#' a list containing several \code{\link[tibble:tibble]{tibble}} is returned.
+#' The elements named df contain the original dataset and augmented versions
+#' from element position number 2 onward. The elements named results contain
+#' the flag variable for outlier detection as well as associated statistics of
+#' the selected procedure.
+#'
 #' @export
 #' @examples
 #' # Modelled ion count dataset
@@ -47,7 +54,8 @@
 #'        args = expr_R_stat,
 #'        reps = 3,
 #'        simulation,
-#'        trend
+#'        trend,
+#'        isoscale = "VPDB"
 #'        )
 diag_R <- function(df,
                    method = "Cameca",
@@ -55,11 +63,18 @@ diag_R <- function(df,
                    reps = 1,
                    ...,
                    plot = TRUE,
-                   plot_type = "interactive"
+                   plot_type = "interactive",
+                   iso = TRUE,
+                   isoscale = NULL
                    ){
 
   gr_by <- enquos(...)
 
+# update ion names to match stat_R output in case of space separation
+  # args <- purrr::modify_at(args, "ion1", ~quo_set_expr(.x, str_replace_all(as_name(.x), " ", "")))
+  # args <- purrr::modify_at(args, "ion2", ~quo_set_expr(.x, str_replace_all(as_name(.x), " ", "")))
+
+# repetitions
   max <- reps + 1
 
 # empty list for iteration storage
@@ -96,8 +111,17 @@ diag_R <- function(df,
                       )
   if (plot) {
 
-    ls.tb %>%
-      plot_diag_R(args = args, !!! gr_by, plot_title = method, type = plot_type)
+    ls.tb %T>%
+      {print(plot_diag_R(df = .,
+                         args = args,
+                         !!! gr_by,
+                         plot_title = method,
+                         type = plot_type,
+                         iso = iso,
+                         isoscale = isoscale
+      )
+      )
+      }
 
     } else {
 
@@ -138,7 +162,6 @@ rerun_diag_R <- function(out,
   # save results; flag ad statistics
   results <- select(out, -c(!!!variables))
 
-
   out <- lst(df = df.aug, results = results)
 
   return(out)
@@ -155,21 +178,7 @@ diag_R_exec <- function(df,
 
   gr_by <- enquos(...)
 
-# Method selection
-  # diag_method <- function(method){
-  #   switch(method,
-  #          Cameca = call2("Cameca_R", expr(.), args, !!! gr_by, output = output),
-  #          CooksD = call2("CooksD_R", expr(.), args, !!! gr_by, output = output),
-  #          norm_E = call2("norm_E", expr(.), args, !!! gr_by, output = output),
-  #          Rm = call2("Rm", expr(.), args, !!! gr_by, output = output),
-  #          QQ = call2("QQ", expr(.), args, !!! gr_by, output = output),
-  #          CV = call2("CV", expr(.), args, !!! gr_by, output = output)
-  #
-  #   )
-  #   }
-
-# Try this lateron
-  diag_vc <- c("Cameca_R", "CooksD_R", "Rm", "CV", "QQ","norm_E")
+  diag_vc <- c("Cameca", "CooksD", "Rm", "CV", "QQ","norm_E")
   diag_method <- purrr::map(diag_vc,
                             call2,
                             expr(.),
@@ -179,7 +188,6 @@ diag_R_exec <- function(df,
                             ) %>%
     set_names(nm = diag_vc)
 
-  # if (method == "CooksD" | method == "Cameca"){
 # Descriptive an predictive statistics for ion ratios
     tb.aug <- stat_R(df,
                      Xt = !! args[["Xt"]],
@@ -191,8 +199,6 @@ diag_R_exec <- function(df,
                      output = "complete"
                      ) %>%
                eval_tidy(expr = diag_method[[method]])
-  # }
-
 
 # Datafile with flag values associated to diagnostics
   if (output == "flag") return(left_join(df, tb.aug, by = "ID"))
@@ -263,8 +269,8 @@ eval_diag <- function(ls_df,
     quo(!! n),
     quo(c(diff(!! n, 1), NA)),
     quo(c(diff(!! RSR, 1), NA)),
-    quo(diff_RS ^ 2 * diff_n),
-    quo((!! RSR) ^ 2 * !! n),
+    quo(diff_RS ^ 2 * (diff_n - 1)),
+    quo((!! RSR) ^ 2 * (!! n - 1)),
     quo(SSD / SSA),
     quo(n2 * nz)
     )
@@ -286,6 +292,7 @@ eval_diag <- function(ls_df,
 
   ls.preserve <-lst(
     quo(sum(n2, na.rm = TRUE)),
+# check this it can be sum, only works for eta (fraction)!!!!
     quo(sum(chi_n2, na.rm = TRUE))
     )
 
@@ -373,237 +380,6 @@ reduce_diag <- function(ls, type = "df", args = expr_R(NULL), ..., output = "sum
 
 }
 
-
-# CooksD_R <- function(df, args = expr_R(NULL), ..., output){
-#
-#   gr_by <- enquos(...)
-#
-# # Switch output complete dataset, stats or summary stats
-#   mod_out <- function(output) {
-#     switch(output,
-#            flag = call2("select",
-#                         expr(.),
-#                         expr(.data$ID),
-#                         expr(.data$E),
-#                         expr(.data$sigma),
-#                         expr(.data$hat_Y),
-#                         expr(.data$hat_R2),
-#                         expr(.data$hat_Y_min),
-#                         expr(.data$hat_Y_max),
-#                         expr(.data$hat_Xi),
-#                         expr(.data$studE),
-#                         expr(.data$CooksD),
-#                         expr(.data$CooksD_cf),
-#                         expr(.data$flag),
-#                         expr(.data$RQ),
-#                         expr(.data$TQ),
-#                         expr(.data$hat_RQ),
-#                         expr(.data$hat_RQ_min),
-#                         expr(.data$hat_RQ_max),
-#                         expr(.data$flag_QQ),
-#                         expr(.data$flag_CM),
-#                         expr(.data$R2),
-#                         expr(.data$SE_beta),
-#                         expr(.data$Chi_R2),
-#                         expr(.data$flag_CV),
-#                         expr(.data$ACF),
-#                         expr(.data$flag_IR)
-#                          ),
-#            complete = call2( "invisible", expr(.)),
-#     )
-#   }
-#
-# # update ion names to match stat_R output in case of space seperation
-#   args[["ion1"]] <- str_replace_all(as_name(args[["ion1"]]), " ", "")
-#   args[["ion2"]] <- str_replace_all(as_name(args[["ion2"]]), " ", "")
-#
-#
-#   df %>%
-#     group_by(!!! gr_by) %>%
-#     mutate(
-# # Hat values
-#            hat_Xi = stats::hat(!! quo_updt(my_q = args[["Xt"]],
-#                                             txt = as_name(args[["ion2"]])
-#                                            )
-#                                ),
-# # modelled Y values
-#            hat_Y = !! quo_updt(my_q = args[["Xt"]],
-#                                x = "M_R"
-#                                ) *
-#                    !! quo_updt(my_q = args[["Xt"]],
-#                                txt = as_name(args[["ion2"]])
-#                                ),
-#            # hat_R2 = (sd(hat_Y) ^ 2 *
-#            #           !! quo_updt(my_q = args[["Xt"]],
-#            #                         x = "n_R"
-#            #                       )
-#            #           ) / ((!! quo_updt(my_q = args[["Xt"]],
-#            #                             txt = as_name(args[["ion2"]]),
-#            #                             x = "S"
-#            #                             )
-#            #                  ) ^ 2 * !! quo_updt(my_q = args[["Xt"]],
-#            #                                    x = "n_R"
-#            #                                     )
-#            #                ),
-#            ESS = (sd(hat_Y) ^ 2 * !! quo_updt(my_q = args[["Xt"]],
-#                                               x = "n_R"
-#                                               )
-#                   ),
-#            # hat_Chi2 =  hat_R2 * !! quo_updt(my_q = args[["Xt"]],
-#            #                                  x = "n_R"
-#            #                                  ),
-#
-# # residuals
-#            E = !! quo_updt(my_q = args[["Xt"]],
-#                            txt = as_name(args[["ion1"]])
-#                            ) - hat_Y,
-# # Standard error of the regression
-#            sigma = sigma_calc(E),
-# # 95 CI of the regression
-#            hat_Y_min = hat_Y - 2 * hat_Y_se(sigma, hat_Xi),
-#            hat_Y_max = hat_Y + 2 * hat_Y_se(sigma, hat_Xi),
-# # sum of Square residuals
-#            SSR = sum(E ^ 2),
-# # coeffecient of determination
-#            hat_R2 =  1 - (SSR/(ESS + SSR))
-#
-#             ) %>%
-#     tidyr::nest() %>%
-#     mutate(
-# # jackknifed mean R
-#            M_Ri = purrr::map(data,
-#                              ~jack_meanR(df = .x,
-#                                          ion1 = !! quo_updt(my_q = args[["Xt"]],
-#                                                             txt = as_name(args[["ion1"]])),
-#                                          ion2 = !! quo_updt(my_q = args[["Xt"]],
-#                                                             txt = as_name(args[["ion2"]]))
-#                                         )
-#                             )
-#
-#            ) %>%
-#     tidyr::unnest(cols = c(data, M_Ri)) %>%
-#     mutate(
-# # jackknifed modelled Y values
-#            hat_Yi = purrr::map2_dbl(M_Ri,
-#                                     !! quo_updt(my_q = args[["Xt"]],
-#                                                 txt = as_name(args[["ion2"]])),
-#                                     ~{.x * .y}),
-# # residuals with i-th value removed
-#            Ei = purrr::map2_dbl(!! quo_updt(my_q = args[["Xt"]],
-#                                             txt = as_name(args[["ion1"]])),
-#                                 hat_Yi,
-#                                 ~{.x - .y})
-#           ) %>%
-#     tidyr::nest() %>%
-#     mutate(
-# # standard error of regression (external with i-th residual removed)
-#           sigma_i = purrr::map(data, ~jack_sigma(.x, Ei))
-#           ) %>%
-#     tidyr::unnest(cols = c(data, sigma_i)) %>%
-#     mutate(
-#            studE = purrr::pmap_dbl(lst(res = E,
-#                                        sigma_i = sigma_i,
-#                                        hat_Xi = hat_Xi
-#                                        ),
-#                                    studE_calc
-#                                    ),
-#            diag_R(tb.pr,
-#                   method = "normE",
-#                   args = expr_R_stat,
-#                   reps = 3,
-#                   file.nm
-#            )
-#            ) %>%
-# # normality test
-#     # mutate(RQ = studE) %>%
-#     # arrange(RQ) %>%
-# # use the formula i - 0.5/ in, for i = 1,..,n for probs
-# # this is a vector of the n probabilities ( theoretical cumulative distribution function CDF)
-#    mutate(prob_vc =  vector_probs(!! quo_updt(my_q = args[["Xt"]],
-#                                               x = "n_R"
-#                                               )
-#                                    ),
-#           RQ = unname(quantile(studE, probs = prob_vc)),
-# # calculate normal (Theoretical) quantiles using mean and standard deviation from
-#           TQ = qnorm(prob_vc, mean(RQ), sd(RQ)),
-# # the standard error is calculated with,
-#           hat_RQ = mean(RQ) + sd(RQ) * TQ,
-#           hat_RQ_se = hat_QR_se(RQ,
-#                                 TQ,
-#                                 prob_vc,
-#                                 !! quo_updt(my_q = args[["Xt"]],
-#                                             txt = as_name(args[["ion2"]]),
-#                                             x = "n"
-#                                             )
-#                                 ),
-#           hat_RQ_min =  hat_RQ - 2 * hat_RQ_se,
-#           hat_RQ_max =  hat_RQ + 2 * hat_RQ_se,
-#           flag_QQ = if_else(
-#             (nortest::ad.test(studE))$p.value < 0.05,
-#             "Ha (non-normal)",
-#             "H0 (normal)"
-#             ),
-# # t-test flag for mu0 (aka the conditional mean of epsilon) being zero
-#           flag_CM = if_else((t.test(studE, mu = 0))$p.value  < 0.05,
-#                             "Ha (mu0 is not zero)",
-#                             "H0 (mu0 is zero)"
-#                             )
-#           ) %>% #,
-# # hetroscadasticity test (Breusch Pagan test)(level of confidence 95%;
-# # cut-off 0.05 for H0 rejection),
-#     tidyr::nest() %>%
-#     mutate(
-#           res_lm = purrr::map(data, ~lm_res(.x, args = args)),
-#           # res_lm = !!quo(lm(!!quo_updt(args[["Xt"]],
-#           #                                      txt = as_name(args[["ion2"]]),
-#           #                                      x = "studE",
-#           #                                      sepfun = "~")
-#           #                           )
-#           #                 ),
-#           # R2 = summary(res_lm)$r.squared,
-#           R2 = purrr::map(res_lm, ~(summary(.x)$r.squared)),
-#           SE_beta = purrr::map(res_lm, ~(unname(summary(.x)$coefficients[2,2]))),
-# # acf test
-#           ACF = purrr::map(data, acf_calc)
-#
-#
-#           # Chi_R2 = R2  * !! quo_updt(my_q = args[["Xt"]],
-#           #                               txt = as_name(args[["ion2"]]),
-#           #                               x = "n"
-#           #                               ),
-#           # flag_CV = if_else(Chi_R2 >
-#           #                   qchisq(.95, df = 1),
-#           #                   "heteroskedasticity",
-#           #                   "homoskedasticity"
-#           #                   )
-#             ) %>%
-#     tidyr::unnest(cols = c(data,
-#                            R2,
-#                            SE_beta#,
-#                            # Chi_R2,
-#                            # flag_CV
-#                            )
-#                   ) %>%
-#     mutate(Chi_R2 = R2  * !! quo_updt(my_q = args[["Xt"]],
-#                                       txt = as_name(args[["ion2"]]),
-#                                       x = "n"
-#                                       ),
-#            flag_CV = if_else(Chi_R2 >
-#                         qchisq(.95, df = 1),
-#                         "Ha (heteroskedasticity)",
-#                         "H0 (homoskedasticity)"
-#                         ),
-#            LB_test = stats::Box.test(studE, type = "Ljung-Box")$p.value,
-#            flag_IR = if_else(LB_test < 0.05,
-#                              "Ha (dependence of residuals)",
-#                              "H0 (independence of residuals)"
-#                              )
-#            ) %>%
-#     ungroup() %>%
-#     eval_tidy(expr =  mod_out(output))
-# }
-
-
 #' Create stat_R call quosure
 #'
 #' \code{expr_R} and \code{expr_cor} functions generate an quosure that mimics a
@@ -642,77 +418,9 @@ expr_R <- function(Xt, N, species, ion1, ion2){
 }
 
 
-
-
 #-------------------------------------------------------------------------------
 # Not exportet helper functions
 #-------------------------------------------------------------------------------
-
-# lm residuals
-lm_res <- function(data, args){
-  call_lm <- parse_expr(paste0("data$studE~data$", as_name(args[["Xt"]]), ".", as_name(args[["ion2"]])))
-  eval_tidy(call2("lm", call_lm))
-
-}
-
-
-
-
-
-acf_calc <- function(data){
-  acf  <- acf(data$studE, plot = FALSE)
-  ci <- qnorm((1 - 0.95) / 2) / sqrt(length(data$studE))
-  df.acf <- tibble(lag =  as.vector(acf$lag)[-1],
-                   acf =  as.vector(acf$acf)[-1],
-                   ci_upper = ci,
-                   ci_lower = -ci
-                 ) }
-
-
-
-# Standard error of regression calculator
-#' @export
-sigma_calc <- function(res) sqrt(sum((res ^ 2)) / (length(res) - 2))
-
-#' Studentized residuals calculator
-#' @export
-studE_calc <- function(res, sigma_i, hat_Xi) res / (sigma_i * sqrt(1 - hat_Xi))
-
-#' Cook's D calulator
-#' @export
-cooksD_calc  <- function(studE, hat_Xi) (studE ^ 2 / 2 ) * (hat_Xi / (1 - hat_Xi))
-
-#' Cook's D cutt-off value calculator
-#' @export
-cooksD_cut_calc  <- function(n) 4 / (n - 2)
-
-#' Jackknife regression coefficient
-#' @export
-jack_meanR <- function(df, ion1, ion2){
-
-  Xt_ion1 <- enquo(ion1)
-  Xt_ion2 <- enquo(ion2)
-
-  Xt_ion1 <- select(df, !! Xt_ion1) %>% pull(!! Xt_ion1)
-  Xt_ion2 <- select(df, !! Xt_ion2) %>% pull(!! Xt_ion2)
-
-
-  R_i <- c((resample::jackknife(Xt_ion1 , mean))$replicates /
-           (resample::jackknife(Xt_ion2 , mean))$replicates)
-
-}
-
-#' Jackknife standard error of regression
-#' @export
-jack_sigma <- function(df, res){
-
-  res <- enquo(res)
-
-  res <- select(df, !! res) %>% pull(!! res)
-
-  sigma_i <- c((resample::jackknife(res, sigma_calc))$replicates)
-
-}
 
 crit_size <- function(RS_Xt.ion2){
 
@@ -722,4 +430,3 @@ crit_size <- function(RS_Xt.ion2){
     pull(y_star)
 
 }
-

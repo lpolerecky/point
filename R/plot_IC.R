@@ -5,15 +5,14 @@
 #' The \code{plot_RDiag} visualises the diagnostics
 #'
 #' @param df A tibble containing processed ion count data.
-#' @param method Character string for the type of diagnostics. Currently only
-#' "standard" is supported, which pertains to the default Cameca software
-#' setting.
+#' @param method Character string for the type of diagnostics.
 #' @param args A list of quosures pertaining to the variables required for a
-#' call to stat_R. The function expr_R can be used to simplify setting this
+#' call to stat_R. The function expr_R() can be used to simplify setting this
 #' argument.
 #' @param ... Variables for grouping.
 #'
-#' @return A t\code{\link[ggplot2:ggplot]{ggplot}}
+#' @return A \code{\link[ggplot2:ggplot]{ggplot}} or
+#' \code{\link[plotly:ggplotly]{ggplotly}}
 #' @export
 #' @examples
 #' # Use point_example() to access the examples bundled with this package
@@ -48,7 +47,9 @@ plot_diag_R <- function(df,
                         ...,
                         plot_title,
                         type,
-                        rep = "1"
+                        rep = "1",
+                        iso = TRUE,
+                        isoscale = NULL
                         ){
 
   gr_by <- enquos(...)
@@ -66,16 +67,26 @@ plot_diag_R <- function(df,
   stat_lab <- reduce_diag(df, type = "df", args = args, !!! gr_by) %>%
     group_by(execution) %>%
     tidyr::nest() %>%
-    mutate(labels = purrr::map2(data, execution,
-                ~stat_select(.x, .y, Xt = !!args[["Xt"]], facets_gr = quos(!!!gr_by))
-                                )
+    mutate(labels = purrr::map2(
+      data,
+      execution,
+      ~stat_select(.x,
+                   .y,
+                   Xt = !!args[["Xt"]],
+                   ion1 = as_name(args[["ion1"]]),
+                   facets_gr = quos(!!!gr_by),
+                   iso = iso,
+                   isoscale = isoscale
+                   )
+      )
            ) %>%
     tidyr::unnest(cols = labels) %>%
     ungroup() %>%
     select(-c(data)) %>%
-    mutate(execution = if_else(trans=="augmented",
-                               as.character(as.numeric(execution) - 1),
-                               execution
+    mutate(execution = if_else(
+      trans == "augmented",
+      as.character(as.numeric(execution) - 1),
+      execution
                                )
            )
 
@@ -124,7 +135,9 @@ plot_diag_R <- function(df,
                      plot_title = plot_title,
                      plot_type = type,
                      args = args,
-                     !!!gr_by
+                     iso = iso,
+                     isoscale = isoscale,
+                     !!! gr_by
                      )
 
 # Residual leverage plot
@@ -163,75 +176,12 @@ plot_diag_R <- function(df,
 
 }
 
-
-
-
-
-
-
-
-
-
-  # df.acf <- df.def %>%
-  #   group_by(!!! gr_by) %>%
-  #   select(!!! gr_by, ACF) %>%
-  #   # distinct(!!! gr_by) %>%
-  #   tidyr::unnest(cols = c(ACF)) %>%
-  #   ungroup() %>%
-  #   tidyr::unite(facet_gr, !!!gr_by)
-  #
-  # acf <- ggplot(df.acf, mapping = aes(x = lag, y = acf)) +
-  #   geom_hline(aes(yintercept = 0)) +
-  #   geom_segment(mapping = aes(xend = lag, yend = 0)) +
-  #   geom_hline(aes(yintercept = ci_upper), color = "darkblue") +
-  #   geom_hline(aes(yintercept = ci_lower), color = "darkblue") +
-  #   facet_wrap(~facet_gr, scales = "free") +
-  #   ggtitle("ACF plot") +
-  #   theme_classic()
-
-
-  # gg.pl <-lst(`1` = crs,
-  #             `2` = QQ.norm,
-  #             `3` = sc.loc,
-  #             `4` = rs.lev,
-  #             `5` = acf
-  #             )
-
-  # gg.sa <- function(nm, x, width.out, height.out){
-  #
-  #   ggsave(filename = paste0(path,"Figure", nm ,".", device),
-  #          plot = x,
-  #          height = height.out,
-  #          width = width.out,
-  #          units = "cm"
-  #          )
-  # }
-  #
-  # if (is.null(path)){
-  #
-  #   return(gg.pl)
-  #
-  # }else{
-  #
-  #   invisible(mapply(gg.sa,
-  #                    names(gg.pl),
-  #                    gg.pl,
-  #                    width.out = width.out,
-  #                    height.out = height.out
-  #                    )
-  #             )
-  #   return(gg.pl)
-  #
-  #   }
-  #
-
-
-
 #-------------------------------------------------------------------------------
+# Not exportet
 #-------------------------------------------------------------------------------
 
 # Stat labels selection
-stat_select <- function(df, execution, Xt, facets_gr) {
+stat_select <- function(df,execution, Xt, ion1, facets_gr, iso, isoscale) {
 
   Xt <- enquo(Xt)
 
@@ -250,7 +200,12 @@ stat_select <- function(df, execution, Xt, facets_gr) {
     transmute(trans = label,
               lb = purrr:: map2(!!quo_updt(Xt, x = "M_R"),
                                 !!quo_updt(Xt, x = "RSeM_R"),
-                                ~stat_lab(a = .x, b = .y, aug)
+                                ~stat_lab(a = .x,
+                                          b = .y,
+                                          ion1 = ion1,
+                                          aug,
+                                          iso = iso,
+                                          isoscale = isoscale)
               ),
               vjust = pos,
               !!! facets_gr
@@ -259,23 +214,51 @@ stat_select <- function(df, execution, Xt, facets_gr) {
 
 }
 
-# funtion for creation of labels for statistics on the original and augmented dataset
-stat_lab <- function(a, b, aug = FALSE){
+# function for creation of labels for statistics on the original and augmented dataset
+stat_lab <- function(a, b, ion1, aug = FALSE, iso = TRUE, isoscale = "VPDB"){
 
-  # turn R into delta value
-  a <- calib_R(a, standard = "VPDB", type = "composition", input = "R", output = "delta")
+# turn R into delta value
+  if (iso) {
+    a <- calib_R(a,
+                 standard = isoscale,
+                 type = "composition",
+                 input = "R",
+                 output = "delta"
+                 )
+    num_iso <- as.numeric(gsub("([0-9]+).*$", "\\1", ion1))
+    el_iso <- as.symbol(gsub("^[0-9]+","",ion1))
+
+    expr_R <- list(substitute(delta^a*b*""^c ==
+                   ~ d ~ "(" *
+                   epsilon[bar(R)]^c ==
+                   ~ e * "\u2030"~
+                   f*
+                   ")",
+                   list(a = num_iso,
+                        b = el_iso,
+                        c = if(aug == TRUE){"*"}else{""},
+                        d = sprintf("%.2f", a),
+                        e = sprintf("%.2f", b),
+                        f = isoscale
+                        )
+                   )
+    )
+  } else {
+
+    expr_R <- list(substitute(bar(R)*""^a ==
+                                ~ b ~ "(" *
+                                epsilon[bar(R)]^a ==
+                                ~ c * "\u2030)",
+                              list(a = if(aug == TRUE){"*"}else{""},
+                                   b = sprintf("%.2f", a),
+                                   c = sprintf("%.2f", b)
+                                   )
+                              )
+                  )
+    }
 
   return(
-    list(substitute(delta^13*"C"*""^c ==
-                      ~ a ~ "(" *
-                    epsilon[bar(R)]^c ==
-                      ~ b * "\u2030)",
-                    list(a = sprintf("%.2f", a),
-                         b = sprintf("%.2f", b),
-                         c = if(aug == TRUE){"*"}else{""}
-                         )
-                    )
-         ) %>%
+    expr_R %>%
       do.call("expression", .) %>%
       factor(x = as.character(a),
              labels = .
@@ -292,25 +275,26 @@ ggplotColours <- function(n = 6, h = c(0, 360) + 15){
 
 
 #standard plot
-gg_default <- function(df, stat_lab, y, x, ion1, ion2, plot_title, plot_type, args, ...){
+gg_default <- function(df,
+                       stat_lab,
+                       y,
+                       x,
+                       ion1,
+                       ion2,
+                       plot_title,
+                       plot_type,
+                       args,
+                       iso,
+                       isoscale,
+                       ...
+                       ){
 
   y <- enquo(y)
   x <- enquo(x)
   gr_by <- enquos(...)
 
-  df <- mutate(df,
-               delta = round(
-                 calib_R(!!quo_updt(args[["Xt"]], x = "M_R"),
-                         standard = "VPDB",
-                         type = "composition",
-                         input = "R",
-                         output = "delta"),
-                 1
-                 )
-               )
-
-
   if (plot_type == "interactive") {
+
 
     text_vc <- c(
       "CooksD" = "Rm",
@@ -319,27 +303,49 @@ gg_default <- function(df, stat_lab, y, x, ion1, ion2, plot_title, plot_type, ar
       "norm_E" = "norm_E",
       "CV" = "CV"
       )
+
     text_type <- text_vc[plot_title]
+
+    if (iso) {
+      df <- mutate(df,
+                   delta = round(
+                     calib_R(!! quo_updt(args[["Xt"]], x = "M_R"),
+                             standard = isoscale,
+                             type = "composition",
+                             input = "R",
+                             output = "delta"),
+                     1
+                   )
+      )
+
+      R_not <- expr(paste0("δ", ion1, " (‰): ", delta))
+    }else{
+      df <- mutate(df,
+                   R = round(!! quo_updt(args[["Xt"]], x = "M_R"), 4)
+                   )
+
+      R_not <- expr(paste0("R: ", R))
+      }
 
     text_expr = lst(
       Rm = expr(paste0(ion2, " (ct/sec): ", !!x, '\n',
                        ion1, " (ct/sec): ", !!y, '\n',
-                       "δ", ion1, " (‰): ", delta
+                       eval(R_not)
                        )
       ),
       QQ = expr(paste0("TQ: ", round(!!x, 2), '\n',
                        "SQ: ", round(!!y, 2), '\n',
-                       "δ", ion1, " (‰): ", delta
+                       eval(R_not)
                        )
       ),
       norm_E = expr(paste0("e*: ", round(!!x, 4), '\n',
                            "hat: ", round(!!y, 2), '\n',
-                           "δ", ion1, " (‰): ", delta
+                           eval(R_not)
                            )
       ),
       CV = expr(paste0("fitted value: ", round(!!x, 4), '\n',
                        "e*: ", round(!!y, 2), '\n',
-                       "δ", ion1, " (‰): ", delta
+                       eval(R_not)
                        )
       )
 
@@ -381,35 +387,35 @@ gg_default <- function(df, stat_lab, y, x, ion1, ion2, plot_title, plot_type, ar
                        size = 0.5)
     }
 
-    p + scale_color_manual("",
+    p <- p +
+      scale_color_manual("",
                        values = c(
                          "good" = ggplotColours(2)[2],
                          "bad" = ggplotColours(2)[1]
                                   ),
                       ) +
-    geom_rug(sides = "tr", alpha = 0.01)
+      scale_y_continuous(breaks = scales::extended_breaks(), labels = scales::label_scientific()) +
+      scale_x_continuous(breaks = scales::extended_breaks(), labels = scales::label_scientific()) +
+      geom_rug(sides = "tr", alpha = 0.01)
 
     if (plot_type == "static") {
-
+      if (!is.null(stat_lab)) {
       p <- p +  geom_text(data = stat_lab,
                            aes(label = lb,
                                vjust = vjust,
                                group = trans
-                           ),
+                               ),
                            x = Inf,
                            y = Inf,
                            hjust = 1.2,
-                           size = 3,
+                           size = 1.5,
                            inherit.aes = FALSE,
                            parse = TRUE
-      )
+                           )
+    }
     }
 
-    # if (length(gr_by) < 3) {
-    #   p <- p + facet_grid(rows = vars(!!gr_by[[1]]), cols = vars(!!gr_by[[2]]), scales = "free")
-    #   } else {
-      p <- p + facet_wrap(vars(!!! gr_by), scales = "free")
-      # }
+    p <- p + facet_wrap(vars(!!! gr_by), scales = "free") #, labeller = label_wrap_gen(width = 15))
 
     p + labs(!!! lab_updater(plot_title, ion1, ion2, plot_type)) +
     theme_classic() +
@@ -424,7 +430,9 @@ lab_updater <- function(method, ion1, ion2, plot_type){
     "norm_E" = "Residual vs. Leverage",
     "CooksD" = "Linear R model (Cook's D)",
     "QQ" = "Normal QQ plot",
-    "CV" = "Scale-location plot"
+    "CV" = "Scale-location plot",
+    "QSA" = "QSA test",
+    "timeseries" = "timeseries"
     )
 
   plot_labs <- lst(
@@ -452,8 +460,17 @@ lab_updater <- function(method, ion1, ion2, plot_type){
           x = axis_labs("hat_Y", ion1, plot_type),
           y = axis_labs("studE", NULL, plot_type),
           title = unname(plot_names[method])
+        ),
+        QSA = lst(
+          x = axis_labs("ionct", ion2, plot_type),
+          y = axis_labs("R", NULL, plot_type),
+          title = unname(plot_names[method])
+        ),
+        timeseries = lst(
+          x = axis_labs("time", NULL, plot_type),
+          y = axis_labs("Xct", NULL, plot_type),
+          title = unname(plot_names[method])
         )
-
         )
 
   plot_labs[[method]]
@@ -472,12 +489,15 @@ axis_labs <- function(type, ion = NULL, plot_type){
          studE = expression("studentized residuals (" * italic(e)^"*" * ")"),
          TQ = "Theoretical quantiles",
          SQ = "Sample quantiles",
+         Xct = "X (ct/sec)",
+         time = "time (sec)",
          hat_Y = substitute("fitted value (" * hat(""^a * b) * ")",
                             lst(a = as.numeric(gsub("([0-9]+).*$", "\\1", ion)),
                                 b = as.symbol(gsub("^[0-9]+","",ion))
                             )
-         ),
-         hat_Xi = expression("hat-values" (italic(h)))
+                            ),
+         hat_Xi = expression("hat-values" (italic(h))),
+         R = "R"
         )
 
     } else{

@@ -275,11 +275,18 @@ stat_R <- function(df, Xt, N, species, ion1, ion2, ..., latex = FALSE,
   df <- df  %>%
 # Calculate single ion count stats
           eval_tidy(expr = zeroCt_cal(zero)) %>%
-          stat_Xt(Xt = !!Xt, N = !!N, species =  !!species,
-                  !!! gr_by, output = "complete") %>%
+          stat_Xt(Xt = !!Xt,
+                  N = !!N,
+                  species =  !!species,
+                  !!! gr_by,
+                  output = "complete"
+                  ) %>%
           cov_R(species = !!species,
-                ion1 = ion1, ion2 = ion2, !!! gr_by,
-                preserve = TRUE) %>%
+                ion1 = ion1,
+                ion2 = ion2,
+                !!! gr_by,
+                preserve = TRUE
+                ) %>%
           group_by(!!! gr_by) %>%
           eval_tidy(expr = mod_cal(output)) %>%
           ungroup()

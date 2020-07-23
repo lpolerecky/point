@@ -48,7 +48,8 @@ Rm <- function(df, args = expr_R(NULL), ..., output){
 }
 
 
-# Standard error of the regression
+#' Standard error of the regression
+#' @export
 sigma_calc <- function(res) sqrt(sum((res ^ 2)) / (length(res) - 1))
 
 # Switch output complete dataset, stats or summary stats
@@ -179,7 +180,6 @@ jack_meanR <- function(df, ion1, ion2){
 
 }
 
-
 # jackknifed standard error of the regression
 jack_sigma <- function(df, res){
 
@@ -189,11 +189,10 @@ jack_sigma <- function(df, res){
 
 }
 
-
 #' @rdname Cameca_R
 #'
 #' @export
-CooksD_R <- function(df, args = expr_R(NULL), ..., output){
+CooksD <- function(df, args = expr_R(NULL), ..., output){
 
   gr_by <- enquos(...)
 
@@ -207,7 +206,14 @@ CooksD_R <- function(df, args = expr_R(NULL), ..., output){
   Rm(df_cd, args = args, !!! gr_by, output = "Rm") %>%
     left_join(df_cd, ., by = "ID") %>%
     eval_tidy(expr =  mod_out(output, var_names))
-  }
+}
+
+
+# Cook's D calculator
+cooksD_calc  <- function(studE, hat_Xi) (studE ^ 2 / 2 ) * (hat_Xi / (1- hat_Xi))
+
+# Cook's D cutt-off value calculator
+cooksD_cut_calc  <- function(n) 4 / (n - 2)
 
 #' Normality test
 #'
@@ -283,20 +289,22 @@ CV <- function(df, args = expr_R(NULL), ..., output){
 
   gr_by <- enquos(...)
 
-  # Variable names of original dataset
+# Variable names of original dataset
   var_names <- colnames(df)
   var_names <- var_names[!var_names %in% "ID"]
+
+  Xt2 <- quo_updt(args[["Xt"]], as_name(args[["ion2"]]))
 
   norm_E(df, args = args, !!! gr_by, output = "studE") %>%
     left_join(df, ., by = "ID") %>%
     group_by(!!! gr_by) %>%
-# hetroscadasticity test (Breusch Pagan test)(level of confidence 95%;
+# Hetroscadasticity test (Breusch Pagan test)(level of confidence 95%;
 # cut-off 0.05 for H0 rejection),
     tidyr::nest() %>%
     mutate(
-      res_lm = purrr::map(data, ~lm_res(.x, args = args)),
-      R2 = purrr::map(res_lm, ~(summary(.x)$r.squared)),
-      SE_beta = purrr::map(res_lm, ~(unname(summary(.x)$coefficients[2,2]))),
+      res_lm = purrr::map(data, ~lm_form(.x, quo(studE), Xt2)),
+      R2 = purrr::map(res_lm, ~{broom::glance(.x)$r.squared}),
+      SE_beta = purrr::map(res_lm, ~{pull(broom::tidy(.x), std.error)[2]}),
             ) %>%
     tidyr::unnest(cols = c(data, R2, SE_beta)) %>%
     mutate(Chi_R2 = R2 * !! quo_updt(my_q = args[["Xt"]],
@@ -321,15 +329,21 @@ CV <- function(df, args = expr_R(NULL), ..., output){
     eval_tidy(expr =  mod_out(output, var_names))
 }
 
+# lm_res <- function(data, arg1, arg2) {
+#
+#   call_lm <- new_formula(get_expr(arg1), get_expr(arg2))
+#   eval(call2("lm", call_lm, data = expr(data)))
+#
+# }
 
-# lm residuals (this can be done better!! tidy formula call)
-lm_res <- function(data, args){
-  call_lm <- parse_expr(paste0("data$studE~data$", as_name(args[["Xt"]]), ".", as_name(args[["ion2"]])))
-  eval_tidy(call2("lm", call_lm))
+# # lm residuals (this can be done better!! tidy formula call)
+# lm_res <- function(data, args){
+#   call_lm <- parse_expr(paste0("data$studE~data$", as_name(args[["Xt"]]), ".", as_name(args[["ion2"]])))
+#   eval_tidy(call2("lm", call_lm))
+#
+# }
 
-}
-
-#' Indpendence of residuals
+#' Independence of residuals
 #'
 #' @export
 IR <- function(df, args = expr_R(NULL), time_steps, ..., plot = FALSE){
@@ -357,17 +371,19 @@ IR <- function(df, args = expr_R(NULL), time_steps, ..., plot = FALSE){
     ungroup() %>%
     tidyr::unnest(cols = c(ACF))
 
-  if (plot){
+  if (plot) {
 
   df.acf %T>%
-      {print(ggplot(., mapping = aes(x = lag, y = acf)) +
-               geom_hline(aes(yintercept = 0)) +
-               geom_segment(mapping = aes(xend = lag, yend = 0)) +
-               geom_hline(aes(yintercept = ci_upper), color = "darkblue") +
-               geom_hline(aes(yintercept = ci_lower), color = "darkblue") +
-               facet_wrap(vars(!!! gr_by), scales = "free") +
-               ggtitle("ACF plot") +
-               theme_classic())}
+      { print(ggplot(., mapping = aes(x = lag, y = acf)) +
+                geom_hline(aes(yintercept = 0)) +
+                geom_segment(mapping = aes(xend = lag, yend = 0)) +
+                geom_hline(aes(yintercept = ci_upper), color = "darkblue") +
+                geom_hline(aes(yintercept = ci_lower), color = "darkblue") +
+                facet_wrap(vars(!!! gr_by), scales = "free") +
+                ggtitle("ACF plot") +
+                theme_classic()
+              )
+        }
 
   } else {
 
@@ -388,8 +404,3 @@ acf_calc <- function(data){
                    )
   }
 
-# https://stackoverflow.com/questions/27264266/multiple-ggplots-with-magrittr-tee-operator
-ggpass <- function(gg){
-  print(gg)
-  return(gg$data)
-}

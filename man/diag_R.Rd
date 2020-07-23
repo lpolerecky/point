@@ -11,7 +11,9 @@ diag_R(
   reps = 1,
   ...,
   plot = TRUE,
-  plot_type = "interactive"
+  plot_type = "interactive",
+  iso = TRUE,
+  isoscale = NULL
 )
 }
 \arguments{
@@ -32,27 +34,35 @@ argument.}
 \item{plot}{Logical indicating whether plot is produced, if FALSE a list of
 tibbles with length `reps` is produced.}
 
-\item{Character}{string determing whether the returned a \code{"static"} plot
-or an \code{"interactive"} plot with \code{\link[plotly:ggplotly]{ggplotly}}.}
+\item{plot_type}{Character string determining whether the returned a
+\code{"static"} plot or an \code{"interactive"} plot with
+\code{\link[plotly:ggplotly]{ggplotly}}.}
+
+\item{iso}{Logical indicating whether the R value should be converted to the
+delta scale.}
+
+\item{isoscale}{If the argument \code{iso} is set to TRUE, a character string
+(e.g. \code{"VPDB"}) for the delta conversion should be given. See
+\code{?calib_R()} for options.}
 }
 \value{
-A list containing several \code{\link[tibble:tibble]{tibble}} the
-elements named df contain the original dataset and augmented versions from
-element number 2 onward. The elements named results contain the flag
-variable for outlier detection as well as associated statistics of the
-selected procedure.
+A dynamic plot or static plot. If the argument plot is \code{FALSE},
+a list containing several \code{\link[tibble:tibble]{tibble}} is returned.
+The elements named df contain the original dataset and augmented versions
+from element position number 2 onward. The elements named results contain
+the flag variable for outlier detection as well as associated statistics of
+the selected procedure.
 }
 \description{
 \code{diag_R} wrapper function for diagnostics on isotope count data
 }
 \details{
 The \code{diag_R} function performs an internal call to stat_R to perform
-diagnostics on the influence of individial measurements on the blockwise or
-global (i.e., a complete analysis) stastics. It identifies potentially
-influential measurements that can subsequentally be filtered from the
-original dataset to improve the precision. See
-\code{vignette("IC-diagnostics", package = "point")} for more information
-on how to use the function, and possible methods for diagnostics.
+diagnostics on the influence of individual measurements on the blockwise or
+global (i.e., a complete analysis) statistics. It identifies potentially
+influential measurements that indicate heterogeneity in the analytical
+substrate. See \code{vignette("IC-diagnostics", package = "point")} for more
+information on how to use the function, and possible methods for diagnostics.
 }
 \examples{
 # Modelled ion count dataset
@@ -71,6 +81,7 @@ diag_R(sim_IC_extremes,
        args = expr_R_stat,
        reps = 3,
        simulation,
-       trend
+       trend,
+       isoscale = "VPDB"
        )
 }

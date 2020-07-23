@@ -9,25 +9,26 @@ plot_diag_R(
   args = expr_R(NULL),
   ...,
   plot_title,
-  type = "static",
-  rep = "1"
+  type,
+  rep = "1",
+  iso = TRUE,
+  isoscale = NULL
 )
 }
 \arguments{
 \item{df}{A tibble containing processed ion count data.}
 
 \item{args}{A list of quosures pertaining to the variables required for a
-call to stat_R. The function expr_R can be used to simplify setting this
+call to stat_R. The function expr_R() can be used to simplify setting this
 argument.}
 
 \item{...}{Variables for grouping.}
 
-\item{method}{Character string for the type of diagnostics. Currently only
-"standard" is supported, which pertains to the default Cameca software
-setting.}
+\item{method}{Character string for the type of diagnostics.}
 }
 \value{
-A t\code{\link[ggplot2:ggplot]{ggplot}}
+A \code{\link[ggplot2:ggplot]{ggplot}} or
+\code{\link[plotly:ggplotly]{ggplotly}}
 }
 \description{
 \code{plot_RDiag} function for propagation of uncertainty for single ions

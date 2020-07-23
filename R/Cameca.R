@@ -1,7 +1,7 @@
 #' Family of diagnostics functions for isotope count ratios
 #'
-#' \code{Cameca_R} default CAMECA diagnostics
-#' \code{CooksD_R} regression diagnostics based on Cook's D
+#' \code{Cameca} default CAMECA diagnostics
+#' \code{CooksD} regression diagnostics based on Cook's D
 #'
 #' These functions perform a specific set of diagnostics to term anomolous
 #' values inr raw ion count data of an isotope pair. The wrapper function
@@ -14,7 +14,7 @@
 #' call to stat_R. The function expr_R can be used to simplify setting this
 #' argument.
 #' @param ... Variables for grouping.
-#' @param output Character string determing whether the returned values in a
+#' @param output Character string determining whether the returned values in a
 #' minimal version `"flag"` (original dataset + diagnostics) or an extended
 #' version with all the intermediate steps of ion- and isotope-wise summary
 #' statistics `"complete"`.
@@ -39,16 +39,18 @@
 #'                ion2 = "12C", file.nm, bl.mt, output = "complete")
 #'
 #' # CAMECA style augmentatio of ion count data for isotope ratios
-#' tb.aug <- Cameca_R(tb.R,
-#'                    args = expr_R(Xt = "Xt.pr",
-#'                                  N = "N.pr",
-#'                                  species = "species.nm",
-#'                                  ion1 = "13C",
-#'                                  ion2 = "12C"),
+#' tb.aug <- Cameca(tb.R,
+#'                  args = expr_R(Xt = "Xt.pr",
+#'                                N = "N.pr",
+#'                                species = "species.nm",
+#'                                ion1 = "13C",
+#'                                ion2 = "12C"
+#'                                ),
 #'                   file.nm,
 #'                   bl.mt,
-#'                   output = "flag")
-Cameca_R <- function(df, args = expr_R(NULL), ..., output){
+#'                   output = "flag"
+#'                   )
+Cameca <- function(df, args = expr_R(NULL), ..., output){
 
   gr_by <- enquos(...)
 
@@ -78,8 +80,8 @@ Cameca_R <- function(df, args = expr_R(NULL), ..., output){
              between(!! quo_updt(my_q = args[["Xt"]], x = "R"),
                      unique(.data$lower),  # mean - 2SD
                      unique(.data$upper)), # mean + 2SD
-             "non-influential",
-             "influential"
+             "good",
+             "bad"
            )
     ) %>%
     ungroup() %>%
