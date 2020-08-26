@@ -435,10 +435,22 @@ QSA_test <- function(.df, .Xt, .N, .species, .ion1, .ion2, ..., .plot = TRUE){
 
 # linear model call
 
-lm_form <- function(data, arg1, arg2) {
+lm_form <- function(data, arg1, arg2, type = "OLS") {
 
-  call_lm <- new_formula(get_expr(arg1), get_expr(arg2))
-  eval(call2("lm", call_lm, data = expr(data)))
+  call_lm <- new_formula(quo_get_expr(arg1), quo_get_expr(arg2))
+  if (type == "Rm") call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste0(as_name(arg2), "-1")))
+
+  wght <- 1 / pull(data, !! arg2)
+
+# switch between OLS and ratio method type linear model
+  lm_method <- function(type) {
+    switch(type,
+           OLS = eval(call2("lm", call_lm, data = expr(data))),
+           Rm = eval(call2("lm", call_lm, data = expr(data), weights = expr(wght)))
+           )
+  }
+
+  lm_method(type)
 
 }
 

@@ -27,7 +27,6 @@ The random nature of secondary ions emitted from a sample is described by Poisso
 
 ```{r setup}
 library(point)
-devtools::load_all(".")
 ```
 
 The following packages are used in the examples that follow.
@@ -447,7 +446,7 @@ The output of this test has a $\chi^2$-distribution of 1 degrees of freedom so t
 
 ```{r coeftest, echo=FALSE, fig.cap="Comparison of the standard error of the $\\beta_1$ coefficient of an OLS for estimating the studentized residuals and the variation in the dependent variable $S_{X^b}$ for several linear trends in the ionization efficiency.", fig.width=6, fig.height=4}
 
-ggplot(CD_ideal, aes(y = SE_beta , x = parse_number(as.character(trend)), color = trend)) +
+ggplot(CD_ideal, aes(y = SE_beta , x = readr::parse_number(as.character(trend)), color = trend)) +
   geom_point() +
   xlab(expression(epsilon[""^12*C]~"(\u2030)")) +
   ylab(expression(S[beta[1]]))

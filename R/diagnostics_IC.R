@@ -70,10 +70,6 @@ diag_R <- function(df,
 
   gr_by <- enquos(...)
 
-# update ion names to match stat_R output in case of space separation
-  # args <- purrr::modify_at(args, "ion1", ~quo_set_expr(.x, str_replace_all(as_name(.x), " ", "")))
-  # args <- purrr::modify_at(args, "ion2", ~quo_set_expr(.x, str_replace_all(as_name(.x), " ", "")))
-
 # repetitions
   max <- reps + 1
 
