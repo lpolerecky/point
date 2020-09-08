@@ -20,8 +20,8 @@ Rm <- function(df, args = expr_R(NULL), ..., output){
   df %>%
     group_by(!!! gr_by) %>%
     tidyr::nest() %>%
-    mutate(R_lm = purrr::map(data, ~lm_form(.x, Xt1, Xt2, type = "OLS")),
-           model = purrr::map(R_lm, {~broom::augment(.x)[,3:8]})) %>%
+    mutate(R_lm = purrr::map(data, ~lm_form(.x, Xt1, Xt2, type = "Rm")),
+           model = purrr::map(R_lm, {~broom::augment(.x) %>% select(-c(!!Xt1, !!Xt2))})) %>%
     tidyr::unnest(cols = c(data, model)) %>%
     mutate(
 # Modelled Y values

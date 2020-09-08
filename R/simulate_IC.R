@@ -22,6 +22,7 @@ sim_R <- function(n = 3000,
 
   tibble::tibble(simulation = type,
                  n = n,
+                 t = 1:n,
                  bl = rep(1:(n/50), each = 50),
                  N.input = as.integer(N_range),
                  R.input = R_gen(start_n,

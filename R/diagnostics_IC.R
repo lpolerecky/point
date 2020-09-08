@@ -143,7 +143,7 @@ rerun_diag_R <- function(out,
 
   variables <- parse_exprs(results_vars[!deselect_vars])
 
-  # if called this way then output is set fixed (more fleible use with diag_R_exec)
+  # if called this way then output is set fixed (more flexible use with diag_R_exec)
   out <- diag_R_exec(out$df,
                      method = method,
                      args = args,
@@ -270,6 +270,8 @@ eval_diag <- function(ls_df,
     quo(SSD / SSA),
     quo(n2 * nz)
     )
+
+
 
 # Names of parameters for diagnostic evaluation
   ls.names <- c("nz", "diff_n", "diff_RS", "SSD", "SSA", "n2", "chi_n2")
@@ -426,3 +428,48 @@ crit_size <- function(RS_Xt.ion2){
     pull(y_star)
 
 }
+
+
+
+# new formula
+#
+# hat_D <- function(.df, .Xt, .N, .species, .ion1, .ion2, ...){
+#
+#   # Update expressions (heavy isotope)
+#   Xt1 <- quo_updt(Xt, ion1) # count rate
+#   Yt1 <- quo_updt(N, ion1) # counts
+#
+#   # Update expressions (light isotope)
+#   Xt2 <- quo_updt(Xt, ion2) # count rate
+#   Yt2 <- quo_updt(N, ion2) # counts
+#
+#   # Update expressions (light isotope)
+#
+#   # predicted standard error of the single ion and isotope count rates
+#   args <- lst(
+#     # number of measurements
+#     quo(n()),
+#     # sum of ion counts (important for external reproducibility calcs)
+#     quo(sum(!! N)),
+#     # predicted SD count rate
+#     quo(sqrt(sum(!!N)))
+#         )
+#
+#
+#   # The statistic names (depend on user-supplied expression)
+#   ls.names <-paste(c("n", "Ntot", "hat_S"), as_name(Xt), sep = "_")
+#   # Set statistic names
+#   args <- set_names(args, nm = ls.names)
+#
+#   # Evaluate expressions
+#   df <- df %>%
+#     group_by(!!! gr_by) %>%
+#     eval_tidy(expr = mod_cal(output), data = .) %>%
+#     ungroup()
+#
+#
+# }
+#
+#
+#
+#

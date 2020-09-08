@@ -420,7 +420,7 @@ str_tibble <- function(str_raw) {
     filter(str_detect(.data$value, ".")) %>%
   # Remove date
     filter(!str_detect(.data$value, pattern  = "\t\t\t\t\t\t")) %>%
-    tidyr::separate_rows(.data$value, sep = "(/(?=[:blank:])) | =") %>%
+    tidyr::separate_rows(.data$value, sep = "(/(?=[[:blank:]])) | =") %>%
     tidyr::separate(.data$value,
                     into = c("variable", "value"),
                     sep =":(?!\\\\)",
