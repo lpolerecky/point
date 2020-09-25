@@ -15,15 +15,22 @@ sim_R <- function(n = 3000,
                   offsetR = NULL,
                   seed,
                   ...
+                  # .cluster = parallel::detectCores()
                   ){
 
   average_n <- N_range / n
   start_n <- n
+  blocks <- rep(1:(n/50), each = 50)
+  iso_offset <- rep(offsetR, length.out = start_n)
+
+  # # parallel computing
+  # cluster <- multidplyr::new_cluster(.cluster / 4)
+  # future::plan(future::sequential())
 
   tibble::tibble(simulation = type,
                  n = n,
                  t = 1:n,
-                 bl = rep(1:(n/50), each = 50),
+                 bl = blocks,
                  N.input = as.integer(N_range),
                  R.input = R_gen(start_n,
                                  baseR,
@@ -35,8 +42,9 @@ sim_R <- function(n = 3000,
                              average_n * (1 + (sys / 1000)),
                              length.out = start_n
                              ),
-                 intercept = average_n
-                 ) %>%
+                 intercept = average_n,
+                 iso_offset = iso_offset
+                 )  %>%
     tidyr::expand_grid(., repetition = c(1:reps), species = c(ion1, ion2)) %>%
     mutate(seed = seed + repetition + row_number(repetition)) %>%
 # Convert common isotope N
@@ -47,8 +55,11 @@ sim_R <- function(n = 3000,
            ) %>%
 # Calculate N of abundant isotope species
     group_by(.data$simulation, .data$species) %>%
+
+
     # tidyr::nest() %>%
 # Random variation (Number generation)
+
     mutate(N.sim = purrr::pmap_dbl(list(N = .data$N.input, n = .data$n, seed = .data$seed), N_gen)) %>%
     # mutate(N.sim= purrr::map(.data$data, ~N_gen(.x, N.input, n, seed))) %>%
     # tidyr::unnest(cols = c(.data$data, .data$N.sim)) %>%

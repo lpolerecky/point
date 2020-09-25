@@ -74,23 +74,32 @@ stat_Xt <- function(df, Xt, N, species, ... , latex = FALSE, output = "sum"){
     # standard error of the mean (SE) count rate
     quo(sd(!! Xt) / sqrt(n())),
     # predicted SD count rate
-    quo(sqrt(sum(!!N))),
+    quo(sqrt((sum(!!N) / n()))),
     # predicted SE count rate
-    quo(sqrt(sum(!!N) / n())))
+    quo(sqrt((sum(!!N) / n()) / n())),
+    # reduced chi squared
+    quo((!!quo_updt(my_q = Xt , x = "SeM") /
+           !!quo_updt(my_q = Xt , x = "hat_SeM")) ^ 2)
+    )
 
 # The statistic names (depend on user-supplied expression)
-  ls.names <-paste0(c("n_", "Ntot_", "M_", "S_", "RS_", "SeM_", "hat_S_", "hat_SeM_"),
+  ls.names <-paste0(c("n_", "Ntot_", "M_", "S_", "RS_",
+                      "SeM_", "hat_S_", "hat_SeM_", "chi2_"),
                     as_name(Xt))
 
 # To render nice latex variable names in Rmarkdown/Latex
-  ls.latex <- set_names(ls.names, nm = c("$n$",
-                                        "$N_{tot}$",
-                                        "$\\bar{X}$",
-                                        "$s_X$",
-                                        "$\\epsilon_X \\,$ (\u2030)",
-                                        "$s_\\bar{X}$",
-                                        "$\\hat{s}_N$",
-                                        "$\\hat{s}_\\bar{N}$"))
+  ls.latex <- set_names(ls.names,
+                        nm = c("$n$",
+                               "$N_{tot}$",
+                               "$\\bar{X}$",
+                               "$s_X$",
+                               "$\\epsilon_X \\,$ (\u2030)",
+                               "$s_\\bar{X}$",
+                               "$\\hat{s}_N$",
+                               "$\\hat{s}_\\bar{N}$",
+                               "$\\chi^{2}$"
+                                )
+                        )
 
 # Set statistic names
   args <- set_names(args, nm = ls.names)

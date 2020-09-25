@@ -4,7 +4,7 @@
 \alias{CV}
 \title{Constant variance test}
 \usage{
-CV(df, args = expr_R(NULL), ..., output)
+CV(df, args = expr_R(NULL), vars, ..., output)
 }
 \description{
 Constant variance test

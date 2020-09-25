@@ -1,7 +1,10 @@
 #' Ideal linear R model
 #'
 #' @export
-Rm <- function(df, args = expr_R(NULL), ..., output){
+Rm <- function(df, args = expr_R(NULL), vars, ..., output){
+
+  # multicore
+  # cluster <- multidplyr::new_cluster(4)
 
   gr_by <- enquos(...)
 
@@ -13,15 +16,17 @@ Rm <- function(df, args = expr_R(NULL), ..., output){
 # standard deviation of R
   S_R <- quo_updt(my_q = args[["Xt"]], x = "S_R")
 
-# variable names of original dataset
-  var_names <- c(colnames(df), aug_names)
-  var_names <- var_names[!var_names %in% "ID"]
-
-  df %>%
+  df_dia <- df %>%
     group_by(!!! gr_by) %>%
-    tidyr::nest() %>%
+    tidyr::nest() %>% #multidplyr::partition(cluster)
     mutate(R_lm = purrr::map(data, ~lm_form(.x, Xt1, Xt2, type = "Rm")),
-           model = purrr::map(R_lm, {~broom::augment(.x) %>% select(-c(!!Xt1, !!Xt2))})) %>%
+           model = purrr::map(R_lm, ~{broom::augment(.x) %>%
+               select(-c(!!Xt1, X =!!Xt2),
+                      )
+           }
+           )
+           ) %>%
+    select(-R_lm) %>%
     tidyr::unnest(cols = c(data, model)) %>%
     mutate(
 # Modelled Y values
@@ -32,25 +37,24 @@ Rm <- function(df, args = expr_R(NULL), ..., output){
                            !! Xt1 < hat_max,
                            "good",
                            "bad"
-                           )
+                           ),
+            flag = as.factor(flag)
             ) %>%
-    ungroup() %>%
-    eval_tidy(expr = mod_out(output, var_names))
+    # dplyr::collect()
+    ungroup()
+
+  mod_out(df, df_dia, gr_by, args, output, vars)
 
 }
 
 #' Normalization of residuals
 #'
 #' @export
-norm_E <- function(df, args = expr_R(NULL), ..., output){
+norm_E <- function(df, args = expr_R(NULL), vars, ..., output){
 
   gr_by <- enquos(...)
 
-# variable names of original dataset
-  var_names <- c(colnames(df), aug_names)
-  var_names <- var_names[!var_names %in% "ID"]
-
-  Rm(df, args = args, !!! gr_by, output = "augment") %>%
+  df_dia<- Rm(df, args = args, vars, !!! gr_by, output = "augment") %>%
     left_join(df, ., by = "ID") %>%
     group_by(!!! gr_by) %>%
     mutate(
@@ -64,44 +68,42 @@ norm_E <- function(df, args = expr_R(NULL), ..., output){
       flag = if_else(CooksD > CooksD_cf,
                      "bad",
                      "good"
-      )
+                     ),
+      flag = as.factor(flag)
       ) %>%
-    ungroup() %>%
-    eval_tidy(expr =  mod_out(output, var_names))
+    ungroup()
+
+  mod_out(df, df_dia, gr_by, args, output, vars)
   }
 
 
 #' @rdname Cameca_R
 #'
 #' @export
-CooksD <- function(df, args = expr_R(NULL), ..., output){
+CooksD <- function(df, args = expr_R(NULL), vars, ..., output){
 
   gr_by <- enquos(...)
 
-  # variable names of original dataset
-  var_names <- c(colnames(df), aug_names)
-  var_names <- var_names[!var_names %in% "ID"]
+  df_cd <- norm_E(df, args = args, vars, !!! gr_by, output = "flag") %>%
+    filter(!!args[["species"]] == !!args[["ion1"]]) %>%
+    select(-vars[["original"]])
 
-  df_cd <- norm_E(df, args = args, !!! gr_by, output = "flag")
+  df_rm <- Rm(df, args = args, vars, !!! gr_by, output = "complete") %>%
+    select(-flag)
 
-  Rm(df, args = args, !!! gr_by, output = "complete") %>%
-    select(-flag) %>%
-    left_join(df_cd, ., by = "ID") %>%
-    eval_tidy(expr =  mod_out(output, var_names))
+  df_dia <- left_join(df_rm, df_cd, by = c("ID", sapply(gr_by, as_name)))
+
+  mod_out(df, df_dia, gr_by, args, output, vars)
 }
 
 #' Normality test
 #'
 #' @export
-QQ <- function(df, args = expr_R(NULL), ..., output){
+QQ <- function(df, args = expr_R(NULL), vars, ..., output){
 
   gr_by <- enquos(...)
 
-  # variable names of original dataset
-  var_names <- c(colnames(df), aug_names)
-  var_names <- var_names[!var_names %in% "ID"]
-
-  Rm(df, args = args, !!! gr_by, output = "augment") %>%
+  df_dia <- Rm(df, args = args, vars, !!! gr_by, output = "augment") %>%
      left_join(df, ., by = "ID") %>%
      group_by(!!! gr_by) %>%
      mutate(prob_vc =  vector_probs(!! quo_updt(my_q = args[["Xt"]],
@@ -124,27 +126,31 @@ QQ <- function(df, args = expr_R(NULL), ..., output){
             hat_min =  hat_Y - 2 * hat_RQ_se,
             hat_max =  hat_Y + 2 * hat_RQ_se,
             flag = if_else(RQ > hat_min & RQ < hat_max, "good", "bad"),
+            flag = as.factor(flag),
             flag_QQ = if_else(
               (nortest::ad.test(.data$.std.resid))$p.value < 0.05,
               "Ha (non-normal)",
               "H0 (normal)"
               ),
+            flag_QQ = as.factor(flag_QQ),
 # t-test flag for mu0 (aka the conditional mean of epsilon) being zero
             flag_CM = if_else(
               (t.test(.data$.std.resid, mu = 0))$p.value  < 0.05,
               "Ha (mu0 is not zero)",
               "H0 (mu0 is zero)"
-              )
+              ),
+            flag_CM = as.factor(flag_CM)
             ) %>%
-            ungroup() %>%
-            eval_tidy(expr =  mod_out(output, var_names))
+            ungroup()
+
+  mod_out(df, df_dia, gr_by, args, output, vars)
 }
 
 
 #' Constant variance test
 #'
 #' @export
-CV <- function(df, args = expr_R(NULL), ..., output){
+CV <- function(df, args = expr_R(NULL), vars, ..., output){
 
   gr_by <- enquos(...)
 
@@ -153,9 +159,9 @@ CV <- function(df, args = expr_R(NULL), ..., output){
 
 # variable names of original dataset
   var_names <- c(colnames(df), aug_names)
-  var_names <- var_names[!var_names %in% "ID"]
+  var_names <- var_names[!var_names %in% c("ID", sapply(gr_by, as_name))]
 
-  Rm(df, args = args, !!! gr_by, output = "augment") %>%
+  df_dia <- Rm(df, args = args, vars, !!! gr_by, output = "augment") %>%
     left_join(df, ., by = "ID") %>%
     group_by(!!! gr_by) %>%
 # Hetroscadasticity test (Breusch Pagan test)(level of confidence 95%;
@@ -185,10 +191,13 @@ CV <- function(df, args = expr_R(NULL), ..., output){
                             studE < hat_max,
                           "good",
                           "bad"
-                          )
+                          ),
+           flag = as.factor(flag)
            ) %>%
-    ungroup() %>%
-    eval_tidy(expr =  mod_out(output, var_names))
+    ungroup()
+
+  mod_out(df, df_dia, gr_by, args, output, vars)
+
 }
 
 
@@ -211,7 +220,8 @@ IR <- function(df, args = expr_R(NULL), time_steps, ..., plot = FALSE){
              LB_test < 0.05,
              "Ha (dependence of residuals)",
              "H0 (independence of residuals)"
-           )
+           ),
+           flag_IR = as.factor(flag_IR)
            ) %>%
     tidyr::nest(data = .data$.std.resid) %>%
     mutate(ACF = purrr::map(data, acf_calc)) %>%
@@ -250,13 +260,13 @@ sigma_calc <- function(res) sqrt(sum((res ^ 2)) / (length(res) - 1))
 #-------------------------------------------------------------------------------
 # Not exportet helper functions
 #-------------------------------------------------------------------------------
-aug_names <- c(".cooksd",
-               ".fitted",
-               ".hat",
-               ".resid",
-               ".sigma",
-               ".std.resid"
-               )
+# aug_names <- c(".cooksd",
+#                ".fitted",
+#                ".hat",
+#                ".resid",
+#                ".sigma",
+#                ".std.resid"
+#                )
 
 # calculate autocorrelation
 acf_calc <- function(data){
@@ -271,20 +281,43 @@ acf_calc <- function(data){
 
 
 # Switch output to flag, augmentation and complete
-mod_out <- function(output, vars = NULL) {
-  switch(output,
-         flag = call2("select",
-                      expr(.),
-                      # expr(!contains("."))
-                      !!! parse_exprs(paste0("-", vars))
-                      ),
-         complete = call2( "invisible", expr(.)),
-         augment =  call2("select",
-                          expr(.),
-                          expr(starts_with(c("ID", ".")))
-         )
-  )
+mod_out <- function(df_R, df_dia, grps, args, output, vars) {
+
+  if (output == "flag"){
+    # diagnostics variables
+    new.vars <- colnames(df_dia)[!colnames(df_dia) %in% colnames(df_R)]
+    new.vars <- new.vars[!str_detect(new.vars, "\\.")]
+    # select and bind
+    flag_df <- bind_rows(select(df_dia ,.data$ID, !!!grps, !!! vars[["ion1"]], !!! new.vars),
+                         select(df_dia, .data$ID, !!!grps, !!! vars[["ion2"]], !!! new.vars)
+                         )
+    return(flag_df)
+  }
+  if (output == "augment"){
+
+    return(select(df_dia, starts_with(c("ID", "."))))
+
+  }
+
+  if (output == "complete"){
+
+    return(select(df_dia, -starts_with(c("."))))
+    }
 }
+
+#   switch(output,
+#          flag = call2("select",
+#                       expr(.),
+#                       # expr(!contains("."))
+#                       !!! parse_exprs(paste0("-", vars))
+#                       ),
+#          complete = call2( "invisible", expr(.)),
+#          augment =  call2("select",
+#                           expr(.),
+#                           expr(starts_with(c("ID", ".")))
+#          )
+#   )
+# }
 
 
 # use the formula i - 0.5/ in, for i = 1,..,n
@@ -303,4 +336,5 @@ hat_Y_se <- function(sigma, hat_Xi){
 }
 
 # Cook's D cutt-off value calculator
-cooksD_cut_calc  <- function(n) 4 / (n - 2)
+cooksD_cut_calc  <- function(n) {4 / (n - 2)}
+

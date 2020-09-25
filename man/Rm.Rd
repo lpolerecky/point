@@ -2,10 +2,10 @@
 % Please edit documentation in R/CooksD.R
 \name{Rm}
 \alias{Rm}
-\title{Ideal linear R Model}
+\title{Ideal linear R model}
 \usage{
-Rm(df, args = expr_R(NULL), ..., output)
+Rm(df, args = expr_R(NULL), vars, ..., output)
 }
 \description{
-Ideal linear R Model
+Ideal linear R model
 }

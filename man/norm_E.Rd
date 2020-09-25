@@ -4,7 +4,7 @@
 \alias{norm_E}
 \title{Normalization of residuals}
 \usage{
-norm_E(df, args = expr_R(NULL), ..., output)
+norm_E(df, args = expr_R(NULL), vars, ..., output)
 }
 \description{
 Normalization of residuals

@@ -2,10 +2,10 @@
 % Please edit documentation in R/diagnostics_IC.R
 \name{reduce_diag}
 \alias{reduce_diag}
-\title{Reduce diagnostis}
+\title{Reduce diagnostics}
 \usage{
-reduce_diag(ls, type = "df", args = expr_R(NULL), ..., output = "sum")
+reduce_diag(ls, type = "df", args = expr_R(NULL), ...)
 }
 \description{
-Reduce diagnostis
+Reduce diagnostics
 }

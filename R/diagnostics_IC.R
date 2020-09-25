@@ -49,24 +49,33 @@
 #'
 #' # Cook's D style diagnostic-augmentation of ion count data for
 #' # isotope ratios; 3 repeats
-#' diag_R(sim_IC_extremes,
-#'        method = "CooksD",
-#'        args = expr_R_stat,
-#'        reps = 3,
-#'        simulation,
-#'        trend,
-#'        isoscale = "VPDB"
-#'        )
+#' ls.dia <- diag_R(sim_IC_extremes,
+#'                  method = "CooksD",
+#'                  args = expr_R_stat,
+#'                  reps = 2,
+#'                  simulation,
+#'                  trend,
+#'                  output = "complete",
+#'                  plot = FALSE
+#'                  )
 diag_R <- function(df,
                    method = "Cameca",
                    args = expr_R(NULL),
                    reps = 1,
                    ...,
+                   output = "flag",
                    plot = TRUE,
                    plot_type = "interactive",
                    iso = TRUE,
                    isoscale = NULL
                    ){
+
+  # Check if output is consistent with plot call
+  if (output == "flag" & plot == TRUE){
+      stop("argument plot = TRUE requires argument output to be set to complete",
+           call. = FALSE
+           )
+    }
 
   gr_by <- enquos(...)
 
@@ -103,12 +112,13 @@ diag_R <- function(df,
     purrr::accumulate(rerun_diag_R,
                       method = method,
                       args = args,
-                      !!! gr_by
+                      !!! gr_by,
+                      output = output
                       )
   if (plot) {
 
     ls.tb %T>%
-      {print(plot_diag_R(df = .,
+      {print(plot_diag_R(ls_df = .,
                          args = args,
                          !!! gr_by,
                          plot_title = method,
@@ -130,34 +140,42 @@ diag_R <- function(df,
 #' @export
 rerun_diag_R <- function(out,
                          input,
-                         method = "Cameca",
+                         method,
                          args = expr_R(NULL),
-                         ...
+                         ...,
+                         output
                          ){
 
   gr_by <- enquos(...)
 
-  # variables to be saved
-  results_vars <- set_names(colnames(out$df))
-  deselect_vars <- results_vars  %in% append(sapply(gr_by, as_name), "ID")
-
-  variables <- parse_exprs(results_vars[!deselect_vars])
+  # variables
+  ls.vars <- var_fun(out$df, gr_by, args = args)
 
   # if called this way then output is set fixed (more flexible use with diag_R_exec)
   out <- diag_R_exec(out$df,
                      method = method,
                      args = args,
                      !!! gr_by,
-                     output = "flag"
+                     output = output
                      )
 
   # save augmented dataframe for next cycle
-  df.aug <- filter(out, flag == "good") %>%
-    select(.data$ID, !!!gr_by, !!!variables)
+  df.aug <- filter(out, flag == "good")
+
+  if (output == "flag") {
+    df.aug <- select(out, .data$ID, !!!gr_by, !!! ls.vars[["original"]])
+  }
+  if (output == "complete") {
+    df.aug <- bind_rows(select(df.aug ,.data$ID, !!!gr_by, !!! ls.vars[["ion1"]]),
+                        select(df.aug, .data$ID, !!!gr_by, !!! ls.vars[["ion2"]])
+                        )
+  }
+
+  #if(output == "flag") df.aug <- select(df.aug, .data$ID, !!!gr_by, !!!var_names)
 
   # save results; flag ad statistics
-  results <- select(out, -c(!!!variables))
-
+  if (output == "flag") results <- select(out, -c(!!! ls.vars[["original"]]))
+  if (output == "complete") results <- out
   out <- lst(df = df.aug, results = results)
 
   return(out)
@@ -166,7 +184,7 @@ rerun_diag_R <- function(out,
 
 #' @export
 diag_R_exec <- function(df,
-                        method = "Cameca",
+                        method,
                         args = expr_R(NULL),
                         ...,
                         output
@@ -174,31 +192,35 @@ diag_R_exec <- function(df,
 
   gr_by <- enquos(...)
 
+  # original variable names
+  ls.vars <- var_fun(df, gr_by, args)
+
   diag_vc <- c("Cameca", "CooksD", "Rm", "CV", "QQ","norm_E")
   diag_method <- purrr::map(diag_vc,
                             call2,
                             expr(.),
                             expr(args),
+                            expr(ls.vars),
                             !!!gr_by,
                             output = expr(output)
                             ) %>%
     set_names(nm = diag_vc)
 
 # Descriptive an predictive statistics for ion ratios
-    tb.aug <- stat_R(df,
-                     Xt = !! args[["Xt"]],
-                     N =!! args[["N"]],
-                     species = !! args[["species"]],
-                     ion1 = as_name(args[["ion1"]]),
-                     ion2 = as_name(args[["ion2"]]),
-                     !!! gr_by,
-                     output = "complete"
-                     ) %>%
-               eval_tidy(expr = diag_method[[method]])
+   stat_R(df,
+          Xt = !! args[["Xt"]],
+          N =!! args[["N"]],
+          species = !! args[["species"]],
+          ion1 = as_name(args[["ion1"]]),
+          ion2 = as_name(args[["ion2"]]),
+          !!! gr_by,
+          output = "complete"
+          ) %>%
+  eval_tidy(expr = diag_method[[method]])
 
 # Datafile with flag values associated to diagnostics
-  if (output == "flag") return(left_join(df, tb.aug, by = "ID"))
-  if (output == "complete") return(tb.aug)
+  # if (output == "flag") return(left_join(df, tb.aug, by = "ID"))
+  # if (output == "complete") return(tb.aug)
 
   }
 
@@ -222,158 +244,124 @@ diag_R_exec <- function(df,
 #'
 #' @export
 #' @examples
-#'
-#' # estimate strength of ionization trend as variation in major ion in per mille
-#' tb.var12C <- predict_var(tb.pr, Xt.pr, N.pr, t.rw, species.nm, "12C", file.nm)
-#'
 #' # evaluation of diagnostics
-#' tb.eval <- eval_diag(ls.diag,
+#' tb.eval <- eval_diag(ls.dia,
 #'                      args = expr_R_stat,
-#'                      tb.var12C,
-#'                      RS_Xt.pr.12C,
-#'                      n_R_Xt.pr,
-#'                      file.nm,
-#'                      bl.mt,
-#'                      output = "sum"
+#'                      flag = flag,
+#'                      simulation,
+#'                      trend
 #'                      )
-eval_diag <- function(ls_df,
-                      args,
-                      df2,
-                      RSXt,
-                      n,
-                      ...,
-                      output = "sum"
-                      ){
+eval_diag <- function(ls_df, args, flag, ..., output = "sum"){
 
-  RSR <- quo_updt(args[["Xt"]], x = "RS_R")
-  RSXt <- enquo(RSXt)
-  n <- enquo(n)
   gr_by <- enquos(...)
+  flag <- enquo(flag)
 
-# connecting the
-  gr_vc <- sapply(gr_by, as_name)
-# connecting the single ion variable
-  uni_gr <- gr_vc[gr_vc %in% colnames(df2)]
+  # heavy isotope
+  Xt1 <- quo_updt(args[["Xt"]], as_name(args[["ion1"]]))
+  # light isotope
+  Xt2 <- quo_updt(args[["Xt"]], as_name(args[["ion2"]]))
 
-  df  <- reduce_diag(ls_df,
-                     type = "df",
-                     args = args,
-                     !!! gr_by
-                     )
+  # Chi squared light isotope
+  Chi <- quo_updt(Xt2, x = "chi2")
 
-  ls.trans <- lst(
-    quo(!! n),
-    quo(c(diff(!! n, 1), NA)),
-    quo(c(diff(!! RSR, 1), NA)),
-    quo(diff_RS ^ 2 * (diff_n - 1)),
-    quo((!! RSR) ^ 2 * (!! n - 1)),
-    quo(SSD / SSA),
-    quo(n2 * nz)
+# Combine original/augmented datasets and results of diagnostics
+  df <- inner_join(
+    reduce_diag(ls_df, "df", args, !!!gr_by),
+    reduce_diag(ls_df, "results",  args, !!!gr_by),
+    by = c("execution", "ID", sapply(gr_by, as_name))
     )
 
+# Check number of levels of bad flag is more than 10
+  df <-  df %>%
+    group_by(execution, !!!gr_by, !!flag) %>%
+    tally() %>%
+    filter(!!flag == "bad" & n < 10) %>%
+    select(.data$execution, !!!gr_by) %>%
+    ungroup() %>%
+    anti_join(df, ., by = c("execution", sapply(gr_by, as_name)))
 
+# Check for ionization trend
+  if (any(between(pull(df, !! Chi), 0.9, 1.1))) {
 
-# Names of parameters for diagnostic evaluation
-  ls.names <- c("nz", "diff_n", "diff_RS", "SSD", "SSA", "n2", "chi_n2")
-
-# Set names
-  ls.trans <- set_names(ls.trans, nm = ls.names)
-
-
-# Switch output complete dataset, stats or summary stats
-  mod_cal <- function(type) {
-    switch(type,
-           complete = call2( "mutate", expr(.), !!! ls.trans),
-           sum = call2( "transmute",  expr(.), !!! ls.trans)
-    )
-    }
-
-  ls.preserve <-lst(
-    quo(sum(n2, na.rm = TRUE)),
-# check this it can be sum, only works for eta (fraction)!!!!
-    quo(sum(chi_n2, na.rm = TRUE))
-    )
-
-# Names to be preserved
-  ls.names2 <- c("n2", "chi_n2")
-
-# Set names
-  ls.preserve <- set_names(ls.preserve, nm = ls.names2)
-
-# Switch to determine what extend of the data is preserved
-  filter_cal <- function(type) {
-    switch(type,
-           complete = call2("select",
-                            expr(.),
-                            expr(-c(ls.names[!ls.names %in% ls.names2]))
-                            ),
-           sum = call2("summarise",
-                       expr(.),
-                       !!! ls.preserve
-                       )
-           )
-    }
-
-
-# Evaluate expressions and calls
-    df_eval <- df %>%
-      group_by(!!! gr_by) %>%
-      arrange(desc(execution)) %>%
-      eval_tidy(expr = mod_cal(output)) %>%
-      eval_tidy(expr = filter_cal(output))
-
-    if (output == "sum") {
-      df <- lst(filter(df, execution == 1), df_eval, df2) %>%
-        purrr::reduce2(lst(gr_vc, uni_gr), left_join) %>%
-        mutate(crit_val = purrr::map_dbl(!! RSXt, crit_size),
-               flag = if_else(.data$chi_n2 > crit_val, "variable", "non-variable")
-               )
-      return(df)
-    }
-
-    if (output == "complete") {
-      df <- left_join(df_eval, df2, by = uni_gr) %>%
-        mutate(crit_val = purrr::map_dbl(!! RSXt, crit_size),
-               flag = if_else(.data$chi_n2 > crit_val, "variable", "non-variable")
-               )
-      return(df)
-    }
-
+    warning("Linear ionization trend absent in some or all analyses; F value might be unreliable.")
 
   }
 
-#' Reduce diagnostis
+# Evaluate expressions and calls
+  df <- stand_var(df, Xt1, quo(hat_Y), flag, !!! gr_by, .data$execution) %>%
+# create zero (constrained) model flag and updated model
+      #group_by(!!! gr_by, .data$execution) %>%
+      tidyr::nest(data = -c(!!! gr_by, .data$execution)) %>%
+      mutate(
+        mod.1 = purrr::map(data, ~lm_form(.x,
+                                          quo(std.var),
+                                          Xt2,
+                                          flag = flag,
+                                          type = "Rm"
+                                          )
+                           ),
+        mod.0 = purrr::map(data, ~lm_form(.x,
+                                          quo(std.var),
+                                          Xt2,
+                                          type = "Rm"
+                                          )
+                           ),
+        # mod.1 = purrr::map(data, ~lm_form(.x,
+        #                                   Xt1,
+        #                                   Xt2,
+        #                                   flag = flag,
+        #                                   type = "LME"
+        #                                   )
+        #                    ),
+        # sum = purrr::map2(mod.1, mod.0, ~{anova(.x, .y)}),
+        # L.ratio = purrr::map_dbl(sum, ~{(pull(.x, L.Ratio))[2]}),
+        # p.val = purrr::map_dbl(sum, ~{(pull(.x, `p-value`))[2]}))
+
+        sum = purrr::map2(mod.0,
+                          mod.1,
+                          ~{broom::tidy(anova(.x, .y))}
+                          ),
+        F.val = purrr::map_dbl(sum, ~{(pull(.x, statistic))[2]}),
+        p.val = purrr::map_dbl(sum, ~{(pull(.x, p.value))[2]})
+           ) #%>%
+      # group_by(!!! gr_by) %>%
+      # arrange(desc(execution)) %>%
+      # mutate(F.diff = c(diff(F.val), NA)) %>%
+      #ungroup()
+
+    if (output == "sum") return(select(df,  -c(data, mod.0, mod.1, sum)))
+    if (output == "complete") {
+      return(select(df, -c(mod.0, mod.1, sum)) %>%
+               tidyr::unnest(cols = c(data))
+             )
+   }
+  }
+
+#' Reduce diagnostics
 #'
 #' @export
-reduce_diag <- function(ls, type = "df", args = expr_R(NULL), ..., output = "sum"){
+reduce_diag <- function(ls, type = "df", args = expr_R(NULL), ...){
 
-  gr_by <- quos(...)
+  gr_by <- enquos(...)
 
   type_reduction <- function(type){
     switch(type,
-           results = call2("bind_rows", expr(.), .id = "execution"),
-           df = call2("map_dfr",
+           results = call2("mutate",
+                           expr(.),
+                           execution = expr(as.numeric(execution) -1)
+                           ),
+           df = call2("mutate",
                       expr(.),
-                      expr(~stat_R(df = .x,
-                                   Xt = !! args[["Xt"]],
-                                   N = !! args[["N"]],
-                                   species = !! args[["species"]],
-                                   ion1 = as_name(args[["ion1"]]),
-                                   ion2 = as_name(args[["ion2"]]),
-                                   !!! gr_by,
-                                   output = output
+                      execution = expr(as.numeric(execution))
                       )
-                      ),
-                      .id = "execution",
-                      .ns = "purrr"
-           )
-    )
+          )
   }
 
   # Reduce the results to a single dataframe
   ls %>%
     purrr::transpose() %>%
     purrr::pluck(type) %>%
+    bind_rows(.id = "execution") %>%
     eval_tidy(expr = type_reduction(type))
 
 }
@@ -430,46 +418,78 @@ crit_size <- function(RS_Xt.ion2){
 }
 
 
+AIC_diff <- function(mod.1, mod.0){
 
-# new formula
-#
-# hat_D <- function(.df, .Xt, .N, .species, .ion1, .ion2, ...){
-#
-#   # Update expressions (heavy isotope)
-#   Xt1 <- quo_updt(Xt, ion1) # count rate
-#   Yt1 <- quo_updt(N, ion1) # counts
-#
-#   # Update expressions (light isotope)
-#   Xt2 <- quo_updt(Xt, ion2) # count rate
-#   Yt2 <- quo_updt(N, ion2) # counts
-#
-#   # Update expressions (light isotope)
-#
-#   # predicted standard error of the single ion and isotope count rates
-#   args <- lst(
-#     # number of measurements
-#     quo(n()),
-#     # sum of ion counts (important for external reproducibility calcs)
-#     quo(sum(!! N)),
-#     # predicted SD count rate
-#     quo(sqrt(sum(!!N)))
-#         )
-#
-#
-#   # The statistic names (depend on user-supplied expression)
-#   ls.names <-paste(c("n", "Ntot", "hat_S"), as_name(Xt), sep = "_")
-#   # Set statistic names
-#   args <- set_names(args, nm = ls.names)
-#
-#   # Evaluate expressions
-#   df <- df %>%
-#     group_by(!!! gr_by) %>%
-#     eval_tidy(expr = mod_cal(output), data = .) %>%
-#     ungroup()
-#
-#
-# }
-#
-#
-#
-#
+(anova(mod.1, mod.0))$AIC[1] -(anova(mod.1, mod.0))$AIC[2]
+
+
+}
+
+
+# standardizing and re-center independent variable for fit to LM
+stand_var <- function(df, Xt1, hat_Y, flag, ...){
+
+  gr_by <- enquos(...)
+
+  df %>%
+    group_by(!!! gr_by, !! flag) %>%
+    mutate(range = if_else(!!Xt1 >= !!hat_Y, "upper", "lower")) %>%
+    group_by(!!! gr_by, !! flag, .data$range) %>%
+    mutate(max.range = if_else(.data$range == "upper", max(!!Xt1 - !!hat_Y) ,
+                               min(!!Xt1 - !!hat_Y)
+                               ),
+           min.range = if_else(.data$range == "upper", min(!!Xt1 - !!hat_Y) ,
+                               max(!!Xt1 - !!hat_Y)
+                               ),
+           range.val = abs(.data$max.range - .data$min.range)
+           ) %>%
+    mutate(std.var = if_else(.data$range == "upper",
+                             abs((!! Xt1 - !! hat_Y) -
+                                   .data$min.range) / .data$range.val,
+                             -abs((!! Xt1 - !! hat_Y) -
+                                    .data$min.range) / .data$range.val
+                             )
+           * .data$range.val + !! hat_Y
+           ) %>%
+    ungroup() %>%
+    select(-c(.data$max.range, .data$min.range, .data$range, .data$range.val))
+}
+
+
+# function to retrieve variable names of original or stats datasets
+var_fun <- function(df, grps, args){
+
+  vars <- colnames(df)
+  # variables to be discarded
+  pat_disc <- purrr::reduce(append(sapply(grps, as_name), "ID"),
+                            str_c,
+                            sep = "|"
+                            )
+  #original col names
+  var_names <- vars %>%
+    set_names() %>%
+    purrr::discard(~str_detect(.x,  pat_disc))
+
+  # variables to be saved
+
+    wide_vars <- purrr::map(c(as_name(args[["ion1"]]),
+                              as_name(args[["ion2"]])
+                              ),
+                              ~paste(vars, .x, sep = ".")
+                            ) %>%
+    purrr::reduce(append) %>%
+    purrr::discard(~str_detect(.x, pat_disc))
+
+    wide_vars.ion1 <- wide_vars[str_detect(wide_vars,
+                                           as_name(args[["ion1"]])
+                                           )
+                                ] %>%
+      set_names(nm = var_names)
+    wide_vars.ion2 <- wide_vars[str_detect(wide_vars,
+                                           as_name(args[["ion2"]])
+                                           )
+                                ] %>%
+      set_names(nm = var_names)
+
+ lst(original = var_names, ion1 = wide_vars.ion1, ion2 = wide_vars.ion2)
+}

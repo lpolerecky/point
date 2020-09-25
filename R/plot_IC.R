@@ -42,7 +42,7 @@
 #' # plotting Cook's D diagnostics
 #' plot_diag_R(tb.aug, args = expr_R_stat, file.nm)
 #'
-plot_diag_R <- function(df,
+plot_diag_R <- function(ls_df,
                         args = expr_R(NULL),
                         ...,
                         plot_title,
@@ -54,7 +54,7 @@ plot_diag_R <- function(df,
 
   gr_by <- enquos(...)
 
-  reps <- seq_along(df)
+  reps <- seq_along(ls_df)
   df.reps <- reps[min(reps):max(reps)-1]
   results.reps <- reps[-1]
 
@@ -63,8 +63,11 @@ plot_diag_R <- function(df,
 # light isotope
   Xt2 <- quo_updt(args[["Xt"]], as_name(args[["ion2"]]))
 
+# iso stats dataset
+  df.R <- reduce_diag(ls_df, "results", args, !!!gr_by)
+
 # labels for point statistics
-  stat_lab <- reduce_diag(df, type = "df", args = args, !!! gr_by) %>%
+  stat_lab <- df.R %>%
     group_by(execution) %>%
     tidyr::nest() %>%
     mutate(labels = purrr::map2(
@@ -82,31 +85,15 @@ plot_diag_R <- function(df,
            ) %>%
     tidyr::unnest(cols = labels) %>%
     ungroup() %>%
-    select(-c(data)) %>%
-    mutate(execution = if_else(
-      trans == "augmented",
-      as.character(as.numeric(execution) - 1),
-      execution
-                               )
-           )
+    select(-c(data))
 
-# strip grouping
-  results <- reduce_diag(df[results.reps],
-                         type = "results",
-                         args = args,
-                         !!! gr_by
-                         ) %>%
-    select(-c(!!! gr_by)) %>%
-    mutate(execution = as.character(as.numeric(execution) - 1))
 
-# data with diagnostics
-  df.def <- reduce_diag(df[df.reps],
-                        type = "df",
-                        args = args,
-                        !!! gr_by,
-                        output = "complete"
-                        ) %>%
-    left_join(., results, by = c("execution", "ID"))
+  # Combine original/augmented datasets and results of diagnostics
+  df.def <- inner_join(
+    reduce_diag(ls_df, "df", args, !!!gr_by),
+    df.R,
+    by = c("execution", "ID", sapply(gr_by, as_name))
+  )
 
   ion1 <- as_name(args[["ion1"]])
   ion2 <- as_name(args[["ion2"]])
@@ -157,8 +144,6 @@ plot_diag_R <- function(df,
     plot_args[["y"]] <- quo(studE)
     plot_args[["x"]] <- quo(fitted)
   }
-
-
 
 # control with environment
   data_env <- env(data = df.def)
@@ -362,24 +347,28 @@ gg_default <- function(df,
     } else {
       p <-  ggplot(data = df, aes(y = !!y, x = !!x, color = flag))
     }
+  if (plot_type == "interactive") {
+    p <- p + geom_point(alpha = 0.5)
+  } else {
+    p <- p + geom_hex(alpha = 0.5)
+    # geom_point(alpha = 0.05)
+  }
+
 
   if (all(c("hat_min", "hat_max", "hat_Y") %in% colnames(df)) & plot_type == "static"){
     p <- p + geom_ribbon(aes(ymin = hat_min,
                              ymax = hat_max
                             ),
-                         fill = "green",
-                         color = "transparent",
-                         alpha = 0.1
+                         color = "black",
+                         fill = "transparent",
+                         #alpha = 0.1
+                         linetype = 3,
+                         size = 0.5
                          )
     }
 
-    if (plot_type == "interactive") {
-    p <- p + geom_point(alpha = 0.5)
-    } else {
-      p <- p + geom_point(alpha = 0.05)
-    }
 
-    if (all(c("hat_min", "hat_max", "hat_Y") %in% colnames(df)) & plot_type == "static"){
+  if (all(c("hat_min", "hat_max", "hat_Y") %in% colnames(df)) & plot_type == "static"){
 
     p <- p + geom_line(aes(y = hat_Y),
                        color = "black",

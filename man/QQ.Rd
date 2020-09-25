@@ -4,7 +4,7 @@
 \alias{QQ}
 \title{Normality test}
 \usage{
-QQ(df, args = expr_R(NULL), ..., output)
+QQ(df, args = expr_R(NULL), vars, ..., output)
 }
 \description{
 Normality test

@@ -435,22 +435,31 @@ QSA_test <- function(.df, .Xt, .N, .species, .ion1, .ion2, ..., .plot = TRUE){
 
 # linear model call
 
-lm_form <- function(data, arg1, arg2, type = "OLS") {
+lm_form <- function(data, arg1, arg2, flag = NULL, type = "OLS") {
 
-  call_lm <- new_formula(quo_get_expr(arg1), quo_get_expr(arg2))
-  if (type == "Rm") call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste0(as_name(arg2), "-1")))
+  # if (type == "OLS" | type == "LME") call_lm <- new_formula(quo_get_expr(arg1), quo_get_expr(arg2))
+  if (type == "Rm" ) call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste0(as_name(arg2), "-1")))
+  if (type == "Rm"  & !is.null(flag)) call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste0(paste(as_name(arg2), as_name(flag), sep = "*"), "-1")))
+  if (type == "OLS" | type == "LME") call_lm <- new_formula(quo_get_expr(arg1), quo_get_expr(arg2))
+  #if (type == "LME") call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste(as_name(arg2), paste0("(", paste(as_name(arg2), as_name(flag), sep = "|"),")"), sep = "+")))
 
-  wght <- 1 / pull(data, !! arg2)
+  if (!is.null(flag)) call_ran <- new_formula(NULL, parse_expr(paste(as_name(arg2), as_name(flag), sep = "|")))
+
+  wght <- pull(data, !! arg2)
+  call_wght <- new_formula(NULL, parse_expr(paste0("I(", paste(1, as_name(arg2), sep = "/"), ")")))
 
 # switch between OLS and ratio method type linear model
   lm_method <- function(type) {
     switch(type,
            OLS = eval(call2("lm", call_lm, data = expr(data))),
-           Rm = eval(call2("lm", call_lm, data = expr(data), weights = expr(wght)))
+           Rm = eval(call2("lm", call_lm, data = expr(data), weights = expr(1 / wght))),
+           LME = eval(call2("lme", call_lm, random = call_ran, data = expr(data))) #, control = nlme::lmeControl(opt = "optim"), weights = call_wght,  .ns = "nlme")) #control = nlme::lmeControl(opt = "optim"),
+           #LME = eval(call2("lmer", call_lm, data = expr(data), .ns = "lme4"))
            )
   }
 
-  lm_method(type)
+ lm_method(type)
+
 
 }
 

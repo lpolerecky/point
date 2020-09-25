@@ -10,6 +10,7 @@ diag_R(
   args = expr_R(NULL),
   reps = 1,
   ...,
+  output = "flag",
   plot = TRUE,
   plot_type = "interactive",
   iso = TRUE,
@@ -76,12 +77,13 @@ expr_R_stat <- expr_R(Xt = "Xt.sim",
 
 # Cook's D style diagnostic-augmentation of ion count data for
 # isotope ratios; 3 repeats
-diag_R(sim_IC_extremes,
-       method = "CooksD",
-       args = expr_R_stat,
-       reps = 3,
-       simulation,
-       trend,
-       isoscale = "VPDB"
-       )
+ls.dia <- diag_R(sim_IC_extremes,
+                 method = "CooksD",
+                 args = expr_R_stat,
+                 reps = 2,
+                 simulation,
+                 trend,
+                 output = "complete",
+                 plot = FALSE
+                 )
 }

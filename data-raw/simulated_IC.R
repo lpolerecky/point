@@ -1,22 +1,25 @@
 ## code to prepare `simulated_IC` dataset
 
 # repetition
-reps <- 100
+reps <- 10
 
 # Types of R variation
 var_R <- c("ideal", "symmetric", "asymmetric")
 
-# Varying linear trends in the ionization efficieny
-var_T <- seq(0, 500, length.out = 11)
+# Varying linear trends in the ionization efficiency
+var_T <- seq(0, 500, length.out = 4)
+
+# # varying isotope offset
+var_I <- c(-5,-25,-45,-65)
 
 # Seeds for number generation
-tot_length <- length(var_T) * length(var_R)
+tot_length <- length(var_T) * length(var_R) * length(var_I)
 var_seed <- 1:tot_length
 
 # Cross all possible parameter combinations
-sim_R.ext <- tidyr::crossing(sys = var_T, type = var_R) %>%
+sim_R.ext <- tidyr::crossing(sys = var_T, type = var_R, offsetR = var_I) %>%
   mutate(seed = var_seed) %>%
-  transmute(params = purrr::pmap(lst(sys, type, seed), lst))
+  transmute(params = purrr::pmap(lst(sys, type, seed, offsetR), lst))
 
 
 sim_IC <- purrr::map2_dfr(rep("sim_R", tot_length),
@@ -26,8 +29,7 @@ sim_IC <- purrr::map2_dfr(rep("sim_R", tot_length),
                                                   reps = reps,
                                                   ion1 = "13C",
                                                   ion2 = "12C",
-                                                  baseR = 5,
-                                                  offsetR = -55
+                                                  baseR = 5
                                                   )
                           )
 

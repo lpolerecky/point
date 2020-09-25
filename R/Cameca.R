@@ -50,23 +50,23 @@
 #'                   bl.mt,
 #'                   output = "flag"
 #'                   )
-Cameca <- function(df, args = expr_R(NULL), ..., output){
+Cameca <- function(df, args = expr_R(NULL), vars, ..., output){
 
   gr_by <- enquos(...)
 
   # Switch output complete dataset, stats or summary stats
-  mod_out <- function(output) {
-    switch(output,
-           flag = call2( "select", expr(.),
-                         expr(.data$ID),
-                         expr(.data$lower),
-                         expr(.data$upper),
-                         expr(.data$flag)
-           ),
-           complete = call2( "invisible", expr(.)))
-  }
+  # mod_out <- function(output) {
+  #   switch(output,
+  #          flag = call2( "select", expr(.),
+  #                        expr(.data$ID),
+  #                        expr(.data$lower),
+  #                        expr(.data$upper),
+  #                        expr(.data$flag)
+  #          ),
+  #          complete = call2( "invisible", expr(.)))
+  # }
 
-  df %>%
+  df_dia <- df %>%
     group_by(!!! gr_by) %>%
     mutate(lower = !! quo_updt(my_q = args[["Xt"]],
                                x = "M_R") - 2 *
@@ -76,14 +76,21 @@ Cameca <- function(df, args = expr_R(NULL), ..., output){
                                x = "M_R") + 2 *
              !! quo_updt(my_q = args[["Xt"]],
                          x = "S_R"),
+           hat_Y =  !! quo_updt(my_q = args[["Xt"]],
+                                x = "M_R") *
+             !! quo_updt(my_q = args[["Xt"]],
+                         txt = as_name(args[["ion2"]])
+                         ),
            flag = if_else(
              between(!! quo_updt(my_q = args[["Xt"]], x = "R"),
                      unique(.data$lower),  # mean - 2SD
                      unique(.data$upper)), # mean + 2SD
              "good",
              "bad"
-           )
+           ),
+           flag = as.factor(flag)
     ) %>%
-    ungroup() %>%
-    eval_tidy(expr =  mod_out(output))
+    ungroup()
+
+  mod_out(df, df_dia, gr_by, args, output, vars)
 }

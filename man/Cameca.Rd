@@ -32,8 +32,8 @@ augmentation of the original dataset.
 \code{CooksD} regression diagnostics based on Cook's D
 }
 \details{
-These functions perform a specific set of diagnostics to term anomolous
-values inr raw ion count data of an isotope pair. The wrapper function
+These functions perform a specific set of diagnostics to term anomalous
+values in raw ion count data of an isotope pair. The wrapper function
 \code{Diag_R} is more convenient as it defines all the ion- and isotope-wise
 statistics required for the diagnostics.
 }
