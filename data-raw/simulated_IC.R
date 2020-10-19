@@ -7,10 +7,10 @@ reps <- 10
 var_R <- c("ideal", "symmetric", "asymmetric")
 
 # Varying linear trends in the ionization efficiency
-var_T <- seq(0, 500, length.out = 4)
+var_T <- seq(200, 500, length.out = 3)
 
 # # varying isotope offset
-var_I <- c(-5,-25,-45,-65)
+var_I <- c(-5, -15, -25)
 
 # Seeds for number generation
 tot_length <- length(var_T) * length(var_R) * length(var_I)

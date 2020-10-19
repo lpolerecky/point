@@ -251,10 +251,11 @@ diag_R_exec <- function(df,
 #'                      simulation,
 #'                      trend
 #'                      )
-eval_diag <- function(ls_df, args, flag, ..., output = "sum"){
+eval_diag <- function(ls_df, args, flag, ..., nest = FALSE, group = NULL, output = "sum"){
 
-  gr_by <- enquos(...)
+  gr_by <- enquos(..., .named = TRUE)
   flag <- enquo(flag)
+  group <- enquo(group)
 
   # heavy isotope
   Xt1 <- quo_updt(args[["Xt"]], as_name(args[["ion1"]]))
@@ -264,12 +265,17 @@ eval_diag <- function(ls_df, args, flag, ..., output = "sum"){
   # Chi squared light isotope
   Chi <- quo_updt(Xt2, x = "chi2")
 
+  # # analysis quo
+  # analysis <- quo(analysis)
+
 # Combine original/augmented datasets and results of diagnostics
   df <- inner_join(
     reduce_diag(ls_df, "df", args, !!!gr_by),
     reduce_diag(ls_df, "results",  args, !!!gr_by),
     by = c("execution", "ID", sapply(gr_by, as_name))
-    )
+    ) %>%
+# Create analysis label
+    mutate(analysis = "analysis")
 
 # Check number of levels of bad flag is more than 10
   df <-  df %>%
@@ -282,59 +288,76 @@ eval_diag <- function(ls_df, args, flag, ..., output = "sum"){
 
 # Check for ionization trend
   if (any(between(pull(df, !! Chi), 0.9, 1.1))) {
-
     warning("Linear ionization trend absent in some or all analyses; F value might be unreliable.")
+  }
+
+# recenter along flag variable
+  df <- stand_var(df, Xt1, quo(hat_Y), flag, !!! gr_by, .data$execution)
+
+# create zero (constrained) model flag and updated model
+  df.lm <- df %>%
+    tidyr::nest(data = -c(!!! gr_by, .data$execution)) %>%
+    mutate(
+        lm.1 = purrr::map(data,
+                          ~lm_form(.x,
+                                   quo(std.var),
+                                   Xt2,
+                                   flag = flag,
+                                   type = "Rm"
+                                   )
+                           ),
+        lm.0 = purrr::map(data,
+                          ~lm_form(.x,
+                                   quo(std.var),
+                                   Xt2,
+                                   type = "Rm"
+                                   )
+                           ),
+        sum.lm = purrr::map2(lm.0, lm.1, ~{broom::tidy(anova(.x, .y))}),
+        F.val = purrr::map_dbl(sum.lm, ~{(pull(.x, statistic))[2]}),
+        p.F = purrr::map_dbl(sum.lm, ~{(pull(.x, p.value))[2]})
+        )
+
+
+# mixed model
+  if (nest) {
+    df.mlm <- df %>%
+      tidyr::nest(data = -c(!!!gr_by[!sapply(gr_by, as_name) %in% as_name(group)])) %>%
+      mutate(
+        mlm.0 = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, type = "Rm"),
+        mlm.inter = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, flag = NULL, vorce = "inter", nest = group, type = "LME"),
+        mlm.intra = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, flag = NULL, vorce = "intra", nest = group, type = "LME"),
+        hat_RS_R.inter = purrr::map_dbl(mlm.inter, purrr::possibly(mlm_RS, NA_real_), arg = Xt2),
+        hat_RS_R_se.inter = purrr::map_dbl(mlm.inter, purrr::possibly(mlm_RS, NA_real_), arg = Xt2, output = "se"),
+        hat_RS_R.intra = purrr::map_dbl(mlm.intra, purrr::possibly(mlm_RS, NA_real_), arg = Xt2),
+        hat_RS_R_se.intra = purrr::map_dbl(mlm.intra, purrr::possibly(mlm_RS, NA_real_), arg = Xt2, output = "se"),
+        # # # sum.mlm = if_else(is.na(mlm.0) | is.na(mlm.1), NA_real_, purrr::map2(mlm.0, mlm.1, ~)),
+        # # # L.ratio  = if_else(is.na(mlm.0) | is.na(mlm.1), NA_real_, purrr::map2_dbl(mlm.0, mlm.1, ~{(pull(anova(.x, .y), L.Ratio))[2]})),
+        p.inter = purrr::map2_dbl(mlm.inter, mlm.0, purrr::possibly(function(x, y){ (pull(anova(x, y), `p-value`))[2] }, NA_real_)),
+        p.intra = purrr::map2_dbl(mlm.intra, mlm.0, purrr::possibly(function(x, y){ (pull(anova(x, y), `p-value`))[2] }, NA_real_))
+            ) %>%
+      select(-c(data, mlm.inter, mlm.intra, mlm.0))
+
+# output lm and mlm combined
+    if (length(gr_by) == 1) {
+      df <- output_lm(df.lm, output)
+      df <- bind_cols(df, select(expand_grid(df.mlm, rep = 1:nrow(df)), -rep))
+      if (output == "sum")  return(df)
+      if (output == "complete")  return(tidyr::unnest(df, data))
+    } else {
+      df <- left_join(df.lm, df.mlm, by = sapply(gr_by[!sapply(gr_by, rlang::as_name) %in% rlang::as_name(group)], as_name)) %>%
+        output_lm(.,output)
+      if (output == "sum")  return(df)
+      if (output == "complete")  return(tidyr::unnest(df, data))
+    }
 
   }
 
-# Evaluate expressions and calls
-  df <- stand_var(df, Xt1, quo(hat_Y), flag, !!! gr_by, .data$execution) %>%
-# create zero (constrained) model flag and updated model
-      #group_by(!!! gr_by, .data$execution) %>%
-      tidyr::nest(data = -c(!!! gr_by, .data$execution)) %>%
-      mutate(
-        mod.1 = purrr::map(data, ~lm_form(.x,
-                                          quo(std.var),
-                                          Xt2,
-                                          flag = flag,
-                                          type = "Rm"
-                                          )
-                           ),
-        mod.0 = purrr::map(data, ~lm_form(.x,
-                                          quo(std.var),
-                                          Xt2,
-                                          type = "Rm"
-                                          )
-                           ),
-        # mod.1 = purrr::map(data, ~lm_form(.x,
-        #                                   Xt1,
-        #                                   Xt2,
-        #                                   flag = flag,
-        #                                   type = "LME"
-        #                                   )
-        #                    ),
-        # sum = purrr::map2(mod.1, mod.0, ~{anova(.x, .y)}),
-        # L.ratio = purrr::map_dbl(sum, ~{(pull(.x, L.Ratio))[2]}),
-        # p.val = purrr::map_dbl(sum, ~{(pull(.x, `p-value`))[2]}))
+# output lm only
+  df <- output_lm(df.lm, output)
+  if (output == "sum")  return(df)
+  if (output == "complete")  return(tidyr::unnest(df, data))
 
-        sum = purrr::map2(mod.0,
-                          mod.1,
-                          ~{broom::tidy(anova(.x, .y))}
-                          ),
-        F.val = purrr::map_dbl(sum, ~{(pull(.x, statistic))[2]}),
-        p.val = purrr::map_dbl(sum, ~{(pull(.x, p.value))[2]})
-           ) #%>%
-      # group_by(!!! gr_by) %>%
-      # arrange(desc(execution)) %>%
-      # mutate(F.diff = c(diff(F.val), NA)) %>%
-      #ungroup()
-
-    if (output == "sum") return(select(df,  -c(data, mod.0, mod.1, sum)))
-    if (output == "complete") {
-      return(select(df, -c(mod.0, mod.1, sum)) %>%
-               tidyr::unnest(cols = c(data))
-             )
-   }
   }
 
 #' Reduce diagnostics
@@ -408,22 +431,6 @@ expr_R <- function(Xt, N, species, ion1, ion2){
 # Not exportet helper functions
 #-------------------------------------------------------------------------------
 
-crit_size <- function(RS_Xt.ion2){
-
-  null_dist <- null_dist %>%
-    mutate(min.val = abs(RS_Xt.ion2 - parse_number(trend))) %>%
-    filter(min.val == min(.data$min.val)) %>%
-    pull(y_star)
-
-}
-
-
-AIC_diff <- function(mod.1, mod.0){
-
-(anova(mod.1, mod.0))$AIC[1] -(anova(mod.1, mod.0))$AIC[2]
-
-
-}
 
 
 # standardizing and re-center independent variable for fit to LM
@@ -492,4 +499,58 @@ var_fun <- function(df, grps, args){
       set_names(nm = var_names)
 
  lst(original = var_names, ion1 = wide_vars.ion1, ion2 = wide_vars.ion2)
+}
+
+#' @export
+mlm_RS <- function(sum, arg, output = "value") {
+
+  ran <- (nlme::VarCorr(sum))[,2] %>%
+    tibble::enframe() %>%
+    filter(name == as_name(arg))
+
+  ran <- as.numeric(tibble::deframe(ran[2,2]))
+  fix <- nlme::fixed.effects(sum) %>% unname()
+
+  RS <-  ran / fix
+
+  if (output == "value") {return(RS * 1000)} # per mille
+
+  if (output == "se"){
+# unequal distribution CI (95 %) converted to sd with deltamethod
+    if (!is.null(nrow(sum$apVar))) {
+    var_matrix <- sum$apVar
+    par <- attr(var_matrix, "Pars")
+    ran_sd <- msm::deltamethod(~ exp(x1)^2, par, var_matrix) * sqrt(nobs(sum))
+    } else{
+      ran_sd <- 0
+    }
+
+
+# fixed effect CI (95 %) converted to sd
+    fix_CI <- nlme::intervals(sum, which = "fixed")
+    fix_sd <- fix_CI$fixed %>%
+      tibble::as_tibble() %>%
+      mutate(se = (upper - lower) / 3.92) %>%
+      pull(se) * sqrt(nobs(sum))
+
+    attr(fix_sd, "label") <- NULL
+
+# propagation when calculating isotope RS
+    RS.se <- ((sqrt(((unique(ran_sd) / unique(ran)) ^ 2) + ((unique(fix_sd) / unique(fix)) ^ 2)) * RS) /  sqrt(nobs(sum))) #* 1000
+    return(RS.se * 1000) # per mille
+  }
+
+}
+
+
+output_lm <- function(df, type){
+
+  if (type == "sum") vars <- quos(data, lm.0, lm.1, sum.lm)
+  if (type == "complete") vars <- quos(lm.0, lm.1, sum.lm)
+
+  switch(type,
+         sum = eval(call2("select", df, expr(-c(!!! vars)))),
+         complete = eval(call2("select", df, expr(-c(!!! vars))))
+         )
+
 }

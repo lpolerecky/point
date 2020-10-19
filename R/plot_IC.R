@@ -48,7 +48,7 @@ plot_diag_R <- function(ls_df,
                         plot_title,
                         type,
                         rep = "1",
-                        iso = TRUE,
+                        iso = FALSE,
                         isoscale = NULL
                         ){
 
@@ -88,7 +88,7 @@ plot_diag_R <- function(ls_df,
     select(-c(data))
 
 
-  # Combine original/augmented datasets and results of diagnostics
+# Combine original/augmented datasets and results of diagnostics
   df.def <- inner_join(
     reduce_diag(ls_df, "df", args, !!!gr_by),
     df.R,
@@ -100,7 +100,7 @@ plot_diag_R <- function(ls_df,
 
 # sample fraction if interactive
   if(type == "interactive") {
-  IDs <- sample_frac(filter(df.def, execution == 1), size = 0.1) %>%  select(ID)
+  IDs <- sample_frac(filter(df.def, execution == 1), size = 0.01) %>%  select(ID)
   }
 
   filter_df <- function(df, plot_type){
@@ -280,7 +280,6 @@ gg_default <- function(df,
 
   if (plot_type == "interactive") {
 
-
     text_vc <- c(
       "CooksD" = "Rm",
       "Rm" = "Rm",
@@ -309,12 +308,13 @@ gg_default <- function(df,
                    R = round(!! quo_updt(args[["Xt"]], x = "M_R"), 4)
                    )
 
-      R_not <- expr(paste0("R: ", R))
+      R_not <- expr(paste0("mean R: ", R))
       }
 
     text_expr = lst(
-      Rm = expr(paste0(ion2, " (ct/sec): ", !!x, '\n',
-                       ion1, " (ct/sec): ", !!y, '\n',
+      Rm = expr(paste0(ion2, " (ct/sec): ", round(!!x, 0), '\n',
+                       ion1, " (ct/sec): ", round(!!y, 0), '\n',
+                       "R :", round(!!y / !!x, 4), '\n',
                        eval(R_not)
                        )
       ),
@@ -504,3 +504,5 @@ axis_labs <- function(type, ion = NULL, plot_type){
 
   }
 }
+
+

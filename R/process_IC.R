@@ -385,19 +385,19 @@ QSA_test <- function(.df, .Xt, .N, .species, .ion1, .ion2, ..., .plot = TRUE){
     tidyr::nest()  %>%
     mutate(
       QSA_lm = purrr::map(data, ~lm_form(.x, R.Xt, Xt2)),
-      R2 = purrr::map(QSA_lm, ~{broom::glance(.x)$r.squared}),
-      B0 = purrr::map(QSA_lm, ~{pull(broom::tidy(.x), estimate)[1]}),
-      B1 = purrr::map(QSA_lm, ~{pull(broom::tidy(.x), estimate)[2]})
+      B1 = purrr::map(QSA_lm, ~{pull(broom::tidy(.x), estimate)[2]}),
+      t.val = purrr::map(QSA_lm, ~{pull(broom::tidy(.x), statistic)[2]}),
+      p.val = purrr::map(QSA_lm, ~{pull(broom::tidy(.x), p.value)[2]})
           ) %>%
-    tidyr::unnest(cols = c(data, R2, B0, B1)) %>%
+    tidyr::unnest(cols = c(data, B1, t.val, p.val)) %>%
     mutate(
-      Chi_R2 = R2 * n(),
-      Chi_crit = qchisq(.95, df = 1),
-      flag_QSA = if_else(Chi_R2 > Chi_crit & B1 < 0,
-                         "Ha QSA",
-                         "H0 no QSA"
-                         ),
-      flag = if_else(Chi_R2 > Chi_crit & B1 < 0,
+      # Chi_R2 = R2 * n(),
+      # Chi_crit = qchisq(.95, df = 1),
+      # flag_QSA = if_else(Chi_R2 > Chi_crit & B1 < 0,
+      #                    "Ha QSA",
+      #                    "H0 no QSA"
+      #                    ),
+      flag = if_else(p.val < 0.01,
                      "bad",
                      "good"
                      )
@@ -434,18 +434,32 @@ QSA_test <- function(.df, .Xt, .N, .species, .ion1, .ion2, ..., .plot = TRUE){
 #gg_default(df.new, stat_lab = NULL, y = R_Xt.pr, x = Xt.pr.12C, "13C", "12C", plot_title = "QSA", plot_type = "static", iso =FALSE, isoscale = NULL) + facet_wrap(vars(file.nm), scale = "free")
 
 # linear model call
+#' @export
+lm_form <- function(data, arg1, arg2, flag = NULL, vorce = "inter", nest = NULL, type = "OLS") {
 
-lm_form <- function(data, arg1, arg2, flag = NULL, type = "OLS") {
+  if (type == "Rm" | type == "LME"){
+    if (is.null(flag)) {
+    call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste0(as_name(arg2), "-1")))
+     }else{
+       call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste0(paste(as_name(arg2), as_name(flag), sep = "*"), "-1")))
+     }
+     }
+  if (type == "OLS") call_lm <- new_formula(quo_get_expr(arg1), quo_get_expr(arg2))
 
-  # if (type == "OLS" | type == "LME") call_lm <- new_formula(quo_get_expr(arg1), quo_get_expr(arg2))
-  if (type == "Rm" ) call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste0(as_name(arg2), "-1")))
-  if (type == "Rm"  & !is.null(flag)) call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste0(paste(as_name(arg2), as_name(flag), sep = "*"), "-1")))
-  if (type == "OLS" | type == "LME") call_lm <- new_formula(quo_get_expr(arg1), quo_get_expr(arg2))
-  #if (type == "LME") call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste(as_name(arg2), paste0("(", paste(as_name(arg2), as_name(flag), sep = "|"),")"), sep = "+")))
+  # if (type == "LME" & is.null(flag)) call_ran <- new_formula(NULL, parse_expr(paste(paste0(as_name(arg2), "-1"), as_name(nest), sep = "|")))
+  if (type == "LME" & vorce == "intra") {
+      #call_ran <- new_formula(NULL, parse_expr(paste(paste0(as_name(arg2), "-1"), "execution", sep = "|")))
+      call_ran <- new_formula(NULL, parse_expr(paste(paste0(as_name(arg2), "-1"), paste(as_name(nest), "execution", sep = "/"), sep = "|")))
+      }
+  if (type == "LME" & vorce == "inter") {
+      call_ran <- new_formula(NULL, parse_expr(paste(paste0(as_name(arg2), "-1"), paste("execution", as_name(nest), sep = "/"), sep = "|")))
+      #call_ran <- list2(execution = new_formula(NULL, 1), !! nest := new_formula(NULL, parse_expr(as_name(arg2))))
+      }
 
-  if (!is.null(flag)) call_ran <- new_formula(NULL, parse_expr(paste(as_name(arg2), as_name(flag), sep = "|")))
 
-  wght <- pull(data, !! arg2)
+  #if (type == "LME" & !is.null(flag)) call_ran <- new_formula(NULL, parse_expr(paste(paste0(paste(as_name(arg2), as_name(flag), sep = "*"), "-1"), as_name(nest), sep = "|")))
+
+  if (type == "Rm") wght <- pull(data, !! arg2)
   call_wght <- new_formula(NULL, parse_expr(paste0("I(", paste(1, as_name(arg2), sep = "/"), ")")))
 
 # switch between OLS and ratio method type linear model
@@ -453,28 +467,34 @@ lm_form <- function(data, arg1, arg2, flag = NULL, type = "OLS") {
     switch(type,
            OLS = eval(call2("lm", call_lm, data = expr(data))),
            Rm = eval(call2("lm", call_lm, data = expr(data), weights = expr(1 / wght))),
-           LME = eval(call2("lme", call_lm, random = call_ran, data = expr(data))) #, control = nlme::lmeControl(opt = "optim"), weights = call_wght,  .ns = "nlme")) #control = nlme::lmeControl(opt = "optim"),
+           LME = eval(call2("lme",
+                            call_lm,
+                            random = call_ran,
+                            data = expr(data),
+                            # control = nlme::lmeControl(opt = "optim"),
+                            weights = call_wght,
+                            .ns = "nlme"
+                            ))
+
            #LME = eval(call2("lmer", call_lm, data = expr(data), .ns = "lme4"))
            )
   }
 
- lm_method(type)
+lm_method(type)
 
 
 }
 
-stat_lab2 <- function(a, b, c, d){
+stat_lab2 <- function(a, b, c){
 
-    expr_lm <- lst(substitute(beta[0] == a * " \n " ~
-                              beta[1] == b * " \n " ~
-                              chi[lm] == c * " \n " ~
-                              "(" * chi[crit] == d * ";" ~
+    expr_lm <- lst(substitute(beta[1] == a * " \n " ~
+                              t[beta[1]] == b * " \n " ~
+                              "(" * p == c * ";" ~
                               "H0:"~ beta[1] == 0 * ")"
                               ,
                               lst(a = sprintf("%+.1e", a),
                                   b = sprintf("%+.1e", b),
-                                  c = sprintf("%.2f", c),
-                                  d = sprintf("%.2f", d)
+                                  c = sprintf("%.3f", c)
                                   )
                               )
                    )
@@ -493,10 +513,9 @@ stat_select2 <- function(df, facets_gr) {
     distinct(!!! facets_gr, .keep_all = TRUE) %>%
     transmute(trans = "original",
               lb = purrr::pmap(lst(
-                a = B0,
-                b = B1,
-                c = Chi_R2,
-                d = Chi_crit
+                a = B1,
+                b = t.val,
+                c = p.val
                 ),
                 stat_lab2),
               vjust = 3.5,

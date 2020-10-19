@@ -4,7 +4,7 @@
 \alias{Cameca}
 \title{Family of diagnostics functions for isotope count ratios}
 \usage{
-Cameca(df, args = expr_R(NULL), ..., output)
+Cameca(df, args = expr_R(NULL), vars, ..., output)
 }
 \arguments{
 \item{df}{A tibble with ion count data and statistics for ion- and

@@ -5,24 +5,24 @@
 \title{Plotting diagnostics}
 \usage{
 plot_diag_R(
-  df,
+  ls_df,
   args = expr_R(NULL),
   ...,
   plot_title,
   type,
   rep = "1",
-  iso = TRUE,
+  iso = FALSE,
   isoscale = NULL
 )
 }
 \arguments{
-\item{df}{A tibble containing processed ion count data.}
-
 \item{args}{A list of quosures pertaining to the variables required for a
 call to stat_R. The function expr_R() can be used to simplify setting this
 argument.}
 
 \item{...}{Variables for grouping.}
+
+\item{df}{A tibble containing processed ion count data.}
 
 \item{method}{Character string for the type of diagnostics.}
 }

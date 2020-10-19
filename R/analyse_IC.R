@@ -576,7 +576,7 @@ cov_R <- function(df, species, ion1, ion2, ..., preserve = FALSE){
   gr_by <- enquos(...)
   species <- enquo(species)
 
-# CAll that creates an ID Uniqually identifies ion pairs for calculating isotope
+# CAll that creates an ID unequally identifies ion pairs for calculating isotope
 # ratios (in case the data file does not contain an ID)
   ID_cal <- function(ID_arg){
 

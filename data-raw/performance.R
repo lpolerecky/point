@@ -17,18 +17,18 @@ grps <- quos(simulation, trend, repetition, iso_offset)
 # Cooks D
 #-------------------------------------------------------------------------------
 
+
 ls.tb <- diag_R(sim_IC,
                 method = "CooksD",
                 args = expr_R_stat,
-                reps = 1,
+                reps = 2,
                 !!! grps,
                 output = "complete",
                 plot = FALSE
                 )
 
-
 # Evaluation of performance
-CD_eval <- eval_diag(ls.tb, expr_R_stat, flag, !!! grps)
+CD_eval <- eval_diag(ls.tb, expr_R_stat, flag, !!! grps, nest = TRUE, group = iso_offset)
 
 usethis::use_data(CD_eval, overwrite = TRUE, compress = "xz")
 
@@ -42,12 +42,11 @@ ls.tb <- diag_R(sim_IC,
                 args = expr_R_stat,
                 reps = 1,
                 !!! grps,
-                bl,
                 output = "complete",
                 plot = FALSE
                 )
 
 # Evaluation of performance
-CM_eval <- eval_diag(ls.tb, expr_R_stat, flag, !!! grps)
+CM_eval <- eval_diag(ls.tb, expr_R_stat, flag, !!! grps, nest = TRUE, group = iso_offset)
 
 usethis::use_data(CM_eval, overwrite = TRUE, compress = "xz")
