@@ -127,30 +127,33 @@ tb.mt <- read_meta(point_example("2018-01-19-GLENDON"))
 # The polya density distribution model to approximate PHD distributions
 # install.packages("polyaAeppli")
 
-tb.mt <- tb.mt %>% 
-           drop_na(mean_PHD, SD_PHD) %>% 
-           filter(species.nm == "12C") %>%  # most high intensity counts
-           mutate(PHD = map(mean_PHD, 
-                                   ~as.integer(seq(0, 700, length = 100)))) %>%
-           unnest(cols = c(PHD)) %>% 
-           mutate(lambda = (2 * mean_PHD^2) / (SD_PHD^2 + mean_PHD),
-                  prob = (SD_PHD^2 - mean_PHD) / (SD_PHD^2 + mean_PHD),
-                  prob = if_else(prob < 0 | prob >= 1 , NA_real_, prob),
-                  ) %>% 
-           drop_na(lambda, prob) %>% 
-           mutate(density = dPolyaAeppli(PHD, 
-                                         lambda = lambda, 
-                                         prob = prob),
-                  Y = pPolyaAeppli(50, 
-                                  lambda = lambda, 
-                                  prob = prob, 
-                                  lower.tail = FALSE)) %>% 
-           group_by(file.nm) %>% 
-           mutate(Yy = max(density) * 0.8) %>% 
-           ungroup()
+tb.mt %>% 
+  drop_na(mean_PHD, SD_PHD) %>% 
+  distinct(file.nm, .keep_all = TRUE) %>% 
+  filter(species.nm == "12C") %>%  # most high intensity counts
+  mutate(PHD = map(mean_PHD,  ~as.integer(seq(0, 700, length = 100)))) %>%
+  unnest(cols = c(PHD)) %>% 
+  mutate(lambda = (2 * mean_PHD^2) / (SD_PHD^2 + mean_PHD),
+         prob = (SD_PHD^2 - mean_PHD) / (SD_PHD^2 + mean_PHD),
+         prob = if_else(prob < 0 | prob >= 1 , NA_real_, prob),
+         ) %>% 
+  drop_na(lambda, prob) %>% 
+  mutate(density = dPolyaAeppli(PHD, 
+                                lambda = lambda, 
+                                 prob = prob
+                                ),
+         Y = pPolyaAeppli(50, 
+                          lambda = lambda, 
+                          prob = prob, 
+                          lower.tail = FALSE
+                          )
+         ) %>% 
+   group_by(file.nm) %>% 
+   mutate(Yy = max(density) * 0.8) %>% 
+   ungroup() %>% 
 
 # Plot of PHD over analysis sequence
-ggplot(tb.mt, aes(x = PHD, y = density)) +
+ggplot( aes(x = PHD, y = density)) +
   geom_line() +
   geom_text(aes(x = 500, y = Yy, label = paste("Y = ", round(Y, 2)))) +
   facet_wrap(vars(date), scales = "free") +

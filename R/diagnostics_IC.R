@@ -292,7 +292,7 @@ eval_diag <- function(ls_df, args, flag, ..., nest = FALSE, group = NULL, output
   }
 
 # recenter along flag variable
-  df <- stand_var(df, Xt1, quo(hat_Y), flag, !!! gr_by, .data$execution)
+  df <- cstd_var(df, Xt1, quo(hat_Y), flag, !!! gr_by, .data$execution)
 
 # create zero (constrained) model flag and updated model
   df.lm <- df %>%
@@ -324,19 +324,23 @@ eval_diag <- function(ls_df, args, flag, ..., nest = FALSE, group = NULL, output
     df.mlm <- df %>%
       tidyr::nest(data = -c(!!!gr_by[!sapply(gr_by, as_name) %in% as_name(group)])) %>%
       mutate(
-        mlm.0 = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, type = "Rm"),
-        mlm.inter = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, flag = NULL, vorce = "inter", nest = group, type = "LME"),
-        mlm.intra = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, flag = NULL, vorce = "intra", nest = group, type = "LME"),
+        AM.0 = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, type = "Rm"),
+        GM.0 = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, type = "Rm", trans =TRUE),
+        "AM_R.{{group}}" := purrr::map_dbl(AM.0, ~{unname(coef(.x))}),
+        "GM_R.{{group}}" := purrr::map2_dbl(data, GM.0, ~{trans_R(.x, arg = Xt2, unname(coef(.y)))}),
+        R_diff = purrr::map2_dbl(!!quo_updt(quo(GM_R), as_name(group)), !!quo_updt(quo(AM_R), as_name(group)), ~{(.x/.y - 1) * 1000}),
+        mlm.inter = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, flag = NULL, vorce = "inter", nest = group, type = "LME", trans = TRUE),
+        mlm.intra = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, flag = NULL, vorce = "intra", nest = group, type = "LME", trans = TRUE),
         hat_RS_R.inter = purrr::map_dbl(mlm.inter, purrr::possibly(mlm_RS, NA_real_), arg = Xt2),
         hat_RS_R_se.inter = purrr::map_dbl(mlm.inter, purrr::possibly(mlm_RS, NA_real_), arg = Xt2, output = "se"),
         hat_RS_R.intra = purrr::map_dbl(mlm.intra, purrr::possibly(mlm_RS, NA_real_), arg = Xt2),
         hat_RS_R_se.intra = purrr::map_dbl(mlm.intra, purrr::possibly(mlm_RS, NA_real_), arg = Xt2, output = "se"),
         # # # sum.mlm = if_else(is.na(mlm.0) | is.na(mlm.1), NA_real_, purrr::map2(mlm.0, mlm.1, ~)),
         # # # L.ratio  = if_else(is.na(mlm.0) | is.na(mlm.1), NA_real_, purrr::map2_dbl(mlm.0, mlm.1, ~{(pull(anova(.x, .y), L.Ratio))[2]})),
-        p.inter = purrr::map2_dbl(mlm.inter, mlm.0, purrr::possibly(function(x, y){ (pull(anova(x, y), `p-value`))[2] }, NA_real_)),
-        p.intra = purrr::map2_dbl(mlm.intra, mlm.0, purrr::possibly(function(x, y){ (pull(anova(x, y), `p-value`))[2] }, NA_real_))
+        p.inter = purrr::map2_dbl(mlm.inter, GM.0, purrr::possibly(function(x, y){ (pull(anova(x, y), `p-value`))[2] }, NA_real_)),
+        p.intra = purrr::map2_dbl(mlm.intra, GM.0, purrr::possibly(function(x, y){ (pull(anova(x, y), `p-value`))[2] }, NA_real_))
             ) %>%
-      select(-c(data, mlm.inter, mlm.intra, mlm.0))
+      select(-c(data, mlm.inter, mlm.intra, AM.0, GM.0))
 
 # output lm and mlm combined
     if (length(gr_by) == 1) {
@@ -434,7 +438,8 @@ expr_R <- function(Xt, N, species, ion1, ion2){
 
 
 # standardizing and re-center independent variable for fit to LM
-stand_var <- function(df, Xt1, hat_Y, flag, ...){
+#' @export
+cstd_var <- function(df, Xt1, hat_Y, flag, ...){
 
   gr_by <- enquos(...)
 
@@ -501,12 +506,27 @@ var_fun <- function(df, grps, args){
  lst(original = var_names, ion1 = wide_vars.ion1, ion2 = wide_vars.ion2)
 }
 
+#' Conditional coefficient back transformation
 #' @export
-mlm_RS <- function(sum, arg, output = "value") {
+trans_R <- function(data, arg, coef){
 
+  M_log_pred <- mean(log(pull(data, !!arg)))
+  GM_pred <- exp(M_log_pred)
+  GM_resp <- exp(M_log_pred * coef)
+  GM_resp / GM_pred
+
+}
+
+#' Relative standard deviation of the coefficient
+#' @export
+mlm_RS <- function(sum, arg, output = "value", trans = TRUE) {
+
+
+
+  if (trans) { arg <- paste0("log(",as_name(arg),")")} else { arg <- as_name(arg) }
   ran <- (nlme::VarCorr(sum))[,2] %>%
     tibble::enframe() %>%
-    filter(name == as_name(arg))
+    filter(name == arg)
 
   ran <- as.numeric(tibble::deframe(ran[2,2]))
   fix <- nlme::fixed.effects(sum) %>% unname()
@@ -524,7 +544,6 @@ mlm_RS <- function(sum, arg, output = "value") {
     } else{
       ran_sd <- 0
     }
-
 
 # fixed effect CI (95 %) converted to sd
     fix_CI <- nlme::intervals(sum, which = "fixed")

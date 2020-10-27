@@ -736,6 +736,8 @@ ggplot(df_den, aes(x = vec_den)) +
   facet_grid(cols = vars(trend))
 
 
+
+
 ```
 
 Based on the simulated data in Figure \@ref(fig:mixmodel) it is evident that the "ideal" model can clearly be differentiated from symmetric and asymmetric isotope variability, although the test is less sensitive to symmetric isotope variation with an increasing linear trend caused by the ionization efficiency. The Monte Carlo simulation of the "ideal" data-set can be used to increase the sensitivity of the model. This yields a mixture model with two additive components; an $\chi^2$ distribution with 1 df and a null distribution (based on the "ideal" data set). The $\eta^2$ metric for isotope ion counts can thus be used to assess the probability of a measured spot representing an isotopic composite, or a truly homogeneous isotopic substrate. 

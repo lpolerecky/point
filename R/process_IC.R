@@ -435,32 +435,49 @@ QSA_test <- function(.df, .Xt, .N, .species, .ion1, .ion2, ..., .plot = TRUE){
 
 # linear model call
 #' @export
-lm_form <- function(data, arg1, arg2, flag = NULL, vorce = "inter", nest = NULL, type = "OLS") {
+lm_form <- function(data, arg1, arg2, flag = NULL, vorce = "inter", nest = NULL, type = "OLS", trans = FALSE) {
 
   if (type == "Rm" | type == "LME"){
     if (is.null(flag)) {
+      if(trans){
+        call_lm <- new_formula(parse_expr(paste0("log(", as_name(arg1), ")")), parse_expr(paste0("-1 + log(", as_name(arg2), ")")))
+      } else {
     call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste0(as_name(arg2), "-1")))
-     }else{
+    }
+     } else {
        call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste0(paste(as_name(arg2), as_name(flag), sep = "*"), "-1")))
      }
-     }
+  }
+
   if (type == "OLS") call_lm <- new_formula(quo_get_expr(arg1), quo_get_expr(arg2))
 
   # if (type == "LME" & is.null(flag)) call_ran <- new_formula(NULL, parse_expr(paste(paste0(as_name(arg2), "-1"), as_name(nest), sep = "|")))
-  if (type == "LME" & vorce == "intra") {
-      #call_ran <- new_formula(NULL, parse_expr(paste(paste0(as_name(arg2), "-1"), "execution", sep = "|")))
-      call_ran <- new_formula(NULL, parse_expr(paste(paste0(as_name(arg2), "-1"), paste(as_name(nest), "execution", sep = "/"), sep = "|")))
-      }
   if (type == "LME" & vorce == "inter") {
-      call_ran <- new_formula(NULL, parse_expr(paste(paste0(as_name(arg2), "-1"), paste("execution", as_name(nest), sep = "/"), sep = "|")))
+      #call_ran <- new_formula(NULL, parse_expr(paste(paste0(as_name(arg2), "-1"), "execution", sep = "|")))
+      call_ran <- new_formula(NULL, parse_expr(paste(paste0("-1 + log(", as_name(arg2), ")"), paste(as_name(nest), "execution", sep = "/"), sep = "|")))
+      #f_rhs(call_lm) <- parse_expr(paste(paste0(f_name(call_lm), "+ (-1 + log(", as_name(arg2), ")"), paste(as_name(nest), "execution)", sep = ":"), sep = "|"))
+      }
+  if (type == "LME" & vorce == "intra") {
+      call_ran <- new_formula(NULL, parse_expr(paste(paste0("-1 + log(", as_name(arg2), ")"), paste("execution", as_name(nest), sep = "/"), sep = "|")))
+      #f_rhs(call_lm) <- parse_expr(paste(paste0(f_name(call_lm),"+ (-1 + log(", as_name(arg2), ")"), paste("execution", paste0(as_name(nest), ":"), sep = "/"), sep = "|"))
       #call_ran <- list2(execution = new_formula(NULL, 1), !! nest := new_formula(NULL, parse_expr(as_name(arg2))))
       }
 
 
   #if (type == "LME" & !is.null(flag)) call_ran <- new_formula(NULL, parse_expr(paste(paste0(paste(as_name(arg2), as_name(flag), sep = "*"), "-1"), as_name(nest), sep = "|")))
 
-  if (type == "Rm") wght <- pull(data, !! arg2)
-  call_wght <- new_formula(NULL, parse_expr(paste0("I(", paste(1, as_name(arg2), sep = "/"), ")")))
+
+    if(trans){
+      if (type == "Rm"){
+      wght <- log(pull(data, !! arg2))
+      } else {
+        call_wght <- new_formula(NULL, parse_expr(paste0("I(", paste(1, paste0("log(",as_name(arg2),")"), sep = "/"), ")")))
+      }
+    } else {
+      wght <- pull(data, !! arg2)
+    }
+
+  #call_wght <- new_formula(NULL, parse_expr(paste0("I(", paste(1, as_name(arg2), sep = "/"), ")")))
 
 # switch between OLS and ratio method type linear model
   lm_method <- function(type) {
@@ -474,9 +491,10 @@ lm_form <- function(data, arg1, arg2, flag = NULL, vorce = "inter", nest = NULL,
                             # control = nlme::lmeControl(opt = "optim"),
                             weights = call_wght,
                             .ns = "nlme"
-                            ))
+                            )
+                      )
 
-           #LME = eval(call2("lmer", call_lm, data = expr(data), .ns = "lme4"))
+           # LME = eval(call2("lmer", call_lm, data = expr(data), weights = expr(1 / wght), .ns = "lme4"))
            )
   }
 
