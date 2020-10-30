@@ -521,7 +521,7 @@ latex_parser <- function(ion1, ion2 = NULL){
              char = call2("str_extract",
                                  quote(ion),
                                  "[:alpha:]+"),
-             sub = rlang::call2("str_extract",
+             sub = call2("str_extract",
                                 quote(ion),
                                 "(?<=[:alpha:])[:digit:]+")
       )

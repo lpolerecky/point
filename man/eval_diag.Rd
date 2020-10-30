@@ -35,7 +35,10 @@ dataframes entered for the argument \code{ls_df}}
 tb.eval <- eval_diag(ls.dia,
                      args = expr_R_stat,
                      flag = flag,
+                     iso_offset,
                      simulation,
-                     trend
+                     trend,
+                     nest = TRUE,
+                     group = simulation
                      )
 }

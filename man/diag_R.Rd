@@ -83,6 +83,7 @@ ls.dia <- diag_R(sim_IC_extremes,
                  reps = 2,
                  simulation,
                  trend,
+                 iso_offset,
                  output = "complete",
                  plot = FALSE
                  )

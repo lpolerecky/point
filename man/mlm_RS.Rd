@@ -4,7 +4,7 @@
 \alias{mlm_RS}
 \title{Relative standard deviation of the coefficient}
 \usage{
-mlm_RS(sum, arg, output = "value", trans = TRUE)
+mlm_RS(sum, arg, output = "value")
 }
 \description{
 Relative standard deviation of the coefficient

@@ -337,25 +337,29 @@ To calculate the external precision for single ion counts with the package `poin
 
 ```{r}
 # summary statistics of the dataset (set latex to FALSE and output to SUM)
-tb.Xt <- stat_Xt(tb.pr, 
-                 Xt = Xt.pr, 
-                 N = N.pr, 
-                 species = species.nm, 
-                 sample.nm, 
-                 file.nm, 
-                 latex = FALSE, 
-                 output = "sum")
+tb.Xt <- stat_Xt(
+  tb.pr, 
+  Xt = Xt.pr, 
+  N = N.pr, 
+  species = species.nm, 
+  sample.nm, 
+  file.nm, 
+  latex = FALSE, 
+  output = "sum"
+  )
 
 # external reproducibility use the mean ion count rate and total counts of the
 # single analyses. Note that the grouping variable is needed to identify the 
 # reference standard
-tb.Xt.ext <- stat_Xt(tb.Xt, 
-                 Xt = M_Xt.pr, 
-                 N = Ntot_Xt.pr, 
-                 species = species.nm, 
-                 sample.nm, 
-                 latex = TRUE,
-                 output = "sum")
+tb.Xt.ext <- stat_Xt(
+  tb.Xt, 
+  Xt = M_Xt.pr, 
+  N = Ntot_Xt.pr, 
+  species = species.nm, 
+  sample.nm, 
+  latex = TRUE,
+  output = "sum"
+  )
 ```
 
 

@@ -55,6 +55,7 @@
 #'                  reps = 2,
 #'                  simulation,
 #'                  trend,
+#'                  iso_offset,
 #'                  output = "complete",
 #'                  plot = FALSE
 #'                  )
@@ -248,8 +249,11 @@ diag_R_exec <- function(df,
 #' tb.eval <- eval_diag(ls.dia,
 #'                      args = expr_R_stat,
 #'                      flag = flag,
+#'                      iso_offset,
 #'                      simulation,
-#'                      trend
+#'                      trend,
+#'                      nest = TRUE,
+#'                      group = simulation
 #'                      )
 eval_diag <- function(ls_df, args, flag, ..., nest = FALSE, group = NULL, output = "sum"){
 
@@ -269,13 +273,16 @@ eval_diag <- function(ls_df, args, flag, ..., nest = FALSE, group = NULL, output
   # analysis <- quo(analysis)
 
 # Combine original/augmented datasets and results of diagnostics
-  df <- inner_join(
-    reduce_diag(ls_df, "df", args, !!!gr_by),
-    reduce_diag(ls_df, "results",  args, !!!gr_by),
-    by = c("execution", "ID", sapply(gr_by, as_name))
-    ) %>%
-# Create analysis label
-    mutate(analysis = "analysis")
+  # df <- inner_join(
+  #   reduce_diag(ls_df, "df", args, !!!gr_by),
+  #   reduce_diag(ls_df, "results",  args, !!!gr_by),
+  #   by = c("execution", "ID", sapply(gr_by, as_name))
+  #   )
+
+  df <- reduce_diag(ls_df, "results",  args, !!!gr_by)
+#   %>%
+# # Create analysis label
+#     mutate(analysis = "analysis")
 
 # Check number of levels of bad flag is more than 10
   df <-  df %>%
@@ -313,6 +320,9 @@ eval_diag <- function(ls_df, args, flag, ..., nest = FALSE, group = NULL, output
                                    type = "Rm"
                                    )
                            ),
+        # hat_D_R = purrr::map2_dbl(lm.1, lm.0, ~{(unname(coef(.x))[1] / unname(coef(.y))[1] -1) * 1000}  ),
+        # new_R = purrr::map_dbl(lm.1, ~{unname(coef(.x))[1] }  ),
+        # old_R = purrr::map_dbl(lm.0, ~{unname(coef(.x))[1] }  ),
         sum.lm = purrr::map2(lm.0, lm.1, ~{broom::tidy(anova(.x, .y))}),
         F.val = purrr::map_dbl(sum.lm, ~{(pull(.x, statistic))[2]}),
         p.F = purrr::map_dbl(sum.lm, ~{(pull(.x, p.value))[2]})
@@ -324,23 +334,23 @@ eval_diag <- function(ls_df, args, flag, ..., nest = FALSE, group = NULL, output
     df.mlm <- df %>%
       tidyr::nest(data = -c(!!!gr_by[!sapply(gr_by, as_name) %in% as_name(group)])) %>%
       mutate(
-        AM.0 = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, type = "Rm"),
-        GM.0 = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, type = "Rm", trans =TRUE),
-        "AM_R.{{group}}" := purrr::map_dbl(AM.0, ~{unname(coef(.x))}),
-        "GM_R.{{group}}" := purrr::map2_dbl(data, GM.0, ~{trans_R(.x, arg = Xt2, unname(coef(.y)))}),
-        R_diff = purrr::map2_dbl(!!quo_updt(quo(GM_R), as_name(group)), !!quo_updt(quo(AM_R), as_name(group)), ~{(.x/.y - 1) * 1000}),
-        mlm.inter = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, flag = NULL, vorce = "inter", nest = group, type = "LME", trans = TRUE),
-        mlm.intra = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, flag = NULL, vorce = "intra", nest = group, type = "LME", trans = TRUE),
+        # AM.0 = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, type = "Rm"),
+        gls.0 = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, type = "GLS", trans = TRUE),
+        "M_R.{{group}}" := purrr::map_dbl(gls.0, ~{unname(coef(.x)) / 1000}),
+        # "GM_R.{{group}}" := purrr::map2_dbl(data, GM.0, ~{trans_R(.x, arg = Xt2, unname(coef(.y)))}),
+        # R_diff = purrr::map2_dbl(!!quo_updt(quo(GM_R), as_name(group)), !!quo_updt(quo(AM_R), as_name(group)), ~{(.x/.y - 1) * 1000}),
+        mlm.inter = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, trans = TRUE, vorce = "inter", nest = group, type = "LME"),
+        mlm.intra = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, trans = TRUE, vorce = "intra", nest = group, type = "LME"),
         hat_RS_R.inter = purrr::map_dbl(mlm.inter, purrr::possibly(mlm_RS, NA_real_), arg = Xt2),
         hat_RS_R_se.inter = purrr::map_dbl(mlm.inter, purrr::possibly(mlm_RS, NA_real_), arg = Xt2, output = "se"),
-        hat_RS_R.intra = purrr::map_dbl(mlm.intra, purrr::possibly(mlm_RS, NA_real_), arg = Xt2),
-        hat_RS_R_se.intra = purrr::map_dbl(mlm.intra, purrr::possibly(mlm_RS, NA_real_), arg = Xt2, output = "se"),
+        dR_dt.intra = purrr::map_dbl(mlm.intra, purrr::possibly(mlm_dR, NA_real_), arg = Xt2),
+        dR_dt_se.intra = purrr::map_dbl(mlm.intra, purrr::possibly(mlm_dR, NA_real_), arg = Xt2, output = "se"),
         # # # sum.mlm = if_else(is.na(mlm.0) | is.na(mlm.1), NA_real_, purrr::map2(mlm.0, mlm.1, ~)),
         # # # L.ratio  = if_else(is.na(mlm.0) | is.na(mlm.1), NA_real_, purrr::map2_dbl(mlm.0, mlm.1, ~{(pull(anova(.x, .y), L.Ratio))[2]})),
-        p.inter = purrr::map2_dbl(mlm.inter, GM.0, purrr::possibly(function(x, y){ (pull(anova(x, y), `p-value`))[2] }, NA_real_)),
-        p.intra = purrr::map2_dbl(mlm.intra, GM.0, purrr::possibly(function(x, y){ (pull(anova(x, y), `p-value`))[2] }, NA_real_))
+        p.inter = purrr::map2_dbl(mlm.inter, gls.0, purrr::possibly(function(x, y){ (pull(anova(x, y), `p-value`))[2] }, NA_real_)),
+        p.intra = purrr::map_dbl(mlm.intra, purrr::possibly(function(x){ (pull(broom::tidy(car::Anova(x, type = 3)), p.value))[2] }, NA_real_))
             ) %>%
-      select(-c(data, mlm.inter, mlm.intra, AM.0, GM.0))
+      select(-c(data, mlm.inter,mlm.intra, gls.0))
 
 # output lm and mlm combined
     if (length(gr_by) == 1) {
@@ -506,27 +516,36 @@ var_fun <- function(df, grps, args){
  lst(original = var_names, ion1 = wide_vars.ion1, ion2 = wide_vars.ion2)
 }
 
-#' Conditional coefficient back transformation
+#' temporal trend of the fixed coefficient
 #' @export
-trans_R <- function(data, arg, coef){
+mlm_dR <- function(sum, arg, output = "value") {
 
-  M_log_pred <- mean(log(pull(data, !!arg)))
-  GM_pred <- exp(M_log_pred)
-  GM_resp <- exp(M_log_pred * coef)
-  GM_resp / GM_pred
+  fix <- nlme::fixed.effects(sum) %>% unname()
+  dR <- fix[2] / fix[1]
+  if (output == "value") {return(dR * 1000)}
+  if (output == "se"){
+  fix.sd <- broom.mixed::tidy(sum) %>%
+    select(std.error) %>%
+    tidyr::drop_na() %>%
+    mutate(sd = std.error  * sqrt(nobs(sum)),
+           mean = dR)
+
+  dR.se <- ((sqrt(((fix.sd$sd[1]/ fix.sd$mean[1]) ^ 2) + ((fix.sd$sd[2]/ fix.sd$mean[2]) ^ 2)) * dR) /  sqrt(nobs(sum)))
+  return(dR.se  * 1000) # per mille
+  }
 
 }
 
 #' Relative standard deviation of the coefficient
 #' @export
-mlm_RS <- function(sum, arg, output = "value", trans = TRUE) {
+mlm_RS <- function(sum, arg, output = "value") {
 
 
 
-  if (trans) { arg <- paste0("log(",as_name(arg),")")} else { arg <- as_name(arg) }
+  #if (trans) { arg <- paste0("I(",as_name(arg),"/1000)")} else { arg <- as_name(arg) }
   ran <- (nlme::VarCorr(sum))[,2] %>%
     tibble::enframe() %>%
-    filter(name == arg)
+    filter(str_detect(name, (as_name(arg))))
 
   ran <- as.numeric(tibble::deframe(ran[2,2]))
   fix <- nlme::fixed.effects(sum) %>% unname()
