@@ -435,7 +435,7 @@ QSA_test <- function(.df, .Xt, .N, .species, .ion1, .ion2, ..., .plot = TRUE){
 
 # linear model call
 #' @export
-lm_form <- function(data, arg1, arg2, flag = NULL, trans = FALSE, vorce = "inter", nest = NULL, type = "OLS") {
+lm_form <- function(data, arg1, arg2, flag = NULL, trans = NULL, vorce = NULL, nest = NULL, type = "OLS") {
 
   # if (type == "Rm" | type == "LME"){
   #   if(is.null(flag)) {
@@ -448,79 +448,142 @@ lm_form <- function(data, arg1, arg2, flag = NULL, trans = FALSE, vorce = "inter
   #   call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste0("-1 +", as_name(arg2), "*", as_name(flag))))
   # }
 
-  if (type == "Rm" | type == "LME" | type == "GLS"){
-    if (is.null(flag)) {
-      if(trans){
-        if (vorce == "intra") {
-          call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste0("-1 + I(", as_name(arg2), "/ 1000) + I(", as_name(arg2), "/ 1000) : execution")))
-          } else {
-        call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste0("-1 + I(", as_name(arg2), "/ 1000)")))
-          }
+  # if (type == "Rm" | type == "LME" | type == "GLS"){
+  #   if (is.null(flag)) {
+  #     if(trans){
+  #       if (vorce == "intra") {
+  #         call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste0("-1 + I(", as_name(arg2), "/ 1000) + I(", as_name(arg2), "/ 1000) : execution")))
+  #         } else {
+  #       call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste0("-1 + I(", as_name(arg2), "/ 1000)")))
+  #         }
+  #     } else {
+  #       call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste0("-1 +", as_name(arg2))))
+  #     }
+  #   } else {
+  #     call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste0("-1 +", as_name(arg2), "*", as_name(flag))))
+  #   }
+  # }
+
+  lm_switch <- function(type, itrc = NULL, trns = NULL){
+
+    if (type %in% c("Rm", "LME", "GLS")) type <- "Rm" else type = "OLS"
+    if (is_quosure(itrc)) {
+      type <- paste(type, deparse(substitute(itrc)), sep = "_")
       } else {
-        call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste0("-1 +", as_name(arg2))))
-      }
-    } else {
-      call_lm <- new_formula(quo_get_expr(arg1), parse_expr(paste0("-1 +", as_name(arg2), "*", as_name(flag))))
-    }
+        if (is.null(trns)) {
+          type <- paste(type, itrc, sep = "_")
+          } else {
+            type <- paste(type, trns, sep = "_")
+          }
+        }
+
+    switch(type,
+           Rm_flag = new_formula(quo_get_expr(arg1), parse_expr(paste0("-1 +", as_name(arg2), "*", as_name(flag)))),
+           Rm_ppt = new_formula(quo_get_expr(arg1), parse_expr(paste0("-1 + I(", as_name(arg2), "/ 1000)"))),
+           Rm_ = new_formula(quo_get_expr(arg1), parse_expr(paste0("-1 +", as_name(arg2)))),
+           Rm_log = new_formula(parse_expr(paste0("log(", as_name(arg1), ")")), parse_expr(paste0("-1 + log(", as_name(arg2), ")"))),
+           Rm_intra =  new_formula(quo_get_expr(arg1), parse_expr(paste0("-1 + I(", as_name(arg2), "/ 1000) + I(", as_name(arg2), "/ 1000) : execution"))),
+           OLS_ = new_formula(quo_get_expr(arg1), quo_get_expr(arg2))
+           )
+
   }
 
-  if (type == "OLS") call_lm <- new_formula(quo_get_expr(arg1), quo_get_expr(arg2))
+  ran_switch <- function(clst, trns  = NULL){
 
-  # if (type == "LME" & is.null(flag)) call_ran <- new_formula(NULL, parse_expr(paste(paste0(as_name(arg2), "-1"), as_name(nest), sep = "|")))
-  if (type == "LME" & vorce == "intra") {
-      #call_ran <- new_formula(NULL, parse_expr(paste(paste0(as_name(arg2), "-1"), "execution", sep = "|")))
-# autoregressive situation of lonitudinal executions
-      call_ran <- new_formula(NULL, parse_expr(paste("-1 + execution", as_name(nest), sep = "|")))
-      # cor_struc <- call2("corAR1", form = call_ran,
-      #                    .ns = "nlme")
-      cor_struc <- NULL
-      mthd <-  "ML"
-      # call_ran <- new_formula(NULL, parse_expr(paste(paste0("-1 + I(", as_name(arg2), "/ 1000)"), paste(as_name(nest), "execution", sep = "/"), sep = "|")))
-      #f_rhs(call_lm) <- parse_expr(paste(paste0(f_name(call_lm), "+ (-1 + log(", as_name(arg2), ")"), paste(as_name(nest), "execution)", sep = ":"), sep = "|"))
-      }
-  if (type == "LME" & vorce == "inter") {
-      call_ran <- new_formula(NULL, parse_expr(paste(paste0("-1 + I(", as_name(arg2), "/ 1000)"), paste("execution", as_name(nest), sep = "/"), sep = "|")))
-      cor_struc <- NULL
-      mthd <-  "REML"
-      #f_rhs(call_lm) <- parse_expr(paste(paste0(f_name(call_lm),"+ (-1 + log(", as_name(arg2), ")"), paste("execution", paste0(as_name(nest), ":"), sep = "/"), sep = "|"))
-      #call_ran <- list2(execution = new_formula(NULL, 1), !! nest := new_formula(NULL, parse_expr(as_name(arg2))))
-      }
+    if (is_character(trns)) clst <- paste(clst, trns, sep = "_")
+    switch(clst,
+           intra = new_formula(NULL, parse_expr(paste("-1 + execution", as_name(nest), sep = "|"))),
+           inter_ppt = new_formula(NULL, parse_expr(paste(paste0("-1 + I(", as_name(arg2), "/ 1000)"), paste("execution", as_name(nest), sep = "/"), sep = "|"))),
+           inter_log = new_formula(NULL, parse_expr(paste(paste0("-1 + log(", as_name(arg2), ")"), paste("execution", as_name(nest), sep = "/"), sep = "|")))
+           )
 
+  }
 
+  # if (type == "OLS") call_lm <- new_formula(quo_get_expr(arg1), quo_get_expr(arg2))
 
+#   # if (type == "LME" & is.null(flag)) call_ran <- new_formula(NULL, parse_expr(paste(paste0(as_name(arg2), "-1"), as_name(nest), sep = "|")))
+#   if (type == "LME" & vorce == "intra") {
+#       #call_ran <- new_formula(NULL, parse_expr(paste(paste0(as_name(arg2), "-1"), "execution", sep = "|")))
+# # autoregressive situation of lonitudinal executions
+#       call_ran <- new_formula(NULL, parse_expr(paste("-1 + execution", as_name(nest), sep = "|")))
+#       # cor_struc <- call2("corAR1", form = call_ran,
+#       #                    .ns = "nlme")
+#       cor_struc <- NULL
+#       mthd <-  "ML"
+#       # call_ran <- new_formula(NULL, parse_expr(paste(paste0("-1 + I(", as_name(arg2), "/ 1000)"), paste(as_name(nest), "execution", sep = "/"), sep = "|")))
+#       #f_rhs(call_lm) <- parse_expr(paste(paste0(f_name(call_lm), "+ (-1 + log(", as_name(arg2), ")"), paste(as_name(nest), "execution)", sep = ":"), sep = "|"))
+#       }
+#   if (type == "LME" & vorce == "inter") {
+#       call_ran <- new_formula(NULL, parse_expr(paste(paste0("-1 + I(", as_name(arg2), "/ 1000)"), paste("execution", as_name(nest), sep = "/"), sep = "|")))
+#       cor_struc <- NULL
+#       mthd <-  "REML"
+#       #f_rhs(call_lm) <- parse_expr(paste(paste0(f_name(call_lm),"+ (-1 + log(", as_name(arg2), ")"), paste("execution", paste0(as_name(nest), ":"), sep = "/"), sep = "|"))
+#       #call_ran <- list2(execution = new_formula(NULL, 1), !! nest := new_formula(NULL, parse_expr(as_name(arg2))))
+#       }
 
-    if(trans){
-      if (type == "Rm"){
-      wght <- (pull(data, !! arg2)) /1000
-      } else {
-        call_wght <- new_formula(NULL, parse_expr(paste0("I(", paste(1, paste0("I(",as_name(arg2),"/ 1000)"), sep = "/"), ")")))
-      }
-    } else {
-      wght <- pull(data, !! arg2)
+  wght_switch <- function(type, trns = NULL){
+    if (type %in% c("LME", "GLS")) type <- "LME" else type = "Rm"
+    if (!is.null(trns) && trns == "log") type <- paste(type, trns, sep = "_")
+
+    switch(type,
+           Rm = 1 / (pull(data, !! arg2)) ,
+           LME_log = new_formula(NULL, parse_expr(paste0("I(", paste(1, paste0("log(",as_name(arg2),")"), sep = "/"), ")"))),
+           LME = new_formula(NULL, parse_expr(paste0("I(", paste(1, paste0("I(",as_name(arg2),"/ 1000)"), sep = "/"), ")")))
+           )
+
+  }
+
+  # switch between types of linear model
+    lm_method <- function(type) {
+      switch(type,
+             OLS = eval(call2("lm", lm_switch("OLS") , data = expr(data))),
+             GLS = eval(call2("gls",lm_switch("GLS", trans), data =expr(data), weights = wght_switch("GLS", trans), .ns = "nlme")),
+             Rm = eval(call2("lm", lm_switch("Rm", flag), data = expr(data), weights = expr(wght_switch("Rm")))),
+             LME = eval(
+              call2(
+               "lme",
+               lm_switch("LME", vorce, trans),
+               random = ran_switch(vorce, trans),
+               data = expr(data),
+               method = if_else(vorce == "inter", "REML", "ML"),
+               weights = wght_switch("LME", trans),
+               .ns = "nlme"
+                   )
+              )
+             )
     }
+    # if(trans){
+    #   if (type == "Rm"){
+    #   wght <- (pull(data, !! arg2)) /1000
+    #   } else {
+    #     call_wght <- new_formula(NULL, parse_expr(paste0("I(", paste(1, paste0("I(",as_name(arg2),"/ 1000)"), sep = "/"), ")")))
+    #   }
+    # } else {
+    #   wght <- pull(data, !! arg2)
+    # }
 
   #call_wght <- new_formula(NULL, parse_expr(paste0("I(", paste(1, as_name(arg2), sep = "/"), ")")))
 
-# switch between OLS and ratio method type linear model
-  lm_method <- function(type) {
-    switch(type,
-           OLS = eval(call2("lm", call_lm, data = expr(data))),
-           GLS = eval(call2("gls", call_lm, data =expr(data), weights = call_wght, .ns = "nlme")),
-           Rm = eval(call2("lm", call_lm, data = expr(data), weights = expr(1 / wght))),
-           LME = eval(call2("lme",
-                            call_lm,
-                            random = call_ran,
-                            data = expr(data),
-                            method = mthd,
-                            correlation = cor_struc,
-                            weights = call_wght,
-                            .ns = "nlme"
-                            )
-                      )
-
-           # LME = eval(call2("lmer", call_lm, data = expr(data), weights = expr(1 / wght), .ns = "lme4"))
-           )
-  }
+# # switch between OLS and ratio method type linear model
+#   lm_method <- function(type) {
+#     switch(type,
+#            OLS = eval(call2("lm", call_lm, data = expr(data))),
+#            GLS = eval(call2("gls", call_lm, data =expr(data), weights = call_wght, .ns = "nlme")),
+#            Rm = eval(call2("lm", call_lm, data = expr(data), weights = expr(1 / wght))),
+#            LME = eval(call2("lme",
+#                             call_lm,
+#                             random = call_ran,
+#                             data = expr(data),
+#                             method = mthd,
+#                             correlation = cor_struc,
+#                             weights = call_wght,
+#                             .ns = "nlme"
+#                             )
+#                       )
+#
+#            # LME = eval(call2("lmer", call_lm, data = expr(data), weights = expr(1 / wght), .ns = "lme4"))
+#            )
+#   }
 
 lm_method(type)
 

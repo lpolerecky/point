@@ -335,22 +335,28 @@ eval_diag <- function(ls_df, args, flag, ..., nest = FALSE, group = NULL, output
       tidyr::nest(data = -c(!!!gr_by[!sapply(gr_by, as_name) %in% as_name(group)])) %>%
       mutate(
         # AM.0 = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, type = "Rm"),
-        gls.0 = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, type = "GLS", trans = TRUE),
-        "M_R.{{group}}" := purrr::map_dbl(gls.0, ~{unname(coef(.x)) / 1000}),
+        gls.0 = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, trans = "ppt", type = "GLS"),
+        "AM_R.{{group}}" := purrr::map_dbl(gls.0, ~{unname(coef(.x)) / 1000}),
+        log_gls.0 = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, trans = "log", type = "GLS"),
+        "GM_R.{{group}}" := purrr::map2_dbl(data, log_gls.0, ~{trans_R(.x, Xt2, unname(coef(.y)))}),
         # "GM_R.{{group}}" := purrr::map2_dbl(data, GM.0, ~{trans_R(.x, arg = Xt2, unname(coef(.y)))}),
-        # R_diff = purrr::map2_dbl(!!quo_updt(quo(GM_R), as_name(group)), !!quo_updt(quo(AM_R), as_name(group)), ~{(.x/.y - 1) * 1000}),
-        mlm.inter = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, trans = TRUE, vorce = "inter", nest = group, type = "LME"),
-        mlm.intra = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, trans = TRUE, vorce = "intra", nest = group, type = "LME"),
-        hat_RS_R.inter = purrr::map_dbl(mlm.inter, purrr::possibly(mlm_RS, NA_real_), arg = Xt2),
-        hat_RS_R_se.inter = purrr::map_dbl(mlm.inter, purrr::possibly(mlm_RS, NA_real_), arg = Xt2, output = "se"),
+        R_diff = purrr::map2_dbl(!!quo_updt(quo(GM_R), as_name(group)), !!quo_updt(quo(AM_R), as_name(group)), ~{(.x/.y - 1) * 1000}),
+        mlm.inter = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, trans = "ppt", vorce = "inter", nest = group, type = "LME"),
+        log_mlm.inter = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, trans = "log", vorce = "inter", nest = group, type = "LME"),
+        mlm.intra = purrr::map(data, purrr::possibly(lm_form, NA), arg1 = Xt1, arg2 = Xt2, vorce = "intra", nest = group, type = "LME"),
+        RS_R.inter = purrr::map_dbl(mlm.inter, purrr::possibly(mlm_RS, NA_real_), arg = Xt2),
+        RS_R_se.inter = purrr::map_dbl(mlm.inter, purrr::possibly(mlm_RS, NA_real_), arg = Xt2, output = "se"),
+        log_RS_R.inter = purrr::map_dbl(log_mlm.inter, purrr::possibly(mlm_RS, NA_real_), arg = Xt2),
+        log_RS_R_se.inter = purrr::map_dbl(log_mlm.inter, purrr::possibly(mlm_RS, NA_real_), arg = Xt2, output = "se"),
         dR_dt.intra = purrr::map_dbl(mlm.intra, purrr::possibly(mlm_dR, NA_real_), arg = Xt2),
         dR_dt_se.intra = purrr::map_dbl(mlm.intra, purrr::possibly(mlm_dR, NA_real_), arg = Xt2, output = "se"),
-        # # # sum.mlm = if_else(is.na(mlm.0) | is.na(mlm.1), NA_real_, purrr::map2(mlm.0, mlm.1, ~)),
-        # # # L.ratio  = if_else(is.na(mlm.0) | is.na(mlm.1), NA_real_, purrr::map2_dbl(mlm.0, mlm.1, ~{(pull(anova(.x, .y), L.Ratio))[2]})),
+        # # # # sum.mlm = if_else(is.na(mlm.0) | is.na(mlm.1), NA_real_, purrr::map2(mlm.0, mlm.1, ~)),
+        # # # # L.ratio  = if_else(is.na(mlm.0) | is.na(mlm.1), NA_real_, purrr::map2_dbl(mlm.0, mlm.1, ~{(pull(anova(.x, .y), L.Ratio))[2]})),
         p.inter = purrr::map2_dbl(mlm.inter, gls.0, purrr::possibly(function(x, y){ (pull(anova(x, y), `p-value`))[2] }, NA_real_)),
+        log_p.inter = purrr::map2_dbl(log_mlm.inter, log_gls.0, purrr::possibly(function(x, y){ (pull(anova(x, y), `p-value`))[2] }, NA_real_)),
         p.intra = purrr::map_dbl(mlm.intra, purrr::possibly(function(x){ (pull(broom::tidy(car::Anova(x, type = 3)), p.value))[2] }, NA_real_))
             ) %>%
-      select(-c(data, mlm.inter,mlm.intra, gls.0))
+      select(-c(data, mlm.inter, log_mlm.inter, mlm.intra, gls.0, log_gls.0))
 
 # output lm and mlm combined
     if (length(gr_by) == 1) {
@@ -533,6 +539,17 @@ mlm_dR <- function(sum, arg, output = "value") {
   dR.se <- ((sqrt(((fix.sd$sd[1]/ fix.sd$mean[1]) ^ 2) + ((fix.sd$sd[2]/ fix.sd$mean[2]) ^ 2)) * dR) /  sqrt(nobs(sum)))
   return(dR.se  * 1000) # per mille
   }
+
+}
+
+#' Conditional coefficient back transformation
+#' @export
+trans_R <- function(data, arg, coef){
+
+  M_log_pred <- mean(log(pull(data, !!arg)))
+  GM_pred <- exp(M_log_pred)
+  GM_resp <- exp(M_log_pred * coef)
+  GM_resp / GM_pred
 
 }
 
