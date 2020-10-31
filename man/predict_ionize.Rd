@@ -4,8 +4,46 @@
 \alias{predict_ionize}
 \title{Predicting trends in ionization efficiency}
 \usage{
-predict_ionize(df, Xt, N, t, species, ..., .plot = TRUE)
+predict_ionize(
+  df,
+  Xt,
+  N,
+  t,
+  species,
+  ...,
+  nest = FALSE,
+  group = NULL,
+  .plot = TRUE
+)
 }
 \description{
 Predicting trends in ionization efficiency
+}
+\examples{
+# raw ion counts on carbonate
+tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
+
+# Processing raw ion count data
+tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
+
+# remove zero count analysis
+tb.zr <- zeroCt(
+  tb.pr,
+  N.pr,
+  species.nm,
+  "12C",
+  "40Ca 16O",
+  file.nm,
+  warn = FALSE
+  )
+
+# predict ionization trends
+tb.ion<- predict_ionize(
+  df = tb.zr,
+  Xt = Xt.pr,
+  N = N.pr,
+  t = t.rw,
+  species = species.nm,
+  file.nm
+  )
 }

@@ -4,7 +4,7 @@
 \alias{reduce_diag}
 \title{Reduce diagnostics}
 \usage{
-reduce_diag(ls, type = "df", args = expr_R(NULL), ...)
+reduce_diag(ls, type = "df", args = expr_R(NULL))
 }
 \description{
 Reduce diagnostics

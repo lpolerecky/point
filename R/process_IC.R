@@ -212,10 +212,38 @@ quo_updt2 <- function(my_q, txt = NULL){
 
 #' Predicting trends in ionization efficiency
 #' @export
-predict_ionize <- function(df, Xt, N, t, species, ..., .plot = TRUE){
+#' @examples
+#' # raw ion counts on carbonate
+#' tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
+#'
+#' # Processing raw ion count data
+#' tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
+#'
+#' # remove zero count analysis
+#' tb.zr <- zeroCt(
+#'   tb.pr,
+#'   N.pr,
+#'   species.nm,
+#'   "12C",
+#'   "40Ca 16O",
+#'   file.nm,
+#'   warn = FALSE
+#'   )
+#'
+#' # predict ionization trends
+#' tb.ion<- predict_ionize(
+#'   df = tb.zr,
+#'   Xt = Xt.pr,
+#'   N = N.pr,
+#'   t = t.rw,
+#'   species = species.nm,
+#'   file.nm
+#'   )
+predict_ionize <- function(df, Xt, N, t, species, ..., nest = FALSE, group = NULL, .plot = TRUE){
 
-  gr_by <- enquos(...)
-  species <- enquo(species)
+  # species <- enquo(species)
+  gr_by <- enquos(..., species)
+  group <- enquo(group)
   Xt <- enquo(Xt)
   N <- enquo(N)
   t <- enquo(t)
@@ -227,46 +255,53 @@ predict_ionize <- function(df, Xt, N, t, species, ..., .plot = TRUE){
 
 
   df <- df %>%
-    group_by(!!! gr_by, !! species) %>%
-    mutate(n = length(!! t)) %>%
-    # Predicted values
-    tidyr::nest() %>%
-    mutate(!! Xt.model  := purrr::map(data, ~gam_fun(.x, Xt = !!Xt, t = !!t, n = !!n))) %>%
-    tidyr::unnest(cols = c(data, !! Xt.model)) %>%
-    # Detrended series
-    mutate(!! Xt.l0 := mean(!! Xt.model) + (!! Xt - !! Xt.model),
-           !! N.l0  := !! Xt.l0 * (min(!! t) - .data$tc.mt),
-           hat_Y := !! Xt.model,
-           hat_min = !! Xt.model,
-           hat_max = !! Xt.model,
-           flag = "good"
+    # group_by( %>%
+    nest(data = -c(!!! gr_by)) %>%
+    mutate(!! Xt.model := purrr::map(data, ~gam_fun(.x, Xt, t))) %>%
+    unnest(cols = c(data, !! Xt.model)) %>%
+# De-trended timeseries
+    mutate(
+      "{{Xt}}.l0" := mean(!! Xt.model) + (!! Xt - !! Xt.model),
+      "{{N}}.l0" := !! Xt.l0 * (min(!! t) - .data$tc.mt),
+      hat_Y = !! Xt.model,
+      hat_min = !! Xt.model,
+      hat_max = !! Xt.model,
+      flag = "good"
            ) %>%
     ungroup()
 
+  if (nest) {
+    df<- df %>%
+      nest(data = -c(!!! gr_by[!sapply(gr_by, as_name) %in% as_name(group)])) %>%
+      mutate(mlm = purrr::map(data, ~gam_fun(.x, Xt, t, group = group, output = "model")))
+      # unnest()
+    return(df)
+  }
+
   if (.plot) {
 
-    # stat_lab <- stat_select2(df, gr_by)
-    facets_gr <- quos(!!! gr_by, !! species)
+    facets_gr <- quos(!!! gr_by)#quos(!!! gr_by, !! species)
 
-    plot_args <- list2(df = df,
-                       stat = NULL,
-                       y = Xt,
-                       x = t,
-                       ion1 = NA,
-                       ion2 = NA,
-                       plot_title = "timeseries",
-                       plot_type = "static",
-                       args = NULL,
-                       iso = FALSE,
-                       isoscale = NULL,
-                       !!! facets_gr
-    )
+    plot_args <- list2(
+      df = df,
+      stat = NULL,
+      y = Xt,
+      x = t,
+      ion1 = NA,
+      ion2 = NA,
+      plot_title = "timeseries",
+      plot_type = "static",
+      args = NULL,
+      iso = FALSE,
+      isoscale = NULL,
+      !!! facets_gr
+      )
 
     # control with environment
     data_env <- env(data = df)
     print(eval(expr(gg_default(!!! plot_args)), data_env))
 
-    return(df)
+    return(df %>% select(-c(hat_Y, hat_min, hat_max, flag)))
 
   }
 }
@@ -290,30 +325,45 @@ predict_var <- function(df, Xt, N, t, species, ion, ...){
   tb.Xt <- stat_Xt(df.ion, !!Xt, !!N, !!species, !!!gr_by)
   tb.Xt.l0 <- stat_Xt(df.l0, !!Xt.l0, !!N.l0, !!species, !!!gr_by)
 
-  RS_Xt <- transmute(tb.Xt,
-                     !!!gr_by,
-                     !!quo_updt(Xt, ion, x = "RS") :=
-                     !!quo_updt(Xt, x = "RS") -
-                       pull(tb.Xt.l0, !!quo_updt(Xt.l0, x = "RS"))
-                     )
+  RS_Xt <- transmute(
+    tb.Xt,
+    !!!gr_by,
+    !!quo_updt(Xt, ion, x = "RS") :=
+    !!quo_updt(Xt, x = "RS") -
+    pull(tb.Xt.l0, !!quo_updt(Xt.l0, x = "RS"))
+    )
+
+
+
 
   }
 
-gam_fun <- function(data, Xt, t, n){
+gam_fun <- function(data, Xt, t, group = NULL, output = "predict"){
 
-  Xt <- enquo(Xt)
-  t <- enquo(t)
-  n <- enquo(n)
 
+  mthd<- "norm"
   s_call <- call2("s", get_expr(t))
   form_gam <- new_formula(get_expr(Xt), s_call, env = caller_env())
+  if (!is.null(group)) {
+    form_ran <- list2(!!group := new_formula(NULL, get_expr(t)))
+    mthd <- "mix"
+  }
 
-  gam_call <- call2("gam", get_expr(form_gam), method = "REML", data = expr(data))
 
-  model <- eval(expr = gam_call)
+  gam_switch <- function(type) {
 
-  unname(predict(model))
+    switch(
+      type,
+      norm = eval(call2("gam", form_gam, method = "REML", data = expr(data))),
+      mix = eval(call2("gamm", form_gam, random = form_ran, method = "REML", data = expr(data)))
+           )
+  }
 
+
+  model <- gam_switch(type = mthd)
+
+  if(output == "predict") return(unname(fitted(model)))
+  if(output == "model") return(model)
 }
 
 #' QSA test

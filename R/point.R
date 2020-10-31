@@ -19,6 +19,7 @@
 #' @import stringr
 #' @import ggplot2
 #' @import mgcv
+#' @import tidyr
 #'
 #' @docType package
 #' @name point

@@ -89,22 +89,24 @@ diag_R <- function(df,
 # Remove zeros
   if (method != "Cameca"){
 
-    df <- zeroCt(df,
-                 !! args[["N"]],
-                 !! args[["species"]],
-                 as_name(args[["ion1"]]),
-                 as_name(args[["ion2"]]),
-                 !!! gr_by,
-                 warn = FALSE
+    df <- zeroCt(
+      df,
+      !! args[["N"]],
+      !! args[["species"]],
+      as_name(args[["ion1"]]),
+      as_name(args[["ion2"]]),
+      !!! gr_by,
+      warn = FALSE
                  )
   }
 
 # ID for connecting flag to original dataframe
   df <- ID_builder(df, !! args[["species"]], !!! gr_by)
 # set initial dataset
-  df <- filter(df,
-               !! args[["species"]] == !! args[["ion1"]] |
-               !! args[["species"]] == !! args[["ion2"]]
+  df <- filter(
+    df,
+    !! args[["species"]] == !! args[["ion1"]] |
+    !! args[["species"]] == !! args[["ion2"]]
                )
   ls.tb[[1]] <- lst(df = df, results = NULL)
 
@@ -153,11 +155,12 @@ rerun_diag_R <- function(out,
   ls.vars <- var_fun(out$df, gr_by, args = args)
 
   # if called this way then output is set fixed (more flexible use with diag_R_exec)
-  out <- diag_R_exec(out$df,
-                     method = method,
-                     args = args,
-                     !!! gr_by,
-                     output = output
+  out <- diag_R_exec(
+    out$df,
+    method = method,
+    args = args,
+    !!! gr_by,
+    output = output
                      )
 
   # save augmented dataframe for next cycle
@@ -167,8 +170,9 @@ rerun_diag_R <- function(out,
     df.aug <- select(out, .data$ID, !!!gr_by, !!! ls.vars[["original"]])
   }
   if (output == "complete") {
-    df.aug <- bind_rows(select(df.aug ,.data$ID, !!!gr_by, !!! ls.vars[["ion1"]]),
-                        select(df.aug, .data$ID, !!!gr_by, !!! ls.vars[["ion2"]])
+    df.aug <- bind_rows(
+      select(df.aug ,.data$ID, !!!gr_by, !!! ls.vars[["ion1"]]),
+      select(df.aug, .data$ID, !!!gr_by, !!! ls.vars[["ion2"]])
                         )
   }
 
@@ -184,12 +188,7 @@ rerun_diag_R <- function(out,
 }
 
 #' @export
-diag_R_exec <- function(df,
-                        method,
-                        args = expr_R(NULL),
-                        ...,
-                        output
-                        ){
+diag_R_exec <- function(df, method, args = expr_R(NULL), ..., output){
 
   gr_by <- enquos(...)
 
@@ -197,14 +196,15 @@ diag_R_exec <- function(df,
   ls.vars <- var_fun(df, gr_by, args)
 
   diag_vc <- c("Cameca", "CooksD", "Rm", "CV", "QQ","norm_E")
-  diag_method <- purrr::map(diag_vc,
-                            call2,
-                            expr(.),
-                            expr(args),
-                            expr(ls.vars),
-                            !!!gr_by,
-                            output = expr(output)
-                            ) %>%
+  diag_method <- purrr::map(
+    diag_vc,
+    call2,
+    expr(.),
+    expr(args),
+    expr(ls.vars),
+    !!!gr_by,
+    output = expr(output)
+    ) %>%
     set_names(nm = diag_vc)
 
 # Descriptive an predictive statistics for ion ratios
@@ -279,7 +279,7 @@ eval_diag <- function(ls_df, args, flag, ..., nest = FALSE, group = NULL, output
   #   by = c("execution", "ID", sapply(gr_by, as_name))
   #   )
 
-  df <- reduce_diag(ls_df, "results",  args, !!!gr_by)
+  df <- reduce_diag(ls_df, "results", args)#, !!!gr_by)
 #   %>%
 # # Create analysis label
 #     mutate(analysis = "analysis")
@@ -383,19 +383,21 @@ eval_diag <- function(ls_df, args, flag, ..., nest = FALSE, group = NULL, output
 #' Reduce diagnostics
 #'
 #' @export
-reduce_diag <- function(ls, type = "df", args = expr_R(NULL), ...){
+reduce_diag <- function(ls, type = "df", args = expr_R(NULL)){
 
-  gr_by <- enquos(...)
+  # gr_by <- enquos(...)
 
   type_reduction <- function(type){
     switch(type,
            results = call2("mutate",
                            expr(.),
-                           execution = expr(as.numeric(execution) -1)
+                           execution =
+                             expr(as.numeric(execution) -1)
                            ),
            df = call2("mutate",
                       expr(.),
-                      execution = expr(as.numeric(execution))
+                      execution =
+                        expr(as.numeric(execution))
                       )
           )
   }
