@@ -4,7 +4,7 @@
 \alias{trans_R}
 \title{Conditional coefficient back transformation}
 \usage{
-trans_R(data, arg, coef)
+trans_R(data, arg, cf)
 }
 \description{
 Conditional coefficient back transformation

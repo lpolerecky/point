@@ -4,12 +4,13 @@
 # variables simulated dataset
 #-------------------------------------------------------------------------------
 
-expr_R_stat <- expr_R(Xt = "Xt.sim",
-                      N = "N.sim",
-                      species = "species",
-                      ion1 = "13C",
-                      ion2 = "12C"
-                      )
+expr_R_stat <- expr_R(
+  Xt = "Xt.sim",
+  N = "N.sim",
+  species = "species",
+  ion1 = "13C",
+  ion2 = "12C"
+  )
 
 grps <- quos(simulation, trend, repetition, iso_offset)
 
@@ -18,17 +19,23 @@ grps <- quos(simulation, trend, repetition, iso_offset)
 #-------------------------------------------------------------------------------
 
 
-ls.tb <- diag_R(sim_IC,
-                method = "CooksD",
-                args = expr_R_stat,
-                reps = 2,
-                !!! grps,
-                output = "complete",
-                plot = FALSE
-                )
+ls.tb <- diag_R(
+  sim_IC,
+  method = "CooksD",
+  args = expr_R_stat,
+  reps = 1,
+  !!! grps,
+  output = "complete",
+  plot = FALSE
+  )
 
 # Evaluation of performance
-CD_eval <- eval_diag(ls.tb, expr_R_stat, flag, !!! grps, nest = TRUE, group = iso_offset)
+CD_eval <- eval_diag(
+  ls.tb,
+  expr_R_stat,
+  flag,
+  !!! grps
+  )
 
 usethis::use_data(CD_eval, overwrite = TRUE, compress = "xz")
 
@@ -37,16 +44,22 @@ usethis::use_data(CD_eval, overwrite = TRUE, compress = "xz")
 #-------------------------------------------------------------------------------
 
 
-ls.tb <- diag_R(sim_IC,
-                method = "Cameca",
-                args = expr_R_stat,
-                reps = 1,
-                !!! grps,
-                output = "complete",
-                plot = FALSE
-                )
+ls.tb <- diag_R(
+  sim_IC,
+  method = "Cameca",
+  args = expr_R_stat,
+  reps = 1,
+  !!! grps,
+  output = "complete",
+  plot = FALSE
+  )
 
 # Evaluation of performance
-CM_eval <- eval_diag(ls.tb, expr_R_stat, flag, !!! grps, nest = TRUE, group = iso_offset)
+CM_eval <- eval_diag(
+  ls.tb,
+  expr_R_stat,
+  flag,
+  !!! grps
+  )
 
 usethis::use_data(CM_eval, overwrite = TRUE, compress = "xz")

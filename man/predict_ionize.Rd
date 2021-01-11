@@ -13,7 +13,8 @@ predict_ionize(
   ...,
   nest = FALSE,
   group = NULL,
-  .plot = TRUE
+  .plot = TRUE,
+  .method = "median"
 )
 }
 \description{

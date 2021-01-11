@@ -1,16 +1,16 @@
 ## code to prepare `simulated_IC` dataset
 
 # repetition
-reps <- 10
+reps <- 15
 
 # Types of R variation
-var_R <- c("ideal", "symmetric", "asymmetric")
+var_R <- c("symmetric", "asymmetric")
 
 # Varying linear trends in the ionization efficiency
-var_T <- seq(200, 500, length.out = 3)
+var_T <- seq(0, 500, length.out = 6)
 
 # # varying isotope offset
-var_I <- c(-5, -15, -25)
+var_I <- seq(0, -30, length.out = 6)
 
 # Seeds for number generation
 tot_length <- length(var_T) * length(var_R) * length(var_I)
@@ -22,16 +22,13 @@ sim_R.ext <- tidyr::crossing(sys = var_T, type = var_R, offsetR = var_I) %>%
   transmute(params = purrr::pmap(lst(sys, type, seed, offsetR), lst))
 
 
-sim_IC <- purrr::map2_dfr(rep("sim_R", tot_length),
-                          sim_R.ext$params,
-                          function(fn, args) exec(fn,
-                                                  !!! args,
-                                                  reps = reps,
-                                                  ion1 = "13C",
-                                                  ion2 = "12C",
-                                                  baseR = 5
-                                                  )
-                          )
+sim_IC <- purrr::map2_dfr(
+  rep("sim_R", tot_length),
+  sim_R.ext$params,
+  function(fn, args) {
+    exec(fn, !!! args, reps = reps, ion1 = "13C", ion2 = "12C", baseR = 0)
+    }
+  )
 
 
 usethis::use_data(sim_IC, overwrite = TRUE, compress = "xz")
@@ -39,9 +36,10 @@ usethis::use_data(sim_IC, overwrite = TRUE, compress = "xz")
 # limited dataset only to show range in systematic of an isotopically
 # ideal substance but different systematic trends
 sim_IC_systematic <- sim_IC %>%
-  filter(trend == "linear trend (var: 0)" |
-         trend == "linear trend (var: 500)"
-         )
+  filter(
+    trend == "linear trend (var: 0)" |
+      trend == "linear trend (var: 500)"
+    )
 
 usethis::use_data(sim_IC_systematic, overwrite = TRUE, compress = "xz")
 

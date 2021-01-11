@@ -58,15 +58,15 @@ plot_diag_R <- function(ls_df,
   df.reps <- reps[min(reps):max(reps)-1]
   results.reps <- reps[-1]
 
-# heavy isotope
+  # Heavy isotope
   Xt1 <- quo_updt(args[["Xt"]], as_name(args[["ion1"]]))
-# light isotope
+  # Light isotope
   Xt2 <- quo_updt(args[["Xt"]], as_name(args[["ion2"]]))
 
-# iso stats dataset
-  df.R <- reduce_diag(ls_df, "results", args, !!!gr_by)
+  # Dataset
+  df.R <- reduce_diag(ls_df, "results", args)
 
-# labels for point statistics
+  # Labels for point statistics
   stat_lab <- df.R %>%
     group_by(execution) %>%
     tidyr::nest() %>%
@@ -90,7 +90,7 @@ plot_diag_R <- function(ls_df,
 
 # Combine original/augmented datasets and results of diagnostics
   df.def <- inner_join(
-    reduce_diag(ls_df, "df", args, !!!gr_by),
+    distinct(reduce_diag(ls_df, "df", args), execution, ID, .keep_all = TRUE),
     df.R,
     by = c("execution", "ID", sapply(gr_by, as_name))
   )
@@ -100,7 +100,8 @@ plot_diag_R <- function(ls_df,
 
 # sample fraction if interactive
   if(type == "interactive") {
-  IDs <- sample_frac(filter(df.def, execution == 1), size = 0.01) %>%  select(ID)
+  IDs <- sample_frac(filter(df.def, execution == 1), size = 0.01) %>%
+    select(ID)
   }
 
   filter_df <- function(df, plot_type){
@@ -113,19 +114,20 @@ plot_diag_R <- function(ls_df,
   df.def <- filter_df(df = df.def, plot_type = type)
   stat_lab  <- filter_df(df = stat_lab , plot_type = type)
 
-  plot_args <- list2(df = df.def,
-                     stat = stat_lab,
-                     y = Xt1,
-                     x = Xt2,
-                     ion1 = ion1,
-                     ion2 = ion2,
-                     plot_title = plot_title,
-                     plot_type = type,
-                     args = args,
-                     iso = iso,
-                     isoscale = isoscale,
-                     !!! gr_by
-                     )
+  plot_args <- list2(
+    df = df.def,
+    stat = stat_lab,
+    y = Xt1,
+    x = Xt2,
+    ion1 = ion1,
+    ion2 = ion2,
+    plot_title = plot_title,
+    plot_type = type,
+    args = args,
+    iso = iso,
+    isoscale = isoscale,
+    !!! gr_by
+    )
 
 # Residual leverage plot
   if(plot_title == "norm_E"){
@@ -154,7 +156,7 @@ plot_diag_R <- function(ls_df,
   }
 
   if(type == "interactive"){
-    return(plotly::ggplotly(gg, tooltip="text")  %>%
+    return(plotly::ggplotly(gg, tooltip="text") %>%
              plotly::animation_opts(frame = 150, transition = 0)
     )
     }
@@ -291,24 +293,30 @@ gg_default <- function(df,
     text_type <- text_vc[plot_title]
 
     if (iso) {
-      df <- mutate(df,
-                   delta = round(
-                     calib_R(!! quo_updt(args[["Xt"]], x = "M_R"),
-                             standard = isoscale,
-                             type = "composition",
-                             input = "R",
-                             output = "delta"),
-                     1
-                   )
-      )
+      df <- mutate(
+        df,
+        delta = round(
+          calib_R(
+            !! quo_updt(args[["Xt"]], x = "M_R"),
+            standard = isoscale,
+            type = "composition",
+            input = "R",
+            output = "delta"
+            ),
+          1
+          )
+        )
 
       R_not <- expr(paste0("δ", ion1, " (‰): ", delta))
+
     }else{
-      df <- mutate(df,
-                   R = round(!! quo_updt(args[["Xt"]], x = "M_R"), 4)
-                   )
+      df <- mutate(
+        df,
+        R = round(!! quo_updt(args[["Xt"]], x = "M_R"), 4)
+        )
 
       R_not <- expr(paste0("mean R: ", R))
+
       }
 
     text_expr = lst(
@@ -350,7 +358,7 @@ gg_default <- function(df,
   if (plot_type == "interactive") {
     p <- p + geom_point(alpha = 0.5)
   } else {
-    p <- p + geom_hex(alpha = 0.5)
+    p <- p + geom_point(alpha = 0.05)
     # geom_point(alpha = 0.05)
   }
 

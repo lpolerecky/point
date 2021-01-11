@@ -32,64 +32,66 @@
 #' # Use point_example() to access the examples bundled with this package
 #'
 #' # raw data containing 13C and 12C counts on carbonate
-#' tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
+#' tb_rw <- read_IC(point_example("2018-01-19-GLENDON"))
 #'
 #' # Processing raw ion count data
-#' tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt, deadtime = 44, thr_PHD = 50)
-cor_IC <-function(df, N, t, Det, deadtime = 0, thr_PHD = 0){
+#' tb_pr <- cor_IC(tb_rw, N.rw, t.rw, deadtime = 44, thr_PHD = 50)
+cor_IC <-function(df, N, t, bl_t = tc.mt, Det = det_type.mt, deadtime = 0,
+                  thr_PHD = 0, hide = TRUE
+                  ){
 
   stopifnot(tibble::is_tibble(df))
   stopifnot(is.numeric(deadtime))
   stopifnot(is.numeric(thr_PHD))
 
+# Unfold meta data
+  vars <- attr(tb_rw, "metadata") %>% select(ends_with(".nm")) %>% colnames()
+  df <- left_join(df, attr(df, "metadata"), by = vars)
+
+# Original quosures
   N <- enquo(N)
   t <- enquo(t)
+  bl_t <- enquo(bl_t)
   Det <- enquo(Det)
 
+# New quosures
+  N.pr <- quo_updt2(N, "pr")
+
 # The corrections
-  args <- lst(
-              # Time increments (time between measurements minus blanking time)
-              quo(min(!! t) - .data$tc.mt),
-              # Count rates
-              quo(!! N / .data$diff.t),
-              # Deadtime correction on count rates
-              quo(if_else(!! Det == "EM",
-                          cor_DT(.data$Xt.rw, deadtime),
-                          .data$Xt.rw)),
-              # Deadtime correction on counts
-              quo(if_else(!! Det == "EM",
-                          cor_DT(.data$Xt.rw, deadtime) * .data$diff.t,
-                          !! N)),
-              # Yield correction on count rates
-              quo(if_else(!! Det == "EM",
-                          cor_yield(.data$Xt.pr,
-                                    .data$mean_PHD,
-                                    .data$SD_PHD,
-                                    thr_PHD),
-                          .data$Xt.pr)),
-              # Yield correction on counts
-              quo(if_else(!! Det == "EM",
-                          cor_yield(.data$Xt.pr,
-                                    .data$mean_PHD,
-                                    .data$SD_PHD,
-                                    thr_PHD) * .data$diff.t,
-                          !! quo_updt2(N, "pr")))
-              )
+  args <- quos(
+# Time increments (time between measurements minus blanking time)
+    min(!! t) - !! bl_t,
+# Count rates
+    !! N / .data$dt.rw,
+# Deadtime correction on count rates
+    if_else(!! Det == "EM", cor_DT(.data$Xt.rw, deadtime), .data$Xt.rw),
+# Deadtime correction on counts
+    if_else(!! Det == "EM", .data$Xt.pr * .data$dt.rw, !! N),
+# Yield correction on count rates
+    if_else(!! Det == "EM",
+            cor_yield(.data$Xt.pr, .data$mean_PHD.mt, .data$SD_PHD.mt, thr_PHD),
+            .data$Xt.pr
+            ),
+# Yield correction on counts
+    if_else(!! Det == "EM", .data$Xt.pr *.data$dt.rw, !! N.pr)
+    )
 
 # The correction names (depend on user-supplied expression)
-  ls.names <- c("diff.t", "Xt.rw", "Xt.pr",
-                as_name(quo_updt2(N, "pr")),
-                "Xt.pr",
-                as_name(quo_updt2(N, "pr")))
+  ls_nm <- c("dt.rw", "Xt.rw", "Xt.pr", as_name(N.pr), "Xt.pr", as_name(N.pr))
 
 # Set correction names
-  args <- set_names(args, nm = ls.names)
+  args <- set_names(args, nm = ls_nm)
 
 # Execute corrections
-  tb.pr <- df %>%
-             mutate(!!! args)
+  tb_pr <- mutate(df, !!! args)
 
-  return(tb.pr %>% select(-.data$diff.t))
+  if (hide) {
+    tb_pr <- select(tb_pr, -(ends_with(".mt")|ends_with(".rw")))
+    attr(tb_pr, "rawdata") <- select(tb_pr, ends_with(".rw"))
+    return(tb_pr)
+    }
+
+  return(tb_pr)
 
   }
 
@@ -239,48 +241,88 @@ quo_updt2 <- function(my_q, txt = NULL){
 #'   species = species.nm,
 #'   file.nm
 #'   )
-predict_ionize <- function(df, Xt, N, t, species, ..., nest = FALSE, group = NULL, .plot = TRUE){
+predict_ionize <- function(df, Xt, N, t, species, ..., nest = FALSE, group = NULL, .plot = TRUE, .method = "median"){
 
-  # species <- enquo(species)
-  gr_by <- enquos(..., species)
+  species <- enquo(species)
+  gr_by <- enquos(..., species, .named = TRUE)
   group <- enquo(group)
   Xt <- enquo(Xt)
   N <- enquo(N)
   t <- enquo(t)
 
+  if (nest) nst_by <- gr_by[!sapply(gr_by, as_name) %in% as_name(group)]
+
   # new quosures
-  Xt.model <- quo_updt(Xt, "model")
+  if (nest) {
+    Xt.mdl <- quo_updt(Xt, "grp") # group-wise
+    }else{
+      Xt.mdl <- quo_updt(Xt, "nlt") # per analysis
+    }
   Xt.l0 <- quo_updt(Xt, "l0")
   N.l0 <-  quo_updt(N, "l0")
 
-
-  df <- df %>%
-    # group_by( %>%
-    nest(data = -c(!!! gr_by)) %>%
-    mutate(!! Xt.model := purrr::map(data, ~gam_fun(.x, Xt, t))) %>%
-    unnest(cols = c(data, !! Xt.model)) %>%
-# De-trended timeseries
-    mutate(
-      "{{Xt}}.l0" := mean(!! Xt.model) + (!! Xt - !! Xt.model),
-      "{{N}}.l0" := !! Xt.l0 * (min(!! t) - .data$tc.mt),
-      hat_Y = !! Xt.model,
-      hat_min = !! Xt.model,
-      hat_max = !! Xt.model,
-      flag = "good"
-           ) %>%
-    ungroup()
-
-  if (nest) {
-    df<- df %>%
-      nest(data = -c(!!! gr_by[!sapply(gr_by, as_name) %in% as_name(group)])) %>%
-      mutate(mlm = purrr::map(data, ~gam_fun(.x, Xt, t, group = group, output = "model")))
-      # unnest()
-    return(df)
+  mth_switch <- function(mth, arg) {
+    switch(mth,
+           median = call2("median", arg),
+           mean  = call2("mean", arg),
+           stop("unknown method", call. = FALSE)
+          ) %>%
+      eval
   }
 
-  if (.plot) {
 
-    facets_gr <- quos(!!! gr_by)#quos(!!! gr_by, !! species)
+
+
+  if (nest) {
+    df <- nest(df, data = -c(!!! nst_by)) %>%
+      mutate(
+        mlm.0 = purrr::map(data, ~gam_fun(.x, Xt, t, output = "model")),
+        mlm.1 = purrr::map(data, ~gam_fun(.x, Xt, t, group = group, output = "model")),
+        p.Xt = purrr::map2_dbl(mlm.1,  mlm.0, ~{purrr::discard(pull(anova(purrr::pluck(.x, "lme"), purrr::pluck(.y, "lme")), `p-value`), is.na)}),
+        dAIC = purrr::map2_dbl(mlm.1,  mlm.0, ~{diff(pull(anova(purrr::pluck(.x, "lme"), purrr::pluck(.y, "lme")), AIC))}),
+        dvars = purrr::map(mlm.1, ~pull_ef(purrr::pluck(.x, "lme"), group = group, arg = t)),
+        !! Xt.mdl := purrr::map(mlm.1, ~as.vector(unname(fitted(purrr::pluck(.x, "gam")))))
+        )
+    df_vars <- unnest(select(df, !!! nst_by, dvars), cols = dvars)
+    df <- select(df, -c(mlm.0, mlm.1, dvars)) %>%
+      unnest(cols = c(data, p.Xt, dAIC, !! Xt.mdl))
+
+    df <- left_join(df, df_vars, by = c(sapply(nst_by, as_name), as_name(group))) %>%
+      group_by(!!! gr_by) %>%
+      mutate(
+        uc_Xt = mth_switch(.method,!! Xt.mdl),
+        "{{Xt}}.l0" := mth_switch(.method,!! Xt.mdl) + (!! Xt - !! Xt.mdl) + ran.intercept # random intercpt correction for group-wise
+        )
+
+    } else {
+      df <- nest(df, data = -c(!!! gr_by)) %>%
+        mutate(!! Xt.mdl := purrr::map(data, ~as.vector(gam_fun(.x, Xt, t)))) %>%
+        unnest(cols = c(data, !! Xt.mdl)) %>%
+        group_by(!!! gr_by) %>%
+        mutate(
+          uc_Xt = mth_switch(.method,!! Xt.mdl),
+          "{{Xt}}.l0" := mth_switch(.method,!! Xt.mdl) + (!! Xt - !! Xt.mdl)
+        )
+
+  }
+
+# De-trended timeseries
+  df <- mutate(df,
+      "{{N}}.l0" := !! Xt.l0 * (min(!! t) - .data$tc.mt),
+      hat_Y = !! Xt.mdl,
+      hat_min = !! Xt.mdl,
+      hat_max = !! Xt.mdl,
+      flag = "good"
+      ) %>%
+    ungroup()
+
+  if (.plot) {
+#
+    if(nest) {
+      facets_gr <- quos(!!! nst_by)
+      } else {
+        facets_gr <- quos(!!! gr_by)
+        }
 
     plot_args <- list2(
       df = df,
@@ -299,11 +341,16 @@ predict_ionize <- function(df, Xt, N, t, species, ..., nest = FALSE, group = NUL
 
     # control with environment
     data_env <- env(data = df)
-    print(eval(expr(gg_default(!!! plot_args)), data_env))
+    eval(expr(gg_default(!!! plot_args) +
+               geom_hline(aes(yintercept = uc_Xt), color = "red", size = 1.1)),
+              data_env
+              ) %>%
+      print()
 
-    return(df %>% select(-c(hat_Y, hat_min, hat_max, flag)))
+  return(select(df, -c(hat_Y, hat_min, hat_max, flag)))
 
   }
+  return(select(df, -c(hat_Y, hat_min, hat_max, flag)))
 }
 
 #' Predicting variation in ion based on ionization trend
@@ -344,6 +391,19 @@ gam_fun <- function(data, Xt, t, group = NULL, output = "predict"){
   mthd<- "norm"
   s_call <- call2("s", get_expr(t))
   form_gam <- new_formula(get_expr(Xt), s_call, env = caller_env())
+
+  # if (is.null(group)) {
+  #   s_call <- call2("s", get_expr(t))
+  #   form_gam <- new_formula(get_expr(Xt), s_call, env = caller_env())
+  #   } else {
+  #     s_call0 <- call2("s", get_expr(t))
+  #     s_call1 <- call2("s", get_expr(group), bs = "re") # random intercept
+  #     # s_call2 <- call2("s", get_expr(group), get_expr(t), bs = "re") # random slope
+  #     s_combi <- lst(s_call0, s_call1) %>% purrr::reduce(function(out, input) call2("+", out, input))# combine s funs
+  #     form_gam <- new_formula(get_expr(Xt), s_combi , env = caller_env())
+  #     }
+  #
+
   if (!is.null(group)) {
     form_ran <- list2(!!group := new_formula(NULL, get_expr(t)))
     mthd <- "mix"
@@ -354,15 +414,15 @@ gam_fun <- function(data, Xt, t, group = NULL, output = "predict"){
 
     switch(
       type,
-      norm = eval(call2("gam", form_gam, method = "REML", data = expr(data))),
+      norm = eval(call2("gamm", form_gam, method = "REML", data = expr(data))),
       mix = eval(call2("gamm", form_gam, random = form_ran, method = "REML", data = expr(data)))
            )
   }
 
+  #gam_call <- call2("gam", form_gam, method = "REML", data = expr(data))
+  model <-gam_switch(type = mthd) # eval(gam_call)
 
-  model <- gam_switch(type = mthd)
-
-  if(output == "predict") return(unname(fitted(model)))
+  if(output == "predict") return(unname(fitted(model$gam)))
   if(output == "model") return(model)
 }
 
@@ -583,12 +643,13 @@ lm_form <- function(data, arg1, arg2, flag = NULL, trans = NULL, vorce = NULL, n
 
   }
 
+ # wght <- pull(data, !! arg2)
   # switch between types of linear model
     lm_method <- function(type) {
       switch(type,
              OLS = eval(call2("lm", lm_switch("OLS") , data = expr(data))),
              GLS = eval(call2("gls",lm_switch("GLS", trans), data =expr(data), weights = wght_switch("GLS", trans), .ns = "nlme")),
-             Rm = eval(call2("lm", lm_switch("Rm", flag), data = expr(data), weights = expr(wght_switch("Rm")))),
+             Rm = eval(call2("lm", lm_switch("Rm", flag), data = expr(data), weights = wght_switch("Rm"))),#expr(1 / wght))),
              LME = eval(
               call2(
                "lme",
@@ -677,5 +738,23 @@ stat_select2 <- function(df, facets_gr) {
               !!! facets_gr
               ) %>%
     tidyr::unnest(cols = lb)
+
+}
+
+pull_ef <- function(mlm, group, arg){
+
+  df.mlm <- mlm %>%
+    nlme::ranef() %>%
+    purrr::pluck(2)
+
+  tibble::rownames_to_column(df.mlm, var = as_name(group)) %>%
+    tibble::as_tibble() %>%
+    dplyr::rename(ran.intercept = contains("Intercept"), ran.shape = !!arg) %>%
+    mutate(!!group := str_replace_all(!!group,"1\\/", ""),
+           fix.intercept = unname(nlme::fixef(mlm))[1],
+           fix.shape = unname(nlme::fixef(mlm))[2]
+           )
+
+
 
 }

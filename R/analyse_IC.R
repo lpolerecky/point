@@ -569,7 +569,7 @@ latex_parser <- function(ion1, ion2 = NULL){
 #-------------------------------------------------------------------------------
 # Helper functions for parsing, testing and validation
 #-------------------------------------------------------------------------------
-# Function for covariate convertion of isotope systems
+# Function for co-variate convertion of isotope systems
 #' @export
 cov_R <- function(df, species, ion1, ion2, ..., preserve = FALSE){
 
