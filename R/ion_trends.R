@@ -77,7 +77,8 @@ predict_ionize <- function(.df, ..., .Xt = Xt.pr, .N = N.pr,
     }
 
   # metadata
-  if (ncol(select(df, ends_with(".mt"))) == 0) df <- unfold(.df)
+  if (ncol(select(.df, ends_with(".mt"))) == 0) df <- unfold(.df)
+
 
 # Groupwise
   if (.nest) {
@@ -105,11 +106,10 @@ predict_ionize <- function(.df, ..., .Xt = Xt.pr, .N = N.pr,
           # mean correction
           !! Xt.l0 := !! M_Xt.l0 + (!! Xt - !! Xt.mdl),
           !! N.l0:= !! Xt.l0 * (min(!! t) - .data$tc.mt)
-          )
-  }
+        )
+      }
 
-  # remove metadata and plot data
-  df <- select(df, -ends_with(".mt"))
+  df <- ungroup(df)
 
   if (.plot) {
     if(.nest) {
@@ -125,8 +125,7 @@ predict_ionize <- function(.df, ..., .Xt = Xt.pr, .N = N.pr,
       hat_min = !! Xt.mdl,
       hat_max = !! Xt.mdl,
       flag = "good"
-      ) %>%
-      ungroup()
+      )
 
     plot_args <- list2(
       df = df_pl,
@@ -154,17 +153,14 @@ predict_ionize <- function(.df, ..., .Xt = Xt.pr, .N = N.pr,
       ) %>%
       print()
 
+
     # hide model data
-    if (.hide) df <- fold(ungroup(df), "modeldata")
+    if (.hide) df <- fold(df, c(".mt",".rw", ".ml"))
     return(df)
-  }
-  if (.hide) df <- fold(ungroup(df), "modeldata")
+    }
+  # hide model data
+  if (.hide) df <- fold(df, c(".mt",".rw", ".ml"))
   return(df)
 }
-
-
-
-
-
 
 
