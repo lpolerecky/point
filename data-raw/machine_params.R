@@ -60,4 +60,4 @@ cam_params <- tibble(
   )
 
 
-usethis::use_data(cam_params, overwrite = TRUE, internal = TRUE)
+usethis::use_data(cam_params, overwrite = TRUE)
