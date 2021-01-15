@@ -24,8 +24,8 @@ Rm <- norm_E <- CooksD <- QQ <- function(.df, ..., .args = expr_R(NULL), .output
   df <- nest_R_lm(.df, gr_by, Xt1, Xt2, method = fun_nm, .hyp = .hyp)
 
   # Output
-  if(.output == "flag") return(unnest(select(df, -c(data, aug)), cols = c(extr, flag)))
-  if(.output == "complete") return(unnest(select(df, -aug), cols = c(data, extr, flag)))
+  if(.output == "flag") return(unnest(select(df, -data), cols = c(extr, flag)))
+  if(.output == "complete") return(unnest(df, cols = c(data, extr, flag)))
 
 }
 
@@ -221,7 +221,7 @@ nest_R_lm <- function(df, gr_by, Xt1, Xt2, method, .hyp){
       flag =
         purrr::map2(extr, aug, ~flag_set(.x, .y, Xt1, Xt2, type = method))
       ) %>%
-    select(-c(R_lm)) %>%
+    select(-c(R_lm, aug)) %>%
     ungroup()
 
 
