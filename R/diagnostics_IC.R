@@ -39,190 +39,161 @@
 #' @export
 #' @examples
 #' # Modelled ion count dataset
-#' # Create expression for mimicking R_stat() call
-#' expr_R_stat <- expr_R(Xt = "Xt.sim",
-#'                       N = "N.sim",
-#'                       species = "species",
-#'                       ion1 = "13C",
-#'                       ion2 = "12C"
-#'                       )
 #'
 #' # Cook's D style diagnostic-augmentation of ion count data for
 #' # isotope ratios; 3 repeats
-#' ls.dia <- diag_R(sim_IC_extremes,
-#'                  method = "CooksD",
-#'                  args = expr_R_stat,
-#'                  reps = 2,
-#'                  simulation,
-#'                  trend,
-#'                  iso_offset,
-#'                  output = "complete",
-#'                  plot = FALSE
-#'                  )
-diag_R <- function(df,
-                   method = "Cameca",
-                   args = expr_R(NULL),
-                   reps = 1,
-                   ...,
-                   output = "flag",
-                   plot = TRUE,
-                   plot_type = "interactive",
-                   iso = TRUE,
-                   isoscale = NULL
+#' diag_R(sim_IC_extremes, "13C", "12C", simulation, trend, iso_offset)
+#'
+diag_R <- function(.df, .ion1, .ion2, ..., .method = "CooksD", .reps = 1,
+                   .Xt = Xt.pr, .N = N.pr, .species = species.nm, .t = t.nm,
+                   .output = "flag", .hyp = "none", .plot = TRUE,
+                   .plot_type = "interactive", .iso = TRUE, .isoscale = NULL
                    ){
 
   # Check if output is consistent with plot call
-  if (output == "flag" & plot == TRUE){
-      stop("argument plot = TRUE requires argument output to be set to complete",
-           call. = FALSE
-           )
+  if (.output == "flag" & .plot == TRUE){
+      stop(
+        "argument plot = TRUE requires argument output to be set to complete",
+        call. = FALSE
+        )
     }
 
+  # Quoting the call (user-supplied expressions)
+  # Grouping
   gr_by <- enquos(...)
 
-# repetitions
-  max <- reps + 1
+  # stat_R variables
+  args <- enquos(.Xt = .Xt, .N = .N, .species = .species, .t = .t)
 
-# empty list for iteration storage
-  ls.tb <- rlang::rep_named(as.character(1:max), lst())
+  # Repetitions
+  max <- .reps + 1
 
-# Remove zeros
-  if (method != "Cameca"){
-
-    df <- zeroCt(
-      df,
-      !! args[["N"]],
-      !! args[["species"]],
-      as_name(args[["ion1"]]),
-      as_name(args[["ion2"]]),
-      !!! gr_by,
-      warn = FALSE
-                 )
-  }
-
-# ID for connecting flag to original dataframe
-  df <- ID_builder(df, !! args[["species"]], !!! gr_by)
-# set initial dataset
-  df <- filter(
-    df,
-    !! args[["species"]] == !! args[["ion1"]] |
-    !! args[["species"]] == !! args[["ion2"]]
-               )
-  ls.tb[[1]] <- lst(df = df, results = NULL)
+  # Empty list for iteration storage
+  ls_tb <- rep_named(as.character(1:max), list2())
+  ls_tb[[1]] <- list2(df = .df, results = NULL)
 
 # Execute repeated cycles of augmentation
-  ls.tb <- ls.tb  %>%
-    purrr::accumulate(rerun_diag_R,
-                      method = method,
-                      args = args,
-                      !!! gr_by,
-                      output = output
-                      )
-  if (plot) {
-
-    ls.tb %T>%
-      {print(plot_diag_R(ls_df = .,
-                         args = args,
-                         !!! gr_by,
-                         plot_title = method,
-                         type = plot_type,
-                         iso = iso,
-                         isoscale = isoscale
+  ls_tb <- ls_tb  %>%
+    purrr::accumulate(
+      rerun_diag_R,
+      .ion1 = .ion1,
+      .ion2 = .ion2,
+      !!! gr_by,
+      .method = .method,
+      .Xt = !!args[[".Xt"]],
+      .N = !!args[[".N"]],
+      .species = !!args[[".species"]],
+      .t = !!args[[".t"]],
+      .output = .output
       )
-      )
-      }
-
-    } else {
-
-      return(ls.tb)
-
-      }
+  # if (plot) {
+  #
+  #   ls.tb %T>%
+  #     {print(plot_diag_R(ls_df = .,
+  #                        args = args,
+  #                        !!! gr_by,
+  #                        plot_title = method,
+  #                        type = plot_type,
+  #                        iso = iso,
+  #                        isoscale = isoscale
+  #     )
+  #     )
+  #     }
+  #
+  #   } else {
+  #
+     return(ls_tb)
+  #
+  #     }
 
 }
 
-#' @export
-rerun_diag_R <- function(out, input, method, args = expr_R(NULL), ..., output){
 
+rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .method,.Xt = Xt.pr,
+                         .N = N.pr, .species = species.nm, .t = t.nm,
+                         .output = .output){
+
+  # Quoting the call (user-supplied expressions)
+  # Grouping
   gr_by <- enquos(...)
 
-  # variables
-  ls.vars <- var_fun(out$df, gr_by, args = args)
+  # stat_R variables
+  args <- enquos(.Xt = .Xt, .N = .N, .species = .species, .t = .t)
 
-  # if called this way then output is set fixed (more flexible use with diag_R_exec)
+  # Heavy isotope
+  Xt1 <- quo_updt(args[[".Xt"]], post = .ion1) # count rate
+  N1 <- quo_updt(args[[".N"]], post = .ion1) # counts
+
+  # Ligh isotope
+  Xt2 <- quo_updt(args[[".Xt"]], post = .ion2) # count rate
+  N2  <- quo_updt(args[[".N"]], post = .ion2) # counts
+
+  # Execute
   out <- diag_R_exec(
     out$df,
-    method = method,
-    args = args,
+    .ion1,
+    .ion2,
     !!! gr_by,
-    output = output
+    .method = .method,
+    .Xt = !!args[[".Xt"]],
+    .N = !!args[[".N"]],
+    .species = !!args[[".species"]],
+    .t = !!args[[".t"]],
+    .output = .output
     )
 
-  # save augmented dataframe for next cycle
-  df.aug <- filter(out, flag == "good")
-
-  if (output == "flag") {
-    df.aug <- select(out, .data$ID, !!!gr_by, !!! ls.vars[["original"]])
-  }
-  if (output == "complete") {
-    df.aug <- bind_rows(
-      select(df.aug ,.data$ID, !!!gr_by, !!! ls.vars[["ion1"]]),
-      select(df.aug, .data$ID, !!!gr_by, !!! ls.vars[["ion2"]])
+  # Save augmented dataframe for next cycle
+  df_aug <- select(out, !!!gr_by, !!args[[".t"]], !!Xt1, !!Xt2, !!N1, !!N2) %>%
+    pivot_longer(
+      -c(!!!gr_by, !!args[[".t"]]),
+      names_to = c(".value", as_name(args[[".species"]])),
+      names_sep = "[[:punct:]]{1}(?=[[:digit:]]{1,2})"
       )
-  }
 
-  #if(output == "flag") df.aug <- select(df.aug, .data$ID, !!!gr_by, !!!var_names)
-
-  # save results; flag ad statistics
-  if (output == "flag") results <- select(out, -c(!!! ls.vars[["original"]]))
-  if (output == "complete") results <- out
-  out <- lst(df = df.aug, results = results)
+  # Output
+  out <- list2(df = df_aug, results = out)
 
   return(out)
 
 }
 
-#' @export
-diag_R_exec <- function(df, method, args = expr_R(NULL), ..., output){
 
+diag_R_exec <- function(.df, .ion1, .ion2, ..., .method, .Xt = Xt.pr,
+                        .N = N.pr, .species = species.nm, .t = t.nm, .output = .output){
+
+  # Quoting the call (user-supplied expressions)
+  # Grouping
   gr_by <- enquos(...)
 
-  # original variable names
-  ls.vars <- var_fun(df, gr_by, args)
+  # stat_R variables
+  args <- enquos(Xt = .Xt, N = .N, species = .species, t = .t)
 
+  # Diagnostic call
   diag_vc <- c("Cameca", "CooksD", "Rm", "CV", "QQ","norm_E")
   diag_method <- purrr::map(
     diag_vc,
     call2,
     expr(.),
-    expr(args),
-    expr(ls.vars),
-    !!!gr_by,
-    output = expr(output)
+    .ion1 = expr(.ion1),
+    .ion2 = expr(.ion2),
+    !!! gr_by,
+    .Xt = expr(!! args[["Xt"]]),
+    .t = expr(!! args[["t"]]),
+    .output = expr(.output)
     ) %>%
     set_names(nm = diag_vc)
 
-# Descriptive an predictive statistics for ion ratios
-   stat_R(df,
-          Xt = !! args[["Xt"]],
-          N =!! args[["N"]],
-          species = !! args[["species"]],
-          ion1 = as_name(args[["ion1"]]),
-          ion2 = as_name(args[["ion2"]]),
-          !!! gr_by,
-          output = "complete"
-          ) %>%
-  eval_tidy(expr = diag_method[[method]])
-
-# Datafile with flag values associated to diagnostics
-  # if (output == "flag") return(left_join(df, tb.aug, by = "ID"))
-  # if (output == "complete") return(tb.aug)
+  # Descriptive an predictive statistics for ion ratios
+  stat_R(.df, .ion1,.ion2, !!! gr_by, .Xt = !!args[["Xt"]], .N = !!args[["N"]],
+         .species = !!args[["species"]], .t = !!args[["t"]],
+         .output = "complete", .zero = TRUE
+         ) %>%
+    eval_tidy(expr = diag_method[[.method]])
 
   }
 
 
-#' Reduce diagnostics
-#'
-#' @export
+
 reduce_diag <- function(ls, type = "df", args = expr_R(NULL)){
 
   type_reduction <- function(type){
@@ -251,57 +222,7 @@ reduce_diag <- function(ls, type = "df", args = expr_R(NULL)){
 
 }
 
-#' Create stat_R call quosure
-#'
-#' \code{expr_R} and \code{expr_cor} functions generate an quosure that mimics a
-#' stat_R call or cor_IC call for subsequent usage in dia_R
-#'
-#' The \code{diag_R} function performs an internal call to stat_R or cor_IC call
-#' to perform diagnostics on the influence of individial measurements on the
-#' blockwise or global (i.e., a complete analysis) stastics. This function
-#' provides a convenient way to enter this call as an quosure into the argument
-#' \code{args} of \code{diag_R}.
-#'
-#' @param Xt A character string constituting the ion count rate.
-#' @param N A character string constituting the ion counts.
-#' @param species A character string constituting the species analysed.
-#' @param ion1 A character string constituting the heavy isotope ("13C").
-#' @param ion2 A character string constituting the light isotope ("12C").
-#' @param t A character string constituting the time increment of measurement.
-#'
-#' @return A list containing the input arguments as a
-#' \code{\link[rlang:quosure]{quosure}}.
-#' @export
-#' @examples
-#' expr_R(Xt = "Xt.pr", N = "N.pr", species = "species.nm", ion1 = "13C",
-#'        ion2 = "12C")
-expr_R <- function(Xt, N, species, ion1, ion2){
-
-  as_quosures(lst(Xt = parse_expr(Xt),
-                  N = parse_expr(N),
-                  species = parse_expr(species),
-                  ion1 = ion1,
-                  ion2 = ion2
-                  ),
-              env = caller_env()
-              )
-
-}
 
 
-#-------------------------------------------------------------------------------
-# Not exportet helper functions
-#-------------------------------------------------------------------------------
 
 
-# output_lm <- function(df, type){
-#
-#   if (type == "sum") vars <- quos(data, lm.0, lm.1, sum.lm)
-#   if (type == "complete") vars <- quos(lm.0, lm.1, sum.lm)
-#
-#   switch(type,
-#          sum = eval(call2("select", df, expr(-c(!!! vars)))),
-#          complete = eval(call2("select", df, expr(-c(!!! vars))))
-#          )
-#
-# }
