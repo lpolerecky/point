@@ -42,21 +42,14 @@
 #'
 #' # Cook's D style diagnostic-augmentation of ion count data for
 #' # isotope ratios; 3 repeats
-#' diag_R(sim_IC_extremes, "13C", "12C", simulation, trend, iso_offset)
+#' diag_R(sim_IC_extremes, "13C", "12C", simulation, trend, iso_offset, .output = "complete)
 #'
 diag_R <- function(.df, .ion1, .ion2, ..., .method = "CooksD", .reps = 1,
                    .Xt = Xt.pr, .N = N.pr, .species = species.nm, .t = t.nm,
-                   .output = "flag", .hyp = "none", .plot = TRUE,
-                   .plot_type = "interactive", .iso = TRUE, .isoscale = NULL
+                   .output = "complete", .hyp = "none", .return = "results",
+                   .plot = FALSE, .plot_type = "static", .plot_stat = NULL,
+                   .plot_iso = FALSE
                    ){
-
-  # Check if output is consistent with plot call
-  if (.output == "flag" & .plot == TRUE){
-      stop(
-        "argument plot = TRUE requires argument output to be set to complete",
-        call. = FALSE
-        )
-    }
 
   # Quoting the call (user-supplied expressions)
   # Grouping
@@ -65,14 +58,23 @@ diag_R <- function(.df, .ion1, .ion2, ..., .method = "CooksD", .reps = 1,
   # stat_R variables
   args <- enquos(.Xt = .Xt, .N = .N, .species = .species, .t = .t)
 
+  # df_init <- zeroCt(.df, .ion1, .ion2, !!!gr_by)
+
   # Repetitions
+  if (.method != "IR") {
   max <- .reps + 1
+
+  # plot stats
+  if (.output == "flag" & !is.null(.plot_stat)) {
+    .plot_stat <- NULL
+    warning("If argument `.output = flag`, argument `plot_stat defaults to `NULL`")
+  }
 
   # Empty list for iteration storage
   ls_tb <- rep_named(as.character(1:max), list2())
   ls_tb[[1]] <- list2(df = .df, results = NULL)
 
-# Execute repeated cycles of augmentation
+  # Execute repeated cycles of augmentation
   ls_tb <- ls_tb  %>%
     purrr::accumulate(
       rerun_diag_R,
@@ -86,32 +88,50 @@ diag_R <- function(.df, .ion1, .ion2, ..., .method = "CooksD", .reps = 1,
       .t = !!args[[".t"]],
       .output = .output
       )
-  # if (plot) {
-  #
-  #   ls.tb %T>%
-  #     {print(plot_diag_R(ls_df = .,
-  #                        args = args,
-  #                        !!! gr_by,
-  #                        plot_title = method,
-  #                        type = plot_type,
-  #                        iso = iso,
-  #                        isoscale = isoscale
-  #     )
-  #     )
-  #     }
-  #
-  #   } else {
-  #
-     return(ls_tb)
-  #
-  #     }
 
+  if (.plot & .return != "results") {
+    .return <- "results"
+    warning("If `plot` is `TRUE`, `return` defaults to `results`")
+  }
+
+  if (.return == "augmented") {
+    df <-reduce_diag(ls_tb, type = "df") %>%
+      mutate(execution = as.numeric(execution))
+    } else {
+      df <- reduce_diag(ls_tb, type = "results") %>%
+        mutate(execution = as.numeric(execution) - 1)
+      }
+
+  if (.plot) {
+    df %T>%
+      {print(
+        gg_IC(., .ion1 = .ion1, .ion2 = .ion2, .method = .method, !!!gr_by,
+              .labels = .plot_stat, .plot_type = .plot_type)
+        )
+      }
+    }
+  return(df)
+  } else {
+
+    # Auto-correlation
+    df <- diag_R_exec(.df, .ion1 = .ion1, .ion2 = .ion2, !!! gr_by,
+                      .method = "IR", .Xt = !!args[[".Xt"]], .N = !!args[[".N"]],
+                      .species = !!args[[".species"]], .t = !!args[[".t"]])
+    if (.plot) {
+
+    df %T>%
+      {print(gg_IR(., .lag = lag, .acf = hat_acf, .flag = flag, !!! gr_by,
+                   .hat = 0, .lower = hat_l_acf, .upper = hat_u_acf))
+      }
+  }
+  return(df)
+}
 }
 
 
 rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .method,.Xt = Xt.pr,
                          .N = N.pr, .species = species.nm, .t = t.nm,
-                         .output = .output){
+                         .output){
 
   # Quoting the call (user-supplied expressions)
   # Grouping
@@ -138,18 +158,23 @@ rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .method,.Xt = Xt.pr,
     .Xt = !!args[[".Xt"]],
     .N = !!args[[".N"]],
     .species = !!args[[".species"]],
-    .t = !!args[[".t"]],
-    .output = .output
+    .t = !!args[[".t"]]
     )
 
   # Save augmented dataframe for next cycle
-  df_aug <- select(out, !!!gr_by, !!args[[".t"]], !!Xt1, !!Xt2, !!N1, !!N2) %>%
+  df_aug <- select(
+    filter(out, flag == "good"),
+    !!!gr_by, !!args[[".t"]], !!Xt1, !!Xt2, !!N1, !!N2
+    ) %>%
     pivot_longer(
       -c(!!!gr_by, !!args[[".t"]]),
       names_to = c(".value", as_name(args[[".species"]])),
       names_sep = "[[:punct:]]{1}(?=[[:digit:]]{1,2})"
       )
 
+  if (.output == "flag") {
+    out <- select(out, -ends_with(paste0("R_", as_name(args[[".Xt"]]))))
+  }
   # Output
   out <- list2(df = df_aug, results = out)
 
@@ -159,7 +184,7 @@ rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .method,.Xt = Xt.pr,
 
 
 diag_R_exec <- function(.df, .ion1, .ion2, ..., .method, .Xt = Xt.pr,
-                        .N = N.pr, .species = species.nm, .t = t.nm, .output = .output){
+                        .N = N.pr, .species = species.nm, .t = t.nm){
 
   # Quoting the call (user-supplied expressions)
   # Grouping
@@ -169,7 +194,7 @@ diag_R_exec <- function(.df, .ion1, .ion2, ..., .method, .Xt = Xt.pr,
   args <- enquos(Xt = .Xt, N = .N, species = .species, t = .t)
 
   # Diagnostic call
-  diag_vc <- c("Cameca", "CooksD", "Rm", "CV", "QQ","norm_E")
+  diag_vc <- c("Cameca", "CooksD", "Rm", "CV", "QQ", "norm_E", "IR")
   diag_method <- purrr::map(
     diag_vc,
     call2,
@@ -179,50 +204,27 @@ diag_R_exec <- function(.df, .ion1, .ion2, ..., .method, .Xt = Xt.pr,
     !!! gr_by,
     .Xt = expr(!! args[["Xt"]]),
     .t = expr(!! args[["t"]]),
-    .output = expr(.output)
+    .output = "complete"
     ) %>%
     set_names(nm = diag_vc)
 
   # Descriptive an predictive statistics for ion ratios
-  stat_R(.df, .ion1,.ion2, !!! gr_by, .Xt = !!args[["Xt"]], .N = !!args[["N"]],
+  stat_R(.df, .ion1, .ion2, !!! gr_by, .Xt = !!args[["Xt"]], .N = !!args[["N"]],
          .species = !!args[["species"]], .t = !!args[["t"]],
-         .output = "complete", .zero = TRUE
-         ) %>%
+         .output = "complete",
+         .zero = TRUE) %>%
     eval_tidy(expr = diag_method[[.method]])
 
   }
 
 
 
-reduce_diag <- function(ls, type = "df", args = expr_R(NULL)){
-
-  type_reduction <- function(type){
-    switch(type,
-           results = call2(
-             "mutate",
-             expr(.),
-             execution =
-             expr(as.numeric(execution) -1)
-             ),
-           df = call2(
-             "mutate",
-             expr(.),
-             execution =
-             expr(as.numeric(execution))
-             )
-          )
-  }
+reduce_diag <- function(ls, type){
 
   # Reduce the results to a single dataframe
   ls %>%
     purrr::transpose() %>%
     purrr::pluck(type) %>%
-    bind_rows(.id = "execution") %>%
-    eval_tidy(expr = type_reduction(type))
+    bind_rows(.id = "execution")
 
 }
-
-
-
-
-
