@@ -43,25 +43,23 @@ gg_IC <- function(.df, .ion1, .ion2, .method, ..., .Xt = Xt.pr, .N = N.pr,
   Xt1 <- quo_updt(args[[".Xt"]], post = .ion1)
   # Light isotope
   Xt2 <- quo_updt(args[[".Xt"]], post = .ion2)
-  # Fitted heavy isotope
+  # Fitted heavy isotope and variance (sigma)
   hat_Xt1 <- quo_updt(args[[".Xt"]], pre = "hat", post = .ion1)
-  hat_l_Xt1 <- quo_updt(args[[".Xt"]], pre = "hat_l", post = .ion1) # lower
-  hat_u_Xt1 <- quo_updt(args[[".Xt"]], pre = "hat_u", post = .ion1) # upper
+  hat_s_Xt1 <- quo_updt(args[[".Xt"]], pre = "hat_s", post = .ion1)
 
   # Filter execution
   if (.plot_type == "static") .df <- filter(.df, execution == .rep)
 
   plot_args <- list2(.df = .df, .x = Xt2, .y = Xt1, .flag = flag,
                      .diag_type = .method, !!! gr_by, .labels = .labels,
-                     .hat = hat_Xt1, .lower = hat_l_Xt1, .upper = hat_u_Xt1)
+                     .hat = hat_Xt1, .error = hat_s_Xt1)
 
   # Residual leverage plot
   if(.method == "norm_E") {
       plot_args[[".y"]] <- quo(studE)
       plot_args[[".x"]] <- quo(hat_Xi)
       plot_args[[".hat"]] <- NULL
-      plot_args[[".lower"]] <- NULL
-      plot_args[[".upper"]] <- NULL
+      plot_args[[".error"]] <- NULL
     }
 
   # Normal QQ plot
@@ -69,17 +67,17 @@ gg_IC <- function(.df, .ion1, .ion2, .method, ..., .Xt = Xt.pr, .N = N.pr,
       plot_args[[".y"]] <- quo(RQ)
       plot_args[[".x"]] <- quo(TQ)
       plot_args[[".hat"]] <- quo_updt(plot_args[[".y"]], pre = "hat")
-      plot_args[[".lower"]] <- quo_updt(plot_args[[".y"]], pre = "hat_l") # lower
-      plot_args[[".upper"]] <- quo_updt(plot_args[[".y"]], pre = "hat_u") # upper
+      plot_args[[".error"]] <- quo_updt(plot_args[[".y"]], pre = "hat_e")
     }
 
   # Scale location plot
   if (.method  == "CV"){
       plot_args[[".y"]] <- quo(studE)
       plot_args[[".x"]] <- hat_Xt1
-      plot_args[[".hat"]] <- quo_updt(plot_args[[".y"]], pre = "hat")
-      plot_args[[".lower"]] <- quo_updt(plot_args[[".y"]], pre = "hat_l") # lower
-      plot_args[[".upper"]] <- quo_updt(plot_args[[".y"]], pre = "hat_u") # upper
+      plot_args[[".hat"]] <- 0
+      plot_args[[".error"]] <- NULL
+      plot_args[[".lower"]] <- -3.5
+      plot_args[[".upper"]] <- 3.5
   }
 
   # Execute
@@ -101,8 +99,8 @@ gg_IC <- function(.df, .ion1, .ion2, .method, ..., .Xt = Xt.pr, .N = N.pr,
 
 
 gg_base <- function(.df, .x, .y, .flag, .diag_type, ..., .labels = NULL,
-                    .geom = "point", .hat = NULL, .lower = NULL, .upper = NULL,
-                    .rug = FALSE){
+                    .geom = "point", .hat = NULL, .error = NULL, .lower = NULL,
+                    .upper = NULL, .rug = FALSE){
 
   gr_by <- enquos(...)
   if (str_detect(as_name(.x), "[[:digit:]]")| .diag_type == "CV") {
@@ -120,6 +118,19 @@ gg_base <- function(.df, .x, .y, .flag, .diag_type, ..., .labels = NULL,
   alpha_sc <- median(count(.df, !!!gr_by)$n) / 1e5
   # Filter correct titles
   ttl <- filter(nm_diag_ttl, nm == .diag_type)
+
+
+  # Uncertainyt bounds
+  # Add bounds to dataframe
+  if (!is.null(.error)) {
+  .df <- mutate(
+    .df,
+    lower = !!.hat - 2 * !!.error,
+    upper = !!.hat + 2 * !!.error
+    )
+  .lower <- quo(lower)
+  .upper <- quo(upper)
+  }
 
   if (!is.null(.labels)) {
     tb_labs <- distinct(.df, !!!gr_by, .keep_all = TRUE) %>%
@@ -183,7 +194,7 @@ gg_base <- function(.df, .x, .y, .flag, .diag_type, ..., .labels = NULL,
       inherit.aes = FALSE
       )
   }
-  p + scale_color_manual(values = c(ggplotColours(2)[2], ggplotColours(2)[1])) +#, labels =  c("confluent", "divergent")) +
+  p + scale_color_manual(values = c(ggplotColours(2)[2], ggplotColours(2)[1])) +
     scale_y_continuous(
       breaks = scales::extended_breaks(),
       labels = scales::label_scientific()
@@ -203,13 +214,14 @@ gg_base <- function(.df, .x, .y, .flag, .diag_type, ..., .labels = NULL,
 
 
 gg_IR <- function(.df, .lag, .acf, .flag, ..., .hat = NULL,
-                 .lower = NULL, .upper = NULL){
+                  .error = NULL){
 
   ggplot(.df, mapping = aes(x = {{.lag}}, y = {{.acf}}, color = {{.flag}})) +
     geom_hline(aes(yintercept = {{.hat}})) +
     geom_segment(mapping = aes(xend = {{.lag}}, yend = {{.hat}})) +
-    geom_hline(aes(yintercept = {{.lower}}), color = "darkblue") +
-    geom_hline(aes(yintercept = {{.upper}}), color = "darkblue") +
+    geom_hline(aes(yintercept = -{{.error}}), color = "darkblue") +
+    geom_hline(aes(yintercept = {{.error}}), color = "darkblue") +
+    scale_color_manual(values = c(ggplotColours(2)[2], ggplotColours(2)[1])) +
     facet_wrap(vars(...), scales = "free") +
     ggtitle("ACF plot") +
     theme_classic()

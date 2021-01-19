@@ -58,8 +58,6 @@ diag_R <- function(.df, .ion1, .ion2, ..., .method = "CooksD", .reps = 1,
   # stat_R variables
   args <- enquos(.Xt = .Xt, .N = .N, .species = .species, .t = .t)
 
-  # df_init <- zeroCt(.df, .ion1, .ion2, !!!gr_by)
-
   # Repetitions
   if (.method != "IR") {
   max <- .reps + 1
@@ -120,8 +118,8 @@ diag_R <- function(.df, .ion1, .ion2, ..., .method = "CooksD", .reps = 1,
     if (.plot) {
 
     df %T>%
-      {print(gg_IR(., .lag = lag, .acf = hat_acf, .flag = flag, !!! gr_by,
-                   .hat = 0, .lower = hat_l_acf, .upper = hat_u_acf))
+      {print(gg_IR(., .lag = lag, .acf = acf, .flag = flag, !!! gr_by,
+                   .hat = 0, .error = hat_e_acf))
       }
   }
   return(df)
