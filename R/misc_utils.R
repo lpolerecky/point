@@ -91,6 +91,81 @@ R_labeller <- function(ion1, ion2, label = "latex"){
     }
 
 }
+#' @rdname ion_labeller
+#'
+#' @export
+stat_labeller <- function(var = "X", stat, value, label = "latex"){
+
+  if (label == "latex") {
+    if (stat == "n") return("$n$")
+    if (stat == "Ntot") return("$N_{tot}$")
+    if (var == "X" & str_detect(stat, "hat")) var <- "N"
+    if (stat == "chi2") return("$\\chi^{2}$")
+    if (str_detect(stat, "M")) {
+      stat_chr <- paste0("\\bar{", var,"}")
+      } else {
+        stat_chr <- var
+      }
+    if (str_detect(stat, "S")) {
+      stat_chr <- paste0("_{", stat_chr,"}")
+      if (str_detect(stat, "R")) {
+        sd_prefix <- "\\epsilon"
+        } else {
+          sd_prefix <- "s"
+        }
+      if (str_detect(stat, "hat")) {
+        stat_chr <- paste0("\\hat{", sd_prefix ,"}", stat_chr)
+        } else {
+          stat_chr <- paste0(sd_prefix, stat_chr)
+        }
+      }
+    if (str_detect(stat, "R")) {
+      return(paste0("$", stat_chr, "$ (\u2030)"))
+      } else {
+        return(paste0("$", stat_chr, "$"))
+      }
+  }
+
+  if (label == "expr") {
+    var <- parse_expr(var)
+    if (stat == "n") return(substitute(n == ~ a, list(a = sprintf(fmt = "%.0f", value))))
+    if (stat == "Ntot") return(substitute(N[tot] == ~ a, list(a = sprintf(fmt = "%.0f", value))))
+    if (stat == "chi2") return(substitute(chi^2 == ~ a, list(a = sprintf(fmt = "%.1f", value))))
+    if (str_detect(stat, "R")) {
+      sd_prefix <- expr(epsilon)
+      value <- paste(sprintf(fmt = "%.1f", value), "(\u2030)")
+      } else {
+        sd_prefix <- expr(s)
+        value <- sprintf(fmt = "%.3f", value)
+        }
+    if (str_detect(stat, "hat")) {
+      sd_prefix <- substitute(hat(a), list(a = sd_prefix))
+      }
+    if (str_detect(stat, "M")) {
+      if (nchar(stat) == 1) {
+        return(substitute(bar(a) == ~ b, list(a = var, b = value)))
+        } else {
+          sym_chr <- substitute(bar(a), list(a = var))
+        }
+      } else {
+        sym_chr <- var
+        }
+    if (str_detect(stat, "S")){
+      stat_chr <- substitute(a[b] == ~ c, list(a = sd_prefix, b = sym_chr, c = value))
+      return(stat_chr)
+      }
+  }
+  }
+#' @rdname ion_labeller
+#'
+#' @export
+select_IC <- function(.df, .var, .stat, ..., .label = "latex"){
+
+  gr_by <- enquos(...)
+  vars <- map_chr(.stat, ~stat_labeller(var = .var, .x, label = .label))
+  select(.df,!!!gr_by, vars)
+
+  }
 
 #' Function for co-variate conversion of isotope systems
 #'
@@ -133,7 +208,7 @@ cov_R <- function(.df, .ion1, .ion2, ..., .species = species.nm, .t = t.nm,
 
   # Filtering
   df <- filter(.df, !! species == .ion1 | !! species == .ion2) %>%
-    mutate(!! species := str_replace_all(!! species, " ", ""))
+    mutate(!! species := str_replace_all(!! species, "\\s", ""))
 
   # Wide format
   pivot_wider(
@@ -191,6 +266,11 @@ zeroCt <- function(.df, .ion1, .ion2, ..., .N = N.pr, .species = species.nm,
   t <- enquo(.t)
   species <- enquo(.species)
   gr_by <- enquos(...)
+
+  # remove white space in ion names
+  .df <- mutate(.df, !! species := str_replace_all(!! species, "\\s", ""))
+  .ion1 <- str_replace_all(.ion1, "\\s", "")
+  .ion2 <- str_replace_all(.ion2, "\\s", "")
 
   df <- filter(.df, !!species == .ion1 | !!species == .ion2)
 
