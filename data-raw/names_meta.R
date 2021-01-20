@@ -1,6 +1,6 @@
 ## Names for the machine parameter settings
 
-cam_params <- tibble(
+names_meta <- tibble(
   cam = c(
     "Raw data file",
     "Block number",
@@ -60,4 +60,4 @@ cam_params <- tibble(
   )
 
 
-usethis::use_data(cam_params, overwrite = TRUE)
+usethis::use_data(names_meta, overwrite = TRUE)
