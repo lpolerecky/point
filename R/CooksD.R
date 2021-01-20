@@ -70,7 +70,7 @@ nest_R_lm <- function(df, gr_by, Xt1, Xt2, t, method, .hyp){
 }
 
 # prefix for modelled values
-prefix <- c("hat", "hat_l", "hat_u")
+prefix <- c("hat", "hat_s", "hat_e")
 
 # augment function transform  and rename variables to standards of point
 transmute_reg <- function(df, Xt1, Xt2, type) {
@@ -83,25 +83,20 @@ transmute_reg <- function(df, Xt1, Xt2, type) {
   hat_args_studE_nm <- paste(prefix, "studE", sep = "_")
   hat_args_studE <- parse_exprs(hat_args_studE_nm)
 
-
   # model args
   args <- quos(
-    original = !!Xt1,
+    hat_E = .data$.resid,
     !!hat_args[[1]] := .data$.fitted,
-    !!hat_args[[2]] := .data$.fitted - 2 * sigma_calc(.data$.resid),
-    !!hat_args[[3]] := .data$.fitted + 2 * sigma_calc(.data$.resid) ,
+    !!hat_args[[2]] := sigma_calc(hat_E),
     studE = .data$.std.resid,
     hat_Xi = .data$.hat,
     CooksD = .data$.cooksd,
-    !!hat_args_studE[[1]] := 0,
-    !!hat_args_studE[[2]] := -3.5,
-    !!hat_args_studE[[3]] :=  3.5
     )
 
-  if (type == "Rm") args <- args[names(args) %in% c(hat_nm, "original")]
+  if (type == "Rm") args <- args[names(args) %in% c(hat_nm, "hat_E")]
   if (type == "norm_E") args <- args[!names(args) %in% hat_nm]
-  if (type == "CooksD") args <- args[names(args) %in% c(hat_nm, "CooksD")]
-  if (type == "CV") args <- args[names(args) %in% c(hat_nm[1], "studE", hat_args_studE_nm)]
+  if (type == "CooksD") args <- args[names(args) %in% c(hat_nm, "hat_E", "CooksD")]
+  if (type == "CV") args <- args[names(args) %in% c(hat_nm[1], "studE")]
   if (type == "QQ"| type == "IR") args <- args["studE"]
 
   transmute(df, !!!args)
@@ -116,40 +111,41 @@ flag_set <- function(df1, df2, Xt1, Xt2, type){
   hat_args_sigma <- purrr::map(prefix, ~quo_updt(Xt1, pre = .x))
 
   # predicted variable and standard error and CI boundaries
-  hat_args_CI <- paste(prefix, "RQ", sep = "_") %>%
-    parse_exprs()
-
-  # predicted sigma level boundaries studentized residuals
-  hat_args_studE <- paste(prefix, "studE", sep = "_") %>%
+  hat_args_QQ <- paste(prefix, "RQ", sep = "_") %>%
     parse_exprs()
 
   # predicted variable and standard error and CI boundaries
   hat_args_acf <- paste(prefix, "acf", sep = "_") %>%
     parse_exprs()
 
-  if (type == "Rm") {
-     df <- mutate(df1, !! Xt1 := pull(df2, !! Xt1)) %>%
-       transmute(flag = purrr::pmap_chr(list(a = !!Xt1, b = !! hat_args_sigma[[2]],c = !! hat_args_sigma[[3]]), function(a,b,c)if_else(between(a,b,c), "confluent", "divergent")))
-    return(df)
-    }
+  if (type == "Rm") return(flagger(df1, hat_E, !!hat_args_sigma[[2]], fct = 2))
   if (type == "CooksD" | type == "norm_E") {
-    df <- transmute(df1, flag = as.factor(if_else(CooksD < {4 / (n() - 2)}, "confluent", "divergent")))
-    return(df)
-    }
-  if (type == "QQ") {
-    df <- transmute(rowwise(df1), flag = as.factor(if_else(between(RQ, !!hat_args_CI[[2]], !!hat_args_CI[[3]]), "confluent", "divergent")))
-    return(df)
-    }
-  if (type == "CV") {
-    df <- transmute(df1, flag = as.factor(if_else(between(studE, !!hat_args_studE[[2]], !!hat_args_studE[[3]]), "confluent", "divergent")))
-    return(df)
-    }
-  if (type == "IR") {
-    df <- transmute(
-      df1,
-      flag = factor(if_else(between(!! hat_args_acf[[1]], !!hat_args_acf[[2]], !!hat_args_acf[[3]]), "confluent", "divergent")))
-    return(df)
-    }
+   df <- transmute(
+     df1,
+     flag =
+       as.factor(if_else(CooksD < {4 / (n() - 2)}, "confluent", "divergent"))
+     )
+   return(df)
+   }
+  if (type == "QQ") return(flagger(df1, QE, !!hat_args_QQ[[3]], fct = 2))
+  if (type == "CV") return(flagger(df1, studE, 3.5, fct = 2))
+  if (type == "IR") return(flagger(df1, acf, !!hat_args_acf[[3]]))
+
+}
+
+
+flagger <- function(df, value, bound, fct = 1){
+
+    transmute(
+      df,
+      flag = as.factor(
+        if_else(
+          between({{value}}, -fct * {{bound}}, fct * {{bound}}),
+          "confluent",
+          "divergent"
+          )
+        )
+      )
 
 }
 
@@ -175,16 +171,15 @@ QQ_trans <- function(df, type, .hyp) {
     H0 <- "H0 (mu0 is zero)"
   }
 
-
   df <- transmute(
     df,
     RQ = unname(quantile(studE, probs = vector_probs(n()))),
     # Calculate normal (Theoretical) quantiles using mean and standard deviation
     TQ = qnorm(vector_probs(n()), mean(RQ), sd(RQ)),
+    QE = RQ - TQ,
     # The standard error
     !!hat_args[[1]] := mean(RQ) + sd(RQ) * TQ,
-    !!hat_args[[2]] := !!hat_args[[1]] - 2 * hat_QR_se(RQ, TQ, vector_probs(n()), n()),
-    !!hat_args[[3]] := !!hat_args[[1]] + 2 * hat_QR_se(RQ, TQ, vector_probs(n()), n())
+    !!hat_args[[3]] := hat_QR_se(RQ, TQ, vector_probs(n()), n()),
     )
 
   if (.hyp != "none") {
@@ -192,7 +187,6 @@ QQ_trans <- function(df, type, .hyp) {
     } else {
       return(df)
       }
-
 }
 
 # auto-correlation and hypothesis tests
@@ -216,8 +210,7 @@ IR_trans <- function(df, type, .hyp) {
 
   df <- tibble(
     lag = as.vector(acf$lag)[-1],
-    !!hat_args[[1]] := as.vector(acf$acf)[-1],
-    !!hat_args[[2]] := si,
+    acf := as.vector(acf$acf)[-1],
     !!hat_args[[3]] := -si
     )
 
@@ -227,8 +220,6 @@ IR_trans <- function(df, type, .hyp) {
       return(df)
       }
   }
-
-
 
 # Hetroscadasticity test (Breusch Pagan test)(level of confidence 95%;
 # cut-off 0.05 for H0 rejection)

@@ -35,43 +35,54 @@
 #'
 #' # Descriptive an predictive statistics for 13C/12C ratios (note .output
 #' # argument and remove zero count analysis)
-#' tb_R <- stat_R(tb_pr, "13C", "12C", file.nm, sample.nm, .output = "complete", .zero = TRUE)
-#'
-#' # Mimic stat_R call
-#' args <-  expr_R("Xt.pr", "N.pr", "species.nm", "13C", "12C")
+#' tb_R <- stat_R(tb_pr, "13C", "12C", file.nm, sample.nm, .output = "complete",
+#'                .zero = TRUE)
 #'
 #' # CAMECA style augmentation of ion count data for isotope ratios
-#' tb_dia <- Cameca(tb_R, file.nm, sample.nm, .args = args, .output = "flag")
-Cameca <- function(.df, ..., .args = expr_R(NULL), .output){
+#' tb_dia <- Cameca(tb_R,"13C", "12C", file.nm, .output = "flag")
+Cameca <- function(.df, .ion1, .ion2, ..., .Xt = Xt.pr, .t = t.nm,
+                   .output = "complete", .hyp = "none"){
 
   # Grouping
   gr_by <- enquos(...)
 
-  # New quosures
-  # Single ion (light)
-  Xt2 <- quo_updt(.args[["Xt"]], post = as_name(.args[["ion2"]]))
+  # Quoting the call (user-supplied expressions)
+  Xt <- enquo(.Xt)
+  t <- enquo(.t)
+
+  # Heavy isotope
+  Xt1 <- quo_updt(Xt, post = .ion1) # count rate
+  # Light isotope
+  Xt2 <- quo_updt(Xt, post = .ion2) # count rate
 
   # R
-  R <- quo_updt(.args[["Xt"]], pre = "R")
-  M_R <- quo_updt(.args[["Xt"]], pre = "M_R")
-  S_R <- quo_updt(.args[["Xt"]], pre = "S_R")
+  R <- quo_updt(Xt, pre = "R")
+  M_R <- quo_updt(Xt, pre = "M_R")
+
+  # Fitted isotope R (+ heavy isotope) and variance (sigma)
+  R <- quo_updt(Xt, pre = "R")
+  hat_R <- quo_updt(R, pre = "hat", post = .ion1)
+  hat_s_R <- quo_updt(R, pre = "hat_s", post = .ion1)
+  hat_Xt1 <- quo_updt(Xt, pre = "hat", post = .ion1)
+  hat_s_Xt1 <- quo_updt(Xt, pre = "hat_s", post = .ion1)
 
   group_by(.df, !!! gr_by) %>%
     mutate(
-      lower = !! M_R - 2 * !! S_R ,
-      upper = !! M_R + 2 * !! S_R,
-      hat_Y = !! M_R * !! Xt2,
+      !! hat_s_R := sd(!!R),
+      !! hat_R := !! M_R,
+      !! hat_Xt1 := !! hat_R * !!Xt2,
+      !! hat_s_Xt1 := !! hat_s_R * !!Xt2,
       flag = if_else(
-        between(!! R,
-        unique(.data$lower),  # mean - 2SD
-        unique(.data$upper)), # mean + 2SD
-        "good",
-        "bad"
+        between(
+          !! R,
+          !! hat_R - 2 * !!hat_s_R, # mean - 2SD
+          !! hat_R + 2 * !!hat_s_R  # mean + 2SD
+          ),
+        "confluent",
+        "divergent"
         ),
       flag = as.factor(flag)
       ) %>%
     ungroup()
-
-
 
 }
