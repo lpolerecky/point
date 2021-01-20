@@ -51,29 +51,31 @@ library(stringr) # manipulating strings
 
 Example datatsets can be accessed as follows with the function `read_IC` (more information on reading raw ion count data can be found in the vignette [IC-read](IC-read.html)).
 
-```{r}
+```{r warning=FALSE}
 # Use point_example() to access the examples bundled with this package 
 
 # Carry-out the routine point workflow
 
 # Raw data containing 13C and 12C counts on carbonate
-tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
+tb_rw <- read_IC(point_example("2018-01-19-GLENDON"), hide = FALSE)
 
 # Vectors of isotope ratios 
 ion1 <-  c("13C", "12C 13C", "13C 14N", "12C 14N", "12C")
 ion2 <-  c("12C", "12C2", "12C 14N", "40Ca 16O", "40Ca 16O")
 
 # Call function over vectors
-tb.rw <- purrr::map2(ion1, ion2, ~zeroCt(tb.rw,
-                                         N.rw, species.nm, 
-                                         .x, .y, file.nm,
-                                         warn = FALSE)) %>% 
+tb_rw <- purrr::map2(
+  ion1, 
+  ion2, 
+  ~zeroCt(tb_rw, .x, .y, file.nm, sample.nm, .N = N.rw, .warn = FALSE)
+  ) %>% 
 # Combine but remove duplicate observations (related isotope pairs)  
-           purrr::reduce(. , union)  
+  purrr::reduce(. , union)  
+
 
 ```
 
-The ion counts obtained from the 2018-01-19-GLENDON dataset includes the species: `r sapply(unique(tb.rw$species.nm), latex_parser)`, of which some are poly-atomic.
+The ion counts obtained from the 2018-01-19-GLENDON dataset includes the species: `r sapply(unique(tb_rw$species.nm), ion_labeller, "latex")`, of which some are poly-atomic.
 
 As a first step, the counts of a single count cycle ($N_i$) are normalised against the time it took to complete the cycle ($0.541$ s) to account for differences in the count times for two different isotopes during stable isotopic SIMS analysis. Hence, for the time period ($t$) over which an isotope species $a$ during measurement $i$ accumulated, the count rate is given by 
 
@@ -86,12 +88,7 @@ The function `cor_IC` can perform this transformation.
 
 ```{r}
 # Processing raw ion count data
-tb.pr <- cor_IC(tb.rw, 
-                N = N.rw, 
-                t = t.rw, 
-                Det = det_type.mt,
-                deadtime = 0, 
-                thr = 0)
+tb_pr <- cor_IC(tb_rw)
 ```
 
 
@@ -105,24 +102,17 @@ The function `stat_Xt` can be applied to the previously processed dataset and gi
 
 ```{r}
 # Single ion descriptive an predictive statistics for all measured ions
-tb.Xt <- stat_Xt(tb.pr, 
-                 Xt = Xt.pr, 
-                 N = N.pr, 
-                 species = species.nm, 
-                 sample.nm, 
-                 file.nm, 
-                 latex = TRUE, 
-                 output = "sum")
+tb_Xt <- stat_Xt(tb_pr, sample.nm, file.nm, .stat = c("Ntot", "M", "S", "SeM"), 
+                 .label = "latex")
 ```
 
 
 ```{r echo=FALSE}
-knitr::kable(head(tb.Xt),
-             format.args = list(digits = 3, 
-                                format = "G", 
-                                flag = "0"),
-             caption = "Summary statistics for internal precision of single ions with stat_Xt."
-             ) 
+knitr::kable(
+  head(tb_Xt),
+  format.args = lst(digits = 3, format = "G", flag = "0"),
+  caption = "Summary statistics for internal precision of single ions with stat_Xt."
+  ) 
 ```
 
 The following statistics are calculated with the function `stat_Xt`: the number of measurements ($n$), total number of counts ($N_{tot} = \sum_{i=1}^{n}N_i$), the arithmetic mean ($\bar{X}$), the standard deviation ($s_X$), the standard error of the mean ($s_{\bar{X}}$), the predicted standard deviation ($\hat{s}_X$), and the predicted standard error of the mean ($\hat{s}_{\bar{X}}$) for which the underlying principals are delineated in detail below.
@@ -195,27 +185,17 @@ The function `stat_R` can be used on the previously processed dataset and gives 
 
 ```{r}
 # Descriptive an predictive statistics for 13C/12C ratios
-tb.R <- stat_R(tb.pr, 
-               Xt = Xt.pr, 
-               N = N.pr, 
-               species = species.nm, 
-               ion1 = "13C", 
-               ion2 = "12C", 
-               sample.nm, 
-               file.nm, 
-               latex = TRUE, 
-               output = "sum",
-               zero = TRUE)
+tb_R <- stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .label = "latex", 
+               .stat = c("M", "RS", "RSeM", "hat_RS", "hat_RSeM", "chi2"))
 ```
 
 
 ```{r echo=FALSE}
-knitr::kable(head(tb.R),
-             format.args = list(digits = 3, 
-                                format = "G", 
-                                flag = "0"),
-             caption = "Summary statistics for internal precision of isotope ratios with stat_R."
-             ) 
+knitr::kable(
+  head(tb_R),
+  format.args = list(digits = 3, format = "G", flag = "0"),
+  caption = "Summary statistics for internal precision of isotope ratios with stat_R."
+  ) 
 ```
 
 The following statistics are calculated with the function `stat_R` for a specific isotope ratio: number of measurements ($n$); the arithmetic mean ($\bar{R}$); the standard deviation and relative standard deviation ($s_R$ and $\epsilon_R$); the standard error of the mean and its relative counterpart ($s_{\bar{R}}$ and $\epsilon_{\bar{R}}$), the predicted standard deviation and the predicted relative standard deviation ($\hat{s}_R$ and $\hat{\epsilon}_R$); and the predicted standard error of the mean and its relative counterpart ($\hat{s}_{\bar{X}}$ and $\hat{\epsilon}_{\bar{R}}$); as well as the reduced $\chi^2$-squared, for which the underlying principals are delineated in detail below.
@@ -337,40 +317,22 @@ To calculate the external precision for single ion counts with the package `poin
 
 ```{r}
 # summary statistics of the dataset (set latex to FALSE and output to SUM)
-tb.Xt <- stat_Xt(
-  tb.pr, 
-  Xt = Xt.pr, 
-  N = N.pr, 
-  species = species.nm, 
-  sample.nm, 
-  file.nm, 
-  latex = FALSE, 
-  output = "sum"
-  )
+tb_Xt <- stat_Xt(tb_pr, sample.nm, file.nm, .stat = c("Ntot", "M", "S", "SeM"))
 
 # external reproducibility use the mean ion count rate and total counts of the
 # single analyses. Note that the grouping variable is needed to identify the 
 # reference standard
-tb.Xt.ext <- stat_Xt(
-  tb.Xt, 
-  Xt = M_Xt.pr, 
-  N = Ntot_Xt.pr, 
-  species = species.nm, 
-  sample.nm, 
-  latex = TRUE,
-  output = "sum"
-  )
+tb_Xt_ext <- stat_Xt(tb_Xt, sample.nm, .Xt = M_Xt.pr, .N = Ntot_Xt.pr, 
+                     .label = "latex")
 ```
 
 
 ```{r echo=FALSE}
-knitr::kable(head(tb.Xt.ext%>% 
-                    filter(str_detect(sample.nm, "Belemnite"))),
-             format.args = list(digits = 3, 
-                                format = "G", 
-                                flag = "0"),
-              caption = "Summary statistics for external precision of single ions."
-             ) 
+knitr::kable(
+  head(filter(tb_Xt_ext, str_detect(sample.nm, "Belemnite"))),
+  format.args = lst(digits = 3, format = "G", flag = "0"),
+  caption = "Summary statistics for external precision of single ions."
+  ) 
 ```
 
 The same workflow applies for isotope ratios, but the second call should now be to the function `stat_R`.
@@ -378,26 +340,18 @@ The same workflow applies for isotope ratios, but the second call should now be 
 
 ```{r}
 # Same as previous chunk but now with stat_R
-tb.R.ext  <- stat_R(tb.Xt, 
-                    Xt = M_Xt.pr, 
-                    N = Ntot_Xt.pr, 
-                    species = species.nm, 
-                    ion1 = "13C", 
-                    ion2 = "12C",  
-                    sample.nm, 
-                    latex = TRUE,
-                    output = "sum",
-                    zero = TRUE)
+tb_R_ext  <- stat_R(tb_Xt, "13C", "12C", sample.nm, .Xt = M_Xt.pr, 
+                    .N = Ntot_Xt.pr, 
+                    .stat =  c("M", "RS", "RSeM", "hat_RS", "hat_RSeM", "chi2"), 
+                    .label = "latex")
 ```
 
 ```{r echo=FALSE}
-knitr::kable(head(tb.R.ext %>% 
-                    filter(str_detect(sample.nm, "Belemnite"))),
-             format.args = list(digits = 3, 
-                                format = "G", 
-                                flag = "0"),
-              caption = "Summary statistics for external precision of isotope ratios."
-             ) 
+knitr::kable(
+  filter(tb_R_ext, str_detect(sample.nm, "Belemnite")),
+  format.args = lst(digits = 3, format = "G", flag = "0"),
+  caption = "Summary statistics for external precision of isotope ratios."
+  ) 
 ```
 
 The number of counts of any single analysis $j$ ($M_j$) is equal to to sum of all counts ($N_i$) in an analysis of $n$ measurements, an thus:
@@ -413,40 +367,20 @@ We can validate this derivation as follows:
 
 ```{r warning=FALSE, message=FALSE}
 # Prove of the previous statement with the example dataset
-tb.R <- stat_R(tb.pr, 
-               Xt = Xt.pr, 
-               N = N.pr, 
-               species = species.nm, 
-               ion1 = "13C", 
-               ion2 = "12C", 
-               sample.nm, 
-               file.nm, 
-               latex =  FALSE, 
-               output = "sum", 
-               zero = TRUE)
+tb_R <- stat_R(tb_pr, "13C", "12C", sample.nm,  file.nm, .zero = TRUE)
 
-tb.R.ext  <- stat_R(tb.Xt, 
-                    Xt = M_Xt.pr, 
-                    N = Ntot_Xt.pr, 
-                    species = species.nm, 
-                    ion1 = "13C", 
-                    ion2 = "12C",  
-                    sample.nm, 
-                    latex = FALSE,
-                    output = "sum", 
-                    zero = TRUE)
+tb_R_ext <- stat_R(tb_Xt, "13C", "12C", sample.nm, .Xt = M_Xt.pr, 
+                   .N = Ntot_Xt.pr, .zero = TRUE)
 
 # The average of the internal relative predicted standard error of the mean 
 # (per mille)
-tb.R %>%  
-  filter(str_detect(sample.nm, "Belemnite")) %>%  
+filter(tb_R, str_detect(sample.nm, "Belemnite")) %>%  
   pull(hat_RSeM_R_Xt.pr) %>% 
   mean() %>% 
   round(1)
 
 # The external predicted standard deviation (per mille)
-tb.R.ext %>%  
-  filter(str_detect(sample.nm, "Belemnite")) %>% 
+filter(tb_R_ext, str_detect(sample.nm, "Belemnite")) %>% 
   pull(hat_RS_R_M_Xt.pr) %>% 
   round(1)
 
