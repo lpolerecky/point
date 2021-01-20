@@ -1,34 +1,7 @@
-#' Plotting diagnostics
-#'
-#' \code{plot_RDiag} function for propagation of uncertainty for single ions
-#'
-#' The \code{plot_RDiag} visualises the diagnostics
-#'
-#' @param df A tibble containing processed ion count data.
-#' @param method Character string for the type of diagnostics.
-#' @param args A list of quosures pertaining to the variables required for a
-#' call to stat_R. The function expr_R() can be used to simplify setting this
-#' argument.
-#' @param ... Variables for grouping.
-#'
-#' @return A \code{\link[ggplot2:ggplot]{ggplot}} or
-#' \code{\link[plotly:ggplotly]{ggplotly}}
-#' @export
-#' @examples
-#' # Use point_example() to access the examples bundled with this package
-#'
-#' # raw data containing 13C and 12C counts on carbonate
-#' tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
-#'
-#' # Processing raw ion count data
-#' tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
-#'
-#' # plotting Cook's D diagnostics
-#' plot_diag_R(tb.aug, args = expr_R_stat, file.nm)
-#'
-gg_IC <- function(.df, .ion1, .ion2, .method, ..., .Xt = Xt.pr, .N = N.pr,
+# Plotting diagnostics
+gg_IC <- function(.df, .ion1, .ion2, .method, .plot_type, ..., .Xt = Xt.pr, .N = N.pr,
                   .species = species.nm, .t = t.nm, .flag = flag,
-                  .labels = NULL, .rep = 1, .plot_type = "static",
+                  .labels = NULL, .rep = 1,
                   .plot_iso = FALSE){
 
   # Quoting the call (user-supplied expressions)
@@ -47,12 +20,22 @@ gg_IC <- function(.df, .ion1, .ion2, .method, ..., .Xt = Xt.pr, .N = N.pr,
   hat_Xt1 <- quo_updt(args[[".Xt"]], pre = "hat", post = .ion1)
   hat_s_Xt1 <- quo_updt(args[[".Xt"]], pre = "hat_s", post = .ion1)
 
-  # Filter execution
+  # Filter execution or downsample for animation
   if (.plot_type == "static") .df <- filter(.df, execution == .rep)
+  # if (.plot_type == "anim") {
+  #   df_sl <- filter(.df, execution == 1)
+  #   df_sl <- slice_sample(group_by(df_sl, !!!gr_by, !!flag), prop = 0.05) %>%
+  #     ungroup() %>%
+  #     select(!!!gr_by, !!args[[".t"]])
+  #   .df <- semi_join(.df, df_sl, by = sapply(c(gr_by, args[[".t"]]), as_name))
+  #
+  #   }
+  if (.plot_type == "anim") .df <- slice_sample(group_by(.df, !!!gr_by, !!flag), prop = 0.05)
 
   plot_args <- list2(.df = .df, .x = Xt2, .y = Xt1, .flag = flag,
-                     .diag_type = .method, !!! gr_by, .labels = .labels,
-                     .hat = hat_Xt1, .error = hat_s_Xt1)
+                     .diag_type = .method, .plot_type = .plot_type, !!! gr_by,
+                     .labels = .labels, .hat = hat_Xt1, .error = hat_s_Xt1)
+
 
   # Residual leverage plot
   if(.method == "norm_E") {
@@ -85,11 +68,8 @@ gg_IC <- function(.df, .ion1, .ion2, .method, ..., .Xt = Xt.pr, .N = N.pr,
   p <- eval(expr(gg_base(!!!plot_args)), data_env)
 
   if (.plot_type == "anim")  {
-    p <- p + gganimate::transition_states(
-      execution,
-      transition_length = 2,
-      state_length = 1
-      )
+    p <- plotly::ggplotly(p, tooltip = "text") %>%
+      plotly::animation_opts(frame = 150, transition = 0)
     return(p)
     }
   if (.plot_type == "static") return(p)
@@ -98,7 +78,7 @@ gg_IC <- function(.df, .ion1, .ion2, .method, ..., .Xt = Xt.pr, .N = N.pr,
 
 
 
-gg_base <- function(.df, .x, .y, .flag, .diag_type, ..., .labels = NULL,
+gg_base <- function(.df, .x, .y, .flag, .diag_type, .plot_type, ..., .labels = NULL,
                     .geom = "point", .hat = NULL, .error = NULL, .lower = NULL,
                     .upper = NULL, .rug = FALSE){
 
@@ -115,12 +95,12 @@ gg_base <- function(.df, .x, .y, .flag, .diag_type, ..., .labels = NULL,
     }
 
   # Adjust point alpha
-  alpha_sc <- median(count(.df, !!!gr_by)$n) / 1e5
+  alpha_sc <- median(count(.df, !!!gr_by)$n) /
+    ifelse(.plot_type == "static", 1e5, 1e3)
   # Filter correct titles
   ttl <- filter(nm_diag_ttl, nm == .diag_type)
 
-
-  # Uncertainyt bounds
+  # Uncertainty bounds
   # Add bounds to dataframe
   if (!is.null(.error)) {
   .df <- mutate(
@@ -148,8 +128,22 @@ gg_base <- function(.df, .x, .y, .flag, .diag_type, ..., .labels = NULL,
     tb_labs <- tibble::add_column(tb_labs, lbs = lbs)
     }
 
-  p <- ggplot(data = .df, aes(x = !!.x, y = !!.y, color = {{.flag}})) +
-    facet_wrap(vars(!!!gr_by), scales = "free")
+  if(.plot_type == "anim") {
+    p <- ggplot(
+      data = .df,
+      aes(
+        x = !!.x,
+        y = !!.y,
+        color = {{.flag}},
+        frame = execution,
+        text = eval(text_labs(.diag_type, x = !!.x, y = !!.y, ion1, ion2))
+        )
+      )
+  }
+  if(.plot_type == "static") {
+    p <- ggplot(data = .df, aes(x = !!.x, y = !!.y, color = {{.flag}}))
+    }
+  p <- p + facet_wrap(vars(!!!gr_by), scales = "free")
   if (.geom == "point") p <- p + geom_point(alpha = alpha_sc)
   if (.geom == "hexbin") p <- p + geom_hexbin()
   if (.geom == "dens2d") {
@@ -168,7 +162,7 @@ gg_base <- function(.df, .x, .y, .flag, .diag_type, ..., .labels = NULL,
         na.value = "transparent"
       )
     }
-  if (!any(sapply(list(.hat, .lower, .upper), is.null))) {
+  if (!any(sapply(list(.hat, .lower, .upper), is.null)) & .plot_type != "anim") {
     p <- p + geom_ribbon(
       aes(ymin = !!.lower, ymax = !!.upper),
       color = "black",
@@ -204,8 +198,8 @@ gg_base <- function(.df, .x, .y, .flag, .diag_type, ..., .labels = NULL,
       labels = scales::label_scientific()
       ) +
     labs(
-      x = axis_labs(ttl$xaxis, ion2, "static"),
-      y = axis_labs(ttl$yaxis, ion1, "static"),
+      x = axis_labs(ttl$xaxis, ion2, .plot_type),
+      y = axis_labs(ttl$yaxis, ion1, .plot_type),
       title = ttl$label
       ) +
     theme_classic() +
@@ -224,195 +218,9 @@ gg_IR <- function(.df, .lag, .acf, .flag, ..., .hat = NULL,
     scale_color_manual(values = c(ggplotColours(2)[2], ggplotColours(2)[1])) +
     facet_wrap(vars(...), scales = "free") +
     ggtitle("ACF plot") +
-    theme_classic()
+    theme_classic() +
+    theme(legend.position = "none")
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# # Combine original/augmented datasets and results of diagnostics
-#   df.def <- inner_join(
-#     distinct(reduce_diag(ls_df, "df", args), execution, ID, .keep_all = TRUE),
-#     df.R,
-#     by = c("execution", "ID", sapply(gr_by, as_name))
-#   )
-#
-#   ion1 <- as_name(args[["ion1"]])
-#   ion2 <- as_name(args[["ion2"]])
-#
-# sample fraction if interactive
-#   if(type == "interactive") {
-#   IDs <- sample_frac(filter(df.def, execution == 1), size = 0.01) %>%
-#     select(ID)
-#   }
-#
-#   filter_df <- function(df, plot_type){
-#     switch(plot_type,
-#            interactive  = call2("semi_join", df, IDs, by = "ID"),
-#            static = call2("filter", df, expr(execution == rep))
-#            )
-#   }
-#
-#   df.def <- filter_df(df = df.def, plot_type = type)
-#   stat_lab  <- filter_df(df = stat_lab , plot_type = type)
-#
-#   plot_args <- list2(
-#     df = df.def,
-#     stat = stat_lab,
-#     y = Xt1,
-#     x = Xt2,
-#     ion1 = ion1,
-#     ion2 = ion2,
-#     plot_title = plot_title,
-#     plot_type = type,
-#     args = args,
-#     iso = iso,
-#     isoscale = isoscale,
-#     !!! gr_by
-#     )
-#
-# # Residual leverage plot
-#   if(plot_title == "norm_E"){
-#     plot_args[["y"]] <- quo(studE)
-#     plot_args[["x"]] <- quo(hat_Xi)
-#   }
-#
-# # normal QQ plot
-#   if(plot_title == "QQ"){
-#     plot_args[["y"]] <- quo(RQ)
-#     plot_args[["x"]] <- quo(TQ)
-#   }
-#
-# # scale location plot
-#   if(plot_title == "CV"){
-#     plot_args[["y"]] <- quo(studE)
-#     plot_args[["x"]] <- quo(fitted)
-#   }
-#
-# # control with environment
-#   data_env <- env(data = df.def)
-#   gg <- eval(expr(gg_default(!!!plot_args)), data_env)
-#
-#   if(type == "static"){
-#   return(gg)
-#   }
-#
-#   if(type == "interactive"){
-#     return(plotly::ggplotly(gg, tooltip="text") %>%
-#              plotly::animation_opts(frame = 150, transition = 0)
-#     )
-#     }
-#
-#
-
-#-------------------------------------------------------------------------------
-# Not exportet
-#-------------------------------------------------------------------------------
-
-
-
-# #standard plot
-# gg_default <- function(df,
-#                        stat_lab,
-#                        y,
-#                        x,
-#                        ion1,
-#                        ion2,
-#                        plot_title,
-#                        plot_type,
-#                        args,
-#                        iso,
-#                        isoscale,
-#                        ...
-#                        ){
-#
-#   y <- enquo(y)
-#   x <- enquo(x)
-#   gr_by <- enquos(...)
-
-  # if (plot_type == "interactive") {
-  #
-  #   text_vc <- c(
-  #     "CooksD" = "Rm",
-  #     "Rm" = "Rm",
-  #     "QQ" = "QQ",
-  #     "norm_E" = "norm_E",
-  #     "CV" = "CV"
-  #     )
-  #
-  #   text_type <- text_vc[plot_title]
-  #
-  #   if (iso) {
-  #     df <- mutate(
-  #       df,
-  #       delta = round(
-  #         calib_R(
-  #           !! quo_updt(args[["Xt"]], x = "M_R"),
-  #           standard = isoscale,
-  #           type = "composition",
-  #           input = "R",
-  #           output = "delta"
-  #           ),
-  #         1
-  #         )
-  #       )
-  #
-  #     R_not <- expr(paste0("δ", ion1, " (‰): ", delta))
-  #
-  #   }else{
-  #     df <- mutate(
-  #       df,
-  #       R = round(!! quo_updt(args[["Xt"]], x = "M_R"), 4)
-  #       )
-  #
-  #     R_not <- expr(paste0("mean R: ", R))
-  #
-  #     }
-  #
-  #   text_expr = lst(
-  #     Rm = expr(paste0(ion2, " (ct/sec): ", round(!!x, 0), '\n',
-  #                      ion1, " (ct/sec): ", round(!!y, 0), '\n',
-  #                      "R :", round(!!y / !!x, 4), '\n',
-  #                      eval(R_not)
-  #                      )
-  #     ),
-  #     QQ = expr(paste0("TQ: ", round(!!x, 2), '\n',
-  #                      "SQ: ", round(!!y, 2), '\n',
-  #                      eval(R_not)
-  #                      )
-  #     ),
-  #     norm_E = expr(paste0("e*: ", round(!!x, 4), '\n',
-  #                          "hat: ", round(!!y, 2), '\n',
-  #                          eval(R_not)
-  #                          )
-  #     ),
-  #     CV = expr(paste0("fitted value: ", round(!!x, 4), '\n',
-  #                      "e*: ", round(!!y, 2), '\n',
-  #                      eval(R_not)
-  #                      )
-  #     )
-  #
-  #   )
-  #
-  #   p <-  ggplot(data = df,
-  #                aes(y = !!y,
-  #                    x = !!x,
-  #                    color = flag,
-  #                    frame = execution,
-  #                    text = eval(text_expr[[text_type]])
-  #                    )
-  #                )
-  #
 
 
 
@@ -434,63 +242,59 @@ axis_labs <- function(type, ion, plot_type){
     hat_Xi = expression("hat-values" (italic(h))),
     R = "R"
     )
-    } else{
-      switch(
-        type,
-        ionct = str_replace("ion (ct/sec)", "ion", ion),
-        studE = "studentized residuals",
-        TQ = "Theoretical quantiles",
-        SQ = "Sample quantiles",
-        hat_Y = "fitted value ",
-        hat_Xi = "hat-values"
+      } else {
+        switch(
+          type,
+          ionct = str_replace("ion (ct/sec)", "ion", ion),
+          studE = "studentized residuals",
+          TQ = "Theoretical quantiles",
+          SQ = "Sample quantiles",
+          hat_Y = "fitted value ",
+          hat_Xi = "hat-values"
+          )
+      }
+}
+
+text_labs <- function(diag_type, x, y, ion1, ion2, iso = FALSE) {
+
+  # if (iso) {
+  #   R_not <- paste0("δ", ion1, " (‰): ", delta)
+  #   } else {
+  #     R_not <- paste0("mean R: ", R)
+  #   }
+  x <- enexpr(x)
+  y <- enexpr(y)
+  ion1 <- enexpr(ion1)
+  ion2 <- enexpr(ion2)
+  if (diag_type == "CooksD" | diag_type == "Cameca") diag_type <- "Rm"
+  switch(
+      diag_type,
+      Rm = expr(
+        paste0(
+          !!ion2, " (ct/sec): ", round(!!x, 0), '\n',
+          !!ion1, " (ct/sec): ", round(!!x, 0), '\n',
+          "R :", round(!!y / !!x, 4), '\n'
+          )
+        ),
+      QQ = expr(
+        paste0(
+          "TQ: ", round(!!x, 2), '\n',
+          "SQ: ", round(!!y, 2), '\n'
+          )
+        ),
+      norm_E = expr(
+        paste0(
+          "e*: ", round(!!x, 4), '\n',
+          "hat: ", round(!!y, 2), '\n'
+          )
+        ),
+      CV = expr(
+        paste0(
+          "fitted value: ", round(!!x, 4), '\n',
+          "e*: ", round(!!y, 2), '\n'
+              )
         )
-  }
-}
-
-
-stat_lab2 <- function(a, b, c){
-
-  expr_lm <- lst(substitute(beta[1] == a * " \n " ~
-                              t[beta[1]] == b * " \n " ~
-                              "(" * p == c * ";" ~
-                              "H0:"~ beta[1] == 0 * ")"
-                            ,
-                            lst(a = sprintf("%+.1e", a),
-                                b = sprintf("%+.1e", b),
-                                c = sprintf("%.3f", c)
-                            )
-  )
-  )
-
-  expr_lm %>%
-    do.call("expression", .) %>%
-    factor(x = as.character(a),
-           labels = .
-    )
-}
-
-
-
-
-
-
-# Stat labels selection
-stat_select2 <- function(df, facets_gr) {
-
-  df %>%
-    distinct(!!! facets_gr, .keep_all = TRUE) %>%
-    transmute(trans = "original",
-              lb = purrr::pmap(lst(
-                a = B1,
-                b = t.val,
-                c = p.val
-              ),
-              stat_lab2),
-              vjust = 3.5,
-              !!! facets_gr
-    ) %>%
-    tidyr::unnest(cols = lb)
-
+      )
 }
 
 ggplotColours <- function(n = 6, h = c(0, 360) + 15){
