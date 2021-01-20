@@ -79,23 +79,23 @@ read_IC <- function(directory, meta = TRUE, hide = TRUE){
     tb_rw <- group_by(tb_rw, .data$file.nm) %>%
       mutate(
         species.nm = ntile(n = length(unique(tb_meta$species.nm))),
-        species.nm = recode(species.nm, !!! vc_species)
+        species.nm = recode(.data$species.nm, !!! vc_species)
         ) %>%
       ungroup() %>%
-      left_join(tb_meta, by = c("file.nm", "species.nm"))
+      left_join(tb_meta, by = c("file.nm", "species.nm")) %>%
+      # add block numbers
+      group_by(.data$file.nm, .data$species.nm) %>%
+      mutate(bl.nm = ntile(n = .data$bl_num.mt)) %>%
+      ungroup()
 
 
-    if (hide) {
-      tb_rw <- fold(tb_rw, type = ".mt")
-        } else {
-        tb_rw <- left_join(tb_rw, tb_meta, by = c("file.nm", "species.nm"))
-        }
+    if (hide) tb_rw <- fold(tb_rw, type = ".mt")
 
-    # Compare length consistency to gauge failures in measurement
-    if (length(compare_length(tb_rw)) > 0) {
-      warning("Inconsistency in the length of one ore more analyses.
-              Use the function `compare_length()` to compare IC and meta data.")
-    }
+    # # Compare length consistency to gauge failures in measurement # reconsider this
+    # if (length(compare_length(tb_rw)) > 0) {
+    #   warning("Inconsistency in the length of one ore more analyses.
+    #           Use the function `compare_length()` to compare IC and meta data.")
+    # }
 
     return(tb_rw)
   }
@@ -470,22 +470,30 @@ compare_length <- function(df) {
 }
 
 # folding the metadata and raw data as attributes
-unfold <- function(df, type = "metadata") {
+unfold <- function(df, type = "metadata", merge = TRUE) {
 
     meta <- attr(df, type)
     vars <- select(meta, ends_with(".nm")) %>%
       colnames()
 
-    return(left_join(df, meta, by = vars))
-
+    if (merge) return(left_join(df, meta, by = vars)) else return(meta)
 }
 
-fold <- function(df, type) {
+fold <- function(df, type, meta = NULL) {
+
   vc_type <- c(`metadata` = ".mt", `rawdata` = ".rw", `modeldata` = ".ml")
   vc_type <- vc_type[vc_type %in% type]
-  tb <- select(df, -c(ends_with(type)))
-  ls_tb <- purrr::map(vc_type, ~select(df, ends_with(.) | ends_with(".nm")))
-  ls_tb[[length(vc_type) + 1]] <- (tb)
+
+
+  if (is.null(meta)){
+    tb <- select(df, -c(ends_with(type)))
+    ls_tb <- purrr::map(vc_type, ~select(df, ends_with(".nm") | ends_with(.x)))
+    ls_tb[[length(vc_type) + 1]] <- (tb)
+    } else {
+      ls_tb <- list2(metadata = meta, df)
+      }
+
+
   purrr::reduce2(rev(ls_tb), rev(names(vc_type)), write_attr)
 }
 
