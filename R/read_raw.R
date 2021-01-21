@@ -165,7 +165,7 @@ read_meta <- function(directory){
     )
 
 # Cameca parameters
-   vc_params <- set_names(point::cam_params$cam, nm = point::cam_params$point)
+   vc_params <- set_names(point::names_meta$cam, nm = point::names_meta$point)
 
 # Select variables present
    vc_params <- vc_params[vc_params  %in% colnames(tb_meas)]
@@ -472,8 +472,10 @@ compare_length <- function(df) {
 # folding the metadata and raw data as attributes
 unfold <- function(df, type = "metadata", merge = TRUE) {
 
-    meta <- attr(df, type)
-    vars <- select(meta, ends_with(".nm")) %>%
+  # no attr of name type return unchanged data
+  if (is.null(attr(df, type))) return(df)
+  meta <- attr(df, type)
+  vars <- select(meta, ends_with(".nm")) %>%
       colnames()
 
     if (merge) return(left_join(df, meta, by = vars)) else return(meta)
@@ -484,7 +486,6 @@ fold <- function(df, type, meta = NULL) {
   vc_type <- c(`metadata` = ".mt", `rawdata` = ".rw", `modeldata` = ".ml")
   vc_type <- vc_type[vc_type %in% type]
 
-
   if (is.null(meta)){
     tb <- select(df, -c(ends_with(type)))
     ls_tb <- purrr::map(vc_type, ~select(df, ends_with(".nm") | ends_with(.x)))
@@ -492,7 +493,6 @@ fold <- function(df, type, meta = NULL) {
     } else {
       ls_tb <- list2(metadata = meta, df)
       }
-
 
   purrr::reduce2(rev(ls_tb), rev(names(vc_type)), write_attr)
 }
