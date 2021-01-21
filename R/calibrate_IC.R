@@ -1,118 +1,167 @@
 #' Calibration of isotope ratios
 #'
-#' \code{calib_R} function to convert isotope values back-and-forth between R and delta
+#' \code{calib_R} function to convert isotope values back-and-forth between R
+#' and delta
 #'
 #' A fundamental in publishing isotope data is the conversion of isotope the delta
 #' formulation comparing the obtained R to that of a standard. These values are
-#' reported on a per mill scale. However in IC calculations most often we use
-#' ratios (R) or fractional abundances (F). This functions provide an easy way
-#' of making these transformaitons for both the average composition but also
-#' fractionations as enrichment factors.
+#' reported on a per mill scale. However in IC calculations ratios (R) or
+#' fractional abundances (F) are most commonly used. This functions provide an easy way
+#' of making these transformations for both the average composition but also
+#' fractionations as enrichment factors (alpha and epsilon).
 #'
 #' @param x  A numeric value or vector.
-#' @param y  A numeric value or vector of product when calculating enrichments (`type = enrichment`).
+#' (\code{`type = enrichment`}).
 #' @param standard A character or numeric value or vector.
+#' @param isotope A character for the name of the isotope (e.g. \code{"13C"}).
 #' @param type Type of conversion, isotope composition or enrichment.
-#' @param input The type of input value, R, F or delta.
-#' @param output Desired ouput value, R, F or delta.
+#' @param input The type of input value, R, F, and delta.
+#' @param output Desired output value, R, F, and delta.
+#' @param y A numeric value or vector of the product when calculating enrichment
+#' factors, following the convention; x = R(product)/ y = R(substrate). Both x
+#' and y should have the same notation, either R, F or delta, as supplied to
+#' the argument input.
 #' @return A numeric value or vector.
 #'
 #' @export
 #' @examples
 #' # R value of 0.0111 to delta on VPDB scale
-#' calib_R(0.0111, standard = 0.011237, type = "composition", input = "R", output = "delta")
+#' calib_R(0.0111, reference = 0.011237, type = "composition", input = "R",
+#'         output = "delta")
 #' # or
-#' calib_R(0.0111, standard = "VPDB", type = "composition", input = "R", output = "delta")
+#' calib_R(0.0111, reference = "VPDB", isotope = "13C",
+#'         type = "composition", input = "R", output = "delta")
 #'
 #' # Fractional abundance for a given R
-#' calib_R(0.0111, type = "composition", input = "R", output = "F")
+#' calib_R(0.0111, reference = 0.011237, type = "composition",
+#'         input = "R", output = "F")
 #'
-#' # Generates warning as input and output are equal
-#' calib_R(0.0111, type = "composition", input = "R", output = "R")
+#' # Alpha enrichment factors can also be calculated based on two delta/R/F
+#' # values, where the second value can be supplied as argument y (i.e.,
+#' # the product of a reaction)
+#' calib_R(-25, reference = "VPDB", isotope = "13C",
+#'         type = "enrichment", input = "delta", output = "alpha", y = -105)
 #'
-#' # Generates warning as standard is unknown
-#' calib_R(0.0111, standard = "somestandard", type = "composition", input = "R", output = "delta")
-#'
-#' # Find R values 60 per mille apart
-#' A <- calib_R(5, standard = "VPDB", type = "composition", input = "delta", output = "R")
-#' B <- calib_R(-55, standard = "VPDB", type = "composition", input = "delta", output = "R")
-calib_R <- function(x,
-                    y = NULL,
-                    standard,
-                    type = c("composition", "enrichment"),
-                    input = c("R", "F", "delta", "delta_alpha"),
-                    output = c("R", "F", "delta", "alpha")
-                    ){
+calib_R <- function(x, reference, isotope, type = "composition",
+                    input = "R", output = "F", y = NULL){
 
-  if (input == output){stop("Input and output is equal", call. = FALSE)}
+  if (input == output) stop("Input and output are equal.", call. = FALSE)
+  if (type == "enrichment") {
+    if (!c(output == "epsilon" | output == "alpha")) {
+      stop("For enrichment conversion at least output has to be an enrichment
+           factor.", call. = FALSE)
+      } else {
+        if(!is.null(y) & c(input == "epsilon" | input == "alpha")) {
+           stop("Input epsilon or alpha is only meaningfull when converting
+                between enrichment factors.", call. = FALSE)
+        }
+        if (is.null(y) & !c(input == "epsilon" | input == "alpha")) {
+           stop("For enrichment conversion of one value input has to be alpha or
+                epsilon.", call. = FALSE)
+        }
+      }
+    }
 
-# transformations for compositions
-  convert_comp <- function(method){
-    switch(method,
-           R_F = calib_R_F(x),
-           R_delta = calib_R_delta(x, standard),
-           F_R = calib_F_R(x),
-           F_delta = calib_F_delta(x, standard),
-           delta_R = calib_delta_R(x, standard),
-           delta_F = calib_delta_F(x, standard)
-           )
+
+  # Transformations for compositions
+  conv_composition <- function(method, value, reference, isotope) {
+    switch(
+      method,
+      R_F = calib_R_F(value),
+      R_delta = calib_R_delta(value, reference, isotope),
+      F_R = calib_F_R(value),
+      F_delta = calib_F_delta(value, reference, isotope),
+      delta_R = calib_delta_R(value, reference, isotope),
+      delta_F = calib_delta_F(value, reference, isotope)
+      )
   }
 
-# calculations of enrichment factors for kinetic reactions
-  convert_enrich <- function(method){
-    switch(method,
-           delta_alpha = calib_delta_alpha(x, y, standard),
-           delta_alpha_delta = calib_delta_alpha_delta(x, y, standard)
+  # Calculations of enrichment factors for kinetic reactions
+  conv_enrichment <- function(method, value){
+    switch(
+      method,
+      epsilon_alpha = calib_epsilon_alpha(value),
+      alpha_epsilon = calib_alpha_epsilon(value)
     )
   }
 
-  switch(type,
-         composition = convert_comp(paste(input, output, sep = "_")),
-         enrichment = convert_enrich(paste(input, output, sep = "_"))
-         )
-  # if (type == "composition") convert_comp(paste(input, output, sep = "_"))
-  # if (type == "enrichment") convert_enrich(paste(input, output, sep = "_"))
+  conv_output <- function(type, input, output, value, reference, isotope){
+    switch(
+      type,
+      composition = conv_composition(
+        paste(input, output, sep = "_"),
+        value, reference,
+        isotope
+        ),
+      enrichment = conv_enrichment(paste(input, output, sep = "_"), value)
+      )
   }
+
+  if (is.null(y)) {
+
+    return(conv_output(type, input, output, x, reference, isotope))
+
+    } else {
+
+      R1 <- conv_output("composition", input, "R", x, reference, isotope)
+      R2 <- conv_output("composition", input, "R", y, reference, isotope)
+      alpha <- R2 / R1
+      if (output == "alpha") return(alpha)
+      if (output == "epsilon") return(conv_enrichment("alpha_epsilon", alpha))
+    }
+  }
+
 
 #-------------------------------------------------------------------------------
 # Not exportet
 #-------------------------------------------------------------------------------
 # transform functions
-calib_R_F <- function(x){x / (1 + x)}
-calib_R_delta <- function(x, standard){1000 * (x / find_standard(standard) - 1)}
-calib_F_R <- function(x){x / 1 - x}
-calib_F_delta <- function(x, standard){calib_R_delta(calib_F_R(x))}
-calib_delta_R <- function(x, standard){(x / 1000) * find_standard(standard) + find_standard(standard)}
-calib_delta_F <- function(x, standard){calib_R_F(calib_delta_R(x))}
+calib_R_F <- function(x) x / (1 + x)
+calib_R_delta <- function(x, reference, isotope){
+  1000 * (x / find_reference(reference, isotope) - 1)
+  }
+calib_F_R <- function(x) x / 1 - x
+calib_F_delta <- function(x, reference, isotope){
+  calib_R_delta(calib_F_R(x), reference, isotope)
+  }
+calib_delta_R <- function(x, reference, isotope){
+  R <- find_reference(reference, isotope)
+  (x / 1000) * R + R
+  }
+calib_delta_F <- function(x, reference, isotope){
+  calib_R_F(calib_delta_R(x, reference, isotope))
+  }
 
 # enrichment transform functions
-calib_delta_alpha <- function(x, y, standard){
-  calib_delta_R(x = y, find_standard(standard)) / calib_delta_R(x = x, find_standard(standard))
-  }
+calib_epsilon_alpha <- function(x)  exp((x / 1000))
+calib_alpha_epsilon <- function(x)  1000 * log(x)
 
-calib_delta_alpha_delta <- function(x, y, standard){
-  y * calib_delta_R(x, standard) %>% calib_R_delta(., standard)
-  }
 
-find_standard <- function(standard){
+find_reference <- function(.reference, .isotope){
 
-# standard database
-  vc_standard <- c(VPDB = 0.011237,
-                   VCDT = 0.045005
-                   )
+  # Reference standard database
+  tb_ref <- point::reference_R
 
-  if (is_character(standard)){
-    if (standard %in% names(vc_standard)){
-      standard <- vc_standard %>% purrr::pluck(standard)
-      return(standard)
+  if (is_character(.reference)) {
+    if (.reference %in% tb_ref$reference) {
+      tb_ref <- filter(tb_ref, reference == .reference)
+      if (.isotope %in% tb_ref$isotope) {
+        return(pull(filter(tb_ref, isotope == .isotope), value))
+        } else {
+          stop(
+            "Isotope unkown for reference standard, provide numeric value
+            manually",
+            call. = FALSE
+            )
+          }
       } else {
-        stop("Standard unkown, provide numeric value manually", call. = FALSE)
-      }
+        stop(
+          "Reference standard unkown, provide numeric value manually",
+          call. = FALSE
+          )
+        }
     } else {
-    return(standard)
+    return(reference)
   }
 }
 
-# Rayleigh equation for unidirectional reactions
-
-rayleigh <- function(f, alpha) f ^ (alpha - 1)
