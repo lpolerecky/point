@@ -51,7 +51,7 @@
 #' @param .plot_iso A character string (e.g. \code{"VPDB"}) for the delta
 #' conversion of R \code{?calib_R()} for options.
 #'
-#' @return A dynamic static plot are returned together with a
+#' @return A dynamic or static plot is returned along with a
 #' \code{\link[tibble::tibble]{tibble}} containing \code{stat_R()} statistics
 #' and diagnostics associated with the chosen method.
 #'
@@ -60,8 +60,9 @@
 #' # Modelled ion count dataset
 #'
 #' # Cook's D style diagnostic-augmentation of ion count data for
-#' # isotope ratios; 3 repeats
-#'
+#' # isotope ratios
+#' diag_R(simu_IC, "13C", "12C", force.nm, spot.nm, .plot = TRUE,
+#'        .Xt = Xt.sm, .N = N.sm)
 #'
 diag_R <- function(.df, .ion1, .ion2, ..., .method = "CooksD", .reps = 1,
                    .Xt = Xt.pr, .N = N.pr, .species = species.nm, .t = t.nm,
@@ -77,7 +78,7 @@ diag_R <- function(.df, .ion1, .ion2, ..., .method = "CooksD", .reps = 1,
   args <- enquos(.Xt = .Xt, .N = .N, .species = .species, .t = .t)
 
   # Metadata
-  if(.meta) meta <- unfold(xc, merge = FALSE)
+  if(.meta) meta <- unfold(.df, merge = FALSE)
 
   # Repetitions
   if (.method != "IR") {
@@ -106,14 +107,14 @@ diag_R <- function(.df, .ion1, .ion2, ..., .method = "CooksD", .reps = 1,
       .N = !!args[[".N"]],
       .species = !!args[[".species"]],
       .t = !!args[[".t"]],
-      .output = .output
+      .output = .output,
+      .hyp = .hyp
       )
 
   if (.plot & .return != "results") {
     .return <- "results"
     warning("If `plot` is `TRUE`, `return` defaults to `results`")
   }
-
 
   if (.return == "augmented") {
     df <-reduce_diag(ls_tb, type = "df") %>%
@@ -123,32 +124,38 @@ diag_R <- function(.df, .ion1, .ion2, ..., .method = "CooksD", .reps = 1,
         mutate(execution = as.numeric(execution) - 1)
     }
 
-
   # metadata
-  if (.meta) df <- fold(df, type = ".mt",  meta = meta)
+  if (.meta & !is.null(meta)) df <- fold(df, type = ".mt",  meta = meta)
 
   if (.plot) {
     df %T>%
       {print(
-        gg_IC(., .ion1 = .ion1, .ion2 = .ion2, .method = .method, .plot_type = .plot_type, !!!gr_by,
-              .labels = .plot_stat)
+        gg_IC(
+          ., .ion1 = .ion1, .ion2 = .ion2, .method = .method,
+          .plot_type = .plot_type, !!!gr_by, .Xt = !!args[[".Xt"]],
+          .N = !!args[[".N"]], .species = !!args[[".species"]],
+          .t = !!args[[".t"]], .labels = .plot_stat
+          )
         )
       }
-    }
-  return(df)
-  } else {
-
-    # Auto-correlation
-    df <- diag_R_exec(.df, .ion1 = .ion1, .ion2 = .ion2, !!! gr_by,
-                      .method = "IR", .Xt = !!args[[".Xt"]], .N = !!args[[".N"]],
-                      .species = !!args[[".species"]], .t = !!args[[".t"]])
-    if (.plot) {
-
-    df %T>%
-      {print(gg_IR(., .lag = lag, .acf = acf, .flag = flag, !!! gr_by,
-                   .hat = 0, .error = hat_e_acf))
-      }
   }
+
+  return(df)
+    } else {
+
+      # Auto-correlation
+      df <- diag_R_exec(
+        .df, .ion1 = .ion1, .ion2 = .ion2, !!! gr_by, .method = "IR",
+        .Xt = !!args[[".Xt"]], .N = !!args[[".N"]],
+        .species = !!args[[".species"]], .t = !!args[[".t"]], .hyp = .hyp
+        )
+      if (.plot) {
+
+      df %T>%
+        {print(gg_IR(., .lag = lag, .acf = acf, .flag = flag, !!! gr_by,
+                     .hat = 0, .error = hat_e_acf))
+        }
+    }
   return(df)
 }
 }
@@ -156,7 +163,7 @@ diag_R <- function(.df, .ion1, .ion2, ..., .method = "CooksD", .reps = 1,
 
 rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .method,.Xt = Xt.pr,
                          .N = N.pr, .species = species.nm, .t = t.nm,
-                         .output){
+                         .output, .hyp){
 
   # Quoting the call (user-supplied expressions)
   # Grouping
@@ -187,7 +194,8 @@ rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .method,.Xt = Xt.pr,
     .Xt = !!args[[".Xt"]],
     .N = !!args[[".N"]],
     .species = !!args[[".species"]],
-    .t = !!args[[".t"]]
+    .t = !!args[[".t"]],
+    .hyp = .hyp
     )
 
   # Save augmented dataframe for next cycle
@@ -213,7 +221,7 @@ rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .method,.Xt = Xt.pr,
 
 
 diag_R_exec <- function(.df, .ion1, .ion2, ..., .method, .Xt = Xt.pr,
-                        .N = N.pr, .species = species.nm, .t = t.nm){
+                        .N = N.pr, .species = species.nm, .t = t.nm, .hyp){
 
   # Quoting the call (user-supplied expressions)
   # Grouping
@@ -233,7 +241,8 @@ diag_R_exec <- function(.df, .ion1, .ion2, ..., .method, .Xt = Xt.pr,
     !!! gr_by,
     .Xt = expr(!! args[["Xt"]]),
     .t = expr(!! args[["t"]]),
-    .output = "complete"
+    .output = "complete",
+    .hyp = .hyp
     ) %>%
     set_names(nm = diag_vc)
 
@@ -246,13 +255,11 @@ diag_R_exec <- function(.df, .ion1, .ion2, ..., .method, .Xt = Xt.pr,
   }
 
 
-
+# Reduce the results to a single dataframe
 reduce_diag <- function(ls, type){
 
-  # Reduce the results to a single dataframe
-  ls %>%
-    purrr::transpose() %>%
-    purrr::pluck(type) %>%
-    bind_rows(.id = "execution")
+  purrr::transpose(ls) %>%
+  purrr::pluck(type) %>%
+  bind_rows(.id = "execution")
 
 }

@@ -3,7 +3,7 @@
 #' @export
 CV <- Rm <- norm_E <- CooksD <- QQ <- IR <- function(
   .df, .ion1, .ion2, ..., .Xt = Xt.pr, .t = t.nm,
-  .output = "complete", .hyp = "none"){
+  .output = "complete", .hyp = "none", .alpha_level = 0.05){
 
   # Grouping
   gr_by <- enquos(...)
@@ -12,13 +12,16 @@ CV <- Rm <- norm_E <- CooksD <- QQ <- IR <- function(
   fun_nm <- as_name(match.call()[[1]])
 
   # check if name has hypothesis test
-  if(fun_nm == "QQ" & .hyp == "bp") {
+  if(fun_nm != "CV" & .hyp == "bp") {
     stop("Wrong hypothesis test for this method.")
     }
-  if(fun_nm == "CV" & (.hyp == "norm" | .hyp == "ttest")) {
+  if(fun_nm != "QQ" & (.hyp == "norm" | .hyp == "ttest")) {
     stop("Wrong hypothesis test for this method.")
     }
-  if (!(fun_nm == "QQ" | fun_nm == "CV") &  .hyp != "none") {
+  if(fun_nm != "IR" & .hyp == "ljung") {
+    stop("Wrong hypothesis test for this method.")
+    }
+  if (!(fun_nm == "QQ" | fun_nm == "CV" | fun_nm == "IR") &  .hyp != "none") {
     .hyp <- "none"
     warning("No hypothesis test avalaible for this method.")
     }
@@ -33,7 +36,7 @@ CV <- Rm <- norm_E <- CooksD <- QQ <- IR <- function(
   Xt2 <- quo_updt(Xt, post = .ion2) # count rate
 
   # Execute
-  df <- nest_R_lm(.df, gr_by, Xt1, Xt2, t, method = fun_nm, .hyp = .hyp)
+  df <- nest_R_lm(.df, gr_by, Xt1, Xt2, t, method = fun_nm, .hyp = .hyp, .alpha_level = .alpha_level)
 
   # Output
   if (fun_nm == "IR") return(unnest(select(df, -c(t, data)), cols = c(extr, flag)))
@@ -46,7 +49,7 @@ CV <- Rm <- norm_E <- CooksD <- QQ <- IR <- function(
 #-------------------------------------------------------------------------------
 
 # nest lm (args as quos)
-nest_R_lm <- function(df, gr_by, Xt1, Xt2, t, method, .hyp){
+nest_R_lm <- function(df, gr_by, Xt1, Xt2, t, method, .hyp, .alpha_level){
 
   tidyr::nest(df, t = !!t, data = -c(!!! gr_by)) %>%
   mutate(
@@ -57,13 +60,13 @@ nest_R_lm <- function(df, gr_by, Xt1, Xt2, t, method, .hyp){
     extr =
       purrr::map(aug, ~transmute_reg(.x, Xt1, Xt2, method)),
     extr =
-      purrr::map(extr, ~QQ_trans(.x, method, .hyp = .hyp)),
+      purrr::map(extr, ~QQ_trans(.x, method, .hyp, .alpha_level)),
     extr =
-      purrr::map(extr, ~IR_trans(.x, method, .hyp = .hyp)),
+      purrr::map(extr, ~IR_trans(.x, method, .hyp, .alpha_level)),
     extr =
-      purrr::map2(aug, extr, ~bp_wrap(.x, .y, Xt2, method, .hyp = .hyp)),
+      purrr::map2(aug, extr, ~bp_wrap(.x, .y, Xt2, method, .hyp, .alpha_level)),
     flag =
-      purrr::map2(extr, aug, ~flag_set(.x, .y, Xt1, Xt2, type = method))
+      purrr::map2(extr, aug, ~flag_set(.x, .y, Xt1, Xt2, method, .alpha_level))
     ) %>%
   select(-c(R_lm, aug))
 
@@ -99,48 +102,61 @@ transmute_reg <- function(df, Xt1, Xt2, type) {
   if (type == "CV") args <- args[names(args) %in% c(hat_nm[1], "studE")]
   if (type == "QQ"| type == "IR") args <- args["studE"]
 
+  # Execute
   transmute(df, !!!args)
-
 }
 
 # create flag variable
-flag_set <- function(df1, df2, Xt1, Xt2, type){
+flag_set <- function(df1, df2, Xt1, Xt2, type, .alpha_level){
 
-  # predicted variable and sigma level boundaries
-  #prefix <- c("hat", "hat_sl", "hat_su")
+  # residual sigma level boundaries
   hat_args_sigma <- purrr::map(prefix, ~quo_updt(Xt1, pre = .x))
 
-  # predicted variable and standard error and CI boundaries
+  # CI boundaries of QQ
   hat_args_QQ <- paste(prefix, "RQ", sep = "_") %>%
     parse_exprs()
 
-  # predicted variable and standard error and CI boundaries
+  # CI boundaries acf
   hat_args_acf <- paste(prefix, "acf", sep = "_") %>%
     parse_exprs()
 
-  if (type == "Rm") return(flagger(df1, hat_E, !!hat_args_sigma[[2]], fct = 2))
-  if (type == "CooksD" | type == "norm_E") {
-   df <- transmute(
+  if (type == "Rm") {
+   df <- flagger(
      df1,
-     flag =
-       as.factor(if_else(CooksD < {4 / (n() - 2)}, "confluent", "divergent"))
+     hat_E,
+     !!hat_args_sigma[[2]],
+     fct = qnorm((1 -.alpha_level / 2))
      )
    return(df)
    }
-  if (type == "QQ") return(flagger(df1, QE, !!hat_args_QQ[[3]], fct = 2))
-  if (type == "CV") return(flagger(df1, studE, 3.5, fct = 2))
+  if (type == "CooksD" | type == "norm_E") {
+   df <- transmute(
+     df1,
+     flag = factor(if_else(CooksD < {4 / (n() - 2)}, "confluent", "divergent"))
+     )
+   return(df)
+   }
+  if (type == "QQ") {
+    df <- flagger(
+      df1,
+      QE,
+      !!hat_args_QQ[[3]],
+      fct = qt((1 - .alpha_level / 2), n())
+      )
+    return(df)
+   }
+  if (type == "CV") return(flagger(df1, studE, 3.5))
   if (type == "IR") return(flagger(df1, acf, !!hat_args_acf[[3]]))
 
 }
-
 
 flagger <- function(df, value, bound, fct = 1){
 
     transmute(
       df,
-      flag = as.factor(
+      flag = factor(
         if_else(
-          between({{value}}, -fct * {{bound}}, fct * {{bound}}),
+          between({{value}}, - fct * {{bound}}, fct * {{bound}}),
           "confluent",
           "divergent"
           )
@@ -150,7 +166,7 @@ flagger <- function(df, value, bound, fct = 1){
 }
 
 # quantile transformations and hypothesis tests
-QQ_trans <- function(df, type, .hyp) {
+QQ_trans <- function(df, type, .hyp, .alpha_level) {
 
   if (type!= "QQ") return(df)
 
@@ -163,34 +179,34 @@ QQ_trans <- function(df, type, .hyp) {
     hyp_result <- nortest::ad.test(df$studE)$p.value
     Ha <- "Ha (non-normal)"
     H0 <- "H0 (normal)"
-  }
+    }
   # t-test flag for mu0 (aka the conditional mean of residual) being zero
   if (.hyp == "ttest") {
     hyp_result <- t.test(df$studE, mu = 0)$p.value
     Ha <- "Ha (mu0 is not zero)"
     H0 <- "H0 (mu0 is zero)"
-  }
+    }
 
   df <- transmute(
     df,
-    RQ = unname(quantile(studE, probs = vector_probs(n()))),
+    RQ = unname(quantile(studE, probs = ppoints(n()))), #vector_probs(n()))),
     # Calculate normal (Theoretical) quantiles using mean and standard deviation
-    TQ = qnorm(vector_probs(n()), mean(RQ), sd(RQ)),
+    TQ = qnorm(ppoints(n()), mean(RQ), sd(RQ)),
     QE = RQ - TQ,
     # The standard error
     !!hat_args[[1]] := mean(RQ) + sd(RQ) * TQ,
-    !!hat_args[[3]] := hat_QR_se(RQ, TQ, vector_probs(n()), n()),
+    !!hat_args[[3]] := hat_QR_se(RQ, TQ, ppoints(n()), n()),
     )
 
   if (.hyp != "none") {
-    return(mutate(df, hyp = if_else(hyp_result < 0.05, Ha, H0)))
+    return(mutate(df, hyp = if_else(hyp_result < .alpha_level, Ha, H0)))
     } else {
       return(df)
       }
 }
 
 # auto-correlation and hypothesis tests
-IR_trans <- function(df, type, .hyp) {
+IR_trans <- function(df, type, .hyp, .alpha_level) {
 
   if (type!= "IR") return(df)
 
@@ -199,14 +215,14 @@ IR_trans <- function(df, type, .hyp) {
     hyp_result <- stats::Box.test(df$studE, type = "Ljung-Box")$p.value
     Ha <- "Ha (dependence of residuals)"
     H0 <- "H0 (independence of residuals)"
-  }
+    }
 
   # predicted variable and standard error and CI boundaries
   hat_args <- paste(prefix, "acf", sep = "_") %>%
     parse_exprs()
 
   acf <- acf(df$studE, plot = FALSE)
-  si <- qnorm((1 - 0.95) / 2) / sqrt(length(df$studE))
+  si <- qnorm(.alpha_level / 2) / sqrt(length(df$studE))
 
   df <- tibble(
     lag = as.vector(acf$lag)[-1],
@@ -215,7 +231,7 @@ IR_trans <- function(df, type, .hyp) {
     )
 
   if (.hyp != "none") {
-    return(mutate(df, hyp = if_else(hyp_result < 0.05, Ha, H0)))
+    return(mutate(df, hyp = if_else(hyp_result < .alpha_level, Ha, H0)))
     } else {
       return(df)
       }
@@ -223,15 +239,18 @@ IR_trans <- function(df, type, .hyp) {
 
 # Hetroscadasticity test (Breusch Pagan test)(level of confidence 95%;
 # cut-off 0.05 for H0 rejection)
-bp_wrap <- function(df1, df2, Xt2, type, .hyp){
+bp_wrap <- function(df1, df2, Xt2, type, .hyp, .alpha_level){
 
   # Breusch Pagan test
   if (type == "CV" & .hyp == "bp") {
     Chi_R2 <- custom_bp(df1, Xt2)
     Ha <- "Ha (heteroskedasticity)"
     H0 <- "H0 (homoskedasticity)"
-    # return(mutate(df2, hyp = Chi_R2))
-    return(mutate(df2, hyp = if_else(Chi_R2 > qchisq(.95, df = 1), Ha, H0)))
+    df2 <- mutate(
+      df2,
+      hyp = if_else(Chi_R2 > qchisq((1 - .alpha_level), df = 1), Ha, H0)
+      )
+    return(df2)
     } else {
       return(df2)
   }
@@ -249,11 +268,11 @@ custom_bp <- function(df, Xt2){
 
 sigma_calc <- function(res) sqrt(sum((res ^ 2)) / (length(res) - 1))
 
-# use the formula i - 0.5/ in, for i = 1,..,n
-# this is a vector of the n probabilities (theoretical cumulative distribution function CDF)
-vector_probs <- function(n){
-  ((1:unique(n)) - 0.5) / (unique(n))
-}
+# # use the formula i - 0.5/ in, for i = 1,..,n
+# # this is a vector of the n probabilities (theoretical cumulative distribution function CDF)
+# vector_probs <- function(n){
+#   ((1:unique(n)) - 0.5) / (unique(n))
+# }
 
 # standard error of quantiles model
 hat_QR_se <- function(RQ, TQ, pb, n){
