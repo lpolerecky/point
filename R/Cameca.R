@@ -8,18 +8,28 @@
 #' \code{Diag_R} is more convenient as it defines all the ion- and isotope-wise
 #' statistics required for the diagnostics.
 #'
-#' @param .df A tibble with ion count data and statistics for ion- and
-#' isotope-wise statistics.
-#' @param .args A list of quosures pertaining to the variables required for a
-#' call to stat_R. The function expr_R can be used to simplify setting this
-#' argument.
+#' @param .df A tibble containing processed ion count data.
+#' @param .ion1 A character string constituting the heavy isotope ("13C").
+#' @param .ion2 A character string constituting the light isotope ("12C").
 #' @param ... Variables for grouping.
+#' @param .method Character string for the method for diagnostics (default =
+#' \code{"CooksD"}, see details).
+#' @param .reps Numeric setting the number of repeated iterations of outlier
+#' detection (default = 1).
+#' @param .Xt A variable constituting the ion count rate (defaults to
+#' variables generated with \code{read_IC()})
+#' @param .N A variable constituting the ion counts (defaults to variables
+#' generated with \code{read_IC()}.).
 #' @param .output Character string determining whether the returned values in a
 #' minimal version `"flag"` (original dataset + diagnostics) or an extended
 #' version with all the intermediate steps of ion- and isotope-wise summary
 #' statistics `"complete"`.
+#' @param .hyp Hypothesis test. Only usable in combination with a selection of
+#' methods (see above argument \code{.method}) and details.
+#' @param .alpha_level. The significance level of the hypothesis test and
+#' rejection level for outliers.
 #'
-#' @return A t\code{\link[tibble:tibble]{tibble}} containing either the original
+#' @return A \code{\link[tibble:tibble]{tibble}} containing either the original
 #' dataset with new columns related to the diagnostics or only the diagnostics.
 #' The flag variable enables convenient filtering of the original tibble for an
 #' augmentation of the original dataset.
@@ -41,7 +51,7 @@
 #' # CAMECA style augmentation of ion count data for isotope ratios
 #' tb_dia <- Cameca(tb_R,"13C", "12C", file.nm, .output = "flag")
 Cameca <- function(.df, .ion1, .ion2, ..., .Xt = Xt.pr, .t = t.nm,
-                   .output = "complete", .hyp = "none"){
+                   .output = "complete", .hyp = "none", .alpha_level = 0.05){
 
   # Grouping
   gr_by <- enquos(...)
@@ -75,8 +85,8 @@ Cameca <- function(.df, .ion1, .ion2, ..., .Xt = Xt.pr, .t = t.nm,
       flag = if_else(
         between(
           !! R,
-          !! hat_R - 2 * !!hat_s_R, # mean - 2SD
-          !! hat_R + 2 * !!hat_s_R  # mean + 2SD
+          !! hat_R + qnorm((.alpha_level / 2)) * !!hat_s_R, # mean - 2SD
+          !! hat_R + qnorm(1 - (.alpha_level / 2)) * !!hat_s_R  # mean + 2SD
           ),
         "confluent",
         "divergent"
