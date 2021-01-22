@@ -36,12 +36,19 @@ CV <- Rm <- norm_E <- CooksD <- QQ <- IR <- function(
   Xt2 <- quo_updt(Xt, post = .ion2) # count rate
 
   # Execute
-  df <- nest_R_lm(.df, gr_by, Xt1, Xt2, t, method = fun_nm, .hyp = .hyp, .alpha_level = .alpha_level)
+  df <- nest_R_lm(.df, gr_by, Xt1, Xt2, t, method = fun_nm, .hyp = .hyp,
+                  .alpha_level = .alpha_level)
 
   # Output
-  if (fun_nm == "IR") return(unnest(select(df, -c(t, data)), cols = c(extr, flag)))
-  if (.output == "flag") return(unnest(select(df, -data), cols = c(t, extr, flag)))
-  if (.output == "complete") return(unnest(select(df, -t), cols = c(data, extr, flag)))
+  if (fun_nm == "IR") {
+    return(unnest(select(df, -c(t, data)), cols = c(extr, flag)))
+  }
+  if (.output == "flag") {
+    return(unnest(select(df, -data), cols = c(t, extr, flag)))
+  }
+  if (.output == "complete") {
+    return(unnest(select(df, -t), cols = c(data, extr, flag)))
+  }
 }
 
 #-------------------------------------------------------------------------------
@@ -141,7 +148,7 @@ flag_set <- function(df1, df2, Xt1, Xt2, type, .alpha_level){
       df1,
       QE,
       !!hat_args_QQ[[3]],
-      fct = qt((1 - .alpha_level / 2), n())
+      fct = qt((1 - .alpha_level / 2), n() - 1)
       )
     return(df)
    }
@@ -222,12 +229,12 @@ IR_trans <- function(df, type, .hyp, .alpha_level) {
     parse_exprs()
 
   acf <- acf(df$studE, plot = FALSE)
-  si <- qnorm(.alpha_level / 2) / sqrt(length(df$studE))
+  si <- qnorm((1 - .alpha_level / 2)) / sqrt(length(df$studE))
 
   df <- tibble(
     lag = as.vector(acf$lag)[-1],
     acf := as.vector(acf$acf)[-1],
-    !!hat_args[[3]] := -si
+    !!hat_args[[3]] := si
     )
 
   if (.hyp != "none") {
