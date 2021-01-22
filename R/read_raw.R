@@ -243,6 +243,58 @@ ICdir_chk <-function(directory, types = c(".is_txt", ".chk_is", ".stat")){
     all()
 }
 
+#' Access and hide IC metadata
+#'
+#' \code{unfold()} helps unpack metadata associated with ion count
+#' data loaded with \code{read_IC()}. \code{fold()} does the opposite an hides
+#' the metadata as attribute of the tibble.
+#'
+#' @param df A tibble containing ion count data along any point of the point-
+#' workflow
+#' @param type A character string identifying the metadata (default:
+#' \code{"metadata"})
+#' @param merge Logical dictating whether metadata is joined to the tibble or
+#' returned as a seperate file.
+#' @param meta Additional tibble containing the metadata for storage along the
+#' main IC data.
+#'
+#' @return A tibble with metadata as an attribute, columns or as a sperate
+#' tibble.
+#' @export
+#' @examples
+#' tb_rw <- read_IC(point_example("2018-01-19-GLENDON"), hide = TRUE)
+#'
+#' # Unfold metadata
+#' unfold(tb_rw, merge = FALSE)
+unfold <- function(df, type = "metadata", merge = TRUE) {
+
+  # no attr of name type return unchanged data
+  if (is.null(attr(df, type))) return(df)
+  meta <- attr(df, type)
+  vars <- select(meta, ends_with(".nm")) %>%
+    colnames()
+  vars <- vars[which(vars %in% colnames(df))]
+
+  if (merge) return(left_join(df, meta, by = vars)) else return(meta)
+}
+#' @rdname unfold
+#'
+#' @export
+fold <- function(df, type, meta = NULL) {
+
+  vc_type <- c(`metadata` = ".mt", `rawdata` = ".rw", `modeldata` = ".ml")
+  vc_type <- vc_type[vc_type %in% type]
+
+  if (is.null(meta)){
+    tb <- select(df, -c(ends_with(type)))
+    ls_tb <- purrr::map(vc_type, ~select(df, ends_with(".nm") | ends_with(.x)))
+    ls_tb[[length(vc_type) + 1]] <- (tb)
+  } else {
+    ls_tb <- list2(metadata = meta, df)
+  }
+
+  purrr::reduce2(rev(ls_tb), rev(names(vc_type)), write_attr)
+}
 
 #-------------------------------------------------------------------------------
 # Function for testing and validation (NOT EXPORTET)
@@ -469,33 +521,6 @@ compare_length <- function(df) {
 
 }
 
-# folding the metadata and raw data as attributes
-unfold <- function(df, type = "metadata", merge = TRUE) {
-
-  # no attr of name type return unchanged data
-  if (is.null(attr(df, type))) return(df)
-  meta <- attr(df, type)
-  vars <- select(meta, ends_with(".nm")) %>%
-      colnames()
-
-    if (merge) return(left_join(df, meta, by = vars)) else return(meta)
-}
-
-fold <- function(df, type, meta = NULL) {
-
-  vc_type <- c(`metadata` = ".mt", `rawdata` = ".rw", `modeldata` = ".ml")
-  vc_type <- vc_type[vc_type %in% type]
-
-  if (is.null(meta)){
-    tb <- select(df, -c(ends_with(type)))
-    ls_tb <- purrr::map(vc_type, ~select(df, ends_with(".nm") | ends_with(.x)))
-    ls_tb[[length(vc_type) + 1]] <- (tb)
-    } else {
-      ls_tb <- list2(metadata = meta, df)
-      }
-
-  purrr::reduce2(rev(ls_tb), rev(names(vc_type)), write_attr)
-}
 
 write_attr <- function(df1, df2, nm) {
   attr(df1, nm) <- df2
