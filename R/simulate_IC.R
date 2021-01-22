@@ -16,7 +16,7 @@
 #' mille.
 #' @param .devR Numeric for the deviation (or forcing) away from the baseline as
 #' delta notation in per mille.
-#' @param .standard Character string for conversion of delta values to R
+#' @param .reference Character string for conversion of delta values to R
 #' (.e.g. VPDB; see \code{?calib_R()} for more information).
 #' @param .seed Numeric sees for reproducibility of the generated data.
 #' @param ... Not supported currently
@@ -28,7 +28,7 @@
 #' # Gradient in 13C/12C over measurement transect
 #' simu_R(500, "symmetric", "13C", "12C", "VPDB", 1)
 #'
-simu_R <- function(.sys, .type, .ion1, .ion2, .standard, .seed, .n = 3e3,
+simu_R <- function(.sys, .type, .ion1, .ion2, .reference, .seed, .n = 3e3,
                    .N = 1e6,  .bl = 50, .reps = 1, .baseR = 0, .devR = 0, ...){
 
   if (!(.type %in% c("symmetric", "asymmetric", "ideal"))) {
@@ -47,7 +47,7 @@ simu_R <- function(.sys, .type, .ion1, .ion2, .standard, .seed, .n = 3e3,
     bl.nm = blocks,
     n.rw = .n,
     N.in = as.integer(.N),
-    R.in = R_gen(ini_n, .baseR, .devR, input = "delta", type = .type),
+    R.in = R_gen(ini_n, .baseR, .devR, reference = .reference, isotope = .ion1, input = "delta", type = .type),
     drift = seq(
       M_N * (1 - (.sys / 1000)),
       M_N * (1 + (.sys / 1000)),
@@ -104,19 +104,21 @@ R_conv <- function(N, R.sim)  as.integer(N * (1 / R.sim))
 #-------------------------------------------------------------------------------
 # Create isotopic gradients and offsets
 #-------------------------------------------------------------------------------
-R_gen <- function(reps, baseR, offsetR, input = "delta", type) {
+R_gen <- function(reps, baseR, devR, reference, isotope, input = "delta", type) {
 
   baseR <- calib_R(
     baseR,
-    standard = "VPDB",
+    reference = "VPDB",
+    isotope = isotope,
     type = "composition",
     input = input,
     output = "R"
     )
 
-  offsetR <- calib_R(
-    offsetR,
-    standard = "VPDB",
+  devR <- calib_R(
+    devR,
+    reference = "VPDB",
+    isotope = isotope,
     type = "composition",
     input = input,
     output = "R"
@@ -129,7 +131,7 @@ R_gen <- function(reps, baseR, offsetR, input = "delta", type) {
   if (type == "asymmetric") {
     R_simu <- approx(
       c(1, 5 * reps /6, reps),
-      c(baseR, offsetR, offsetR),
+      c(baseR, devR, devR),
       n = reps ,
       method = "constant"
       )$y
@@ -138,7 +140,7 @@ R_gen <- function(reps, baseR, offsetR, input = "delta", type) {
   if (type == "symmetric") {
     R_simu <- approx(
       c(1, reps),
-      c(offsetR, baseR),
+      c(devR, baseR),
       n = reps ,
       method = "linear"
       )$y
