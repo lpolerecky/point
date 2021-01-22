@@ -12,7 +12,7 @@
 #'
 #' @param x  A numeric value or vector.
 #' (\code{`type = enrichment`}).
-#' @param standard A character or numeric value or vector.
+#' @param reference A character or numeric value or vector.
 #' @param isotope A character for the name of the isotope (e.g. \code{"13C"}).
 #' @param type Type of conversion, isotope composition or enrichment.
 #' @param input The type of input value, R, F, and delta.
