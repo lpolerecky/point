@@ -66,9 +66,10 @@
 #'
 diag_R <- function(.df, .ion1, .ion2, ..., .method = "CooksD", .reps = 1,
                    .Xt = Xt.pr, .N = N.pr, .species = species.nm, .t = t.nm,
-                   .output = "complete", .hyp = "none", .return = "results",
-                   .meta = TRUE, .plot = FALSE, .plot_type = "static",
-                   .plot_stat = NULL, .plot_iso = FALSE){
+                   .output = "complete", .hyp = "none",
+                   .alpha_level = 0.05, .return = "results", .meta = TRUE,
+                   .plot = FALSE, .plot_type = "static", .plot_stat = NULL,
+                   .plot_iso = FALSE){
 
   # Quoting the call (user-supplied expressions)
   # Grouping
@@ -108,7 +109,8 @@ diag_R <- function(.df, .ion1, .ion2, ..., .method = "CooksD", .reps = 1,
       .species = !!args[[".species"]],
       .t = !!args[[".t"]],
       .output = .output,
-      .hyp = .hyp
+      .hyp = .hyp,
+      .alpha_level = .alpha_level
       )
 
   if (.plot & .return != "results") {
@@ -124,7 +126,7 @@ diag_R <- function(.df, .ion1, .ion2, ..., .method = "CooksD", .reps = 1,
         mutate(execution = as.numeric(execution) - 1)
     }
 
-  # metadata
+  # Return metadata
   if (.meta & !is.null(meta)) df <- fold(df, type = ".mt",  meta = meta)
 
   if (.plot) {
@@ -134,36 +136,35 @@ diag_R <- function(.df, .ion1, .ion2, ..., .method = "CooksD", .reps = 1,
           ., .ion1 = .ion1, .ion2 = .ion2, .method = .method,
           .plot_type = .plot_type, !!!gr_by, .Xt = !!args[[".Xt"]],
           .N = !!args[[".N"]], .species = !!args[[".species"]],
-          .t = !!args[[".t"]], .labels = .plot_stat
+          .t = !!args[[".t"]], .labels = .plot_stat, .alpha_level = .alpha_level
           )
         )
       }
-  }
-
+    }
   return(df)
     } else {
-
       # Auto-correlation
       df <- diag_R_exec(
         .df, .ion1 = .ion1, .ion2 = .ion2, !!! gr_by, .method = "IR",
         .Xt = !!args[[".Xt"]], .N = !!args[[".N"]],
-        .species = !!args[[".species"]], .t = !!args[[".t"]], .hyp = .hyp
+        .species = !!args[[".species"]], .t = !!args[[".t"]], .hyp = .hyp,
+        .alpha_level = .alpha_level
         )
       if (.plot) {
 
       df %T>%
         {print(gg_IR(., .lag = lag, .acf = acf, .flag = flag, !!! gr_by,
-                     .hat = 0, .error = hat_e_acf))
+                     .hat = 0, .sd = hat_e_acf))
         }
-    }
+      }
   return(df)
-}
+  }
 }
 
 
 rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .method,.Xt = Xt.pr,
                          .N = N.pr, .species = species.nm, .t = t.nm,
-                         .output, .hyp){
+                         .output, .hyp, .alpha_level){
 
   # Quoting the call (user-supplied expressions)
   # Grouping
@@ -195,7 +196,8 @@ rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .method,.Xt = Xt.pr,
     .N = !!args[[".N"]],
     .species = !!args[[".species"]],
     .t = !!args[[".t"]],
-    .hyp = .hyp
+    .hyp = .hyp,
+    .alpha_level = .alpha_level
     )
 
   # Save augmented dataframe for next cycle
@@ -219,9 +221,8 @@ rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .method,.Xt = Xt.pr,
 
 }
 
-
-diag_R_exec <- function(.df, .ion1, .ion2, ..., .method, .Xt = Xt.pr,
-                        .N = N.pr, .species = species.nm, .t = t.nm, .hyp){
+diag_R_exec <- function(.df, .ion1, .ion2, ..., .method, .Xt = Xt.pr, .N = N.pr,
+                        .species = species.nm, .t = t.nm, .hyp, .alpha_level){
 
   # Quoting the call (user-supplied expressions)
   # Grouping
@@ -242,7 +243,8 @@ diag_R_exec <- function(.df, .ion1, .ion2, ..., .method, .Xt = Xt.pr,
     .Xt = expr(!! args[["Xt"]]),
     .t = expr(!! args[["t"]]),
     .output = "complete",
-    .hyp = .hyp
+    .hyp = .hyp,
+    .alpha_level = .alpha_level
     ) %>%
     set_names(nm = diag_vc)
 
