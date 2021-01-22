@@ -1,8 +1,7 @@
 # Plotting diagnostics
-gg_IC <- function(.df, .ion1, .ion2, .method, .plot_type, ..., .Xt = Xt.pr, .N = N.pr,
-                  .species = species.nm, .t = t.nm, .flag = flag,
-                  .labels = NULL, .rep = 1,
-                  .plot_iso = FALSE){
+gg_IC <- function(.df, .ion1, .ion2, .method, .plot_type, ..., .Xt = Xt.pr,
+                  .N = N.pr, .species = species.nm, .t = t.nm, .flag = flag,
+                  .labels = NULL, .rep = 1, .alpha_level, .plot_iso = FALSE){
 
   # Quoting the call (user-supplied expressions)
   # Grouping
@@ -30,19 +29,20 @@ gg_IC <- function(.df, .ion1, .ion2, .method, .plot_type, ..., .Xt = Xt.pr, .N =
   #   .df <- semi_join(.df, df_sl, by = sapply(c(gr_by, args[[".t"]]), as_name))
   #
   #   }
-  if (.plot_type == "anim") .df <- slice_sample(group_by(.df, !!!gr_by, !!flag), prop = 0.05)
+  if (.plot_type == "anim") .df <- slice_sample(group_by(.df, !!!gr_by, !!flag),
+                                                prop = 0.05)
 
   plot_args <- list2(.df = .df, .x = Xt2, .y = Xt1, .flag = flag,
                      .diag_type = .method, .plot_type = .plot_type, !!! gr_by,
-                     .labels = .labels, .hat = hat_Xt1, .error = hat_s_Xt1)
-
+                     .labels = .labels, .hat = hat_Xt1, .sd = hat_s_Xt1,
+                     .alpha_level = .alpha_level)
 
   # Residual leverage plot
   if(.method == "norm_E") {
       plot_args[[".y"]] <- quo(studE)
       plot_args[[".x"]] <- quo(hat_Xi)
       plot_args[[".hat"]] <- NULL
-      plot_args[[".error"]] <- NULL
+      plot_args[[".sd"]] <- NULL
     }
 
   # Normal QQ plot
@@ -50,7 +50,8 @@ gg_IC <- function(.df, .ion1, .ion2, .method, .plot_type, ..., .Xt = Xt.pr, .N =
       plot_args[[".y"]] <- quo(RQ)
       plot_args[[".x"]] <- quo(TQ)
       plot_args[[".hat"]] <- quo_updt(plot_args[[".y"]], pre = "hat")
-      plot_args[[".error"]] <- quo_updt(plot_args[[".y"]], pre = "hat_e")
+      plot_args[[".sd"]] <- NULL
+      plot_args[[".se"]] <- quo_updt(plot_args[[".y"]], pre = "hat_e")
     }
 
   # Scale location plot
@@ -58,9 +59,8 @@ gg_IC <- function(.df, .ion1, .ion2, .method, .plot_type, ..., .Xt = Xt.pr, .N =
       plot_args[[".y"]] <- quo(studE)
       plot_args[[".x"]] <- hat_Xt1
       plot_args[[".hat"]] <- 0
-      plot_args[[".error"]] <- NULL
-      plot_args[[".lower"]] <- -3.5
-      plot_args[[".upper"]] <- 3.5
+      plot_args[[".sd"]] <- NULL
+      plot_args[[".cv"]] <- 3.5
   }
 
   # Execute
@@ -77,13 +77,12 @@ gg_IC <- function(.df, .ion1, .ion2, .method, .plot_type, ..., .Xt = Xt.pr, .N =
   }
 
 
-
-gg_base <- function(.df, .x, .y, .flag, .diag_type, .plot_type, ..., .labels = NULL,
-                    .geom = "point", .hat = NULL, .error = NULL, .lower = NULL,
-                    .upper = NULL, .rug = FALSE){
+gg_base <- function(.df, .x, .y, .flag, .diag_type, .plot_type, ...,
+                    .labels = NULL, .geom = "point", .hat = NULL, .sd = NULL,
+                    .se = NULL, .cv = NULL, .alpha_level, .rug = FALSE){
 
   gr_by <- enquos(...)
-  if (str_detect(as_name(.x), "[[:digit:]]")| .diag_type == "CV") {
+  if (str_detect(as_name(.x), "[[:digit:]]") | .diag_type == "CV") {
     ion2 <- str_split(as_name(.x), "[[:punct:]]")[[1]] %>% tail(1)
     } else {
       ion2 <- NULL
@@ -98,23 +97,40 @@ gg_base <- function(.df, .x, .y, .flag, .diag_type, .plot_type, ..., .labels = N
   alpha_sc <- median(count(.df, !!!gr_by)$n) /
     ifelse(.plot_type == "static", 1e5, 1e3)
   # Filter correct titles
-  ttl <- filter(nm_diag_ttl, nm == .diag_type)
+  ttl <- filter(names_diag, name == .diag_type)
 
   # Uncertainty bounds
-  # Add bounds to dataframe
-  if (!is.null(.error)) {
-  .df <- mutate(
-    .df,
-    lower = !!.hat - 2 * !!.error,
-    upper = !!.hat + 2 * !!.error
-    )
+  if (!is.null(.sd) | !is.null(.se) | !is.null(.cv)) {
+    if (!is.null(.sd)){
+      .df <- mutate(
+        .df,
+        fct  = qnorm((1 - .alpha_level / 2)),
+        lower = !!.hat - .data$fct * !!.sd,
+        upper = !!.hat + .data$fct * !!.sd
+        )
+    }
+    if (!is.null(.se)) {
+      .df <- mutate(
+        .df,
+        fct  = qt((1 - .alpha_level / 2), n() - 1),
+        lower = !!.hat - .data$fct * !!.se,
+        upper = !!.hat + .data$fct * !!.se
+        )
+    }
+    if (!is.null(.cv)) {
+      .df <- mutate(
+        .df,
+        lower = !!.hat - !!.cv,
+        upper = !!.hat + !!.cv
+      )
+    }
   .lower <- quo(lower)
   .upper <- quo(upper)
   }
 
   if (!is.null(.labels)) {
     tb_labs <- distinct(.df, !!!gr_by, .keep_all = TRUE) %>%
-      select(!!!gr_by, starts_with(paste0(point::nm_stat_R$nm,"_"))) %>%
+      select(!!!gr_by, starts_with(paste0(point::names_stat_R$name,"_"))) %>%
       pivot_longer(
         -c(!!!gr_by),
         names_to = c("stat", ".value"),
@@ -128,7 +144,7 @@ gg_base <- function(.df, .x, .y, .flag, .diag_type, .plot_type, ..., .labels = N
     tb_labs <- tibble::add_column(tb_labs, lbs = lbs)
     }
 
-  if(.plot_type == "anim") {
+  if (.plot_type == "anim") {
     p <- ggplot(
       data = .df,
       aes(
@@ -140,10 +156,22 @@ gg_base <- function(.df, .x, .y, .flag, .diag_type, .plot_type, ..., .labels = N
         )
       )
   }
-  if(.plot_type == "static") {
+  if (.plot_type == "static") {
     p <- ggplot(data = .df, aes(x = !!.x, y = !!.y, color = {{.flag}}))
     }
   p <- p + facet_wrap(vars(!!!gr_by), scales = "free")
+  if (!any(sapply(list(.hat, .sd, .se, .cv), is.null)) &
+      .plot_type != "anim") {
+    p <- p + geom_ribbon(
+      aes(ymin = !!.lower, ymax = !!.upper),
+      color = "black",
+      fill = "aliceblue",
+      alpha = 0.6,
+      linetype = 3,
+      size = 0.5
+      ) +
+      geom_line(aes(y = !!.hat), color = "black", linetype = 2, size = 0.5)
+    }
   if (.geom == "point") p <- p + geom_point(alpha = alpha_sc)
   if (.geom == "hexbin") p <- p + geom_hexbin()
   if (.geom == "dens2d") {
@@ -160,18 +188,7 @@ gg_base <- function(.df, .x, .y, .flag, .diag_type, .plot_type, ..., .labels = N
         palette = "YlOrRd",
         direction = 1,
         na.value = "transparent"
-      )
-    }
-  if (!any(sapply(list(.hat, .lower, .upper), is.null)) & .plot_type != "anim") {
-    p <- p + geom_ribbon(
-      aes(ymin = !!.lower, ymax = !!.upper),
-      color = "black",
-      fill = "aliceblue",
-      alpha = 0.6,
-      linetype = 3,
-      size = 0.5
-      ) +
-      geom_line(aes(y = !!.hat), color = "black", linetype = 2, size = 0.5)
+        )
     }
   if (.rug) p <- p + geom_rug(sides = "tr", alpha = 0.01)
   if (!is.null(.labels)) {
@@ -208,13 +225,13 @@ gg_base <- function(.df, .x, .y, .flag, .diag_type, .plot_type, ..., .labels = N
 
 
 gg_IR <- function(.df, .lag, .acf, .flag, ..., .hat = NULL,
-                  .error = NULL){
+                  .sd = NULL){
 
   ggplot(.df, mapping = aes(x = {{.lag}}, y = {{.acf}}, color = {{.flag}})) +
     geom_hline(aes(yintercept = {{.hat}})) +
     geom_segment(mapping = aes(xend = {{.lag}}, yend = {{.hat}})) +
-    geom_hline(aes(yintercept = -{{.error}}), color = "darkblue") +
-    geom_hline(aes(yintercept = {{.error}}), color = "darkblue") +
+    geom_hline(aes(yintercept = -{{.sd}}), color = "darkblue") +
+    geom_hline(aes(yintercept = {{.sd}}), color = "darkblue") +
     scale_color_manual(values = c(ggplotColours(2)[2], ggplotColours(2)[1])) +
     facet_wrap(vars(...), scales = "free") +
     ggtitle("ACF plot") +
