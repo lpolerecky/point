@@ -23,35 +23,38 @@
 #' variables generated with \code{diag_R()}).
 #' @param .output A character string for output as summary statistics ("sum")
 #' and statistics with the original data ("complete").
+#' @param .meta Logical whether to preserve the metadata as an attribute
+#' (defaults to TRUE).
 #'
 #' @return A \code{\link[tibble::tibble]{tibble}} with model output. See
 #' \code{point::names_model} for more information on the results.
 #'
 #' @export
 #' @examples
-#' # Use point_example() to access the examples bundled with this package
-#' # raw data containing 13C and 12C counts on carbonate
-#' tb_rw <- read_IC(point_example("2018-01-19-GLENDON"))
 #'
-#' # Processing raw ion count data
-#' tb_pr <- cor_IC(tb_rw)
+#' # Simulated IC data
+#' tb_dia <-diag_R(simu_IC, "13C", "12C", force.nm, spot.nm, .Xt = Xt.sm,
+#'                 .N = N.sm)
 #'
-#' # Diagnostics
-#' tb_dia <- diag_R(tb_pr, "13C", "12C", file.nm, sample.nm)
+#' # Evaluate signficance and effect of outliers based on Cook's D
+#' eval_diag(tb_dia, "13C", "12C", force.nm, spot.nm, .nest = force.nm,
+#'           .Xt = Xt.sm, .N = N.sm)
 #'
-#' # evaluation of diagnostics
-#' eval_diag(tb_dia, "13C", "12C", file.nm, sample.nm)
 eval_diag <- function(.df, .ion1, .ion2, ..., .nest = NULL,
                       .Xt = Xt.pr, .N = N.pr, .species = species.nm,
                       .t = t.nm, .flag = flag, .output = "sum", .tf = "ppt",
-                      .label = "none"){
+                      .label = "none", .meta = TRUE){
 
   # Quoting the call (user-supplied expressions)
   # Grouping
   gr_by <- enquos(...)
+
   # Additional arguments
   args <- enquos(Xt = .Xt, N = .N, species = .species, t = .t, flag = .flag,
                  nest = .nest)
+
+  # Metadata
+  if(.meta) meta <- unfold(.df, merge = FALSE)
 
   # heavy isotope
   Xt1 <- quo_updt(args[["Xt"]], post = .ion1)
@@ -61,7 +64,9 @@ eval_diag <- function(.df, .ion1, .ion2, ..., .nest = NULL,
   # Mean R analysis
   M_R <- quo_updt(args[["Xt"]], pre = "M_R")
   # Mean R group
-  M_R.gr <- quo_updt(expr(M_R), post = as_name(args[["nest"]]))
+  if (is_symbol(get_expr(args[["nest"]]))) {
+    M_R.gr <- quo_updt(expr(M_R), post = as_name(args[["nest"]]))
+    }
   # Predicted heavy isotope
   hat_Xt1 <- quo_updt(Xt1, pre = "hat")
 
@@ -74,7 +79,9 @@ eval_diag <- function(.df, .ion1, .ion2, ..., .nest = NULL,
   ls_latex <- set_names(labs$name, nm = labs$latex)
 
   ls_latex[1] <- as_name(M_R)
-  ls_latex[7] <- as_name(M_R.gr)
+  if (is_symbol(get_expr(args[["nest"]]))) {
+    ls_latex[7] <- as_name(M_R.gr)
+    }
 
   if (!(as_name(hat_Xt1) %in% colnames(.df))) {
     .df <- mutate(.df, !!hat_Xt1 := !!M_R * !!Xt2)
@@ -88,11 +95,11 @@ eval_diag <- function(.df, .ion1, .ion2, ..., .nest = NULL,
     }
 
   if (nrow(filter(df_n, !!args[["flag"]] == "divergent" & n > 10)) <
-      nrow(filter(df_n, !!args[["flag"]] == "bad"))) {
+      nrow(filter(df_n, !!args[["flag"]] == "divergent"))) {
     warning("Number of flagged outliers in some samples is too small for a
             reliable diagnostic. Execution proceeded with remaining samples.")
     # Otherwise filter data-set
-    .df <- filter(df_n, !!args[["flag"]] == "bad" & n < 10)  %>%
+    .df <- filter(df_n, !!args[["flag"]] == "divergent" & n < 10)  %>%
       select(.data$execution, !!!gr_by) %>%
       anti_join(.df, ., by = c("execution", sapply(gr_by, as_name)))
     }
@@ -106,7 +113,8 @@ eval_diag <- function(.df, .ion1, .ion2, ..., .nest = NULL,
             F statistic might be unreliable.")
     }
 
-  # Re-center along flag variable
+  # Re-center residuals along flag variable
+
   df <- cstd_var(.df, Xt1, hat_Xt1, args[["flag"]], !!! gr_by, execution)
 
   # Create zero (constrained) model flag and updated model
@@ -115,7 +123,7 @@ eval_diag <- function(.df, .ion1, .ion2, ..., .nest = NULL,
       lm_out =
         purrr::map(
           data,
-          ~lm_fun(.x, .Xt1 = quo(std.var), .Xt2 = Xt2, .flag = args[["flag"]])
+          ~lm_fun(.x, .Xt1 = quo(cstd_X), .Xt2 = Xt2, .flag = args[["flag"]])
           )
       ) %>%
     unnest_wider(lm_out)
@@ -185,12 +193,17 @@ eval_diag <- function(.df, .ion1, .ion2, ..., .nest = NULL,
     df <- purrr::reduce(ls_mlm, left_join, by = sapply(nest_gr, as_name)) %>%
       eval_tidy(expr = output_lm(.output))
 
+    # Return metadata
+    if (.meta & !is.null(meta)) df <- fold(df, type = ".mt",  meta = meta)
     if (.label == "latex") return(rename(df, !!!ls_latex))
     return(df)
   }
   # Prepare output
   df <- df_lm %>%
     eval_tidy(expr = output_lm(.output))
+
+  # Return metadata
+  if (.meta & !is.null(meta)) df <- fold(df, type = ".mt",  meta = meta)
   if (.label == "latex") return(rename(df, !!!ls_latex))
   return(df)
 }
@@ -211,10 +224,10 @@ lm_fun <- function(.df, .Xt1, .Xt2, .flag) {
   # zero R model
   lm_0 <- lm_form(.df, .Xt1, .Xt2, type = "Rm")
   # Effect size
-  df_f <- tibble(effectsize::cohens_f(lm_1, model2 =  lm_0))
-  ls_lm$f <- pull(df_f , Cohens_f_partial)
-  ls_lm$f_cl <- pull(df_f , CI_low)
-  ls_lm$f_cu <- pull(df_f , CI_high)
+  # df_f <- tibble(effectsize::cohens_f(lm_1, model2 =  lm_0))
+  # ls_lm$f <- pull(df_f , Cohens_f_partial)
+  # ls_lm$f_cl <- pull(df_f , CI_low)
+  # ls_lm$f_cu <- pull(df_f , CI_high)
   # Join model hypothesis test
   df_aov <- broom::tidy(anova(lm_0 , lm_1))
   ls_lm$F_vl <- pull(df_aov, statistic)[2]
@@ -304,10 +317,8 @@ mlm_fun2 <- function(.df, .Xt1, .Xt2, .tf, .group) {
     RS_R_se_intra = mlm_dR(mlm_intra, .Xt2, output = "se"),
     # p value
     p_intra = pull(df_aov, p.value)[2]
-  )
-
+    )
   return(ls_intra)
-
 }
 
 #-------------------------------------------------------------------------------
@@ -332,38 +343,27 @@ coef_pull <- function(sum, data, arg, trans){
 
 }
 
-# standardizing and re-center independent variable for fit to LM
-cstd_var <- function(df, Xt1, hat_Y, flag, ...){
+# re-center outliers towards the fitted value by subtraction of residual
+# extremes
+cstd_var <- function(.df, .Xt1, .hat_Y, .flag, ...){
 
   gr_by <- enquos(...)
 
-  group_by(df, !!! gr_by, !! flag) %>%
-    mutate(range = if_else(!!Xt1 >= !!hat_Y, "upper", "lower")) %>%
-    group_by(!!! gr_by, !! flag, .data$range) %>%
+  group_by(.df, !!! gr_by) %>%
     mutate(
-      max.range = if_else(
-        .data$range == "upper",
-        max(!!Xt1 - !!hat_Y),
-        min(!!Xt1 - !!hat_Y)
-        ),
-      min.range = if_else(
-        .data$range == "upper",
-        min(!!Xt1 - !!hat_Y) ,
-        max(!!Xt1 - !!hat_Y)
-        ),
-      range.val = abs(.data$max.range - .data$min.range)
+      # Residuals
+      E = !!.Xt1 - !!.hat_Y,
+      # Divide values in upper and lower sectors
+      sector = if_else(!!.Xt1 >= !!.hat_Y, "upper", "lower")
       ) %>%
+    group_by(!!! gr_by, !!.flag, .data$sector) %>%
     mutate(
-      std.var =
-        if_else(
-          .data$range == "upper",
-          abs((!! Xt1 - !! hat_Y) -.data$min.range) / .data$range.val,
-          -abs((!! Xt1 - !! hat_Y) -.data$min.range) / .data$range.val
-          ) * .data$range.val + !! hat_Y
+       min_bound = if_else(.data$sector == "upper", min(.data$E), max(.data$E)),
+      cstd_X = .data$E - min_bound + !!.hat_Y,
+      .keep = "unused"
       ) %>%
-    ungroup() %>%
-    select(-c(.data$max.range, .data$min.range, .data$range, .data$range.val))
-}
+    ungroup()
+   }
 
 # Temporal trend of the fixed coefficient
 mlm_dR <- function(sum, arg, output = "value") {
