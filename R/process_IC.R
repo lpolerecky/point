@@ -61,7 +61,7 @@ cor_IC <-function(.df, ..., .N = N.rw, .t = t.nm, .bl_t = tc.mt,
   N.pr <- quo_updt(N, post = "pr", update_post = TRUE)
 
 # Unfold metadata
-  if (ncol(select(df, ends_with(".mt"))) == 0) df <- unfold(.df)
+  if (ncol(select(.df, ends_with(".mt"))) == 0) df <- unfold(.df) else df <- .df
 
 # Manual setting of blank time
   if (is_character(get_expr(bl_t))) {
