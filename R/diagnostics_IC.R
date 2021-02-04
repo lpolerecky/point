@@ -154,7 +154,7 @@ diag_R <- function(.df, .ion1, .ion2, ..., .method = "CooksD", .reps = 1,
 
       df %T>%
         {print(gg_IR(., .lag = lag, .acf = acf, .flag = flag, !!! gr_by,
-                     .hat = 0, .sd = hat_e_acf))
+                     .hat = 0, .sd = e_acf))
         }
       }
   return(df)
@@ -248,10 +248,13 @@ diag_R_exec <- function(.df, .ion1, .ion2, ..., .method, .Xt = Xt.pr, .N = N.pr,
     ) %>%
     set_names(nm = diag_vc)
 
-  # Descriptive an predictive statistics for ion ratios
-  stat_R(.df, .ion1, .ion2, !!! gr_by, .Xt = !!args[["Xt"]], .N = !!args[["N"]],
+  # Descriptive an predictive statistics for single ions and ion ratios
+  stat_Xt(.df, !!! gr_by, .Xt = !!args[["Xt"]], .N = !!args[["N"]],
          .species = !!args[["species"]], .t = !!args[["t"]],
-         .output = "complete", .zero = TRUE) %>%
+         .output = "complete") %>%
+    stat_R(.ion1, .ion2, !!! gr_by, .Xt = !!args[["Xt"]], .N = !!args[["N"]],
+          .species = !!args[["species"]], .t = !!args[["t"]],
+          .output = "complete", .zero = TRUE) %>%
     eval_tidy(expr = diag_method[[.method]])
 
   }

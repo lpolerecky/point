@@ -73,40 +73,33 @@ nest_R_lm <- function(df, gr_by, Xt1, Xt2, t, method, .hyp, .alpha_level){
     extr =
       purrr::map2(aug, extr, ~bp_wrap(.x, .y, Xt2, method, .hyp, .alpha_level)),
     flag =
-      purrr::map2(extr, aug, ~flag_set(.x, .y, Xt1, Xt2, method, .alpha_level))
+      purrr::map(extr, ~flag_set(.x, Xt1, Xt2, method, .alpha_level))
     ) %>%
   select(-c(R_lm, aug))
 
 }
 
-# prefix for modelled values
-prefix <- c("hat", "hat_s", "hat_e")
-
 # augment function transform  and rename variables to standards of point
-transmute_reg <- function(df, Xt1, Xt2, type) {
+transmute_reg <- function(df, Xt1, Xt2, type){
 
-  # predicted variable and sigma level boundaries
-  hat_args <- purrr::map(prefix, ~quo_updt(Xt1, pre = .x))
-  hat_nm <- paste(prefix, as_name(Xt1), sep = "_")
-
-  # predicted sigma level boundaries studentized residuals
-  hat_args_studE_nm <- paste(prefix, "studE", sep = "_")
-  hat_args_studE <- parse_exprs(hat_args_studE_nm)
+  # predicted heavy isotope
+  hat_Xt1 <- quo_updt(Xt1, pre = "hat")
+  # residual standard deviation
+  hat_s_Xt1 <- quo_updt(Xt1, pre = "hat_s")
 
   # model args
   args <- quos(
     hat_E = .data$.resid,
-    !!hat_args[[1]] := .data$.fitted,
-    !!hat_args[[2]] := sigma_calc(hat_E),
+    !! hat_Xt1 := .data$.fitted,
+    !! hat_s_Xt1 := .data$.sigma,
     studE = .data$.std.resid,
     hat_Xi = .data$.hat,
     CooksD = .data$.cooksd,
     )
 
-  if (type == "Rm") args <- args[names(args) %in% c(hat_nm, "hat_E")]
-  if (type == "norm_E") args <- args[!names(args) %in% hat_nm]
-  if (type == "CooksD") args <- args[names(args) %in% c(hat_nm, "hat_E", "CooksD")]
-  if (type == "CV") args <- args[names(args) %in% c(hat_nm[1], "studE")]
+  if (type == "Rm"| type == "CV") args <- args[c(as_name(hat_Xt1), "studE")]
+  if (type == "norm_E") args <- args[c("studE", "hat_Xi", "CooksD")]
+  if (type == "CooksD") args <- args[c(as_name(hat_Xt1), "CooksD")]
   if (type == "QQ"| type == "IR") args <- args["studE"]
 
   # Execute
@@ -114,49 +107,29 @@ transmute_reg <- function(df, Xt1, Xt2, type) {
 }
 
 # create flag variable
-flag_set <- function(df1, df2, Xt1, Xt2, type, .alpha_level){
+flag_set <- function(df, Xt1, Xt2, type, .alpha_level){
 
-  # residual sigma level boundaries
-  hat_args_sigma <- purrr::map(prefix, ~quo_updt(Xt1, pre = .x))
-
-  # CI boundaries of QQ
-  hat_args_QQ <- paste(prefix, "RQ", sep = "_") %>%
-    parse_exprs()
-
-  # CI boundaries acf
-  hat_args_acf <- paste(prefix, "acf", sep = "_") %>%
-    parse_exprs()
-
-  if (type == "Rm") {
-   df <- flagger(
-     df1,
-     hat_E,
-     !!hat_args_sigma[[2]],
-     fct = qnorm((1 -.alpha_level / 2))
-     )
-   return(df)
-   }
+  if (type == "Rm" | type == "CV") return(flagger(df, studE, 3.5))
+  if (type == "IR") return(flagger(df, acf, e_acf))
   if (type == "CooksD" | type == "norm_E") {
    df <- transmute(
-     df1,
+     df,
      flag = factor(if_else(CooksD < {4 / (n() - 2)}, "confluent", "divergent"))
      )
    return(df)
    }
   if (type == "QQ") {
     df <- flagger(
-      df1,
+      df,
       QE,
-      !!hat_args_QQ[[3]],
+      hat_e_RQ,
       fct = qt((1 - .alpha_level / 2), n() - 1)
       )
     return(df)
    }
-  if (type == "CV") return(flagger(df1, studE, 3.5))
-  if (type == "IR") return(flagger(df1, acf, !!hat_args_acf[[3]]))
-
 }
 
+# function to create flag based on error or variance in modelled value
 flagger <- function(df, value, bound, fct = 1){
 
     transmute(
@@ -176,10 +149,6 @@ flagger <- function(df, value, bound, fct = 1){
 QQ_trans <- function(df, type, .hyp, .alpha_level) {
 
   if (type!= "QQ") return(df)
-
-  # predicted variable and standard error and CI boundaries
-  hat_args <- paste(prefix, "RQ", sep = "_") %>%
-    parse_exprs()
 
   # Normality hypothesis test
   if (.hyp == "norm") {
@@ -201,8 +170,8 @@ QQ_trans <- function(df, type, .hyp, .alpha_level) {
     TQ = qnorm(ppoints(n()), mean(RQ), sd(RQ)),
     QE = RQ - TQ,
     # The standard error
-    !!hat_args[[1]] := mean(RQ) + sd(RQ) * TQ,
-    !!hat_args[[3]] := hat_QR_se(RQ, TQ, ppoints(n()), n()),
+    hat_RQ = mean(RQ) + sd(RQ) * TQ,
+    hat_e_RQ = hat_QR_se(RQ, TQ, ppoints(n()), n()),
     )
 
   if (.hyp != "none") {
@@ -224,17 +193,13 @@ IR_trans <- function(df, type, .hyp, .alpha_level) {
     H0 <- "H0 (independence of residuals)"
     }
 
-  # predicted variable and standard error and CI boundaries
-  hat_args <- paste(prefix, "acf", sep = "_") %>%
-    parse_exprs()
-
   acf <- acf(df$studE, plot = FALSE)
   si <- qnorm((1 - .alpha_level / 2)) / sqrt(length(df$studE))
 
   df <- tibble(
     lag = as.vector(acf$lag)[-1],
     acf := as.vector(acf$acf)[-1],
-    !!hat_args[[3]] := si
+    e_acf := si
     )
 
   if (.hyp != "none") {
@@ -273,7 +238,7 @@ custom_bp <- function(df, Xt2){
   return(R2 * length(R2))
   }
 
-sigma_calc <- function(res) sqrt(sum((res ^ 2)) / (length(res) - 1))
+# sigma_calc <- function(res) sqrt(sum((res ^ 2)) / (length(res) - 1))
 
 # # use the formula i - 0.5/ in, for i = 1,..,n
 # # this is a vector of the n probabilities (theoretical cumulative distribution function CDF)
@@ -285,7 +250,7 @@ sigma_calc <- function(res) sqrt(sum((res ^ 2)) / (length(res) - 1))
 hat_QR_se <- function(RQ, TQ, pb, n){
   (sd(RQ) / dnorm(TQ)) * sqrt((pb * (1 - pb))/ unique(n))
 }
-# confidence interval regression model
-hat_Y_se <- function(sigma, hat_Xi){
-  sigma * sqrt(hat_Xi)
-}
+# # confidence interval regression model
+# hat_Y_se <- function(sigma, hat_Xi){
+#   sigma * sqrt(hat_Xi)
+# }

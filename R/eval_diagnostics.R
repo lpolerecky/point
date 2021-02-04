@@ -56,32 +56,17 @@ eval_diag <- function(.df, .ion1, .ion2, ..., .nest = NULL,
   # Metadata
   if(.meta) meta <- unfold(.df, merge = FALSE)
 
-  # heavy isotope
+  # rare isotope
   Xt1 <- quo_updt(args[["Xt"]], post = .ion1)
-  # light isotope
+  # common isotope
   Xt2 <- quo_updt(args[["Xt"]], post = .ion2)
   N2 <- quo_updt(args[["N"]], post = .ion2)
-  # Mean R analysis
+  chi2_Xt2 <- quo_updt(args[["Xt"]], pre = "chi2", post = .ion2)
+  # mean R analysis
   M_R <- quo_updt(args[["Xt"]], pre = "M_R")
-  # Mean R group
-  if (is_symbol(get_expr(args[["nest"]]))) {
-    M_R.gr <- quo_updt(expr(M_R), post = as_name(args[["nest"]]))
-    }
-  # Predicted heavy isotope
+  # predicted heavy isotope
   hat_Xt1 <- quo_updt(Xt1, pre = "hat")
 
-  # latex model variable names
-  if (length(unique(pull(.df, .data$execution))) > 1) {
-    labs <- point::names_model
-    } else{
-      labs <- point::names_model[1:13,]
-    }
-  ls_latex <- set_names(labs$name, nm = labs$latex)
-
-  ls_latex[1] <- as_name(M_R)
-  if (is_symbol(get_expr(args[["nest"]]))) {
-    ls_latex[7] <- as_name(M_R.gr)
-    }
 
   if (!(as_name(hat_Xt1) %in% colnames(.df))) {
     .df <- mutate(.df, !!hat_Xt1 := !!M_R * !!Xt2)
@@ -89,12 +74,12 @@ eval_diag <- function(.df, .ion1, .ion2, ..., .nest = NULL,
   # Check number of levels of bad flag is more than 10
   df_n <-  count(.df, .data$execution, !!!gr_by, !!args[["flag"]])
 
-  if (nrow(filter(df_n, !!args[["flag"]] == "divergent" & n > 10)) == 0) {
-  stop("Number of flagged outliers in all samples is too small for a reliable
-       diagnostic. Execution has stopped.")
+  if (nrow(filter(df_n, !!args[["flag"]] == "divergent" & n >= 10)) == 0) {
+    stop("Number of flagged outliers in all samples is too small for a reliable
+         diagnostic. Execution has stopped.")
     }
 
-  if (nrow(filter(df_n, !!args[["flag"]] == "divergent" & n > 10)) <
+  if (nrow(filter(df_n, !!args[["flag"]] == "divergent" & n >= 10)) <
       nrow(filter(df_n, !!args[["flag"]] == "divergent"))) {
     warning("Number of flagged outliers in some samples is too small for a
             reliable diagnostic. Execution proceeded with remaining samples.")
@@ -105,28 +90,31 @@ eval_diag <- function(.df, .ion1, .ion2, ..., .nest = NULL,
     }
 
   # Check for ionization trend
-  chi2 <- group_by(filter(.df, .data$execution == 1), !!!gr_by) %>%
-    summarise(chi2 = ((sd(!!Xt2) / sqrt(n())) / (sqrt(mean(!!N2) / n()))) ^ 2)
-
-  if (any(between(chi2$chi2, 0.9, 1.1))) {
+  if (any(between(pull(.df ,!!chi2_Xt2) , 0.9, 1.1))) {
     warning("Linear ionization trend absent in some or all analyses;
             F statistic might be unreliable.")
     }
 
   # Re-center residuals along flag variable
-
   df <- cstd_var(.df, Xt1, hat_Xt1, args[["flag"]], !!! gr_by, execution)
 
   # Create zero (constrained) model flag and updated model
-  df_lm <- tidyr::nest(df, data = -c(!!! gr_by,  .data$execution, !! M_R)) %>%
+  df_lm <- tidyr::nest(df, !! M_R := !! M_R, data = -c(!!! gr_by,  .data$execution)) %>%
     mutate(
       lm_out =
         purrr::map(
           data,
           ~lm_fun(.x, .Xt1 = quo(cstd_X), .Xt2 = Xt2, .flag = args[["flag"]])
+          ),
+      !! M_R :=
+        purrr::map(
+          !! M_R,
+          distinct
           )
       ) %>%
     unnest_wider(lm_out)
+
+  if (.output == "sum") df_lm <- unnest(df_lm, cols = !! M_R) else df_lm <- select(df_lm, - !!M_R)
 
   if (is_symbol(get_expr(args[["nest"]]))) {
     # Groups for nested data
@@ -166,7 +154,7 @@ eval_diag <- function(.df, .ion1, .ion2, ..., .nest = NULL,
     ls_mlm <- lst(df_lm, df_mlm1)
 
       # Check if longitudinal analyses can be performed
-      if (length(unique(pull(df, .data$execution))) > 1) {
+      if (n_distinct(pull(df, .data$execution)) > 1) {
 
         df_mlm2 <- mutate(
           df_mlm,
@@ -191,20 +179,12 @@ eval_diag <- function(.df, .ion1, .ion2, ..., .nest = NULL,
 
     # Prepare output
     df <- purrr::reduce(ls_mlm, left_join, by = sapply(nest_gr, as_name)) %>%
-      eval_tidy(expr = output_lm(.output))
-
-    # Return metadata
-    if (.meta & !is.null(meta)) df <- fold(df, type = ".mt",  meta = meta)
-    if (.label == "latex") return(rename(df, !!!ls_latex))
+      output_lm(args[["Xt"]], meta,  .label, .output)
     return(df)
   }
   # Prepare output
   df <- df_lm %>%
-    eval_tidy(expr = output_lm(.output))
-
-  # Return metadata
-  if (.meta & !is.null(meta)) df <- fold(df, type = ".mt",  meta = meta)
-  if (.label == "latex") return(rename(df, !!!ls_latex))
+    output_lm(args[["Xt"]], meta,  .label, .output)
   return(df)
 }
 
@@ -290,7 +270,7 @@ mlm_fun1 <- function(.df, .gls, .Xt1, .Xt2, .tf, .group) {
     # test statistic
     dAIC_inter = diff(pull(df_aov, `AIC`)),
     # p value
-    p_inter = pull(df_aov, `p-value`)[2]
+    p_inter = zuur_cor(pull(df_aov, `L.Ratio`)[2])
     )
 
   return(ls_inter)
@@ -325,15 +305,46 @@ mlm_fun2 <- function(.df, .Xt1, .Xt2, .tf, .group) {
 # output function
 #-------------------------------------------------------------------------------
 
-output_lm <- function(.output) {
+output_lm <- function(df, Xt, meta = NULL, label, output) {
 
-  switch(
-    .output,
-    sum = call2( "select", expr(.), expr(-data)),
-    complete = call2("unnest", expr(.), cols = expr(data))
+  # Output transform
+  trans_out <- function(output) {
+    switch(
+      output,
+      sum = call2( "select", expr(.), expr(-data)),
+      complete = call2("unnest", expr(.), cols = expr(data))
     )
+  }
 
-}
+  df <- df %>%
+    eval_tidy(expr = trans_out(output))
+
+  # Latex labels
+  if (label == "latex") {
+    # Stat selection
+    vars1 <- purrr::keep(
+      colnames(df),
+      ~str_detect(
+        .,
+        str_c(paste0("^",  point::names_model$name), collapse = "|")
+      )
+    )
+    vars2 <- paste(point::names_stat_R$name, "R", as_name(Xt), sep = "_")
+    # To render nice latex variable names in Rmarkdown/Latex
+    ls_latex <- set_names(vars1, nm = point::names_model$latex[1:length(vars1)])
+    if (output == "complete") {
+      ls_latex2 <- set_names(
+        vars2,
+        nm = purrr::map_chr(point::names_stat_R$name, ~stat_labeller(stat = .x))
+        )
+      ls_latex <- append(ls_latex, ls_latex2)
+    }
+    return(rename(df, !!!ls_latex))
+  }
+  # Return metadata
+  if (!is.null(meta)) df <- fold(df, type = ".mt",  meta = meta)
+  return(df)
+  }
 
 coef_pull <- function(sum, data, arg, trans){
 
@@ -358,7 +369,7 @@ cstd_var <- function(.df, .Xt1, .hat_Y, .flag, ...){
       ) %>%
     group_by(!!! gr_by, !!.flag, .data$sector) %>%
     mutate(
-       min_bound = if_else(.data$sector == "upper", min(.data$E), max(.data$E)),
+      min_bound = if_else(.data$sector == "upper", min(.data$E), max(.data$E)),
       cstd_X = .data$E - min_bound + !!.hat_Y,
       .keep = "unused"
       ) %>%
@@ -424,7 +435,8 @@ mlm_RS <- function(sum, arg, output = "value") {
     fix_sd <- fix_CI$fixed %>%
       tibble::as_tibble() %>%
       mutate(se = (upper - lower) / 3.92) %>%
-      pull(se) * sqrt(nobs(sum))
+      pull(se) *
+      sqrt(nobs(sum))
 
     attr(fix_sd, "label") <- NULL
 
@@ -435,3 +447,6 @@ mlm_RS <- function(sum, arg, output = "value") {
     return(RS.se * 1000) # per mille
   }
 }
+
+# correction for testing on the boundary Zuur et al 2008 (CH 5, p 123)
+zuur_cor <- function(L) 0.5 * (1 - pchisq(L, 1))
