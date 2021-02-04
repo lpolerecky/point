@@ -12,12 +12,13 @@ gg_IC <- function(.df, .ion1, .ion2, .method, .plot_type, ..., .Xt = Xt.pr,
 
   flag <-  enquo(.flag)
   # Heavy isotope
+  N1 <- quo_updt(args[[".Xt"]], post = .ion1)
   Xt1 <- quo_updt(args[[".Xt"]], post = .ion1)
   # Light isotope
   Xt2 <- quo_updt(args[[".Xt"]], post = .ion2)
   # Fitted heavy isotope and variance (sigma)
   hat_Xt1 <- quo_updt(args[[".Xt"]], pre = "hat", post = .ion1)
-  hat_s_Xt1 <- quo_updt(args[[".Xt"]], pre = "hat_s", post = .ion1)
+  hat_S_Xt1 <- quo_updt(args[[".Xt"]], pre = "hat_S", post = .ion1)
 
   # Filter execution or downsample for animation
   if (.plot_type == "static") .df <- filter(.df, execution == .rep)
@@ -34,7 +35,7 @@ gg_IC <- function(.df, .ion1, .ion2, .method, .plot_type, ..., .Xt = Xt.pr,
 
   plot_args <- list2(.df = .df, .x = Xt2, .y = Xt1, .flag = flag,
                      .diag_type = .method, .plot_type = .plot_type, !!! gr_by,
-                     .labels = .labels, .hat = hat_Xt1, .sd = hat_s_Xt1,
+                     .labels = .labels, .hat = hat_Xt1, .sd = hat_S_Xt1 ,
                      .alpha_level = .alpha_level)
 
   # Residual leverage plot
@@ -59,7 +60,6 @@ gg_IC <- function(.df, .ion1, .ion2, .method, .plot_type, ..., .Xt = Xt.pr,
       plot_args[[".y"]] <- quo(studE)
       plot_args[[".x"]] <- hat_Xt1
       plot_args[[".hat"]] <- 0
-      plot_args[[".sd"]] <- NULL
       plot_args[[".cv"]] <- 3.5
   }
 
@@ -94,8 +94,19 @@ gg_base <- function(.df, .x, .y, .flag, .diag_type, .plot_type, ...,
     }
 
   # Adjust point alpha
-  alpha_sc <- median(count(.df, !!!gr_by)$n) /
-    ifelse(.plot_type == "static", 1e5, 1e3)
+  # Calculate density
+  ran <- range(count(.df, !!!gr_by)$n)
+  .df <- group_by(.df) %>%
+    mutate(
+      h_x = if_else(MASS::bandwidth.nrd(!!.x) == 0, 0.1, MASS::bandwidth.nrd(!!.x)),
+      h_y = if_else(MASS::bandwidth.nrd(!!.y) == 0, 0.1, MASS::bandwidth.nrd(!!.y)),
+      dens = get_density(!!.x, !!.y, h = c(h_x, h_y), n = log(ran[2]) / log(n()) * 100),
+      # Adjust point alpha
+      alpha_sc = (ran[1] / n()) / 4
+    )
+
+  # alpha_sc <- median(count(.df, !!!gr_by)$n) /
+  #   ifelse(.plot_type == "static", 1e5, 1e3)
   # Filter correct titles
   ttl <- filter(names_diag, name == .diag_type)
 
@@ -157,39 +168,23 @@ gg_base <- function(.df, .x, .y, .flag, .diag_type, .plot_type, ...,
       )
   }
   if (.plot_type == "static") {
-    p <- ggplot(data = .df, aes(x = !!.x, y = !!.y, color = {{.flag}}))
+    p <- ggplot(data = .df, aes(x = !!.x, y = !!.y))
     }
   p <- p + facet_wrap(vars(!!!gr_by), scales = "free")
-  if (!any(sapply(list(.hat, .sd, .se, .cv), is.null)) &
+  if (!is.null(.hat) & !all(sapply(list(.sd, .se, .cv), is.null)) &
       .plot_type != "anim") {
     p <- p + geom_ribbon(
       aes(ymin = !!.lower, ymax = !!.upper),
       color = "black",
       fill = "aliceblue",
-      alpha = 0.6,
+      # alpha = 0.6,
       linetype = 3,
       size = 0.5
       ) +
       geom_line(aes(y = !!.hat), color = "black", linetype = 2, size = 0.5)
     }
-  if (.geom == "point") p <- p + geom_point(alpha = alpha_sc)
+  if (.geom == "point") p <- p + geom_point(aes(color = dens), alpha = min(.df$alpha_sc))
   if (.geom == "hexbin") p <- p + geom_hexbin()
-  if (.geom == "dens2d") {
-    p <- p + stat_density_2d(
-      aes(fill = ..ndensity..),
-      geom = "raster",
-      contour = FALSE,
-      contour_var = "count",
-      show.legend = FALSE
-      ) +
-      scale_fill_distiller(
-        limits = c(0.01, 1),
-        breaks = seq(0.01, 1, length.out = 100),
-        palette = "YlOrRd",
-        direction = 1,
-        na.value = "transparent"
-        )
-    }
   if (.rug) p <- p + geom_rug(sides = "tr", alpha = 0.01)
   if (!is.null(.labels)) {
     p <- p + ggrepel::geom_text_repel(
@@ -205,8 +200,14 @@ gg_base <- function(.df, .x, .y, .flag, .diag_type, .plot_type, ...,
       inherit.aes = FALSE
       )
   }
-  p + scale_color_manual(values = c(ggplotColours(2)[2], ggplotColours(2)[1])) +
-    scale_y_continuous(
+  p + scale_color_distiller(
+    breaks = seq(0, 1, length.out = 100),
+    palette = "YlOrRd",
+    direction = 1,
+    na.value = "transparent",
+    guide = FALSE
+    ) +
+  scale_y_continuous(
       breaks = scales::extended_breaks(),
       labels = scales::label_scientific()
       ) +
@@ -322,3 +323,11 @@ ggplotColours <- function(n = 6, h = c(0, 360) + 15){
       )
 }
 
+# density calculation function (https://themockup.blog/posts/2020-08-28-heatmaps-in-ggplot2/)
+get_density <- function(x, y, h, n) {
+  density_out <- MASS::kde2d(x, y, h, n)
+  int_x <- findInterval(x, density_out$x)
+  int_y <- findInterval(y, density_out$y)
+  comb_int <- cbind(int_x, int_y)
+  return(density_out$z[comb_int])
+}
