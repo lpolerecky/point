@@ -40,15 +40,13 @@ library(ggplot2) # graphics
 ```{r plot_defaults, echo=FALSE}
 # Default ggplot theme
 theme_set(theme_classic())
-theme_replace(axis.title = element_text(size = 11),
-              axis.text = element_text(size = 9),
-              plot.background = element_rect(fill = "transparent",
-                                             color = NA),
-              panel.background = element_rect(fill = "transparent",
-                                              color = NA),
-              legend.background = element_rect(fill = "transparent",
-                                               color = NA)
-              )
+theme_replace(
+  axis.title = element_text(size = 11),
+  axis.text = element_text(size = 9),
+  plot.background = element_rect(fill = "transparent", color = NA),
+  panel.background = element_rect(fill = "transparent", color = NA),
+  legend.background = element_rect(fill = "transparent", color = NA)
+  )
 ```
 
 ## Nomenclature
@@ -70,42 +68,23 @@ The function `diag_R()` is designed to be a flexible wrapper for both isotope an
 
 # Carry-out the routine point workflow
 # Raw data containing 13C and 12C counts on carbonate
-tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
+tb_rw <- read_IC(point_example("2018-01-19-GLENDON"))
 
 # Processing raw ion count data
-tb.pr <- cor_IC(tb.rw, 
-                N = N.rw, 
-                t = t.rw, 
-                Det = det_type.mt, 
-                deadtime = 0, 
-                thr_PHD = 0)
+tb_pr <- cor_IC(tb_rw)
 
 # CAMECA style augmented datafile
 # Vectors of isotope ratios 
-ion1 <-  c("13C", "12C 13C", "13C 14N", "12C 14N", "12C")
-ion2 <-  c("12C", "12C2", "12C 14N", "40Ca 16O", "40Ca 16O")
+ion1 <-  c("13C")#, "12C 14N", "12C")
+ion2 <-  c("12C")#, "40Ca 16O", "40Ca 16O")
 
 # Call function Diag_R over all ion ratio combinations  
-tb.aug <- purrr::map2(ion1, 
-                      ion2, 
-                      ~(diag_R(tb.pr,
-                               method = "Cameca",
-                               args = expr_R(Xt = "Xt.pr",
-                                             N = "N.pr",
-                                             species = "species.nm",
-                                             ion1 = .x,
-                                             ion2 = .y
-                                             ),
-                               reps = 1,
-                               file.nm,
-                               bl.mt,
-                               plot = FALSE
-                               ) %>%
-                        purrr::transpose() %>%
-                        purrr::pluck("df") %>%
-                        purrr::pluck("2")
-                        )
-                      ) 
+ls_aug <- purrr::map2(
+  ion1, 
+  ion2, 
+  ~diag_R(tb_pr, .x, .y, file.nm, bl.nm, .method = "Cameca", .plot = F, .reps = 2)
+  )       
+
 
 ```
 
@@ -122,36 +101,29 @@ The default method to account for such discrepancies, as incorporated in the Cam
 # Reproduce Cameca stat file: descriptive an predictive statistics for  
 # ratios (blockwise)
 
-# List variables
-ls.CAMECA <- lst(df = tb.aug, a = ion1, b = ion2)
 
-# Function to transform to calculate block wise and produce CAMECA output style
-fun_CAMECA <-function(df, a, b){
+ fun_CAMECA <- function(df){
   
-  stat_R(df, Xt.pr, N.pr, species.nm, a, b, 
-         file.nm, bl.mt, output = "complete"
-         ) %>%   
-    filter(file.nm == "2018-01-19-GLENDON_1_1") %>% 
-    distinct(bl.mt, .keep_all = TRUE) %>% 
-    mutate_at(vars(contains("meas_bl.mt")), ~(. - n_R_Xt.pr)) %>% 
-    mutate(`Err_mean (%)` = RSeM_R_Xt.pr / 10,
-           `Poisson (%)` = hat_RSeM_R_Xt.pr / 10,
-           `Ratio#` = paste(a, b, sep = "/")
-           ) %>% 
-    select(`Block#` = bl.mt, 
-           `Ratio#`, 
-           "Mean" = M_R_Xt.pr, 
-           "SD" = S_R_Xt.pr, 
-           N_rej = contains("meas_bl.mt")[1], 
-           `Err_mean (%)`,
-           `Poisson (%)`,
-           "Khi2" = chi2_R_Xt.pr
-    )
+  filter(df, file.nm  == "2018-01-19-GLENDON_1_1", execution == 2) %>% 
+  distinct(file.nm, bl.nm, .keep_all = TRUE) %>% 
+    transmute(
+      `Block#` = bl.nm, 
+      `Ratio#` = R.nm,
+      "Mean" = M_R_Xt.pr, 
+      "SD" = S_R_Xt.pr,
+       N_rej = 65 - n_R_Xt.pr,
+      `Err_mean (%)` = RSeM_R_Xt.pr / 10,
+      `Poisson (%)` = hat_RSeM_R_Xt.pr / 10,
+      "Khi2" = chi2_R_Xt.pr
+      ) 
+
   }
 
 # Call the function
-tb.CAMECA <- purrr::pmap_dfr(ls.CAMECA, fun_CAMECA) %>% 
-              arrange(`Block#`)
+# tb.CAMECA <- 
+  purrr::map_dfr(ls_aug, fun_CAMECA) %>% 
+    group_by(`Ratio#`) %>% 
+    arrange(`Block#`)
               
 ```
 
@@ -651,6 +623,8 @@ This effect size (Fig. \@ref(fig:effectsize)) can be unified in a single measure
   (\#eq:RST)
 \end{equation}
 
+$$ RST = \epsilon_{R}^{2} \times (n-1) = \sum_{i = 1}^{n} (\frac{x_{i}}{\bar{x}} - 1)^{2} $$
+
 where the augmentation effectively splits the variability in the dataset, as follows:
 
 \begin{equation}
@@ -658,7 +632,7 @@ where the augmentation effectively splits the variability in the dataset, as fol
  (\#eq:RSA)
 \end{equation}
 
-
+ $$RST = RSA + RSE = \epsilon_{R}^{2*} \times n^{*} + \epsilon_{R}^{2`} \times n^{`}$$
 <!-- obtained from the  explained by the augmentated model ($SSA$) divided by the $SST$ of $R$. Here $SSE$ is the variance by the following hypothetical  model as follows -->
 
 The division of variability among RSA ad RSE by the *Cooks D* augmentation yields an effect size measure: 
@@ -667,6 +641,8 @@ The division of variability among RSA ad RSE by the *Cooks D* augmentation yield
   \eta^2 = \frac{RSE}{RSA} = \frac{RST}{RSA} - 1 =  \frac{\epsilon_{R}^{2'} \times n^{'}}{\epsilon_{R}^{2*} \times n^{*}}
   (\#eq:eta)
 \end{equation} 
+
+$$ \eta^2 = \frac{RSE}{RSA} = \frac{RST}{RSA} - 1 =  \frac{\epsilon_{R}^{2'} \times n^{'}}{\epsilon_{R}^{2*} \times n^{*}} $$
 
 This yields a variance function which can be converted to a $\chi^2$ goodness of fit test, where the coefficient $\bar{R}'$ can divided as a hypothesis with $H0 : \bar{R}' = 0$ and $Ha : \bar{R}' \ne 0$. This test has 1 degree of freedom, as there are 2 relations ($r$) used to calculate the coefficient estimate ($\bar{R}$ from species $a$ and $b$) of the linear model ($df = r - 1$ for goodness of fit).  In other words, the $H0$ suggest that the augmentation brings about no change in the variability of the ion count data, so that if the $H0$ is rejected there is reason to assume that the data originates from a substrate with a heterogeneous isotopic composition.  
 

@@ -89,11 +89,13 @@ stat_Xt <- function(.df,..., .Xt = Xt.pr, .N = N.pr, .species = species.nm,
     # standard deviation (SD) count rate
     sd(!! Xt),
     # RSD ion count rate
-    (!! args[["S_Xt"]] / !! args[["M_Xt"]]) * 1000,
+    (!! args[["S_Xt"]] / !! args[["M_Xt"]]) * 100,
     # standard error of the mean (SE) count rate
     sd(!! Xt) / sqrt(n()),
     # predicted SD count rate
     sqrt(mean(!!N)),
+    # predicted RSD count rate
+    (1 / sqrt(mean(!!N))) * 100,
     # predicted SE count rate
     sqrt(mean(!!N) / n()),
     # reduced chi squared
@@ -107,17 +109,21 @@ stat_Xt <- function(.df,..., .Xt = Xt.pr, .N = N.pr, .species = species.nm,
   calcs <- set_names(calcs , nm = ls_nm)
 
   # Stat selection
-  pos_vars <- purrr::keep(ls_nm, ~str_detect(., str_c(paste0("^", .stat), collapse = "|")))
-  neg_vars <- purrr::discard(ls_nm, ~str_detect(., str_c(paste0("^", .stat), collapse = "|")))
+  str_stat <- str_c(paste0("^", .stat), collapse = "|")
+  pos_vars <- purrr::keep(ls_nm, ~str_detect(., str_stat))
+  neg_vars <- purrr::discard(ls_nm, ~str_detect(., str_stat))
 
-  # To render nice latex variable names in Rmarkdown/Latex
-  ls_latex <- set_names(pos_vars, nm = purrr::map_chr(.stat, ~stat_labeller(stat = .x)))
+  # Render latex variable names
+  ls_latex <- set_names(
+    pos_vars,
+    nm = purrr::map_chr(.stat, ~stat_labeller(stat = .x))
+    )
 
   # Evaluate expressions
   df <- group_by(.df, !!! gr_by, !! species) %>%
-          eval_tidy(expr = mod_cal(.output, calcs = calcs)) %>%
-          ungroup() %>%
-          select(-any_of(neg_vars))
+    eval_tidy(expr = mod_cal(.output, calcs = calcs)) %>%
+    ungroup() %>%
+    select(-any_of(neg_vars))
 
   # Output
   if (!is.null(.label)) {
@@ -204,7 +210,7 @@ stat_R <- function(.df, .ion1, .ion2, ..., .Xt = Xt.pr, .N = N.pr,
     )
 
   # The statistic names (depend on user-supplied expression)
-  ls_nm <-paste(point::names_stat_R$name, "R", as_name(Xt), sep = "_")
+  ls_nm <- paste(point::names_stat_R$name, "R", as_name(Xt), sep = "_")
 
   # Set statistic names
   calcs <- set_names(calcs, nm = ls_nm)
@@ -215,16 +221,20 @@ stat_R <- function(.df, .ion1, .ion2, ..., .Xt = Xt.pr, .N = N.pr,
   }
 
   # Stat selection
-  pos_vars <- purrr::keep(ls_nm, ~str_detect(., str_c(paste0("^", .stat), collapse = "|")))
-  neg_vars <- purrr::discard(ls_nm, ~str_detect(., str_c(paste0("^", .stat), collapse = "|")))
+  str_stat <- str_c(paste0("^", .stat), collapse = "|")
+  pos_vars <- purrr::keep(ls_nm, ~str_detect(., str_stat))
+  neg_vars <- purrr::discard(ls_nm, ~str_detect(.,  str_stat))
 
-  # To render nice latex variable names in Rmarkdown/Latex
-  ls_latex <- set_names(pos_vars, nm = purrr::map_chr(.stat, ~stat_labeller(stat = .x)))
+  # Render nice latex variable names
+  ls_latex <- set_names(
+    pos_vars,
+    nm = purrr::map_chr(.stat, ~stat_labeller(var = "R", stat = .x))
+    )
 
   # Evaluate expressions and calls
   df <- .df  %>%
     eval_tidy(expr = zeroCt_cal(.zero, .ion1, .ion2, gr_by, N, species, t)) %>%
-    cov_R(.ion1, .ion2, !!! gr_by, .species = !!species, .t = !!t) %>%
+    cov_R(c(.ion1, .ion2), !!! gr_by, .species = !!species, .t = !!t) %>%
     group_by(!!! gr_by) %>%
     eval_tidy(expr = mod_cal(.output, calcs = calcs)) %>%
     ungroup() %>%
