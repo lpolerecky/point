@@ -312,34 +312,13 @@ A series of several ion count analyses is usually performed in a study. The cons
 
 Similarly the predicted standard deviation of an $m$-series of analyses can be calculated following similar conventions as outlined above. Here, we substitute $\bar{N}^a$ of a chemical species $a$ by  $\bar{M}^a$ (i.e., the mean counts for an $m$-series of analyses) in Eq. \@ref(eq:stdpois) for single ions and \@ref(eq:stdpoisR1) (and subsequent derivations of the equation) for isotope ratios. Note, that these formulations consider counts per analysis and *not* counts per measurement.
 
-To calculate the external precision for single ion counts with the package `point` apply the function `stat_Xt` two times on the same dataset (i.e. a raw ion count dataset containing replicate measurements on a reference material). Note, that the second call should calculate the statistics over the summary table of the first iteration.
+To calculate the external precision for ion ratios with the package `point` apply the functions `stat_Xt()` and `stat_R()` in conjunction on the same dataset (e.g. a raw ion count dataset containing replicate measurements on a reference material). Note, that the second call should calculate the statistics over the summary table of the first iteration.
 
 
 ```{r}
 # summary statistics of the dataset (set latex to FALSE and output to SUM)
 tb_Xt <- stat_Xt(tb_pr, sample.nm, file.nm, .stat = c("Ntot", "M", "S", "SeM"))
 
-# external reproducibility use the mean ion count rate and total counts of the
-# single analyses. Note that the grouping variable is needed to identify the 
-# reference standard
-tb_Xt_ext <- stat_Xt(tb_Xt, sample.nm, .Xt = M_Xt.pr, .N = Ntot_Xt.pr, 
-                     .label = "latex")
-```
-
-
-```{r echo=FALSE}
-knitr::kable(
-  head(filter(tb_Xt_ext, str_detect(sample.nm, "Belemnite"))),
-  format.args = lst(digits = 3, format = "G", flag = "0"),
-  caption = "Summary statistics for external precision of single ions."
-  ) 
-```
-
-The same workflow applies for isotope ratios, but the second call should now be to the function `stat_R`.
-
-
-```{r}
-# Same as previous chunk but now with stat_R
 tb_R_ext  <- stat_R(tb_Xt, "13C", "12C", sample.nm, .Xt = M_Xt.pr, 
                     .N = Ntot_Xt.pr, 
                     .stat =  c("M", "RS", "RSeM", "hat_RS", "hat_RSeM", "chi2"), 
@@ -361,7 +340,7 @@ The number of counts of any single analysis $j$ ($M_j$) is equal to to sum of al
   (\#eq:Mser)
 \end{equation}
 
-Given the previous relationship, the average predicted standard error of the mean of a single analysis should approximate the predicted standard deviation of an $m$-series of analyses [see @Fitzsimons2000a].
+Given the previous relationship, the average predicted standard error of the mean of single analyses should approximate the predicted standard deviation if viewed as one single continuous analysis, or $m$-series of analyses [see @Fitzsimons2000a].
 
 We can validate this derivation as follows:
 
