@@ -30,12 +30,12 @@
 #'
 ion_labeller <- function(ion, label = "latex") {
 
-# Regex for element names
+  # Regex for element names
   el_reg <- "((?<=[[:digit:]])[[:upper:]]{1})(?<=[[:upper:]])[[:lower:]]{1}|(?<=[[:digit:]])[[:upper:]]{1}"
-# Regex mass number
+  # Regex mass number
   ms_reg <- "[[:digit:]]{1,2}(?=[[:upper:]])"
-# Regex stochiometry
-  st_reg <- "(?<=[[:alpha:]])([[:digit:]]|\\s|[[:punct:]])"
+  # Regex stochiometry
+  st_reg <- "[[:digit:]]*(?![[:alpha:]])"
 
   suppressWarnings(
   ls_chr <- purrr::map(
@@ -47,18 +47,14 @@ ion_labeller <- function(ion, label = "latex") {
   )
 
   if (label == "latex") {
+    paste_ion <- function(ls){
+      if (length(ls[["c"]]) != 0) if (!str_detect(ls[["c"]], "[[:digit:]]")) ls[["c"]] <- NULL
+      paste0("$\\phantom{,}^{", ls[["a"]], "}$", ls[["b"]],"$_{", ls[["c"]],"}$")
+    }
 
     ls_ion <- purrr::map(
       ls_chr,
-      ~paste0(
-        "$\\phantom{,}^{",
-        .x[["a"]],
-        "}$",
-        .x[["b"]],
-        "$_{",
-        .x[["c"]],
-        "}$"
-        )
+      paste_ion
       )
 
     lb <- purrr::reduce(ls_ion, paste, sep = "--")
@@ -94,7 +90,8 @@ R_labeller <- function(ion1, ion2, label = "latex"){
 #' @rdname ion_labeller
 #'
 #' @export
-stat_labeller <- function(var = "X", stat, value, label = "latex"){
+stat_labeller <- function(var = "X", stat, value, label = "latex",
+                          type = "internal"){
 
   if (label == "latex") {
     if (stat == "n") return("$n$")
@@ -103,8 +100,10 @@ stat_labeller <- function(var = "X", stat, value, label = "latex"){
     if (stat == "chi2") return("$\\chi^{2}$")
     if (str_detect(stat, "M")) {
       stat_chr <- paste0("\\bar{", var,"}")
+      if (type == "external") stat_chr <- paste0("\\bar{", stat_chr,"}")
       } else {
         stat_chr <- var
+        if (type == "external") stat_chr <- paste0("\\bar{", stat_chr,"}")
       }
     if (str_detect(stat, "S")) {
       stat_chr <- paste0("_{", stat_chr,"}")
@@ -156,16 +155,6 @@ stat_labeller <- function(var = "X", stat, value, label = "latex"){
       }
   }
   }
-#' @rdname ion_labeller
-#'
-#' @export
-select_IC <- function(.df, .var, .stat, ..., .label = "latex"){
-
-  gr_by <- enquos(...)
-  vars <- map_chr(.stat, ~stat_labeller(var = .var, .x, label = .label))
-  select(.df,!!!gr_by, vars)
-
-  }
 
 #' Function for co-variate conversion of isotope systems
 #'
@@ -179,8 +168,8 @@ select_IC <- function(.df, .var, .stat, ..., .label = "latex"){
 #' `zeroCt()`.
 #'
 #' @param .df A tibble containing processed ion count data.
-#' @param .ion1 A character string constituting the heavy isotope ("13C").
-#' @param .ion2 A character string constituting the light isotope ("12C").
+#' @param .ion1 A character string or vector constituting ion names.
+#' @param .ion2 A character string or vector constituting ion names.
 #' @param ... Variables for grouping.
 #' @param .species A variable constituting the species analysed.
 #' @param .t A variable constituting the time of the analyses.
@@ -197,18 +186,27 @@ select_IC <- function(.df, .var, .stat, ..., .label = "latex"){
 #' tb_pr <- cor_IC(tb_rw)
 #'
 #' # wide format
-#' cov_R(tb_pr, "13C", "12C", file.nm)
+#' cov_R(tb_pr, c("13C", "12C"), file.nm)
 #'
-cov_R <- function(.df, .ion1, .ion2, ..., .species = species.nm, .t = t.nm,
+cov_R <- function(.df, .ion, ..., .species = species.nm, .t = t.nm,
                   .preserve = FALSE){
 
   t <- enquo(.t)
   species <- enquo(.species)
   gr_by <- enquos(...)
 
+  # observation per group
+  obs_gr <- group_size(group_by(.df, !!!gr_by, !! species))
+  # distinct observation for time increments
+  obs_t <- n_distinct(pull(.df, !!t))
+  # check if t steps is consistent with grouping otherwise create new ID
+  if (any(obs_gr  / obs_t > 1)) {
+    .df <- mutate(group_by(.df, !!!gr_by, !! species), !!t := row_number()) %>%
+      ungroup
+  }
   # Filtering
-  df <- filter(.df, !! species == .ion1 | !! species == .ion2) %>%
-    mutate(!! species := str_replace_all(!! species, "\\s", ""))
+  df <- filter(.df, !!species %in% .ion) %>%
+    mutate(!! species := str_replace_all(str_trim(!! species), "\\s", "_"))
 
   # Wide format
   pivot_wider(
@@ -216,11 +214,8 @@ cov_R <- function(.df, .ion1, .ion2, ..., .species = species.nm, .t = t.nm,
     c(!!!gr_by, !!t, !!species),
     names_from = !! species,
     values_from = -c(!!!gr_by, !!t, !!species),
-    # values_fn = length,
     names_sep = "."
     )
-
-  # if (.preserve) return(df) else return(select(df, -.data$ID))
 }
 
 #' Remove analytical runs with zero counts
@@ -268,9 +263,9 @@ zeroCt <- function(.df, .ion1, .ion2, ..., .N = N.pr, .species = species.nm,
   gr_by <- enquos(...)
 
   # remove white space in ion names
-  .df <- mutate(.df, !! species := str_replace_all(!! species, "\\s", ""))
-  .ion1 <- str_replace_all(.ion1, "\\s", "")
-  .ion2 <- str_replace_all(.ion2, "\\s", "")
+  .df <- mutate(.df, !! species := str_replace_all(str_trim(!! species), "\\s", "_"))
+  .ion1 <- str_replace_all(str_trim(.ion1), "\\s", "_")
+  .ion2 <- str_replace_all(str_trim(.ion2), "\\s", "_")
 
   df <- filter(.df, !!species == .ion1 | !!species == .ion2)
 

@@ -171,8 +171,8 @@ rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .method,.Xt = Xt.pr,
   gr_by <- enquos(...)
 
   # remove white space in ion names
-  .ion1 <- str_replace_all(.ion1, "\\s", "")
-  .ion2 <- str_replace_all(.ion2, "\\s", "")
+  .ion1 <- str_replace_all(str_trim(.ion1), "\\s", "_")
+  .ion2 <- str_replace_all(str_trim(.ion2), "\\s", "_")
 
   # stat_R variables
   args <- enquos(.Xt = .Xt, .N = .N, .species = .species, .t = .t)
@@ -212,7 +212,14 @@ rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .method,.Xt = Xt.pr,
       )
 
   if (.output == "flag") {
-    out <- select(out, -ends_with(paste0("R_", as_name(args[[".Xt"]]))))
+    ls_ion1 <- paste(paste(point::names_stat_Xt$name, as_name(args[[".Xt"]]), sep = "_"), .ion1, sep = ".")
+    ls_ion2 <-paste( paste(point::names_stat_Xt$name, as_name(args[[".Xt"]]), sep = "_"), .ion2, sep = ".")
+    ls_R <- paste(point::names_stat_R$name, "R", as_name(args[[".Xt"]]), sep = "_")
+    ls_vars <- c(ls_ion1, ls_ion2, ls_R, "R.nm")
+    ls_vars <- ls_vars[!ls_vars  %in% paste0("hat_S_" ,as_name(args[[".Xt"]]), ".", .ion1)]
+    out <- select(out, -any_of(ls_vars))
+
+                    #ends_with(paste0("R_", as_name(args[[".Xt"]]))))
   }
   # Output
   out <- list2(df = df_aug, results = out)
@@ -250,11 +257,11 @@ diag_R_exec <- function(.df, .ion1, .ion2, ..., .method, .Xt = Xt.pr, .N = N.pr,
 
   # Descriptive an predictive statistics for single ions and ion ratios
   stat_Xt(.df, !!! gr_by, .Xt = !!args[["Xt"]], .N = !!args[["N"]],
-         .species = !!args[["species"]], .t = !!args[["t"]],
-         .output = "complete") %>%
-    stat_R(.ion1, .ion2, !!! gr_by, .Xt = !!args[["Xt"]], .N = !!args[["N"]],
           .species = !!args[["species"]], .t = !!args[["t"]],
-          .output = "complete", .zero = TRUE) %>%
+          .output = "complete") %>%
+    stat_R(.ion1, .ion2, !!! gr_by, .Xt = !!args[["Xt"]], .N = !!args[["N"]],
+           .species = !!args[["species"]], .t = !!args[["t"]],
+           .output = "complete", .zero = TRUE) %>%
     eval_tidy(expr = diag_method[[.method]])
 
   }

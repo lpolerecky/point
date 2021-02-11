@@ -143,7 +143,7 @@ stat_Xt <- function(.df,..., .Xt = Xt.pr, .N = N.pr, .species = species.nm,
 #'
 #' @export
 stat_R <- function(.df, .ion1, .ion2, ..., .Xt = Xt.pr, .N = N.pr,
-                   .species = species.nm, .t = t.nm,
+                   .species = species.nm, .t = t.nm, .nest = NULL,
                    .stat = point::names_stat_R$name, .label = NULL,
                    .output = "sum", .zero = FALSE){
 
@@ -158,15 +158,36 @@ stat_R <- function(.df, .ion1, .ion2, ..., .Xt = Xt.pr, .N = N.pr,
   species <- enquo(.species)
   t <- enquo(.t)
   gr_by <- enquos(...)
+  nest <- enquos(.nest)
+  type <- "internal"
+
+  # For external precision
+  if (!any(sapply(nest, function(x) is.null(get_expr(x))))) {
+    .df <- stat_Xt(.df, !!!gr_by, .Xt = !!Xt, .N = !!N, .species = !!species,
+                   .t = !!t)
+    # Updated quotes
+    N <- quo_updt(Xt, pre = "Ntot")
+    Xt <- quo_updt(Xt, pre = "M")
+    gr_by <- nest
+    if (!is.null(.label)) type <- "external"
+    .df <- add_count(.df, !!!nest, !!species)
+    if (any(.df$n <= 1)) {
+      warning("Some groups have to few observation for a reliable estimation of
+              external precision. These groups have been omitted.")
+      .df <- filter(.df, n > 1)
+    }
+  }
 
   # If t column is empty create a manual time increment
   if (!(as_name(t) %in% colnames(.df))) {
-    .df <- group_by(.df, !!!gr_by, !!species) %>% mutate(!!t := row_number())
+    .df <- group_by(.df, !!!gr_by, !!species) %>%
+      mutate(!!t := row_number()) %>%
+      ungroup()
   }
 
   # Remove white space in ion names
-  .ion1 <- str_replace_all(.ion1, "\\s", "")
-  .ion2 <- str_replace_all(.ion2, "\\s", "")
+  .ion1 <- str_replace_all(str_trim(.ion1), "\\s", "_")
+  .ion2 <- str_replace_all(str_trim(.ion2), "\\s", "_")
 
   # Update quosures (heavy isotope)
   Xt1 <- quo_updt(Xt, post = .ion1) # count rate
@@ -202,7 +223,7 @@ stat_R <- function(.df, .ion1, .ion2, ..., .Xt = Xt.pr, .N = N.pr,
     # predictive RSD isotope ratio
     !! args[["hat_S_R"]] / !! args[["M_R"]] * 1000,
     # predictive SE isotope ratio
-    !!args[["hat_S_R"]]  / sqrt(n()),
+    !! args[["hat_S_R"]]  / sqrt(n()),
     # predictive RSE isotope ratio
     !! args[["hat_SeM_R"]]  / !! args[["M_R"]] * 1000,
     # reduced chi squared
@@ -228,8 +249,9 @@ stat_R <- function(.df, .ion1, .ion2, ..., .Xt = Xt.pr, .N = N.pr,
   # Render nice latex variable names
   ls_latex <- set_names(
     pos_vars,
-    nm = purrr::map_chr(.stat, ~stat_labeller(var = "R", stat = .x))
+    nm = purrr::map_chr(.stat, ~stat_labeller(var = "R", stat = .x, type = type))
     )
+
 
   # Evaluate expressions and calls
   df <- .df  %>%
