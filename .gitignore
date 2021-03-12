@@ -1,0 +1,7 @@
+# secrets and environments
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.httr-oauth
+.Renviron
