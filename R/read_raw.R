@@ -364,7 +364,7 @@ str_loc <- function(loc) {
   loc %>%
     stringr::str_split("=+", simplify = TRUE) %>%
     stringr::str_subset("[:digit:]") %>%
-    sapply(parse_number) %>%
+    sapply(readr::parse_number) %>%
     set_names(nm = c("x.mt", "y.mt", "z.mt"))
 }
 
