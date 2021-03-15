@@ -1,5 +1,5 @@
 # Plotting diagnostics
-gg_IC <- function(.df, .ion1, .ion2, .method, .plot_type, ..., .Xt = Xt.pr,
+gg_IC <- function(.IC, .ion1, .ion2, .method, .plot_type, ..., .Xt = Xt.pr,
                   .N = N.pr, .species = species.nm, .t = t.nm, .flag = flag,
                   .labels = NULL, .rep = 1, .alpha_level, .plot_iso = FALSE){
 
@@ -11,29 +11,20 @@ gg_IC <- function(.df, .ion1, .ion2, .method, .plot_type, ..., .Xt = Xt.pr,
   args <- enquos(.Xt = .Xt, .N = .N, .species = .species, .t = .t)
 
   flag <-  enquo(.flag)
-  # Heavy isotope
+  # Common isotope
   N1 <- quo_updt(args[[".Xt"]], post = .ion1)
   Xt1 <- quo_updt(args[[".Xt"]], post = .ion1)
-  # Light isotope
+  # rare isotope
   Xt2 <- quo_updt(args[[".Xt"]], post = .ion2)
-  # Fitted heavy isotope and variance (sigma)
+  # Fitted rare isotope and variance (sigma)
   hat_Xt1 <- quo_updt(args[[".Xt"]], pre = "hat", post = .ion1)
-  hat_S_Xt1 <- quo_updt(args[[".Xt"]], pre = "hat_S", post = .ion1)
+  hat_S_Xt1 <- quo_updt(args[[".N"]], pre = "hat_S", post = .ion1)
 
-  # Filter execution or downsample for animation
-  if (.plot_type == "static") .df <- filter(.df, execution == .rep)
-  # if (.plot_type == "anim") {
-  #   df_sl <- filter(.df, execution == 1)
-  #   df_sl <- slice_sample(group_by(df_sl, !!!gr_by, !!flag), prop = 0.05) %>%
-  #     ungroup() %>%
-  #     select(!!!gr_by, !!args[[".t"]])
-  #   .df <- semi_join(.df, df_sl, by = sapply(c(gr_by, args[[".t"]]), as_name))
-  #
-  #   }
-  if (.plot_type == "anim") .df <- slice_sample(group_by(.df, !!!gr_by, !!flag),
-                                                prop = 0.05)
+  # Filter execution
+  if (.plot_type == "static") .IC <- filter(.IC, execution == .rep)
 
-  plot_args <- list2(.df = .df, .x = Xt2, .y = Xt1, .flag = flag,
+  # Plotting arguments
+  plot_args <- list2(.IC = .IC, .x = Xt2, .y = Xt1, .flag = flag,
                      .diag_type = .method, .plot_type = .plot_type, !!! gr_by,
                      .labels = .labels, .hat = hat_Xt1, .sd = hat_S_Xt1 ,
                      .alpha_level = .alpha_level)
@@ -64,73 +55,50 @@ gg_IC <- function(.df, .ion1, .ion2, .method, .plot_type, ..., .Xt = Xt.pr,
   }
 
   # Execute
-  data_env <- env(data = .df)
+  data_env <- env(data = .IC)
   p <- eval(expr(gg_base(!!!plot_args)), data_env)
-
-  if (.plot_type == "anim")  {
-    p <- plotly::ggplotly(p, tooltip = "text") %>%
-      plotly::animation_opts(frame = 150, transition = 0)
-    return(p)
-    }
   if (.plot_type == "static") return(p)
-
   }
 
 
-gg_base <- function(.df, .x, .y, .flag, .diag_type, .plot_type, ...,
+gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
                     .labels = NULL, .geom = "point", .hat = NULL, .sd = NULL,
                     .se = NULL, .cv = NULL, .alpha_level, .rug = FALSE){
 
+  # Grouping
   gr_by <- enquos(...)
-  if (str_detect(as_name(.x), "[[:digit:]]") | .diag_type == "CV") {
-    ion2 <- str_split(as_name(.x), "[[:punct:]]")[[1]] %>% tail(1)
-    } else {
-      ion2 <- NULL
-    }
-  if (str_detect(as_name(.y), "[[:digit:]]")) {
-    ion1 <- str_split(as_name(.y), "[[:punct:]]")[[1]] %>% tail(1)
-    } else {
-      ion1 <- NULL
-    }
 
-  # Adjust point alpha
-  # Calculate density
-  ran <- range(count(.df, !!!gr_by)$n)
-  .df <- group_by(.df) %>%
-    mutate(
-      h_x = if_else(MASS::bandwidth.nrd(!!.x) == 0, 0.1, MASS::bandwidth.nrd(!!.x)),
-      h_y = if_else(MASS::bandwidth.nrd(!!.y) == 0, 0.1, MASS::bandwidth.nrd(!!.y)),
-      dens = get_density(!!.x, !!.y, h = c(h_x, h_y), n = log(ran[2]) / log(n()) * 100),
-      # Adjust point alpha
-      alpha_sc = (ran[1] / n()) / 4
-    )
+  # Create ion labels from variables
+  ion2 <- detect_ion(.x, .diag_type)
+  ion1 <- detect_ion(.y)
 
-  # alpha_sc <- median(count(.df, !!!gr_by)$n) /
-  #   ifelse(.plot_type == "static", 1e5, 1e3)
+  # 2D density
+  .IC <- twodens(.IC, .x, .y, gr_by, .flag)
+
   # Filter correct titles
-  ttl <- filter(names_diag, name == .diag_type)
+  ttl <- filter(point::names_diag, name == .diag_type)
 
   # Uncertainty bounds
   if (!is.null(.sd) | !is.null(.se) | !is.null(.cv)) {
     if (!is.null(.sd)){
-      .df <- mutate(
-        .df,
+      .IC <- mutate(
+        .IC,
         fct  = qnorm((1 - .alpha_level / 2)),
         lower = !!.hat - .data$fct * !!.sd,
         upper = !!.hat + .data$fct * !!.sd
         )
     }
     if (!is.null(.se)) {
-      .df <- mutate(
-        .df,
+      .IC <- mutate(
+        .IC,
         fct  = qt((1 - .alpha_level / 2), n() - 1),
         lower = !!.hat - .data$fct * !!.se,
         upper = !!.hat + .data$fct * !!.se
         )
     }
     if (!is.null(.cv)) {
-      .df <- mutate(
-        .df,
+      .IC <- mutate(
+        .IC,
         lower = !!.hat - !!.cv,
         upper = !!.hat + !!.cv
       )
@@ -139,53 +107,24 @@ gg_base <- function(.df, .x, .y, .flag, .diag_type, .plot_type, ...,
   .upper <- quo(upper)
   }
 
-  if (!is.null(.labels)) {
-    tb_labs <- distinct(.df, !!!gr_by, .keep_all = TRUE) %>%
-      select(!!!gr_by, starts_with(paste0(point::names_stat_R$name,"_"))) %>%
-      pivot_longer(
-        -c(!!!gr_by),
-        names_to = c("stat", ".value"),
-        names_sep = "\\_R\\_"
-        )
-    lbs <- purrr::map2(
-      tb_labs$stat,
-      pull(select(tb_labs, last_col()), 1),
-      ~stat_labeller("R", stat = .x, value = .y, "expr")
-      )
-    tb_labs <- tibble::add_column(tb_labs, lbs = lbs)
-    }
+  # R statistics labels
+  if (!is.null(.labels)) tb_labs <- stat_labs(.IC, gr_by)
 
-  if (.plot_type == "anim") {
-    p <- ggplot(
-      data = .df,
-      aes(
-        x = !!.x,
-        y = !!.y,
-        color = {{.flag}},
-        frame = execution,
-        text = eval(text_labs(.diag_type, x = !!.x, y = !!.y, ion1, ion2))
-        )
-      )
+  # Base plot
+  if (.plot_type == "static") p <- ggplot(data = .IC, aes(x = !! .x, y = !! .y))
+
+  # Facets
+  p <- p + facet_wrap(vars(!!! gr_by), scales = "free")
+
+  # Geom for "point" data
+  if (.geom == "point") {
+    p <- p + geom_point(aes(color = .data$dens, alpha = .data$alpha_sc))
   }
-  if (.plot_type == "static") {
-    p <- ggplot(data = .df, aes(x = !!.x, y = !!.y))
-    }
-  p <- p + facet_wrap(vars(!!!gr_by), scales = "free")
-  if (!is.null(.hat) & !all(sapply(list(.sd, .se, .cv), is.null)) &
-      .plot_type != "anim") {
-    p <- p + geom_ribbon(
-      aes(ymin = !!.lower, ymax = !!.upper),
-      color = "black",
-      fill = "aliceblue",
-      # alpha = 0.6,
-      linetype = 3,
-      size = 0.5
-      ) +
-      geom_line(aes(y = !!.hat), color = "black", linetype = 2, size = 0.5)
-    }
-  if (.geom == "point") p <- p + geom_point(aes(color = dens), alpha = min(.df$alpha_sc))
+
   if (.geom == "hexbin") p <- p + geom_hexbin()
+
   if (.rug) p <- p + geom_rug(sides = "tr", alpha = 0.01)
+
   if (!is.null(.labels)) {
     p <- p + ggrepel::geom_text_repel(
       data = filter(tb_labs, stat %in% .labels),
@@ -200,14 +139,32 @@ gg_base <- function(.df, .x, .y, .flag, .diag_type, .plot_type, ...,
       inherit.aes = FALSE
       )
   }
+
+  # Model
+  if (!is.null(.hat)) {
+    p <- p + geom_line(aes(y = !!.hat), color = "black", linetype = 2,
+                       size = 0.5)
+  }
+
+  # Model uncertainties
+  if (!all(sapply(list(.sd, .se, .cv), is.null))) {
+    p <- p + geom_ribbon(
+      aes(ymin = !!.lower, ymax = !!.upper),
+      color = "black",
+      fill = "transparent",
+      linetype = 3,
+      size = 0.5
+    )
+  }
+
   p + scale_color_distiller(
     breaks = seq(0, 1, length.out = 100),
     palette = "YlOrRd",
-    direction = 1,
     na.value = "transparent",
     guide = FALSE
     ) +
-  scale_y_continuous(
+    scale_alpha_identity(guide = FALSE, limits = c(1e-5, 1)) +
+    scale_y_continuous(
       breaks = scales::extended_breaks(),
       labels = scales::label_scientific()
       ) +
@@ -263,7 +220,7 @@ axis_labs <- function(type, ion, plot_type){
       } else {
         switch(
           type,
-          ionct = str_replace("ion (ct/sec)", "ion", ion),
+          ionct = stringr::str_replace("ion (ct/sec)", "ion", ion),
           studE = "studentized residuals",
           TQ = "Theoretical quantiles",
           SQ = "Sample quantiles",
@@ -323,11 +280,123 @@ ggplotColours <- function(n = 6, h = c(0, 360) + 15){
       )
 }
 
-# density calculation function (https://themockup.blog/posts/2020-08-28-heatmaps-in-ggplot2/)
-get_density <- function(x, y, h, n) {
-  density_out <- MASS::kde2d(x, y, h, n)
-  int_x <- findInterval(x, density_out$x)
-  int_y <- findInterval(y, density_out$y)
+extract_diff_dens <- function(IC, dens_x, dens_y, dens_z, x, y) {
+  x <- pull(IC, !!x)
+  y <- pull(IC, !!y)
+  int_x <- findInterval(x, dens_x)
+  int_y <- findInterval(y, dens_y)
   comb_int <- cbind(int_x, int_y)
-  return(density_out$z[comb_int])
+  dens_z[comb_int]
 }
+
+# creat ion labels from variables
+detect_ion <- function(var, diag_type = ""){
+
+  if (stringr::str_detect(as_name(var), "[[:digit:]]") | diag_type == "CV") {
+    stringr::str_split(as_name(var), "[[:punct:]]")[[1]] %>% tail(1)
+    } else {
+      NULL
+      }
+}
+
+# density calculation function (https://themockup.blog/posts/2020-08-28-heatmaps-in-ggplot2/)
+twodens <- function(IC, x, y, grps, flag){
+  # Ranges for alpha and density
+  ran_z <- range(pull(count(IC, !!! grps), n))
+
+  # Calculate density for x and y frame
+  diff_dens <- group_by(IC, !!! grps) %>%
+    mutate(
+      # Group-wise ranges x and y
+      min_x = min(!! x),
+      max_x = max(!! x),
+      min_y = min(!! y),
+      max_y = max(!! y),
+      # Bandwidths
+      h_x = if_else(MASS::bandwidth.nrd(!!x) == 0, 0.1, MASS::bandwidth.nrd(!!x)),
+      h_y = if_else(MASS::bandwidth.nrd(!!y) == 0, 0.1, MASS::bandwidth.nrd(!!y)),
+      # Calculate bins for density
+      bin_n = log(ran_z[2]) / log(n()) * 100
+      ) %>%
+    ungroup() %>%
+    tidyr::nest(data = -c(!!! grps, !! flag)) %>%
+    mutate(dens = purrr::map(data, nest_dens, x, y), .keep ="unused") %>%
+    tidyr::pivot_wider(names_from = flag, values_from = dens) %>%
+    mutate(
+      dens_x = purrr::map(confluent, list("x")),
+      dens_y = purrr::map(confluent, list("y")),
+      # Cubed density to accentuate the outliers density
+      dens_z = purrr::map2(confluent, divergent, ~{(.x$z - .y$z) ^ 3}),
+      .keep ="unused"
+      )
+
+  left_join(
+    tidyr::nest(IC, IC = -c(!!! grps)),
+    diff_dens,
+    by = sapply(grps, as_name)
+    ) %>%
+    mutate(
+      dens =
+        purrr::pmap(
+          list(IC, dens_x, dens_y, dens_z),
+          extract_diff_dens,
+          x = x,
+          y = y
+          )
+      ) %>%
+    select(!!!grps, IC, dens) %>%
+    tidyr::unnest(cols=c(IC, dens))%>%
+    group_by(!!! grps) %>%
+    # Adjust alpha
+    mutate(alpha_sc = (ran_z[1] / n()) / 4)
+
+}
+
+
+nest_dens <- function(IC, x, y) {
+    x <- pull(IC, !!x)
+    y <- pull(IC, !!y)
+    ran_x <- c(unique(IC$min_x), unique(IC$max_x))
+    ran_y <- c(unique(IC$min_y), unique(IC$max_y))
+    # Calculate density
+    MASS::kde2d(x, y, h = c(IC$h_x, IC$h_y), n = IC$bin_n,
+                lims = c(ran_x, ran_y))
+}
+
+stat_labs <- function(.IC, gr_by){
+
+  tb_labs <- distinct(.IC, !!! gr_by, .keep_all = TRUE) %>%
+    select(!!!gr_by, starts_with(paste0(point::names_stat_R$name, "_R"))) %>%
+    tidyr::pivot_longer(
+      -c(!!! gr_by),
+      names_to = c("stat", ".value"),
+      names_sep = "\\_R\\_"
+    ) %>%
+    tidyr::unite(col = "value", - c(!!!gr_by, stat), na.rm = TRUE)
+  lbs <- purrr::map2(
+    tb_labs$stat,
+    pull(tb_labs, value),
+    ~stat_labeller("R", stat = .x, value = as.numeric(.y), "expr")
+  )
+  tibble::add_column(tb_labs, lbs = lbs)
+}
+#-------------------------------------------------------------------------------
+# anim plot parts
+# if (.plot_type == "anim") {
+#   p <- ggplot(
+#     data = .IC,
+#     aes(
+#       x = !!.x,
+#       y = !!.y,
+#       color = {{ .flag }},
+#       frame = execution,
+#       text = eval(text_labs(.diag_type, x = !!.x, y = !!.y, ion1, ion2))
+#     )
+#   )
+# }
+
+# if (.plot_type == "anim")  {
+#   p <- plotly::ggplotly(p, tooltip = "text") %>%
+#     plotly::animation_opts(frame = 150, transition = 0)
+#   return(p)
+# }
