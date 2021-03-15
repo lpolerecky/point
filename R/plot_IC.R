@@ -78,36 +78,12 @@ gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
   # Filter correct titles
   ttl <- filter(point::names_diag, name == .diag_type)
 
-  # Uncertainty bounds
-  if (!is.null(.sd) | !is.null(.se) | !is.null(.cv)) {
-    if (!is.null(.sd)){
-      .IC <- mutate(
-        .IC,
-        fct  = qnorm((1 - .alpha_level / 2)),
-        lower = !!.hat - .data$fct * !!.sd,
-        upper = !!.hat + .data$fct * !!.sd
-        )
-    }
-    if (!is.null(.se)) {
-      .IC <- mutate(
-        .IC,
-        fct  = qt((1 - .alpha_level / 2), n() - 1),
-        lower = !!.hat - .data$fct * !!.se,
-        upper = !!.hat + .data$fct * !!.se
-        )
-    }
-    if (!is.null(.cv)) {
-      .IC <- mutate(
-        .IC,
-        lower = !!.hat - !!.cv,
-        upper = !!.hat + !!.cv
-      )
-    }
-  .lower <- quo(lower)
-  .upper <- quo(upper)
-  }
+  # Uncertainty bounds for geom_ribbon
+  bounds <- list(sd = .sd, se = .se, cv = .cv)
+  .IC <- ribbon_stat(.IC, .hat, bounds[!sapply(bounds, is.null)],
+                       .alpha_level)
 
-  # R statistics labels
+  # R statistics labels for geom_text
   if (!is.null(.labels)) tb_labs <- stat_labs(.IC, gr_by)
 
   # Base plot
@@ -147,9 +123,9 @@ gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
   }
 
   # Model uncertainties
-  if (!all(sapply(list(.sd, .se, .cv), is.null))) {
+  if (any(sapply(bounds, is.null))) {
     p <- p + geom_ribbon(
-      aes(ymin = !!.lower, ymax = !!.upper),
+      aes(ymin = .data$lower, ymax = .data$upper),
       color = "black",
       fill = "transparent",
       linetype = 3,
@@ -380,6 +356,55 @@ stat_labs <- function(.IC, gr_by){
   )
   tibble::add_column(tb_labs, lbs = lbs)
 }
+
+# stat for uncertainty intervals
+ribbon_stat <- function(IC, hat, bound, alpha_level){
+
+    fct_switch <- function(alpha_level, bound){
+    switch(
+      bound,
+      sd = qnorm((1 - alpha_level / 2)),
+      se = qt((1 - alpha_level / 2), n() - 1),
+      cv = 1
+    )
+  }
+    mutate(
+      IC,
+      fct = fct_switch(alpha_level, names(bound)),
+      lower = !! hat - .data$fct * !!bound[[1]],
+      upper = !! hat + .data$fct * !!bound[[1]]
+      )
+
+  }
+
+
+  # if (!is.null(.sd)){
+  #   .IC <- mutate(
+  #     .IC,
+  #     fct  = qnorm((1 - .alpha_level / 2)),
+  #     lower = !!.hat - .data$fct * !!.sd,
+  #     upper = !!.hat + .data$fct * !!.sd
+  #   )
+  # }
+  # if (!is.null(.se)) {
+  #   .IC <- mutate(
+  #     .IC,
+  #     fct  = qt((1 - .alpha_level / 2), n() - 1),
+  #     lower = !!.hat - .data$fct * !!.se,
+  #     upper = !!.hat + .data$fct * !!.se
+  #   )
+  # }
+  # if (!is.null(.cv)) {
+  #   .IC <- mutate(
+  #     .IC,
+  #     lower = !!.hat - !!.cv,
+  #     upper = !!.hat + !!.cv
+  #   )
+  # }
+
+
+
+
 #-------------------------------------------------------------------------------
 # anim plot parts
 # if (.plot_type == "anim") {
