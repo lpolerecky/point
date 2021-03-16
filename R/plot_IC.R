@@ -51,6 +51,7 @@ gg_IC <- function(.IC, .ion1, .ion2, .method, .plot_type, ..., .Xt = Xt.pr,
       plot_args[[".y"]] <- quo(studE)
       plot_args[[".x"]] <- hat_Xt1
       plot_args[[".hat"]] <- 0
+      plot_args[[".sd"]] <- NULL
       plot_args[[".cv"]] <- 3.5
   }
 
@@ -68,7 +69,7 @@ gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
   # Grouping
   gr_by <- enquos(...)
 
-  # Create ion labels from variables
+    # Create ion labels from variables
   ion2 <- detect_ion(.x, .diag_type)
   ion1 <- detect_ion(.y)
 
@@ -78,16 +79,16 @@ gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
   # Filter correct titles
   ttl <- filter(point::names_diag, name == .diag_type)
 
-  # Uncertainty bounds for geom_ribbon
-  bounds <- list(sd = .sd, se = .se, cv = .cv)
-  .IC <- ribbon_stat(.IC, .hat, bounds[!sapply(bounds, is.null)],
-                       .alpha_level)
-
   # R statistics labels for geom_text
   if (!is.null(.labels)) tb_labs <- stat_labs(.IC, gr_by)
 
   # Base plot
   if (.plot_type == "static") p <- ggplot(data = .IC, aes(x = !! .x, y = !! .y))
+
+  plot_width <- as.numeric(
+    ggplot2::ggplotGrob(p)$widths[1]) *
+    ceiling(log2(nrow(distinct(.IC, !!!gr_by)))
+            )
 
   # Facets
   p <- p + facet_wrap(vars(!!! gr_by), scales = "free")
@@ -123,8 +124,14 @@ gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
   }
 
   # Model uncertainties
-  if (any(sapply(bounds, is.null))) {
+  bounds <- list(sd = .sd, se = .se, cv = .cv)
+
+  if (!all(sapply(bounds, is.null))) {
+    # Uncertainty bounds for geom_ribbon
+    .IC <- ribbon_stat(.IC, .hat, bounds[!sapply(bounds, is.null)],
+                       .alpha_level)
     p <- p + geom_ribbon(
+      data = .IC,
       aes(ymin = .data$lower, ymax = .data$upper),
       color = "black",
       fill = "transparent",
@@ -133,12 +140,24 @@ gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
     )
   }
 
-  p + scale_color_distiller(
-    breaks = seq(0, 1, length.out = 100),
-    palette = "YlOrRd",
+
+  p + scale_color_gradientn(
+    "",
+    # limits = c(-1, 1),
+    breaks = range(.IC$dens),
+    labels =  c("divergent", "confluent"),
+    colors = colorspace::diverge_hcl(7, rev = TRUE),
     na.value = "transparent",
-    guide = FALSE
+    guide = guide_colourbar(ticks = FALSE, barwidth = plot_width)
     ) +
+    # scale_color_distiller(
+    # "",
+    # breaks = range(.IC$dens),
+    # labels =  c("divergent", "confluent"),
+    # palette = "YlOrRd",
+    # na.value = "transparent",
+    # guide = guide_colourbar(ticks = FALSE, barwidth = plot_width)
+    # ) +
     scale_alpha_identity(guide = FALSE, limits = c(1e-5, 1)) +
     scale_y_continuous(
       breaks = scales::extended_breaks(),
@@ -154,7 +173,7 @@ gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
       title = ttl$label
       ) +
     theme_classic() +
-    theme(legend.position = "none")
+    theme(legend.position = "top")
   }
 
 
@@ -301,6 +320,8 @@ twodens <- function(IC, x, y, grps, flag){
     mutate(
       dens_x = purrr::map(confluent, list("x")),
       dens_y = purrr::map(confluent, list("y")),
+      # Take care off case when no outliers
+      divergent = tidyr::replace_na(divergent, list(list(z = 0))),
       # Cubed density to accentuate the outliers density
       dens_z = purrr::map2(confluent, divergent, ~{(.x$z - .y$z) ^ 3}),
       .keep ="unused"
@@ -321,7 +342,7 @@ twodens <- function(IC, x, y, grps, flag){
           )
       ) %>%
     select(!!!grps, IC, dens) %>%
-    tidyr::unnest(cols=c(IC, dens))%>%
+    tidyr::unnest(cols = c(IC, dens)) %>%
     group_by(!!! grps) %>%
     # Adjust alpha
     mutate(alpha_sc = (ran_z[1] / n()) / 4)
@@ -361,13 +382,13 @@ stat_labs <- function(.IC, gr_by){
 ribbon_stat <- function(IC, hat, bound, alpha_level){
 
     fct_switch <- function(alpha_level, bound){
-    switch(
-      bound,
-      sd = qnorm((1 - alpha_level / 2)),
-      se = qt((1 - alpha_level / 2), n() - 1),
-      cv = 1
-    )
-  }
+      switch(
+        bound,
+        sd = qnorm((1 - alpha_level / 2)),
+        se = qt((1 - alpha_level / 2), n() - 1),
+        cv = 1
+        )
+    }
     mutate(
       IC,
       fct = fct_switch(alpha_level, names(bound)),
