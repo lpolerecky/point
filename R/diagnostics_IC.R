@@ -17,9 +17,9 @@
 #' execution 1) of the datasets and the results \code{.return = "results"} for
 #' outlier detection as well as associated statistics of the selected procedure.
 #'
-#' @param .df A tibble containing processed ion count data.
-#' @param .ion1 A character string constituting the heavy isotope ("13C").
-#' @param .ion2 A character string constituting the light isotope ("12C").
+#' @param .IC A tibble containing processed ion count data.
+#' @param .ion1 A character string constituting the rare isotope ("13C").
+#' @param .ion2 A character string constituting the common isotope ("12C").
 #' @param ... Variables for grouping.
 #' @param .method Character string for the method for diagnostics (default =
 #' \code{"CooksD"}, see details).
@@ -43,28 +43,27 @@
 #' @param .meta Logical whether to preserve the metadata as an attribute
 #' (defaults to TRUE).
 #' @param .plot Logical indicating whether plot is generated.
-#' @param .plot_type Character string determining whether the returned a
-#' \code{"static"} \code{\link[ggplot2::ggplot2]{ggplot2}} or an
-#' \code{"interactive"} plot with \code{\link[plotly::ggplotly]{ggplotly}}.
+#' @param .plot_type Character string determining whether the returned plot is
+#' \code{"static"} \code{ggplot2::\link[ggplot2::ggplot2]{ggplot2}()}(currently
+#' only supported option).
 #' @param .plot_stat Adds a statistic label to the plot (e.g. . \code{"M"}), see
 #' \code{point::nm_stat_R} for the full selection of statistics available.
 #' @param .plot_iso A character string (e.g. \code{"VPDB"}) for the delta
-#' conversion of R \code{?calib_R()} for options.
+#' conversion of R (see \code{?calib_R()} for options).
 #'
 #' @return A dynamic or static plot is returned along with a
-#' \code{\link[tibble::tibble]{tibble}} containing \code{stat_R()} statistics
-#' and diagnostics associated with the chosen method.
+#' \code{tibble::\link[tibble::tibble]{tibble}()} containing \code{stat_R()}
+#' statistics and diagnostics associated with the chosen method.
 #'
 #' @export
 #' @examples
 #' # Modelled ion count dataset
-#'
 #' # Cook's D style diagnostic-augmentation of ion count data for
 #' # isotope ratios
 #' diag_R(simu_IC, "13C", "12C", force.nm, spot.nm, .plot = TRUE,
 #'        .Xt = Xt.sm, .N = N.sm)
 #'
-diag_R <- function(.df, .ion1, .ion2, ..., .method = "CooksD", .reps = 1,
+diag_R <- function(.IC, .ion1, .ion2, ..., .method = "CooksD", .reps = 1,
                    .Xt = Xt.pr, .N = N.pr, .species = species.nm, .t = t.nm,
                    .output = "complete", .hyp = "none",
                    .alpha_level = 0.05, .return = "results", .meta = TRUE,
@@ -79,90 +78,89 @@ diag_R <- function(.df, .ion1, .ion2, ..., .method = "CooksD", .reps = 1,
   args <- enquos(.Xt = .Xt, .N = .N, .species = .species, .t = .t)
 
   # Metadata
-  if(.meta) meta <- unfold(.df, merge = FALSE)
+  if(.meta) meta <- unfold(.IC, merge = FALSE)
 
-  # Repetitions
+    # Repetitions
   if (.method != "IR") {
-  max <- .reps + 1
+    max <- .reps + 1
 
-  # plot stats
-  if (.output == "flag" & !is.null(.plot_stat)) {
-    .plot_stat <- NULL
-    warning("If argument `.output = flag`, argument `plot_stat` defaults to
-            `NULL`")
-  }
+    # plot stats
+    if (.output == "flag" & !is.null(.plot_stat)) {
+      .plot_stat <- NULL
+      warning("If argument `.output = flag`, argument `plot_stat` defaults to
+              `NULL`")
+      }
 
-  # Empty list for iteration storage
-  ls_tb <- rep_named(as.character(1:max), list2())
-  ls_tb[[1]] <- list2(df = .df, results = NULL)
+    # Empty list for iteration storage
+    ls_tb <- rep_named(as.character(1:max), list2())
+    ls_tb[[1]] <- list2(IC = .IC, results = NULL)
 
-  # Execute repeated cycles of augmentation
-  ls_tb <- ls_tb  %>%
+    # Execute repeated cycles of augmentation
+    ls_tb <- ls_tb  %>%
     purrr::accumulate(
       rerun_diag_R,
       .ion1 = .ion1,
       .ion2 = .ion2,
       !!! gr_by,
       .method = .method,
-      .Xt = !!args[[".Xt"]],
-      .N = !!args[[".N"]],
-      .species = !!args[[".species"]],
-      .t = !!args[[".t"]],
+      # !!! args,
+      .Xt = !! args[[".Xt"]],
+      .N = !! args[[".N"]],
+      .species = !! args[[".species"]],
+      .t = !! args[[".t"]],
       .output = .output,
       .hyp = .hyp,
       .alpha_level = .alpha_level
       )
 
-  if (.plot & .return != "results") {
-    .return <- "results"
-    warning("If `plot` is `TRUE`, `return` defaults to `results`")
-  }
-
-  if (.return == "augmented") {
-    df <-reduce_diag(ls_tb, type = "df") %>%
-      mutate(execution = as.numeric(execution))
-    } else {
-      df <- reduce_diag(ls_tb, type = "results") %>%
-        mutate(execution = as.numeric(execution) - 1)
-    }
-
-  # Return metadata
-  if (.meta & !is.null(meta)) df <- fold(df, type = ".mt",  meta = meta)
-
-  if (.plot) {
-    df %T>%
-      {print(
-        gg_IC(
-          ., .ion1 = .ion1, .ion2 = .ion2, .method = .method,
-          .plot_type = .plot_type, !!!gr_by, .Xt = !!args[[".Xt"]],
-          .N = !!args[[".N"]], .species = !!args[[".species"]],
-          .t = !!args[[".t"]], .labels = .plot_stat, .alpha_level = .alpha_level
-          )
-        )
+    if (.plot & .return != "results") {
+      .return <- "results"
+      warning("If `plot` is `TRUE`, `return` defaults to `results`")
       }
-    }
-  return(df)
+
+    if (.return == "augmented") {
+      IC <-reduce_diag(ls_tb, type = "df") %>%
+      mutate(execution = as.numeric(execution))
+      } else {
+        IC <- reduce_diag(ls_tb, type = "results") %>%
+          mutate(execution = as.numeric(execution) - 1)
+        }
+
+    # Return metadata
+    if (.meta & !is.null(meta)) IC <- fold(IC, type = ".mt",  meta = meta)
+
+    if (.plot) {
+      IC %T>%
+        {print(
+          gg_IC(IC, .ion1 = .ion1, .ion2 = .ion2, .method = .method,
+                .plot_type = .plot_type, !!!gr_by, .Xt = !!args[[".Xt"]],
+                .N = !!args[[".N"]], .species = !!args[[".species"]],
+                .t = !!args[[".t"]], .labels = .plot_stat,
+                .alpha_level = .alpha_level)
+        )}
+      }
+    return(IC)
     } else {
       # Auto-correlation
-      df <- diag_R_exec(
-        .df, .ion1 = .ion1, .ion2 = .ion2, !!! gr_by, .method = "IR",
+      IC <- diag_R_exec(
+        .IC, .ion1 = .ion1, .ion2 = .ion2, !!! gr_by, .method = "IR",
         .Xt = !!args[[".Xt"]], .N = !!args[[".N"]],
         .species = !!args[[".species"]], .t = !!args[[".t"]], .hyp = .hyp,
         .alpha_level = .alpha_level
         )
       if (.plot) {
-
-      df %T>%
-        {print(gg_IR(., .lag = lag, .acf = acf, .flag = flag, !!! gr_by,
-                     .hat = 0, .sd = e_acf))
+        IC %T>%
+          {print(
+            gg_IR(., .lag = lag, .acf = acf, .flag = flag, !!! gr_by,
+                  .hat = 0, .sd = e_acf)
+            )}
         }
-      }
-  return(df)
+    return(IC)
   }
 }
 
 
-rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .method,.Xt = Xt.pr,
+rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .method, .Xt = Xt.pr,
                          .N = N.pr, .species = species.nm, .t = t.nm,
                          .output, .hyp, .alpha_level){
 
@@ -170,24 +168,24 @@ rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .method,.Xt = Xt.pr,
   # Grouping
   gr_by <- enquos(...)
 
-  # remove white space in ion names
-  .ion1 <- str_replace_all(str_trim(.ion1), "\\s", "_")
-  .ion2 <- str_replace_all(str_trim(.ion2), "\\s", "_")
+  # Remove white space in ion names
+  .ion1 <- ion_trim(.ion1)
+  .ion2 <- ion_trim(.ion2)
 
   # stat_R variables
   args <- enquos(.Xt = .Xt, .N = .N, .species = .species, .t = .t)
 
-  # Heavy isotope
+  # Rare isotope
   Xt1 <- quo_updt(args[[".Xt"]], post = .ion1) # count rate
   N1 <- quo_updt(args[[".N"]], post = .ion1) # counts
 
-  # Ligh isotope
+  # Common isotope
   Xt2 <- quo_updt(args[[".Xt"]], post = .ion2) # count rate
   N2  <- quo_updt(args[[".N"]], post = .ion2) # counts
 
   # Execute
   out <- diag_R_exec(
-    out$df,
+    out$IC,
     .ion1,
     .ion2,
     !!! gr_by,
@@ -203,32 +201,25 @@ rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .method,.Xt = Xt.pr,
   # Save augmented dataframe for next cycle
   df_aug <- select(
     filter(out, flag == "confluent"),
-    !!!gr_by, !!args[[".t"]], !!Xt1, !!Xt2, !!N1, !!N2
+    !!! gr_by, !! args[[".t"]], !! Xt1, !! Xt2, !! N1, !! N2
     ) %>%
-    pivot_longer(
+    tidyr::pivot_longer(
       -c(!!!gr_by, !!args[[".t"]]),
       names_to = c(".value", as_name(args[[".species"]])),
-      names_sep = "[[:punct:]]{1}(?=[[:digit:]]{1,2})"
+      names_sep = "\\.(?=[[:digit:]]{1,2})"
       )
 
   if (.output == "flag") {
-    ls_ion1 <- paste(paste(point::names_stat_Xt$name, as_name(args[[".Xt"]]), sep = "_"), .ion1, sep = ".")
-    ls_ion2 <-paste( paste(point::names_stat_Xt$name, as_name(args[[".Xt"]]), sep = "_"), .ion2, sep = ".")
-    ls_R <- paste(point::names_stat_R$name, "R", as_name(args[[".Xt"]]), sep = "_")
-    ls_vars <- c(ls_ion1, ls_ion2, ls_R, "R.nm")
-    ls_vars <- ls_vars[!ls_vars  %in% paste0("hat_S_" ,as_name(args[[".Xt"]]), ".", .ion1)]
-    out <- select(out, -any_of(ls_vars))
-
-                    #ends_with(paste0("R_", as_name(args[[".Xt"]]))))
-  }
+    # filter all stat variables out, except Poisson prediction for rare isotope
+    except <- quo_updt(args[[".N"]], pre = "hat_S", post = .ion1) %>% as_name()
+    out <- select(out, -any_of(all_args(args, .ion1, .ion2, except)))
+    }
   # Output
-  out <- list2(df = df_aug, results = out)
-
+  out <- list2(IC = df_aug, results = out)
   return(out)
-
 }
 
-diag_R_exec <- function(.df, .ion1, .ion2, ..., .method, .Xt = Xt.pr, .N = N.pr,
+diag_R_exec <- function(.IC, .ion1, .ion2, ..., .method, .Xt = Xt.pr, .N = N.pr,
                         .species = species.nm, .t = t.nm, .hyp, .alpha_level){
 
   # Quoting the call (user-supplied expressions)
@@ -256,7 +247,7 @@ diag_R_exec <- function(.df, .ion1, .ion2, ..., .method, .Xt = Xt.pr, .N = N.pr,
     set_names(nm = diag_vc)
 
   # Descriptive an predictive statistics for single ions and ion ratios
-  stat_Xt(.df, !!! gr_by, .Xt = !!args[["Xt"]], .N = !!args[["N"]],
+  stat_Xt(.IC, !!! gr_by, .Xt = !!args[["Xt"]], .N = !!args[["N"]],
           .species = !!args[["species"]], .t = !!args[["t"]],
           .output = "complete") %>%
     stat_R(.ion1, .ion2, !!! gr_by, .Xt = !!args[["Xt"]], .N = !!args[["N"]],
@@ -269,9 +260,17 @@ diag_R_exec <- function(.df, .ion1, .ion2, ..., .method, .Xt = Xt.pr, .N = N.pr,
 
 # Reduce the results to a single dataframe
 reduce_diag <- function(ls, type){
-
   purrr::transpose(ls) %>%
   purrr::pluck(type) %>%
   bind_rows(.id = "execution")
+}
 
+all_args <- function(args, ion1, ion2, except = NULL) {
+  args_Xt <- sapply(
+    purrr::flatten(purrr::map(c(ion1, ion2), ~arg_builder(args, "Xt", .x))),
+    as_name
+    )
+  args_R <- sapply(arg_builder(args, "R"), as_name)
+  vc_args <- c(args_Xt, args_R, R = "R.nm")
+  vc_args[!vc_args %in% except]
 }
