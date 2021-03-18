@@ -22,14 +22,17 @@ knitr::opts_chunk$set(
 
 
 # Precision of Ion Count Data
+
 <!-- Secondary ion mass spectrometry (SIMS) have become an increasingly popular tool for Earth scientists to investigate natural phenomena such as biomineralization and sediment diagenesis, or to track the fate of labelled tracers in stable isotope probing experiments.  -->
 The random nature of secondary ions emitted from an analytical substrate (e.g. rock sample) during sputtering can be described by Poisson statistics, which can be used to predict the precision of pulsed ion counts (e.g. measurements with a *Cameca NanoSIMS 50L*) under ideal circumstances. More specifically, the variation can be deduced from the total counts of secondary ions. Usefully, we can compare these predictive values with the descriptive statistics; essentially estimates of the true population location (e.g. mean) and spread (variance). This requires the assumption that the sample is taken from an infinite population. In the package `point`, tools are provided that perform these statistical tests on raw ion count data with appropriate error propagation in the case of isotope ratios. Working with raw ion count data has certain benefits as it allows subsetting of certain parts of the analysis by checking for anomalous measurements. The latter is more detailed in the vignette [IC-diagnostics](IC-diagnostics.html), which itself heavily relies on the here outlined functions.
+
 
 ```{r setup}
 library(point) # load package
 ```
 
 The following packages are used in the examples that follow.
+
 
 ```{r additional_packages, message = FALSE}
 library(dplyr) # manipulating data
@@ -47,15 +50,16 @@ library(stringr) # manipulating strings
 * Analysis: $n$-series of measurements $N_{(i)} = M_j$ 
 * Study: $m$-series of analyses $M_{(j)}$, constituting the different spots on the analytical substrate  
 
+
 ## Example dataset
 
 Example datatsets can be accessed as follows with the function `read_IC` (more information on reading raw ion count data can be found in the vignette [IC-read](IC-read.html)).
 
+
 ```{r warning=FALSE}
 # Use point_example() to access the examples bundled with this package 
 
-# Carry-out the routine point workflow
-
+# Carry-out the routine point work-flow
 # Raw data containing 13C and 12C counts on carbonate
 tb_rw <- read_IC(point_example("2018-01-19-GLENDON"), hide = FALSE)
 
@@ -71,11 +75,10 @@ tb_rw <- purrr::map2(
   ) %>% 
 # Combine but remove duplicate observations (related isotope pairs)  
   purrr::reduce(. , union)  
-
-
 ```
 
-The ion counts obtained from the 2018-01-19-GLENDON dataset includes the species: `r sapply(unique(tb_rw$species.nm), ion_labeller, "latex")`, of which some are poly-atomic.
+
+The ion counts obtained from the 2018-01-19-GLENDON dataset includes the species: `r sapply(unique(tb_rw$species.nm), ion_labeller)`, of which some are poly-atomic.
 
 As a first step, the counts of a single count cycle ($N_i$) are normalised against the time it took to complete the cycle ($0.541$ s) to account for differences in the count times for two different isotopes during stable isotopic SIMS analysis. Hence, for the time period ($t$) over which an isotope species $a$ during measurement $i$ accumulated, the count rate is given by 
 
@@ -94,16 +97,19 @@ tb_pr <- cor_IC(tb_rw)
 
 This function can also correct the ion counts for effects associated with the machine setup, such as, artifacts induced by the ion detector type. These settings mostly affect the accuracy of the analysis. For more information on this topic see the vignette [IC-process](IC-process.html).
 
+
 ## Internal precision of ion count data
 Internal analytical precision is a consistency check of a series of analytical results. The package `point` contains several functions needed to obtain the descriptive and predictive statistics (Poisson statistics) to assess the internal precision of count data for single ions as well as isotope ratios. In the here-outlined examples, the internal consistency of ion count data generated with a *NanoSIMS Cameca 50L* is validated, and the underlying principals of the statistical treatment is explained.
+
 
 ### Descriptive and predictive statistics for single ions
 The function `stat_Xt` can be applied to the previously processed dataset and gives descriptive and predictive statistics of all the individual ions. The function requires the following arguments: `df`, which is a [tibble](https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html) containing the processed ion count data; `Xt`, which refers to the column in the tibble containing the ion count rates; `N`, are the counts; and `species`, which refers to the column containing a reference for the chemical species under investigation. The dots `...` should be used to define a grouping variable for an analysis (here defined as the sample- and file-names of the loaded data). In addition, it is possible to choose whether the variable names can be rendered with $\LaTeX$; and whether to create a `tibble` that contains only statistics as a summary table `"sum"`; a `tibble` with the same number of observations as the input dataset `"stat"`; or return a `tibble` complete with both the statistics and the original dataset. 
 
+
 ```{r}
 # Single ion descriptive an predictive statistics for all measured ions
-tb_Xt <- stat_Xt(tb_pr, sample.nm, file.nm, .stat = c("Ntot", "M", "S", "SeM"), 
-                 .label = "latex")
+tb_Xt <- stat_Xt(tb_pr, sample.nm, file.nm, .stat = c("tot", "M", "S", "SeM"), 
+                 .label = "webtex")
 ```
 
 
@@ -117,6 +123,7 @@ knitr::kable(
 
 The following statistics are calculated with the function `stat_Xt`: the number of measurements ($n$), total number of counts ($N_{tot} = \sum_{i=1}^{n}N_i$), the arithmetic mean ($\bar{X}$), the standard deviation ($s_X$), the standard error of the mean ($s_{\bar{X}}$), the predicted standard deviation ($\hat{s}_X$), and the predicted standard error of the mean ($\hat{s}_{\bar{X}}$) for which the underlying principals are delineated in detail below.
 
+
 #### Arithmetic mean
 The sample mean ($\bar{X}^a$) of chemical species $a$ over a single analysis is given by: 
 
@@ -126,6 +133,7 @@ The sample mean ($\bar{X}^a$) of chemical species $a$ over a single analysis is 
 \end{equation}
   
 To validate the internal consistency of the ion count data, it is necessary to define the internal precision of the analysis. This can be done with the standard deviation ($s_x$), which gives the spread of the sample, and the standard error of the mean ($s_{\bar{x}}$), which defines how well this $\bar{X}$ approximates the true population mean ($\mu$). These statistics rely on the assumption that the underlying probability distribution follows a normal (Gaussian) distribution.    
+
 
 #### Standard deviation
 The standard deviation for a limited sample of the population gives a measure of how individual measurements are spread about the mean in one analysis, and is given by:
@@ -137,6 +145,7 @@ The standard deviation for a limited sample of the population gives a measure of
 
 where $n$ is the number of measurement cycles in the analysis and $X_i$ is the $i$-th measurement cycle. The number of measurements is subtracted with one ($n - 1$) to express that only $n - 1$ of the $(x_{i}-\bar{x})^2$ are independent. The sample standard deviation can inform about the confidence whether a single measurement falls within a given range of the sample mean value. 
 
+
 #### Standard error of the mean
 The standard error of the mean ($s_{\bar{X}^a}$) provides a measure of how well the mean of a limited sample (i.e., analysis) approximates the actual population mean. This measure can be used to gauge the precision of the analysis with $n$ measurement cycles. This value is dependent on the number of measurements ($n$) and thus becomes smaller with increasing measurement numbers (i.e. $\bar{X}$ becomes more precise). The standard error of the mean is given by the following equation.
 
@@ -144,6 +153,7 @@ The standard error of the mean ($s_{\bar{X}^a}$) provides a measure of how well 
   s_{\bar{X}^a} = \frac{s_{X^a}}{\sqrt{n}}
   (\#eq:se)
 \end{equation}
+
 
 #### Predicted standard deviation
 Ion count measurements have an inherent fundamental imprecision, which is dictated by the random nature of secondary ion production. This restrict the precision of the analysis to a certain analytical threshold. The amplitude of this inherent variation can be gauged with Poisson statistics. The Poisson distribution describes the likelihood of random events occurring over a defined (and fixed) time-period. Further conditions to be satisfied to validate the assumption of a Poisson distribution is the observation that $N$ should be able to occur over a larger number of occasions and that the probability of the event occurring at a particular occasions is limited but constant. In the case of SIMS measurements $N_i$ is the number of secondary ions counted by the detector during a single measurement cycle [see @Fitzsimons2000a]. 
@@ -171,6 +181,7 @@ where:
 
 In this formulation, the hat on $\hat{s}_N$ denotes that the statistics is predictive, instead of $s_X$ which is an observed value. The commonality of the two measures is, however, that they are a estimate of the true population $\sigma$. 
 
+
 #### Predicted standard error of the mean
 In a similar fashion, the standard error of the mean for Poisson statistics depends on the number of measurements ($n$), and can be formulated as follows:
 
@@ -179,13 +190,14 @@ In a similar fashion, the standard error of the mean for Poisson statistics depe
   (\#eq:sepois)
 \end{equation}
 
+
 ### Descriptive and predictive statistics for isotope ratios
-The function `stat_R` can be used on the previously processed dataset and gives descriptive and predictive statistics for a pre-specified isotope ratio ($R$); e.g. $^{13}$C/$^{12}$C. Note that only isotope pairs give sensible statistical results as the ionization potential for two isotope of one element should be relatively similar. The function requires the following arguments; `df`, which is a tibble containing the ion count data; `Xt`, which is the column in the tibble containing the ion count rates; `N`, which is column with the processed counts; `species`, which refers to the column containing a reference for the chemical species under investigation; `ion1`, a character string representing the heavy ion of $R$ (e.g. `"13C"`); and `ion2`, the light isotope of $R$  (e.g. `"12C"`). The dots `...` should be used to define a grouping variable for an analysis (here defined as the sample- and file-names of the loaded data). Again for this function, the arguments `latex` and `output` tailor the generated `tibble` to the specific need; and follows the same definitions as outlined for `stat_Xt` (see above). This function has on additional argument named `zero`, which removes analysis that contain measurements with zero counts, and prevents the generation of `NaN` in the output statistics. 
+The function `stat_R` can be used on the previously processed dataset and gives descriptive and predictive statistics for a pre-specified isotope ratio ($R$); e.g. $^{13}$C/$^{12}$C. Note that only isotope pairs give sensible statistical results as the ionization potential for two isotope of one element should be relatively similar. The function requires the following arguments; `df`, which is a tibble containing the ion count data; `Xt`, which is the column in the tibble containing the ion count rates; `N`, which is column with the processed counts; `species`, which refers to the column containing a reference for the chemical species under investigation; `ion1`, a character string representing the heavy ion of $R$ (e.g. `"13C"`); and `ion2`, the light isotope of $R$  (e.g. `"12C"`). The dots `...` should be used to define a grouping variable for an analysis (here defined as the sample- and file-names of the loaded data). Again for this function, the arguments `webtex` and `output` tailor the generated `tibble` to the specific need; and follows the same definitions as outlined for `stat_Xt` (see above). This function has on additional argument named `zero`, which removes analysis that contain measurements with zero counts, and prevents the generation of `NaN` in the output statistics. 
 
 
 ```{r}
 # Descriptive an predictive statistics for 13C/12C ratios
-tb_R <- stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .label = "latex", 
+tb_R <- stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .label = "webtex", 
                .stat = c("M", "RS", "RSeM", "hat_RS", "hat_RSeM", "chi2"))
 ```
 
@@ -198,7 +210,9 @@ knitr::kable(
   ) 
 ```
 
+
 The following statistics are calculated with the function `stat_R` for a specific isotope ratio: number of measurements ($n$); the arithmetic mean ($\bar{R}$); the standard deviation and relative standard deviation ($s_R$ and $\epsilon_R$); the standard error of the mean and its relative counterpart ($s_{\bar{R}}$ and $\epsilon_{\bar{R}}$), the predicted standard deviation and the predicted relative standard deviation ($\hat{s}_R$ and $\hat{\epsilon}_R$); and the predicted standard error of the mean and its relative counterpart ($\hat{s}_{\bar{X}}$ and $\hat{\epsilon}_{\bar{R}}$); as well as the reduced $\chi^2$-squared, for which the underlying principals are delineated in detail below.
+
 
 #### Descriptive statistics with error propagation for isotope ratios
 The mean isotope ratio ($\bar{R}$) can be calculated from the mean values of the specific ions of the complete analysis.
@@ -304,26 +318,25 @@ The reduced $\chi^2$ can be used to assess the machine performance as it cross-v
   (\#eq:chi2)
 \end{equation}
 
-where values close to $1$ suggest good agreement between the actual measurement and the predicted value. Values lower than $1$ suggest that the analysis was better than predicted, and values higher than $1$ indicate that the analysis was worse than predicted by Poisson statistics.
+where values close to $1$ suggest good agreement between the actual measurement and the predicted value [@Kilburn2015a]. Values lower than $1$ suggest that the analysis was better than predicted, and values higher than $1$ indicate that the analysis was worse than predicted by Poisson statistics.
 
 
 ## External precision of ion count data
+
 A series of several ion count analyses is usually performed in a study. The consistency of such $m$-series of analyses is usually gauged with a homogeneous reference material; the so-called external precision, repeatability or reproducivbility of the study [@Fitzsimons2000a]. This value is usually reported as the standard deviation of the $m$-series of analyses on the reference material. In calculating this statistic the $n$ in Eq. \@ref(eq:std) is replaced by $m$. The standard deviation is reported as we are interested in how a single analysis relates to the variability of the study, where variability is the sum of the random nature of counting statistics, machine performance and homogeneity of the analytical substrate. Conversely, we are not interested in how precisely we can approach the mean of an $m$-series of analysis (i.e. the mean of the study). 
 
 Similarly the predicted standard deviation of an $m$-series of analyses can be calculated following similar conventions as outlined above. Here, we substitute $\bar{N}^a$ of a chemical species $a$ by  $\bar{M}^a$ (i.e., the mean counts for an $m$-series of analyses) in Eq. \@ref(eq:stdpois) for single ions and \@ref(eq:stdpoisR1) (and subsequent derivations of the equation) for isotope ratios. Note, that these formulations consider counts per analysis and *not* counts per measurement.
 
-To calculate the external precision for ion ratios with the package `point` apply the functions `stat_Xt()` and `stat_R()` in conjunction on the same dataset (e.g. a raw ion count dataset containing replicate measurements on a reference material). Note, that the second call should calculate the statistics over the summary table of the first iteration.
+To calculate the external precision for ion ratios with the package `point`, use the nest argument of `stat_R()` to define groupings of analyses (e.g. a raw ion count dataset containing replicate measurements on a reference material). 
 
 
 ```{r}
-# summary statistics of the dataset (set latex to FALSE and output to SUM)
-tb_Xt <- stat_Xt(tb_pr, sample.nm, file.nm, .stat = c("Ntot", "M", "S", "SeM"))
-
-tb_R_ext  <- stat_R(tb_Xt, "13C", "12C", sample.nm, .Xt = M_Xt.pr, 
-                    .N = Ntot_Xt.pr, 
+# external precision of the dataset 
+tb_R_ext  <- stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .nest = sample.nm, 
                     .stat =  c("M", "RS", "RSeM", "hat_RS", "hat_RSeM", "chi2"), 
-                    .label = "latex")
+                    .label = "webtex")
 ```
+
 
 ```{r echo=FALSE}
 knitr::kable(
@@ -332,6 +345,7 @@ knitr::kable(
   caption = "Summary statistics for external precision of isotope ratios."
   ) 
 ```
+
 
 The number of counts of any single analysis $j$ ($M_j$) is equal to to sum of all counts ($N_i$) in an analysis of $n$ measurements, an thus:
 
@@ -344,28 +358,28 @@ Given the previous relationship, the average predicted standard error of the mea
 
 We can validate this derivation as follows:
 
+
 ```{r warning=FALSE, message=FALSE}
 # Prove of the previous statement with the example dataset
-tb_R <- stat_R(tb_pr, "13C", "12C", sample.nm,  file.nm, .zero = TRUE)
+tb_R_int <- stat_R(tb_pr, "13C", "12C", sample.nm,  file.nm, .stat = "hat_RSeM",
+                   .zero = TRUE)
 
-tb_R_ext <- stat_R(tb_Xt, "13C", "12C", sample.nm, .Xt = M_Xt.pr, 
-                   .N = Ntot_Xt.pr, .zero = TRUE)
+tb_R_ext <- stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .nest = sample.nm, 
+                   .stat = "hat_RS",.zero = TRUE)
 
 # The average of the internal relative predicted standard error of the mean 
 # (per mille)
-filter(tb_R, str_detect(sample.nm, "Belemnite")) %>%  
-  pull(hat_RSeM_R_Xt.pr) %>% 
+filter(tb_R_int, str_detect(sample.nm, "Belemnite")) %>%  
+  pull(hat_RSeM_R_N.pr) %>% 
   mean() %>% 
   round(1)
 
 # The external predicted standard deviation (per mille)
-filter(tb_R_ext, str_detect(sample.nm, "Belemnite")) %>% 
-  pull(hat_RS_R_M_Xt.pr) %>% 
-  round(1)
-
+round(tb_R_ext$hat_RS_R_tot_N.pr, 1)
 ```
 
 
 The values match and confirm the previous relationship for this study.
+
 
 # References

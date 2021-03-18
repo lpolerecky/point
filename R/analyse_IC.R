@@ -1,6 +1,6 @@
 #' Analyse raw ion count data
 #'
-#' \code{stat_Xt} function for descriptive and predictive statistics on single
+#' \code{stat_X} function for descriptive and predictive statistics on single
 #' ion precision.
 #' \code{stat_R} function for descriptive and predictive statistics on isotope
 #' ratios (R) precision with appropriate error propagation.
@@ -17,7 +17,7 @@
 #' @param .ion1 A character string constituting the heavy isotope ("13C").
 #' @param .ion2 A character string constituting the light isotope ("12C").
 #' @param ... Variables for grouping.
-#' @param .Xt A variable constituting the ion count rate (defaults to
+#' @param .X A variable constituting the ion count rate (defaults to
 #' variables generated with \code{read_IC()}.)
 #' @param .N A variable constituting the ion counts (defaults to variables
 #' generated with \code{read_IC()}.).
@@ -26,7 +26,7 @@
 #' @param .t A variable constituting the time of the analyses (defaults to
 #' variables generated with \code{read_IC()}.).
 #' @param .stat Select statistics (e.g. \code{c("M", "RS"}), see the tables
-#' \code{point::names_stat_Xt} and \code{point::names_stat_R} for the full
+#' \code{point::names_stat_X} and \code{point::names_stat_R} for the full
 #' selection of statistics available (default uses all statistic
 #' transformations).
 #' @param .label A character string indicating whether variable names are latex
@@ -53,13 +53,13 @@
 #' tb_pr <- cor_IC(tb_rw)
 #'
 #' # Single ion descriptive an predictive statistics for all measured ions
-#' stat_Xt(tb_pr, file.nm)
+#' stat_X(tb_pr, file.nm)
 #'
 #' # Descriptive an predictive statistics for 13C/12C ratios
 #' stat_R(tb_pr, "13C", "12C", file.nm, .zero = TRUE)
 #'
-stat_Xt <- function(.IC, ..., .Xt = Xt.pr, .N = N.pr, .species = species.nm,
-                    .t = t.nm, .stat = point::names_stat_Xt$name, .label = NULL,
+stat_X <- function(.IC, ..., .X = Xt.pr, .N = N.pr, .species = species.nm,
+                    .t = t.nm, .stat = point::names_stat_X$name, .label = NULL,
                     .output = "sum"){
 
   stopifnot(tibble::is_tibble(.IC))
@@ -68,13 +68,13 @@ stat_Xt <- function(.IC, ..., .Xt = Xt.pr, .N = N.pr, .species = species.nm,
   }
 
   # Quoting the call (user-supplied expressions)
-  args <- enquos(.Xt = .Xt, .N = .N, .species = .species, .t = .t)
+  args <- enquos(.X = .X, .N = .N, .species = .species, .t = .t)
 
   # Grouping
   gr_by <- enquos(...)
 
   # New quosures
-  new_args <- arg_builder(args, "Xt")
+  new_args <- arg_builder(args, "X")
   args <- append(args, new_args)
 
   # The statistics
@@ -84,13 +84,13 @@ stat_Xt <- function(.IC, ..., .Xt = Xt.pr, .N = N.pr, .species = species.nm,
     # sum of ion counts (important for external reproducibility calcs)
     sum(!! args[[".N"]]),
     # mean ion count rate
-    mean(!! args[[".Xt"]]),
+    mean(!! args[[".X"]]),
     # standard deviation (SD) count rate
-    sd(!! args[[".Xt"]]),
+    sd(!! args[[".X"]]),
     # RSD ion count rate
-    (!! args[["S_Xt"]] / !! args[["M_Xt"]]) * 100,
+    (!! args[["S_X"]] / !! args[["M_X"]]) * 100,
     # standard error of the mean (SE) count rate
-    sd(!! args[[".Xt"]]) / sqrt(n()),
+    sd(!! args[[".X"]]) / sqrt(n()),
     # predicted SD count rate
     sqrt(mean(!! args[[".N"]])),
     # predicted RSD count rate
@@ -98,7 +98,7 @@ stat_Xt <- function(.IC, ..., .Xt = Xt.pr, .N = N.pr, .species = species.nm,
     # predicted SE count rate
     sqrt(mean(!! args[[".N"]]) / n()),
     # reduced chi squared
-    (!! args[["SeM_Xt"]] / !! args[["hat_SeM_N"]]) ^ 2
+    (!! args[["SeM_X"]] / !! args[["hat_SeM_N"]]) ^ 2
     )
 
   # The statistic names (depend on user-supplied expression)
@@ -115,10 +115,10 @@ stat_Xt <- function(.IC, ..., .Xt = Xt.pr, .N = N.pr, .species = species.nm,
   # Render latex variable names
   if (!is.null(.label)) {
     ls_latex <- set_names(
-    pos_vars,
-    nm = purrr::map_chr(.stat, ~stat_labeller(stat = .x, label = .label))
-    )
-  }
+      pos_vars,
+      tex_labeller(point::names_stat_X, .stat, .label)
+      )
+    }
 
   # Evaluate expressions
   IC <- group_by(.IC, !!! gr_by, !! args[[".species"]]) %>%
@@ -145,10 +145,10 @@ stat_Xt <- function(.IC, ..., .Xt = Xt.pr, .N = N.pr, .species = species.nm,
   return(IC)
   }
 
-#' @rdname stat_Xt
+#' @rdname stat_X
 #'
 #' @export
-stat_R <- function(.IC, .ion1, .ion2, ..., .Xt = Xt.pr, .N = N.pr,
+stat_R <- function(.IC, .ion1, .ion2, ..., .X = Xt.pr, .N = N.pr,
                    .species = species.nm, .t = t.nm, .nest = NULL,
                    .stat = point::names_stat_R$name, .label = NULL,
                    .output = "sum", .zero = FALSE){
@@ -160,7 +160,7 @@ stat_R <- function(.IC, .ion1, .ion2, ..., .Xt = Xt.pr, .N = N.pr,
   }
 
   # Quoting the call (user-supplied expressions)
-  args <- enquos(.Xt = .Xt, .N = .N, .species = .species, .t = .t)
+  args <- enquos(.X = .X, .N = .N, .species = .species, .t = .t)
   # Grouping
   gr_by <- enquos(...)
   # Nesting
@@ -173,11 +173,11 @@ stat_R <- function(.IC, .ion1, .ion2, ..., .Xt = Xt.pr, .N = N.pr,
 
     # Calculate single ion stat to obtain mean and total ion counts
     data_env <- env(data = .IC)
-    IC <- call2("stat_Xt", .IC, !!! gr_by, !!! args, .ns = "point") %>%
+    IC <- call2("stat_X", .IC, !!! gr_by, !!! args, .ns = "point") %>%
       eval(envir = data_env)
 
     # Updated quotes
-    args[[".Xt"]] <- quo_updt(args[[".Xt"]], pre = "M")
+    args[[".X"]] <- quo_updt(args[[".X"]], pre = "M")
     args[[".N"]] <- quo_updt(args[[".N"]], pre = "tot")
     # Updated grouping
     gr_by <- nest
@@ -208,10 +208,10 @@ stat_R <- function(.IC, .ion1, .ion2, ..., .Xt = Xt.pr, .N = N.pr,
   args <- list2(
     !!! args,
     # Update quosures (rare isotope)
-    Xt1 = quo_updt(args[[".Xt"]], post = .ion1), # count rate
+    X1 = quo_updt(args[[".X"]], post = .ion1), # count rate
     N1 = quo_updt(args[[".N"]], post = .ion1), # counts
     # Update quosures (common isotope)
-    Xt2 = quo_updt(args[[".Xt"]], post = .ion2), # count rate
+    X2 = quo_updt(args[[".X"]], post = .ion2), # count rate
     N2 = quo_updt(args[[".N"]], post = .ion2) # counts
     )
 
@@ -224,25 +224,25 @@ stat_R <- function(.IC, .ion1, .ion2, ..., .Xt = Xt.pr, .N = N.pr,
     # number of measurements
     n(),
     # mean isotope ratio
-    mean(!! args[["Xt1"]]) / mean(!! args[["Xt2"]]),
+    mean(!! args[["X1"]]) / mean(!! args[["X2"]]),
     # SD isotope ratio
-    stat_SDprop(!! args[["Xt1"]], !! args[["Xt2"]]),
+    stat_SDprop(!! args[["X1"]], !! args[["X2"]]),
     # RSD isotope ratio
-    (!! args[["S_R_Xt"]] / !! args[["M_R_Xt"]]) * 1000,
+    (!! args[["S_R_X"]] / !! args[["M_R_X"]]) * 1000,
     # SE isotope ratio
-    !! args[["S_R_Xt"]] / sqrt(n()),
+    !! args[["S_R_X"]] / sqrt(n()),
     # RSE isotope ratio
-    (!! args[["SeM_R_Xt"]] / !! args[["M_R_Xt"]]) * 1000,
+    (!! args[["SeM_R_X"]] / !! args[["M_R_X"]]) * 1000,
     # predictive SD isotope ratio
     stat_SDprop(!! args[["N1"]], !! args[["N2"]], predicted = TRUE),
     # predictive RSD isotope ratio
-    !! args[["hat_S_R_N"]] / !! args[["M_R_Xt"]] * 1000,
+    !! args[["hat_S_R_N"]] / !! args[["M_R_X"]] * 1000,
     # predictive SE isotope ratio
     !! args[["hat_S_R_N"]]  / sqrt(n()),
     # predictive RSE isotope ratio
-    !! args[["hat_SeM_R_N"]]  / !! args[["M_R_Xt"]] * 1000,
+    !! args[["hat_SeM_R_N"]]  / !! args[["M_R_X"]] * 1000,
     # reduced chi squared
-    (!! args[["SeM_R_Xt"]] / !! args[["hat_SeM_R_N"]]) ^ 2
+    (!! args[["SeM_R_X"]] / !! args[["hat_SeM_R_N"]]) ^ 2
     )
 
   # The statistic names (depend on user-supplied expression)
@@ -253,8 +253,8 @@ stat_R <- function(.IC, .ion1, .ion2, ..., .Xt = Xt.pr, .N = N.pr,
 
   # Extra arg in case of mutate and transmute (isotope ratio for each time step)
   if (.output != "sum") {
-    R <- paste("R", as_name(args[[".Xt"]]), sep = "_")
-    calcs[[R]] <- quo(!! args[["Xt1"]] / !! args[["Xt2"]])
+    R <- paste("R", as_name(args[[".X"]]), sep = "_")
+    calcs[[R]] <- quo(!! args[["X1"]] / !! args[["X2"]])
   }
 
   # Stat selection
@@ -271,7 +271,7 @@ stat_R <- function(.IC, .ion1, .ion2, ..., .Xt = Xt.pr, .N = N.pr,
         ~stat_labeller(var = "R", stat = .x, type = type, label = .label)
         )
       )
-  }
+    }
 
   # Evaluate expressions and calls
   IC <- .IC  %>%
@@ -406,22 +406,32 @@ zeroCt_cal <- function(zero_arg, .ion1, .ion2, gr_by, .N, .species, .t){
       }
 }
 
-# build new quosures and names for calcs
-arg_builder <- function(args, stat){
+# Build new quosures and names for calcs
+arg_builder <- function(args, stat, ion = NULL){
 
-  if (stat == "Xt") stat_names <- point::names_stat_Xt
+  if (stat == "X") stat_names <- point::names_stat_X
   if (stat == "R") {
-    stat_names <- mutate(
-      point::names_stat_R,
-      name = paste(name, "R", sep = "_")
-      )
+    stat_names <- tidyr::unite(point::names_stat_R, "name", c(name, ratio))
   }
 
   arg_names <- paste(stat_names$name, stat_names$origin, sep = "_")
-  purrr::map2(
+  args <- purrr::map2(
     stat_names$origin,
     stat_names$name,
     ~quo_updt(args[[paste0(".", .x)]], pre = .y)
-    ) %>%
-  set_names(nm = arg_names)
+    )
+  if (!is.null(ion)) {
+    args <- purrr::map(args, quo_updt, post = ion)
+    }
+  set_names(args, nm = arg_names)
+}
+
+# latex labeller function
+tex_labeller <- function(vars, stat, type){
+  names_vars <- filter(vars, name %in% stat)
+  purrr::map2_chr(
+    names_vars$origin,
+    names_vars$name,
+    ~stat_labeller(var = .x, stat = .y, label = type)
+  )
 }
