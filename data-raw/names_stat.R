@@ -13,7 +13,7 @@ names_stat_X <- tibble(
     "hat_SeM",
     "chi2"
     ),
-  origin = c("t", "N", rep("X", 4), rep("N", 3), "t"),
+  origin = c("t", "N", rep("X", 4), rep("N", 4)),
   label = c(
     "observations",
     "total count",
@@ -45,7 +45,7 @@ names_stat_R <- tibble(
     "chi2"
     ),
   ratio = "R",
-  origin = c("t", rep("X", 5), rep("N", 4), "t"),
+  origin = c("t", rep("X", 5), rep("N", 5)),
   label = c(
     "observations",
     "mean",
