@@ -1,17 +1,19 @@
 ## code to prepare nm_stat and R_stat dataset goes here
 
-names_stat_Xt <- tibble(
+names_stat_X <- tibble(
   name = c(
     "n",
-    "Ntot",
+    "tot",
     "M",
     "S",
     "RS",
     "SeM",
     "hat_S",
+    "hat_RS",
     "hat_SeM",
     "chi2"
     ),
+  origin = c("t", "N", rep("X", 4), rep("N", 3), "t"),
   label = c(
     "observations",
     "total count",
@@ -20,12 +22,13 @@ names_stat_Xt <- tibble(
     "relative standard deviation",
     "standard error of the mean",
     "predicted standard deviation",
+    "predicted relative standard deviation",
     "predicted standard error of the mean",
     "chi squared"
   )
 )
 
-usethis::use_data(names_stat_Xt, overwrite = TRUE)
+usethis::use_data(names_stat_X, overwrite = TRUE)
 
 names_stat_R <- tibble(
   name = c(
@@ -41,6 +44,8 @@ names_stat_R <- tibble(
     "hat_RSeM",
     "chi2"
     ),
+  ratio = "R",
+  origin = c("t", rep("X", 5), rep("N", 4), "t"),
   label = c(
     "observations",
     "mean",
