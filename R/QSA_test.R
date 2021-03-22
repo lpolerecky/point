@@ -6,11 +6,11 @@
 #' depend on the ion counting system. Quasi simultaneous arrival is one of
 #' those potential errors that can also impact isotope ratios.
 #'
-#' @param .df A tibble containing processed ion count data.
+#' @param .IC A tibble containing processed ion count data.
 #' @param .ion1 A character string constituting the heavy isotope ("13C").
 #' @param .ion2 A character string constituting the light isotope ("12C").
 #' @param ... Variables for grouping.
-#' @param .Xt A variable constituting the ion count rate (defaults to
+#' @param .X A variable constituting the ion count rate (defaults to
 #' variables generated with \code{read_IC()}.)
 #' @param .N A variable constituting the ion counts (defaults to variables
 #' generated with \code{read_IC()}.).
@@ -20,13 +20,13 @@
 #' variables generated with \code{read_IC()}.).
 #' @param .plot Currently not supported.
 #'
-#' @return A \code{\link[tibble:tibble]{tibble}} containing the original dataset
-#' and adds the variables: \code{beta}, \code{t_QSA}, and \code{p_QSA} that
-#' summarise the results of an linear model fitted by OLS (respectively; the
-#' slope and the associated student's t test statistic and  p value) on the
-#' ion count rates of the common isotope (as predictor) and the isotope ratio
-#' (as dependent variable). The p value is for \code{beta} being different from
-#' zero.
+#' @return A \code{tibble::\link[tibble:tibble]{tibble}()} containing the
+#' original dataset and adds the variables: \code{beta}, \code{t_QSA}, and
+#' \code{p_QSA} that summarise the results of an linear model fitted by OLS
+#' (respectively; the slope and the associated student's t test statistic and
+#' p value) on the ion count rates of the common isotope (as predictor) and the
+#' isotope ratio (as dependent variable). The p value is for \code{beta} being
+#' different from zero.
 #' .
 #' @export
 #' @examples
@@ -40,24 +40,27 @@
 #'
 #' # QSA test
 #' tb_QSA <- QSA_test(tb_pr, "13C", "12C", file.nm)
-QSA_test <- function(.df, .ion1, .ion2, ..., .nest = NULL, .Xt = Xt.pr,
+QSA_test <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr,
                      .N = N.pr, .species = species.nm, .t = t.nm, plot = TRUE){
 
-  # # Quoting the call (user-supplied expressions)
-  Xt <- enquo(.Xt)
-  N <- enquo(.N)
-  species <- enquo(.species)
-  t <- enquo(.t)
+  # Quoting the call (user-supplied expressions)
+  args <- enquos(.X = .X, .N = .N, .species = .species, .t = .t, .nest  = .nest)
+
+  # Grouping
   gr_by <- enquos(...)
   nest <- enquo(.nest)
-  Xt1 <- quo_updt(Xt, post = .ion1) # count rate
-  Xt2 <- quo_updt(Xt, post = .ion2) # count rate
-  R_Xt <- quo_updt(Xt, pre = "R")
 
-  df <- zeroCt(.df, .ion1 , .ion2, !!! gr_by, .N = !!N, .species = !!species,
-               .t = !!t) %>%
-    cov_R(c(.ion1, .ion2), !!! gr_by, .species = !!species, .t = !!t) %>%
-    mutate("R_{{Xt}}" := !! Xt1  / !! Xt2 )
+  # Updated quosures
+  X1 <- quo_updt(args[[".X"]], post = .ion1) # count rate
+  X2 <- quo_updt(args[[".X"]], post = .ion2) # count rate
+  R_X <- quo_updt(args[[".X"]], pre = "R")
+
+  IC <- zeroCt(.IC, .ion1, .ion2, !!! gr_by, .N = !! args[[".N"]],
+               .species = !! args[[".species"]]) %>%
+    cov_R(c(.ion1, .ion2), !!! gr_by, .species = !! args[[".species"]],
+          .t = !! args[[".t"]]) %>%
+    mutate(!!R_X  := !! X1  / !! X2 )
+  return(IC)
 
   df_lm <- tidyr::nest(df, data = -c(!!! gr_by)) %>%
     mutate(
@@ -65,25 +68,25 @@ QSA_test <- function(.df, .ion1, .ion2, ..., .nest = NULL, .Xt = Xt.pr,
         purrr::map(
           data,
           purrr::possibly(mlm_QSA, NA),
-          .Xt1 = R_Xt,
-          .Xt2 = Xt2
-        )
+          .Xt1 = R_X,
+          .Xt2 = X2
+          )
       ) %>%
     tidyr::unnest_wider(lm_out) %>%
     tidyr::unnest(cols = data)
 
-  if (is_symbol(get_expr(nest))) {
+  if (is_symbol(get_expr(args[[".nest"]]))) {
     # Groups for nested data
-    nest_gr <- gr_by[!sapply(gr_by, as_name) %in% as_name(nest)]
+    nest_gr <- gr_by[!sapply(gr_by, as_name) %in% as_name(args[[".nest"]])]
 
-    df_mlm <- tidyr::nest(df, data = -c(!!! nest_gr)) %>%
+    df_mlm <- tidyr::nest(IC, data = -c(!!! nest_gr)) %>%
       mutate(
         mlm_out =
           purrr::map(
             data,
             purrr::possibly(mlm_QSA, NA),
-            .Xt1 = R_Xt,
-            .Xt2 = Xt2,
+            .X1 = R_Xt,
+            .X2 = X2,
             .group = nest
           )
         ) %>%
@@ -95,22 +98,19 @@ QSA_test <- function(.df, .ion1, .ion2, ..., .nest = NULL, .Xt = Xt.pr,
     df <- purrr::reduce(ls_mlm, left_join, by = sapply(nest_gr, as_name))
     return(df)
     }
-
   return(df_lm)
-
 }
-
 
 
 #-------------------------------------------------------------------------------
 # lm and mlm model QSA
 #-------------------------------------------------------------------------------
 
-mlm_QSA <- function(.df, .Xt1, .Xt2, .group = NULL) {
+mlm_QSA <- function(.IC, .X1, .X2, .group = NULL) {
 
   # lm  model
   if (is.null(get_expr(.group))) {
-    lm_QSA <- lm_form(.df, .Xt1, .Xt2)
+    lm_QSA <- lm_form(.IC, .X1, .X2)
     td <- broom::tidy(lm_QSA) %>% mutate(effect = "fixed")
     min <-  min(fitted(lm_QSA))
     max <-  max(fitted(lm_QSA))
@@ -118,7 +118,7 @@ mlm_QSA <- function(.df, .Xt1, .Xt2, .group = NULL) {
   }
   # mlm  model
   if (!is.null(get_expr(.group))) {
-    mlm_QSA <- lm_form(.df, .Xt1, .Xt2, nest = .group, type = "QSA")
+    mlm_QSA <- lm_form(.IC, .X1, .X2, nest = .group, type = "QSA")
     td <- broom.mixed::tidy(mlm_QSA)
     min <-  min(fitted(mlm_QSA))
     max <-  max(fitted(mlm_QSA))
@@ -128,15 +128,13 @@ mlm_QSA <- function(.df, .Xt1, .Xt2, .group = NULL) {
   ls_QSA <- lst(
     # model params
     "alpha_{{label}}" := pull(filter(td, effect == "fixed" & term == "(Intercept)"), estimate),
-    "beta_{{label}}" := pull(filter(td, effect == "fixed" & term == as_name(.Xt2)), estimate),
-    "t_{{label}}" := pull(filter(td, effect == "fixed" & term == as_name(.Xt2)), statistic),
-    "p_{{label}}" := pull(filter(td, effect == "fixed" & term == as_name(.Xt2)), `p.value`),
+    "beta_{{label}}" := pull(filter(td, effect == "fixed" & term == as_name(.X2)), estimate),
+    "t_{{label}}" := pull(filter(td, effect == "fixed" & term == as_name(.X2)), statistic),
+    "p_{{label}}" := pull(filter(td, effect == "fixed" & term == as_name(.X2)), `p.value`),
     # modelled delta value
     "delta_{{label}}" := (min / max - 1) * 1e3
   )
-
   return(  ls_QSA)
-
 }
 
 
