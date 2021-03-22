@@ -1,26 +1,33 @@
 #' Chemical species names for plots and tables
 #'
 #' \code{ion_labeller} and \code{R_labeller} converts a character string
-#' containing chemical species names in a latex string or expression.
+#' containing chemical species names in a latex string or expression. The
+#' \code{stat_labeller} function generates labels for statistics in tables
+#' (latex) or on plots (expressions).
 #'
 #' This functions converts chemical species names of the form, e.g. `"12C"`,
 #' `"13C2"`, `"12C 14N"`, or `"12C-14N"` to a character string which can be
 #' parsed in Latex to species names with appropriate superscripts on th left for
-#' mass and subscripts for stochiometry on the right.
+#' mass and subscripts for the index on the right.
 #'
 #' @param ion A chemical species character string
-#' @param ion1 A chemical species character string (for isotope ratios the heavy
+#' @param ion1 A chemical species character string (for isotope ratios the rare
 #' isotope).
-#' @param ion2 A chemical species character string (for isotope ratios the light
-#' isotope).
-#' @param label Character string indicating whether the output should be latex
-#' or an expression.
+#' @param ion2 A chemical species character string (for isotope ratios the
+#' common isotope).
+#' @param var A character string for the variable, either \code{"X"} for single
+#' ions or \code{"R"} for ion ratios.
+#' @param org A character string for the origin of a derived variable, e.g., R.
+#' @param stat A character string for the statistic following convention of e.g.
+#' \code{point::names_stat_X}.
+#' @param value The numeric value for the statistic result.
+#' @param label Character string indicating whether the output should be
+#' \code{"latex"} or an expression (\code{"expr"}).
 #'
 #' @return A character string parsable in Latex or expression for usage in
 #' plots.
 #' @export
 #' @examples
-#'
 #' # plot some ion count data
 #' library(ggplot2)
 #' ggplot() +
@@ -34,8 +41,8 @@ ion_labeller <- function(ion, label = "latex") {
   el_reg <- "((?<=[[:digit:]])[[:upper:]]{1})(?<=[[:upper:]])[[:lower:]]{1}|(?<=[[:digit:]])[[:upper:]]{1}"
   # Regex mass number
   ms_reg <- "[[:digit:]]{1,2}(?=[[:upper:]])"
-  # Regex stochiometry
-  st_reg <- "[[:digit:]]*(?![[:alpha:]])"
+  # Regex element index
+  st_reg <- "[[:digit:]]{1,2}(?=[[:punct:]])|[[:digit:]]{1,2}(?![[:graph:]])"
 
   suppressWarnings(
   ls_chr <- purrr::map(
@@ -46,10 +53,13 @@ ion_labeller <- function(ion, label = "latex") {
     purrr::transpose()
   )
 
-  if (label == "latex") {
+  if (label == "latex" | label == "webtex") {
     paste_ion <- function(ls){
-      if (length(ls[["c"]]) != 0) if (!str_detect(ls[["c"]], "[[:digit:]]")) ls[["c"]] <- NULL
-      paste0("$\\phantom{,}^{", ls[["a"]], "}$", ls[["b"]],"$_{", ls[["c"]],"}$")
+      if (length(ls[["c"]]) != 0) {
+        if (!stringr::str_detect(ls[["c"]], "[[:digit:]]")) ls[["c"]] <- NULL
+        }
+      paste0("$\\phantom{,}^{", ls[["a"]], "}$", ls[["b"]],"$_{", ls[["c"]],
+             "}$")
     }
 
     ls_ion <- purrr::map(
@@ -77,7 +87,7 @@ ion_labeller <- function(ion, label = "latex") {
 R_labeller <- function(ion1, ion2, label = "latex"){
 
   ls_R <- purrr::map(c(ion1, ion2), ion_labeller, label)
-  if (label == "latex") {
+  if (label == "latex" | label == "webtex") {
     lb <- paste(ls_R[[1]], ls_R[[2]], sep = "/")
     return(lb)
     }
@@ -90,57 +100,93 @@ R_labeller <- function(ion1, ion2, label = "latex"){
 #' @rdname ion_labeller
 #'
 #' @export
-stat_labeller <- function(var = "X", stat, value, label = "latex",
-                          type = "internal"){
+stat_labeller <- function(var, org, stat, value, label = "latex"){
 
-  if (label == "latex") {
+  if (label == "latex" | label == "webtex") {
     if (stat == "n") return("$n$")
-    if (stat == "Ntot") return("$N_{tot}$")
-    if (var == "X" & str_detect(stat, "hat")) var <- "N"
-    if (stat == "chi2") return("$\\chi^{2}$")
-    if (str_detect(stat, "M")) {
+    if (stat == "tot") return("$N_{tot}$")
+
+    if (stat == "F") return(paste0("$F_{", var,"}$"))
+    if (stringr::str_detect(stat, "M")) {
       stat_chr <- paste0("\\bar{", var,"}")
-      if (type == "external") stat_chr <- paste0("\\bar{", stat_chr,"}")
+      # external precision
+      if (stringr::str_detect(org, "^M$|^Ntot$")) {
+        stat_chr <- paste0("\\bar{", stat_chr,"}")
+          }
+      # mlm external precision
+      if (stringr::str_detect(org, "^M_R$")) {
+        stat_chr <- paste0("\\hat{", stat_chr,"}")
+        if (stringr::str_detect(stat, "hat")) {
+          stat <- stringr::str_replace(stat, "hat", "") # remove hat above stat
+        }
+          }
       } else {
         stat_chr <- var
-        if (type == "external") stat_chr <- paste0("\\bar{", stat_chr,"}")
-      }
-    if (str_detect(stat, "S")) {
+        # external precision
+        if (stringr::str_detect(org, "^M$|^Ntot$")) {
+          stat_chr <- paste0("\\bar{", stat_chr,"}")
+          }
+        # mlm external precision
+        if (stringr::str_detect(org, "^M_R$")) {
+          stat_chr <- paste0("\\bar{", stat_chr,"}")
+          if (stringr::str_detect(stat, "hat")) {
+            stat <- stringr::str_replace(stat, "hat", "")# remove hat above stat
+          }
+          }
+        }
+
+    # p values, AIC
+    if (stat == "p") return(paste0("$p_{", stat_chr,"}$"))
+    if (stat == "dAIC") return(paste0("$\\Delta AIC_{", stat_chr, "}$"))
+    if (stat == "chi2") return(paste0("$\\chi^{2}_{",  stat_chr,"}$"))
+    # Prefix of relative and normal standard deviations and errors
+    if (stringr::str_detect(stat, "S")) {
       stat_chr <- paste0("_{", stat_chr,"}")
-      if (str_detect(stat, "R")) {
+      if (stringr::str_detect(stat, "R")) {
         sd_prefix <- "\\epsilon"
         } else {
           sd_prefix <- "s"
         }
-      if (str_detect(stat, "hat")) {
+      # Hat of predicted standard deviations and errors
+      if (stringr::str_detect(stat, "hat")) {
         stat_chr <- paste0("\\hat{", sd_prefix ,"}", stat_chr)
         } else {
           stat_chr <- paste0(sd_prefix, stat_chr)
         }
+    }
+    #  Per mille signs  of relative standard deviations and errors
+    if (stringr::str_detect(stat, "R")) {
+      if (label == "webtex") return(paste0("$", stat_chr, "$ (\u2030)"))
+      if (label == "latex") {
+        return(paste0("$", stat_chr, "(\\text{\\textperthousand})$"))
       }
-    if (str_detect(stat, "R")) {
-      return(paste0("$", stat_chr, "$ (\u2030)"))
-      } else {
-        return(paste0("$", stat_chr, "$"))
-      }
+        } else {
+          return(paste0("$", stat_chr, "$"))
+          }
   }
-
+# plot labels as expressions
   if (label == "expr") {
     var <- parse_expr(var)
-    if (stat == "n") return(substitute(n == ~ a, list(a = sprintf(fmt = "%.0f", value))))
-    if (stat == "Ntot") return(substitute(N[tot] == ~ a, list(a = sprintf(fmt = "%.0f", value))))
-    if (stat == "chi2") return(substitute(chi^2 == ~ a, list(a = sprintf(fmt = "%.1f", value))))
-    if (str_detect(stat, "R")) {
+    if (stat == "n") {
+      return(substitute(n == ~ a, list(a = sprintf(fmt = "%.0f", value))))
+    }
+    if (stat == "tot") {
+      return(substitute(N[tot] == ~ a, list(a = sprintf(fmt = "%.0f", value))))
+    }
+    if (stat == "chi2") {
+      return(substitute(chi^2 == ~ a, list(a = sprintf(fmt = "%.1f", value))))
+    }
+    if (stringr::str_detect(stat, "R")) {
       sd_prefix <- expr(epsilon)
       value <- paste(sprintf(fmt = "%.1f", value), "(\u2030)")
       } else {
         sd_prefix <- expr(s)
         value <- sprintf(fmt = "%.3f", value)
         }
-    if (str_detect(stat, "hat")) {
+    if (stringr::str_detect(stat, "hat")) {
       sd_prefix <- substitute(hat(a), list(a = sd_prefix))
       }
-    if (str_detect(stat, "M")) {
+    if (stringr::str_detect(stat, "M")) {
       if (nchar(stat) == 1) {
         return(substitute(bar(a) == ~ b, list(a = var, b = value)))
         } else {
@@ -149,8 +195,11 @@ stat_labeller <- function(var = "X", stat, value, label = "latex",
       } else {
         sym_chr <- var
         }
-    if (str_detect(stat, "S")){
-      stat_chr <- substitute(a[b] == ~ c, list(a = sd_prefix, b = sym_chr, c = value))
+    if (stringr::str_detect(stat, "S")){
+      stat_chr <- substitute(
+        a[b] == ~ c,
+        list(a = sd_prefix, b = sym_chr, c = value)
+        )
       return(stat_chr)
       }
   }
@@ -167,7 +216,7 @@ stat_labeller <- function(var = "X", stat, value, label = "latex",
 #' increment of measurement. Pay attention when using in combination with
 #' `zeroCt()`.
 #'
-#' @param .df A tibble containing processed ion count data.
+#' @param .IC A tibble containing processed ion count data.
 #' @param .ion1 A character string or vector constituting ion names.
 #' @param .ion2 A character string or vector constituting ion names.
 #' @param ... Variables for grouping.
@@ -175,7 +224,7 @@ stat_labeller <- function(var = "X", stat, value, label = "latex",
 #' @param .t A variable constituting the time of the analyses.
 #' @param .preserve A logical whether to preserve ID variable.
 #'
-#' @return A \code{\link[tibble:tibble]{tibble}} in wide format
+#' @return A \code{tibble::\link[tibble:tibble]{tibble}} in wide format
 #' @export
 #' @examples
 #'
@@ -188,7 +237,7 @@ stat_labeller <- function(var = "X", stat, value, label = "latex",
 #' # wide format
 #' cov_R(tb_pr, c("13C", "12C"), file.nm)
 #'
-cov_R <- function(.df, .ion, ..., .species = species.nm, .t = t.nm,
+cov_R <- function(.IC, .ion, ..., .species = species.nm, .t = t.nm,
                   .preserve = FALSE){
 
   t <- enquo(.t)
@@ -196,21 +245,22 @@ cov_R <- function(.df, .ion, ..., .species = species.nm, .t = t.nm,
   gr_by <- enquos(...)
 
   # observation per group
-  obs_gr <- group_size(group_by(.df, !!!gr_by, !! species))
+  obs_gr <- group_size(group_by(.IC, !!!gr_by, !! species))
   # distinct observation for time increments
-  obs_t <- n_distinct(pull(.df, !!t))
+  obs_t <- n_distinct(pull(.IC, !!t))
   # check if t steps is consistent with grouping otherwise create new ID
   if (any(obs_gr  / obs_t > 1)) {
-    .df <- mutate(group_by(.df, !!!gr_by, !! species), !!t := row_number()) %>%
-      ungroup
-  }
-  # Filtering
-  df <- filter(.df, !!species %in% .ion) %>%
-    mutate(!! species := str_replace_all(str_trim(!! species), "\\s", "_"))
+    .IC <- mutate(group_by(.IC, !!!gr_by, !! species), !!t := row_number()) %>%
+      ungroup()
+    }
+
+  # Remove white space in ion names and add underscore for polyatomic species
+  IC <- mutate(.IC, !! species := ion_trim(!! species)) %>%
+    filter(!! species %in% sapply(.ion, ion_trim))
 
   # Wide format
-  pivot_wider(
-    df,
+  tidyr::pivot_wider(
+    IC,
     c(!!!gr_by, !!t, !!species),
     names_from = !! species,
     values_from = -c(!!!gr_by, !!t, !!species),
@@ -226,7 +276,7 @@ cov_R <- function(.df, .ion, ..., .species = species.nm, .t = t.nm,
 #' This functions removes analytical runs with zero counts for calculating
 #' isotope ratios.
 #'
-#' @param .df A tibble containing processed ion count data.
+#' @param .IC A tibble containing processed ion count data.
 #' @param .ion1 A character string constituting the heavy isotope ("13C").
 #' @param .ion2 A character string constituting the light isotope ("12C").
 #' @param ... Variables for grouping.
@@ -254,31 +304,28 @@ cov_R <- function(.df, .ion, ..., .species = species.nm, .t = t.nm,
 #' ion2 <-  c("12C", "12C2", "12C 14N", "40Ca 16O", "40Ca 16O")
 #'
 #' tb_pr <- purrr::map2(ion1, ion2, ~zeroCt(tb_pr, .x, .y, file.nm))
-zeroCt <- function(.df, .ion1, .ion2, ..., .N = N.pr, .species = species.nm,
-                   .t = t.nm, .warn = TRUE){
+zeroCt <- function(.IC, .ion1, .ion2, ..., .N = N.pr, .species = species.nm,
+                   .warn = TRUE){
 
   N <- enquo(.N)
-  t <- enquo(.t)
   species <- enquo(.species)
   gr_by <- enquos(...)
 
-  # remove white space in ion names
-  .df <- mutate(.df, !! species := str_replace_all(str_trim(!! species), "\\s", "_"))
-  .ion1 <- str_replace_all(str_trim(.ion1), "\\s", "_")
-  .ion2 <- str_replace_all(str_trim(.ion2), "\\s", "_")
+  # Remove white space in ion names and add underscore for polyatomic species
+  .ion1 <- ion_trim(.ion1)
+  .ion2 <- ion_trim(.ion2)
+  IC <- mutate(.IC, !! species := ion_trim(!! species)) %>%
+    filter(!!species == .ion1 | !!species == .ion2)
 
-  df <- filter(.df, !!species == .ion1 | !!species == .ion2)
-
-  if (.warn){
-    if (any(select(df, !!N) %>% pull(!!N) == 0)) {
-      warning("Zero counts present and removed")
+  if (isTRUE(.warn)) {
+    if (any(pull(IC, !! N) == 0)) {
+      warning("Zero counts present and removed", call. = FALSE)
     }
   }
 
-  ls_0 <- filter(df, !! N == 0) %>%
+  ls_0 <- filter(IC, !! N == 0) %>%
     select(!!! gr_by)
-
-  anti_join(df, ls_0, by = sapply(gr_by, as_name))
+  anti_join(IC, ls_0, by = sapply(gr_by, as_name))
 }
 
 #-------------------------------------------------------------------------------
@@ -303,3 +350,6 @@ ID_builder <- function(.df, ..., .t = t.nm, .species = species.nm){
 
   }
 
+ion_trim <-function(ion) {
+  stringr::str_replace_all(stringr::str_trim(ion), "\\s", "_")
+}
