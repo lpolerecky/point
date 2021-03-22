@@ -1,5 +1,5 @@
 # Plotting diagnostics
-gg_IC <- function(.IC, .ion1, .ion2, .method, .plot_type, ..., .Xt = Xt.pr,
+gg_IC <- function(.IC, .ion1, .ion2, .method, .plot_type, ..., .X = Xt.pr,
                   .N = N.pr, .species = species.nm, .t = t.nm, .flag = flag,
                   .labels = NULL, .rep = 1, .alpha_level, .plot_iso = FALSE){
 
@@ -8,25 +8,25 @@ gg_IC <- function(.IC, .ion1, .ion2, .method, .plot_type, ..., .Xt = Xt.pr,
   gr_by <- enquos(...)
 
   # stat_R variables
-  args <- enquos(.Xt = .Xt, .N = .N, .species = .species, .t = .t)
+  args <- enquos(.X = .X, .N = .N, .species = .species, .t = .t)
 
   flag <-  enquo(.flag)
   # Common isotope
-  N1 <- quo_updt(args[[".Xt"]], post = .ion1)
-  Xt1 <- quo_updt(args[[".Xt"]], post = .ion1)
+  N1 <- quo_updt(args[[".X"]], post = .ion1)
+  X1 <- quo_updt(args[[".X"]], post = .ion1)
   # rare isotope
-  Xt2 <- quo_updt(args[[".Xt"]], post = .ion2)
+  X2 <- quo_updt(args[[".X"]], post = .ion2)
   # Fitted rare isotope and variance (sigma)
-  hat_Xt1 <- quo_updt(args[[".Xt"]], pre = "hat", post = .ion1)
-  hat_S_Xt1 <- quo_updt(args[[".N"]], pre = "hat_S", post = .ion1)
+  hat_X1 <- quo_updt(args[[".X"]], pre = "hat", post = .ion1)
+  hat_S_N1 <- quo_updt(args[[".N"]], pre = "hat_S", post = .ion1)
 
   # Filter execution
   if (.plot_type == "static") .IC <- filter(.IC, execution == .rep)
 
   # Plotting arguments
-  plot_args <- list2(.IC = .IC, .x = Xt2, .y = Xt1, .flag = flag,
+  plot_args <- list2(.IC = .IC, .x = X2, .y = X1, .flag = flag,
                      .diag_type = .method, .plot_type = .plot_type, !!! gr_by,
-                     .labels = .labels, .hat = hat_Xt1, .sd = hat_S_Xt1 ,
+                     .labels = .labels, .hat = hat_X1, .sd = hat_S_N1 ,
                      .alpha_level = .alpha_level)
 
   # Residual leverage plot
@@ -49,7 +49,7 @@ gg_IC <- function(.IC, .ion1, .ion2, .method, .plot_type, ..., .Xt = Xt.pr,
   # Scale location plot
   if (.method  == "CV"){
       plot_args[[".y"]] <- quo(studE)
-      plot_args[[".x"]] <- hat_Xt1
+      plot_args[[".x"]] <- hat_X1
       plot_args[[".hat"]] <- 0
       plot_args[[".sd"]] <- NULL
       plot_args[[".cv"]] <- 3.5
@@ -74,7 +74,7 @@ gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
   ion1 <- detect_ion(.y)
 
   # 2D density
-  .IC <- twodens(.IC, .x, .y, gr_by, .flag)
+  if (is_symbol(get_expr(.flag))) .IC <- twodens(.IC, .x, .y, gr_by, .flag)
 
   # Filter correct titles
   ttl <- filter(point::names_diag, name == .diag_type)
@@ -94,24 +94,35 @@ gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
   p <- p + facet_wrap(vars(!!! gr_by), scales = "free")
 
   # Geom for "point" data
-  if (.geom == "point") {
-    p <- p + geom_point(aes(color = .data$dens, alpha = .data$alpha_sc))
-  }
+  if (is_symbol(get_expr(.flag)) & .geom == "point") {
+    p <- p + geom_point(aes(color = .data$dens, alpha = .data$alpha_sc)) +
+      scale_color_gradientn(
+        "",
+        breaks = range(.IC$dens),
+        labels =  c("divergent", "confluent"),
+        colors = colorspace::diverge_hcl(7, rev = TRUE),
+        na.value = "transparent",
+        guide = guide_colourbar(ticks = FALSE, barwidth = plot_width)
+        ) +
+      scale_alpha_identity(guide = FALSE, limits = c(1e-5, 1))
+    } else {
+      p <- p + geom_point(alpha = 0.01)
+      }
 
   if (.geom == "hexbin") p <- p + geom_hexbin()
 
   if (.rug) p <- p + geom_rug(sides = "tr", alpha = 0.01)
 
   if (!is.null(.labels)) {
-    p <- p + ggrepel::geom_text_repel(
+    p <- p + geom_text(
       data = filter(tb_labs, stat %in% .labels),
       aes(
         x = -Inf,
         y = Inf,
         label = lbs
         ),
-      direction = "y",
-      segment.color = "transparent",
+      vjust = "inward",
+      hjust = "inward",
       parse = TRUE,
       inherit.aes = FALSE
       )
@@ -137,28 +148,10 @@ gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
       fill = "transparent",
       linetype = 3,
       size = 0.5
-    )
-  }
+      )
+    }
 
-
-  p + scale_color_gradientn(
-    "",
-    # limits = c(-1, 1),
-    breaks = range(.IC$dens),
-    labels =  c("divergent", "confluent"),
-    colors = colorspace::diverge_hcl(7, rev = TRUE),
-    na.value = "transparent",
-    guide = guide_colourbar(ticks = FALSE, barwidth = plot_width)
-    ) +
-    # scale_color_distiller(
-    # "",
-    # breaks = range(.IC$dens),
-    # labels =  c("divergent", "confluent"),
-    # palette = "YlOrRd",
-    # na.value = "transparent",
-    # guide = guide_colourbar(ticks = FALSE, barwidth = plot_width)
-    # ) +
-    scale_alpha_identity(guide = FALSE, limits = c(1e-5, 1)) +
+  p <- p +
     scale_y_continuous(
       breaks = scales::extended_breaks(),
       labels = scales::label_scientific()
@@ -177,17 +170,16 @@ gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
   }
 
 
-gg_IR <- function(.df, .lag, .acf, .flag, ..., .hat = NULL,
-                  .sd = NULL){
+gg_IR <- function(.df, .lag, .acf, .flag, ..., .sd = NULL){
 
   ggplot(.df, mapping = aes(x = {{.lag}}, y = {{.acf}}, color = {{.flag}})) +
-    geom_hline(aes(yintercept = {{.hat}})) +
-    geom_segment(mapping = aes(xend = {{.lag}}, yend = {{.hat}})) +
+    geom_hline(aes(yintercept = 0)) +
+    geom_segment(mapping = aes(xend = {{.lag}}, yend = 0)) +
     geom_hline(aes(yintercept = -{{.sd}}), color = "darkblue") +
     geom_hline(aes(yintercept = {{.sd}}), color = "darkblue") +
     scale_color_manual(values = c(ggplotColours(2)[2], ggplotColours(2)[1])) +
     facet_wrap(vars(...), scales = "free") +
-    ggtitle("ACF plot") +
+    labs(title = "ACF plot") +
     theme_classic() +
     theme(legend.position = "none")
 }
@@ -225,47 +217,6 @@ axis_labs <- function(type, ion, plot_type){
       }
 }
 
-text_labs <- function(diag_type, x, y, ion1, ion2, iso = FALSE) {
-
-  # if (iso) {
-  #   R_not <- paste0("δ", ion1, " (‰): ", delta)
-  #   } else {
-  #     R_not <- paste0("mean R: ", R)
-  #   }
-  x <- enexpr(x)
-  y <- enexpr(y)
-  ion1 <- enexpr(ion1)
-  ion2 <- enexpr(ion2)
-  if (diag_type == "CooksD" | diag_type == "Cameca") diag_type <- "Rm"
-  switch(
-      diag_type,
-      Rm = expr(
-        paste0(
-          !!ion2, " (ct/sec): ", round(!!x, 0), '\n',
-          !!ion1, " (ct/sec): ", round(!!x, 0), '\n',
-          "R :", round(!!y / !!x, 4), '\n'
-          )
-        ),
-      QQ = expr(
-        paste0(
-          "TQ: ", round(!!x, 2), '\n',
-          "SQ: ", round(!!y, 2), '\n'
-          )
-        ),
-      norm_E = expr(
-        paste0(
-          "e*: ", round(!!x, 4), '\n',
-          "hat: ", round(!!y, 2), '\n'
-          )
-        ),
-      CV = expr(
-        paste0(
-          "fitted value: ", round(!!x, 4), '\n',
-          "e*: ", round(!!y, 2), '\n'
-              )
-        )
-      )
-}
 
 ggplotColours <- function(n = 6, h = c(0, 360) + 15){
   if ((diff(h) %% 360) < 1) h[2] <- h[2] - 360 / n
@@ -368,13 +319,13 @@ stat_labs <- function(.IC, gr_by){
       -c(!!! gr_by),
       names_to = c("stat", ".value"),
       names_sep = "\\_R\\_"
-    ) %>%
+      ) %>%
     tidyr::unite(col = "value", - c(!!!gr_by, stat), na.rm = TRUE)
   lbs <- purrr::map2(
     tb_labs$stat,
     pull(tb_labs, value),
-    ~stat_labeller("R", stat = .x, value = as.numeric(.y), "expr")
-  )
+    ~stat_labeller("R", stat = .x, value = as.numeric(.y), label = "expr")
+    )
   tibble::add_column(tb_labs, lbs = lbs)
 }
 
@@ -399,50 +350,3 @@ ribbon_stat <- function(IC, hat, bound, alpha_level){
   }
 
 
-  # if (!is.null(.sd)){
-  #   .IC <- mutate(
-  #     .IC,
-  #     fct  = qnorm((1 - .alpha_level / 2)),
-  #     lower = !!.hat - .data$fct * !!.sd,
-  #     upper = !!.hat + .data$fct * !!.sd
-  #   )
-  # }
-  # if (!is.null(.se)) {
-  #   .IC <- mutate(
-  #     .IC,
-  #     fct  = qt((1 - .alpha_level / 2), n() - 1),
-  #     lower = !!.hat - .data$fct * !!.se,
-  #     upper = !!.hat + .data$fct * !!.se
-  #   )
-  # }
-  # if (!is.null(.cv)) {
-  #   .IC <- mutate(
-  #     .IC,
-  #     lower = !!.hat - !!.cv,
-  #     upper = !!.hat + !!.cv
-  #   )
-  # }
-
-
-
-
-#-------------------------------------------------------------------------------
-# anim plot parts
-# if (.plot_type == "anim") {
-#   p <- ggplot(
-#     data = .IC,
-#     aes(
-#       x = !!.x,
-#       y = !!.y,
-#       color = {{ .flag }},
-#       frame = execution,
-#       text = eval(text_labs(.diag_type, x = !!.x, y = !!.y, ion1, ion2))
-#     )
-#   )
-# }
-
-# if (.plot_type == "anim")  {
-#   p <- plotly::ggplotly(p, tooltip = "text") %>%
-#     plotly::animation_opts(frame = 150, transition = 0)
-#   return(p)
-# }

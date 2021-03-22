@@ -1,10 +1,10 @@
 
-gam_fun <- function(df, Xt, t, group, Xt.mdl){
+gam_fun <- function(IC, args, X.mdl){
 
   # null model
-  mlm_0 <- gam_form(df, Xt, t, output = "model")
+  mlm_0 <- gam_form(IC, args, output = "model")
   # full model
-  mlm_1 <- gam_form(df, Xt, t, group, output = "model")
+  mlm_1 <- gam_form(IC, args, args[[".nest"]], output = "model")
 
   # anova and extract components
   mlm_0_lme <- purrr::pluck(mlm_0, "lme")
@@ -17,7 +17,7 @@ gam_fun <- function(df, Xt, t, group, Xt.mdl){
   fit <- as.vector(unname(fitted(mlm_1_gam)))
 
   tb_ran <- tibble::as_tibble(ls_ran) %>%
-    rename(ran_in.ml = contains("Intercept"), ran_sh.ml = !!t)
+    rename(ran_in.ml = contains("Intercept"), ran_sh.ml = !! args[[".t"]])
 
   sq_in <- rep(tb_ran$ran_in.ml, each = length(fit) / nrow(tb_ran))
   sq_sh <- rep(tb_ran$ran_sh.ml, each = length(fit) / nrow(tb_ran))
@@ -29,22 +29,36 @@ gam_fun <- function(df, Xt, t, group, Xt.mdl){
     fix_sh.ml = unname(nlme::fixef(mlm_1_lme))[2],
     p_intra.ml = purrr::discard(pull(mlm_aov, `p-value`), is.na),
     dAIC.ml = purrr::discard(diff(pull(mlm_aov, AIC)), is.na),
-    !! Xt.mdl := fit
+    !! X.mdl := fit
     )
 
 }
 
-gam_form <- function(data, Xt, t, group = NULL, output = "predict"){
+gam_form <- function(data, args, nest = NULL, output = "predict"){
 
     mthd <- "norm"
-    s_call <- call2("s", get_expr(t))
-    form_gam <- new_formula(get_expr(Xt), s_call, env = caller_env())
+    s_call <- call2("s", get_expr(args[[".t"]]))
+    form_gam <- new_formula(
+      get_expr(args[[".X"]]),
+      s_call,
+      env = env(data = data)
+      )
 
-    if (!is.null(group)) {
-      form_ran <- list2(!!group := new_formula(NULL, get_expr(t)))
+    if (!is.null(nest)) {
+      form_ran <- list2(
+        !! nest :=
+          new_formula(
+            NULL,
+            get_expr(args[[".t"]]),
+            env = env(data = data)
+            )
+          )
       mthd <- "mix"
-    }
+      }
 
+    # Perform model in correct env
+    data_env <- env(data = data)
+    # Switch between fixed and mixed model
     gam_switch <- function(type) {
       switch(
         type,
@@ -54,7 +68,8 @@ gam_form <- function(data, Xt, t, group = NULL, output = "predict"){
             form_gam,
             method = "REML",
             data = expr(data)
-            )
+            ),
+          data_env
           ),
         mix = eval(
           call2(
@@ -63,7 +78,8 @@ gam_form <- function(data, Xt, t, group = NULL, output = "predict"){
             random = form_ran,
             method = "REML",
             data = expr(data)
-            )
+            ),
+          data_env
           )
         )
     }

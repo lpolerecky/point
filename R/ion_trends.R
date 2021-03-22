@@ -9,13 +9,12 @@
 #'
 #' @param .IC A tibble containing raw ion count data.
 #' @param ... Variables for grouping.
-#' @param .Xt A variable constituting the ion count rate.
+#' @param .X A variable constituting the ion count rate.
 #' @param .N A variable constituting the ion counts.
 #' @param .species A variable constituting the species analysed.
 #' @param .t A variable constituting the time increments.
-#' @param .nest A logical indicating whether a nested mixed GAM model is
-#' applied.
-#' @param .group The grouping variable for the mixed GAM model.
+#' @param .nest A variable identifying a groups of analyses which indicates
+#' whether a nested mixed GAM model is applied.
 #' @param .plot Logical indicating whether to plot ion trends
 #' @param .method Method for calculating de-trended single ion counts
 #' @param .hide A logical indicating whether only processed data should be
@@ -36,86 +35,87 @@
 #' predict_ionize(tb_0, file.nm)
 #'
 #' # predict ionization trends mixed type
-#' tb_bel <- filter(tb_0, str_detect(sample.nm, "Belemnite"))
+#' tb_bel <- filter(tb_0, stringr::str_detect(sample.nm, "Belemnite"))
 #'
-#' predict_ionize(tb_bel, sample.nm, file.nm, .nest = TRUE, .group = file.nm)
-predict_ionize <- function(.IC, ..., .Xt = Xt.pr, .N = N.pr,
-                           .species = species.nm, .t = t.nm, .nest = FALSE,
-                           .group = NULL, .plot = TRUE, .method = "median",
-                           .hide = TRUE){
+#' predict_ionize(tb_bel, sample.nm, file.nm, .nest = file.nm)
+predict_ionize <- function(.IC, ..., .nest = NULL, .X = Xt.pr, .N = N.pr,
+                           .species = species.nm, .t = t.nm, .plot = TRUE,
+                           .method = "median", .hide = TRUE){
 
-  species <- enquo(.species)
+  #Quoting the call (user-supplied expressions)
+  args <- enquos(.X = .X, .N = .N, .species = .species, .t = .t, .nest  = .nest)
+
+  # Grouping
   gr_by <- enquos(..., .species, .named = TRUE)
-  group <- enquo(.group)
-  Xt <- enquo(.Xt)
-  N <- enquo(.N)
-  t <- enquo(.t)
-
-  if (.nest) nst_by <- gr_by[!sapply(gr_by, as_name) %in% as_name(group)]
 
   # New quosures
-  if (.nest) {
-    Xt.mdl <- quo_updt(Xt, post = "grp", update_post = TRUE) # group-wise
-    M_Xt.l0 <- quo_updt(Xt, pre = "M", post = "grp", update_post = TRUE)
+  if (is_symbol(get_expr(args[[".nest"]]))) {
+    # group-wise
+    nest_gr <- gr_by[!sapply(gr_by, as_name) %in% as_name(args[[".nest"]])]
+    X.mdl <- quo_updt(args[[".X"]], post = "grp", update_post = TRUE)
+    M_X.l0 <- quo_updt(args[[".X"]], pre = "M", post = "grp",
+                        update_post = TRUE)
     } else {
-      Xt.mdl <- quo_updt(Xt, post = "nlt", update_post = TRUE) # per analysis
-      M_Xt.l0 <- quo_updt(Xt, pre = "M", post = "nlt", update_post = TRUE)
+      # per analysis
+      X.mdl <- quo_updt(args[[".X"]], post = "nlt", update_post = TRUE)
+      M_X.l0 <- quo_updt(args[[".X"]], pre = "M", post = "nlt",
+                          update_post = TRUE)
       }
 
-  Xt.l0 <- quo_updt(Xt, post = "l0", update_post = TRUE)
-  N.l0 <-  quo_updt(N, post = "l0", update_post = TRUE)
+  X.l0 <- quo_updt(args[[".X"]], post = "l0", update_post = TRUE)
+  N.l0 <-  quo_updt(args[[".N"]], post = "l0", update_post = TRUE)
 
   # Metadata
-  if (ncol(select(.IC, ends_with(".mt"))) == 0) IC <- unfold(.IC)
+  if (ncol(select(.IC, ends_with(".mt"))) == 0) .IC <- unfold(.IC)
 
-  # Group wise
-  if (.nest) {
-    IC <- tidyr::nest(ic, data = -c(!!! nst_by)) %>%
-      mutate(gam_out = purrr::map(data, ~gam_fun(.x, Xt, t, group, Xt.mdl))) %>%
-      unnest(cols = c(data, gam_out)) %>%
-      group_by(!!! nst_by) %>%
+  # Group-wise
+  if (is_symbol(get_expr(args[[".nest"]]))) {
+    IC <- tidyr::nest(.IC, data = -c(!!! nest_gr)) %>%
+      mutate(gam_out = purrr::map(data, ~gam_fun(.x, args, X.mdl))) %>%
+      tidyr::unnest(cols = c(data, gam_out)) %>%
+      group_by(!!! nest_gr) %>%
       mutate(
         # Group wise mean
-        !! M_Xt.l0 := mth_switch(.method,!! Xt.mdl),
+        !! M_X.l0 := mth_switch(.method,!! X.mdl),
         # mean plus random intercept correction
-        !! Xt.l0 := !! M_Xt.l0 + (!! Xt - !! Xt.mdl) + ran_in.ml,
-        !! N.l0 := !! Xt.l0 * (min(!! t) - .data$tc.mt)
+        !! X.l0 := !! M_X.l0 + (!! args[[".X"]] - !! X.mdl) + ran_in.ml,
+        !! N.l0 := !! X.l0 * (min(!! args[[".t"]]) - .data$tc.mt)
         )
     # Single analysis
     } else {
-      IC <- tidyr::nest(IC, data = -c(!!! gr_by)) %>%
+      IC <- tidyr::nest(.IC, data = -c(!!! gr_by)) %>%
         mutate(
-          !! Xt.mdl := purrr::map(data, ~as.vector(gam_form(.x, Xt, t)))
+          !! X.mdl := purrr::map(data, ~as.vector(gam_form(.x, args)))
           ) %>%
-        tidyr::unnest(cols = c(data, !! Xt.mdl)) %>%
+        tidyr::unnest(cols = c(data, !! X.mdl)) %>%
         group_by(!!! gr_by) %>%
         mutate(
-          !! M_Xt.l0 := mth_switch(.method,!! Xt.mdl),
+          !! M_X.l0 := mth_switch(.method, !! X.mdl),
           # mean correction
-          !! Xt.l0 := !! M_Xt.l0 + (!! Xt - !! Xt.mdl),
-          !! N.l0:= !! Xt.l0 * (min(!! t) - .data$tc.mt)
+          !! X.l0 := !! M_X.l0 + (!! args[[".X"]]- !! X.mdl),
+          !! N.l0 := !! X.l0 * (min(!! args[[".t"]]) - .data$tc.mt)
           )
       }
 
   IC <- ungroup(IC)
 
   if (.plot) {
-    if(.nest) {
-      facets_gr <- quos(!!! nst_by)
+    if (is_symbol(get_expr(args[[".nest"]]))) {
+      facets_gr <- quos(!!! nest_gr)
       } else {
         facets_gr <- quos(!!! gr_by)
         }
 
-    plot_args <- list2(.IC = IC, .x = t, .y = Xt, .flag = NULL,
-                       .diag_type = "timeseries", .plot_type = "static",
-                       !!! gr_by, .hat =Xt.mdl, .alpha_level = NULL)
+    plot_args <- list2(.IC = IC, .x = args[[".t"]], .y = args[[".X"]],
+                       .flag = NULL, .diag_type = "timeseries",
+                       .plot_type = "static", !!! facets_gr, .hat = X.mdl,
+                       .alpha_level = NULL)
+    ggh <- geom_hline(aes(yintercept = !! M_X.l0), color = "blue", size = 1.1)
 
     # Control with environment
-    data_env <- env(data = df)
+    data_env <- env(data = IC)
     # Plot
-    expr(gg_base(!!! plot_args) +
-           geom_hline(aes(yintercept = !! M_Xt.l0), color = "blue", size = 1.1)
-         ) %>%
+    expr(gg_base(!!! plot_args) + ggh) %>%
       eval(envir = data_env) %>%
       print()
 
@@ -135,6 +135,6 @@ mth_switch <- function(mth, arg) {
     median = call2("median", arg),
     mean  = call2("mean", arg),
     stop("unknown method", call. = FALSE)
-  ) %>%
+    ) %>%
     eval()
 }
