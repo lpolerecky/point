@@ -4,14 +4,14 @@
 #' of outliers on R detected with diagnostics, such as Cook's D or sigma
 #' rejection (Cameca default method).
 #'
-#' @param .df A tibble containing ion count data and diagnostics generated with
-#' \code{diag_R()}, as a minimum a flag variable is required.
-#' @param .ion1 A character string constituting the heavy isotope ("13C").
-#' @param .ion2 A character string constituting the light isotope ("12C").
+#' @param .IC A tibble containing ion count data and diagnostics generated with
+#' \code{diag_R()}, as a minimum the outlier \code{flag} variable is required.
+#' @param .ion1 A character string constituting the rare isotope (e.g. "13C").
+#' @param .ion2 A character string constituting the common isotope (e.g. "12C").
 #' @param ... Variables for grouping.
-#' @param .nest A variable over which to created the random component of a mixed
-#' linear model (default = NULL).
-#' @param .Xt A variable constituting the ion count rate (defaults to
+#' @param .nest A variable hat identifies a series of analyses to calculate
+#' the significance of inter-isotope variability.
+#' @param .X A variable constituting the ion count rate (defaults to
 #' variables generated with \code{read_IC()})
 #' @param .N A variable constituting the ion counts (defaults to variables
 #' generated with \code{read_IC()}.).
@@ -21,171 +21,152 @@
 #' variables generated with \code{read_IC()}).
 #' @param .flag A variable constituting the outlier flag (defaults to
 #' variables generated with \code{diag_R()}).
-#' @param .output A character string for output as summary statistics ("sum")
-#' and statistics with the original data ("complete").
+#' @param .execution A variable constituting the iterative cycles of diagnostics
+#' (defaults to variables generated with \code{diag_R()}).
+#' @param .output A character string for output as summary statistics
+#' ("inference") and statistics with the original data ("complete").
+#' @param .tf Variable transformation as parts per thousand (\code{"ppt"}) or
+#' log (\code{"log"}) before mixed linear model application.
+#' @param .label A character string indicating whether variable names are latex
+#' (\code{"latex"}) or webtex (\code{"webtex"}) compatible. Will be extended in
+#' the future \code{default = NULL}.
 #' @param .meta Logical whether to preserve the metadata as an attribute
 #' (defaults to TRUE).
 #'
-#' @return A \code{\link[tibble::tibble]{tibble}} with model output. See
-#' \code{point::names_model} for more information on the results.
+#' @return A \code{tibble::\link[tibble:tibble]{tibble}()} with model output.
+#' See \code{point::names_model} for more information on the model results.
 #'
 #' @export
 #' @examples
-#'
 #' # Simulated IC data
-#' tb_dia <-diag_R(simu_IC, "13C", "12C", force.nm, spot.nm, .Xt = Xt.sm,
-#'                 .N = N.sm)
+#' tb_dia <- diag_R(simu_IC, "13C", "12C", type.nm, spot.nm,
+#'                  .output = "diagnostic")
 #'
-#' # Evaluate signficance and effect of outliers based on Cook's D
-#' eval_diag(tb_dia, "13C", "12C", force.nm, spot.nm, .nest = force.nm,
-#'           .Xt = Xt.sm, .N = N.sm)
+#' # Evaluate significance and effect of outliers based on Cook's D
+#' eval_diag(tb_dia, "13C", "12C", type.nm, spot.nm, .nest = type.nm)
 #'
-eval_diag <- function(.df, .ion1, .ion2, ..., .nest = NULL,
-                      .Xt = Xt.pr, .N = N.pr, .species = species.nm,
-                      .t = t.nm, .flag = flag, .output = "sum", .tf = "ppt",
-                      .label = "none", .meta = TRUE){
+eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr,
+                      .N = N.pr, .species = species.nm, .t = t.nm, .flag = flag,
+                      .execution = execution, .output = "inference",
+                      .tf = "ppt", .label = NULL, .meta = TRUE){
 
   # Quoting the call (user-supplied expressions)
   # Grouping
-  gr_by <- enquos(...)
+  gr_by <- enquos(..., .execution)
 
   # Additional arguments
-  args <- enquos(Xt = .Xt, N = .N, species = .species, t = .t, flag = .flag,
-                 nest = .nest)
+  args <- enquos(.X = .X, .N = .N, .species = .species, .t = .t, .flag = .flag,
+                 .nest = .nest, .execution = .execution)
 
   # Metadata
-  if(.meta) meta <- unfold(.df, merge = FALSE)
+  if(.meta) meta <- unfold(.IC, merge = FALSE)
 
-  # rare isotope
-  Xt1 <- quo_updt(args[["Xt"]], post = .ion1)
-  # common isotope
-  Xt2 <- quo_updt(args[["Xt"]], post = .ion2)
-  N2 <- quo_updt(args[["N"]], post = .ion2)
-  chi2_Xt2 <- quo_updt(args[["Xt"]], pre = "chi2", post = .ion2)
-  # mean R analysis
-  M_R <- quo_updt(args[["Xt"]], pre = "M_R")
-  # predicted heavy isotope
-  hat_Xt1 <- quo_updt(Xt1, pre = "hat")
+  # Update quosures (rare and common isotope)
+  args <- list2(
+    !!! args,
+    !!! all_args(args, .ion1, .ion2, chr = FALSE),
+    # Rare isotope
+    X1  = quo_updt(args[[".X"]], post = .ion1),
+    # Common isotope
+    X2  = quo_updt(args[[".X"]], post = .ion2)
+    )
+
+  # New quosures (model output)
+  model_args <- arg_builder(args, "model")
+  args <- list2(
+    !!! args,
+    # Model arguments
+    !!! model_args,
+    # Predicted rare isotope count rate
+    hat_X1 = quo_updt(args[["X1"]], pre = "hat"),
+    # Re-centred X
+    Xe = quo_updt(args[[".X"]], post = "e", update_post = TRUE)
+    )
 
 
-  if (!(as_name(hat_Xt1) %in% colnames(.df))) {
-    .df <- mutate(.df, !!hat_Xt1 := !!M_R * !!Xt2)
+  # Predicted rare isotope count rate
+  if (!(as_name(args[["hat_X1"]]) %in% colnames(.IC))) {
+    .IC <- mutate(.IC, !! args[["hat_X1"]] := !! args[["M_R"]] * !! args[["X2"]])
     }
   # Check number of levels of bad flag is more than 10
-  df_n <-  count(.df, .data$execution, !!!gr_by, !!args[["flag"]])
+  IC_n <-  count(.IC, !! args[[".execution"]], !!! gr_by, !! args[[".flag"]])
 
-  if (nrow(filter(df_n, !!args[["flag"]] == "divergent" & n >= 10)) == 0) {
-    stop("Number of flagged outliers in all samples is too small for a reliable
-         diagnostic. Execution has stopped.")
+  if (nrow(filter(IC_n , !! args[[".flag"]] == "divergent" & n >= 10)) == 0) {
+    stop("Number of flagged outliers in all samples is too small for a reliable diagnostic. Execution has stopped.",
+         call. = FALSE)
     }
 
-  if (nrow(filter(df_n, !!args[["flag"]] == "divergent" & n >= 10)) <
-      nrow(filter(df_n, !!args[["flag"]] == "divergent"))) {
-    warning("Number of flagged outliers in some samples is too small for a
-            reliable diagnostic. Execution proceeded with remaining samples.")
+  if (nrow(filter(IC_n, !! args[[".flag"]] == "divergent" & n >= 10)) <
+      nrow(filter(IC_n, !! args[[".flag"]] == "divergent"))) {
+    warning("Number of flagged outliers in some samples is too small for a reliable diagnostic. Execution proceeded with remaining samples.",
+            call. = FALSE)
     # Otherwise filter data-set
-    .df <- filter(df_n, !!args[["flag"]] == "divergent" & n < 10)  %>%
-      select(.data$execution, !!!gr_by) %>%
-      anti_join(.df, ., by = c("execution", sapply(gr_by, as_name)))
+    .IC <- filter(IC_n, !! args[[".flag"]] == "divergent" & n < 10)  %>%
+      select(!!!gr_by) %>%
+      anti_join(.IC, ., by = c(sapply(gr_by, as_name)))
     }
 
-  # Check for ionization trend
-  if (any(between(pull(.df ,!!chi2_Xt2) , 0.9, 1.1))) {
-    warning("Linear ionization trend absent in some or all analyses;
-            F statistic might be unreliable.")
+  # Check for ionization efficiency trend
+  if (any(between(pull(.IC , !! args[["chi2_N2"]]) , 0.9, 1.1))) {
+    warning("Linear ionization trend absent in some or all analyses; F statistic might be unreliable.",
+            call. = FALSE)
     }
 
-  # Re-center residuals along flag variable
-  df <- cstd_var(.df, Xt1, hat_Xt1, args[["flag"]], !!! gr_by, execution)
+  # Re-centre residuals along flag variable
+  IC <- cstd_var(.IC, gr_by, args)
 
   # Create zero (constrained) model flag and updated model
-  df_lm <- tidyr::nest(df, !! M_R := !! M_R, data = -c(!!! gr_by,  .data$execution)) %>%
+  IC_lm <- tidyr::nest(IC, data = -c(!!! gr_by)) %>%
     mutate(
-      lm_out =
-        purrr::map(
-          data,
-          ~lm_fun(.x, .Xt1 = quo(cstd_X), .Xt2 = Xt2, .flag = args[["flag"]])
-          ),
-      !! M_R :=
-        purrr::map(
-          !! M_R,
-          distinct
-          )
+      !! args[["ratio"]] := purrr::map(data, ~distinct(.x, !! args[["ratio"]])),
+      !! args[["M_R"]] := purrr::map(data, ~distinct(.x, !! args[["M_R"]])),
+      lm_out = purrr::map(data, lm_fun, args)
       ) %>%
-    unnest_wider(lm_out)
+    tidyr::unnest_wider(lm_out)
 
-  if (.output == "sum") df_lm <- unnest(df_lm, cols = !! M_R) else df_lm <- select(df_lm, - !!M_R)
-
-  if (is_symbol(get_expr(args[["nest"]]))) {
-    # Groups for nested data
-    nest_gr <- gr_by[!sapply(gr_by, as_name) %in% as_name(args[["nest"]])]
-
-    df_mlm <- df %>%
-    # Nest over nest groups
-      tidyr::nest(data = -c(!!! nest_gr))
-
-    df_mlm1 <- mutate(
-      df_mlm,
-      gls_out =
-        purrr::map(
-          data,
-          purrr::possibly(gls_fun, NA),
-          .Xt1 = Xt1,
-          .Xt2 = Xt2,
-          .tf = .tf,
-          .group = args[["nest"]]
-          ),
-      inter_out =
-        purrr::map2(
-          data,
-          gls_out,
-          purrr::possibly(mlm_fun1, NA),
-          .Xt1 = Xt1,
-          .Xt2 = Xt2,
-          .tf = .tf,
-          .group = args[["nest"]]
-          )
-      ) %>%
-        hoist(.col = gls_out, "ls_gls") %>%
-        select(-c(gls_out, data)) %>%
-        unnest_wider(ls_gls) %>%
-        unnest_wider(inter_out)
-
-    ls_mlm <- lst(df_lm, df_mlm1)
-
-      # Check if longitudinal analyses can be performed
-      if (n_distinct(pull(df, .data$execution)) > 1) {
-
-        df_mlm2 <- mutate(
-          df_mlm,
-          intra_out =
-            purrr::map(
-              data,
-              purrr::possibly(mlm_fun2, NA),
-              .Xt1 = Xt1,
-              .Xt2 = Xt2,
-              .tf = .tf,
-              .group = args[["nest"]]
-              )
-          ) %>%
-          select(-data) %>%
-          unnest_wider(intra_out)
-
-        ls_mlm$df_mlm2 <- df_mlm2
-
+  if (.output == "inference") {
+    IC_lm <- tidyr::unnest(
+      IC_lm,
+      cols = c(!! args[["ratio"]], !! args[["M_R"]])
+      )
       } else {
-        warning("Longitudinal analyses cannot be peformed.")
-      }
+        IC_lm <- select(IC_lm, - c(!! args[["ratio"]] , !! args[["M_R"]]))
+        }
+
+  if (is_symbol(get_expr(args[[".nest"]]))) {
+    # Groups for nested data
+    nest_args <- c(as_name(args[[".nest"]]), as_name(args[[".execution"]]))
+    nest_gr <- gr_by[!sapply(gr_by, as_name) %in% nest_args]
+
+    IC_mlm <- IC %>%
+    # Nest over nest groups
+      tidyr::nest(data = -c(!!! nest_gr)) %>%
+      mutate(
+        gls_out =
+          purrr::map(data, purrr::possibly(gls_fun, NA), args, .tf = .tf),
+        inter_out =
+          purrr::map2(
+            data,
+            gls_out,
+            purrr::possibly(mlm_fun, NA),
+            args,
+            .tf = .tf
+            )
+        ) %>%
+      select(-c(gls_out, data)) %>%
+      tidyr::unnest_wider(inter_out)
+
+    IC_mlm <- list(IC_lm, IC_mlm)
 
     # Prepare output
-    df <- purrr::reduce(ls_mlm, left_join, by = sapply(nest_gr, as_name)) %>%
-      output_lm(args[["Xt"]], meta,  .label, .output)
-    return(df)
+    IC <- purrr::reduce(IC_mlm, left_join, by = sapply(nest_gr, as_name)) %>%
+      output_lm(args, model_args, .meta, .label, .output)
+    return(IC)
   }
   # Prepare output
-  df <- df_lm %>%
-    output_lm(args[["Xt"]], meta,  .label, .output)
-  return(df)
+  IC <- IC_lm %>%
+    output_lm(args, model_args, .meta, .label, .output)
+  return(IC)
 }
 
 #-------------------------------------------------------------------------------
@@ -195,157 +176,112 @@ eval_diag <- function(.df, .ion1, .ion2, ..., .nest = NULL,
 # lm models
 #-------------------------------------------------------------------------------
 
-lm_fun <- function(.df, .Xt1, .Xt2, .flag) {
-
-  ls_lm <- lst()
+lm_fun <- function(.IC, args) {
 
   # full R model
-  lm_1 <- lm_form(.df, .Xt1, .Xt2, flag = .flag, type = "Rm")
+  lm_1 <- lm_form(.IC, args[["Xe"]], args[["X2"]], flag = args[[".flag"]],
+                  type = "Rm")
   # zero R model
-  lm_0 <- lm_form(.df, .Xt1, .Xt2, type = "Rm")
-  # Effect size
-  # df_f <- tibble(effectsize::cohens_f(lm_1, model2 =  lm_0))
-  # ls_lm$f <- pull(df_f , Cohens_f_partial)
-  # ls_lm$f_cl <- pull(df_f , CI_low)
-  # ls_lm$f_cu <- pull(df_f , CI_high)
-  # Join model hypothesis test
-  df_aov <- broom::tidy(anova(lm_0 , lm_1))
-  ls_lm$F_vl <- pull(df_aov, statistic)[2]
-  ls_lm$p_F <- pull(df_aov, p.value)[2]
+  lm_0 <- lm_form(.IC, args[["Xe"]], args[["X2"]], type = "Rm")
 
-  return(ls_lm)
+  # Join model hypothesis test
+  IC_aov <- broom::tidy(anova(lm_0 , lm_1))
+
+  lst(
+    !! args[["F_R"]] := pull(IC_aov, statistic)[2],
+    !! args[["p_R"]] := pull(IC_aov, p.value)[2]
+    )
 }
 
 #-------------------------------------------------------------------------------
 # gls models
 #-------------------------------------------------------------------------------
 
-gls_fun <- function(.df, .Xt1, .Xt2, .tf, .group) {
-
-  # group-wise ratio of arithmetic mean
-  M_R.gr <- quo_updt(expr(M_R), post = as_name(.group))
+gls_fun <- function(.IC, args, .tf) {
 
   # zero model
-  gls_0 <- lm_form(.df, .Xt1, .Xt2, trans = .tf, type = "GLS")
-  # log-log zero model
-  log_gls_0 <- lm_form(.df, .Xt1, .Xt2, trans = "log", type = "GLS")
+  gls_0 <- lm_form(.IC, args[["X1"]], args[["X2"]], trans = .tf,
+                   type = "GLS")
 
-  ls_gls <- lst(
-    # group-wise ratio of arithmetic mean (R)
-    !!M_R.gr := coef_pull(gls_0, .df, .Xt2, .tf),
-    # group-wise ratio of geometric mean (logR)
-    GM_R = coef_pull(log_gls_0, .df, .Xt2, "log"),
-    # comparison of geometric and arithmetic R
-    dNorm = (GM_R / !!M_R.gr - 1) * 1000
+  lst(
+    !! args[["hat_M_M_R"]] := coef_pull(gls_0, .IC, !! args[["X2"]], .tf),
+    gls_0 = gls_0
     )
-
-  return(lst(ls_gls, gls_0 = gls_0))
 }
 
 #-------------------------------------------------------------------------------
 # mlm model inter R variability
 #-------------------------------------------------------------------------------
 
-mlm_fun1 <- function(.df, .gls, .Xt1, .Xt2, .tf, .group) {
+mlm_fun <- function(.IC, .gls, args, .tf) {
 
   # zero model
   gls_0 <- purrr::pluck(.gls, "gls_0")
   # mlm inter model
   mlm_inter <- lm_form(
-    .df,
-    .Xt1,
-    .Xt2,
+    .IC,
+    args[["X1"]],
+    args[["X2"]],
     trans = .tf,
     vorce = "inter",
-    nest = .group,
+    nest =  args[[".nest"]],
     type = "LME"
     )
   # log likelihood test
-  df_aov <- anova(mlm_inter, gls_0)
+  IC_aov <- anova(mlm_inter, gls_0)
 
-  ls_inter <- lst(
+  lst(
+    # GLS results
+    !! args[["hat_M_M_R"]] := purrr::pluck(.gls, as_name(args[["hat_M_M_R"]])),
     # model relative standard deviation of group and associated standard error
-    RS_R_inter = mlm_RS(mlm_inter, .Xt2),
-    RS_R_se_inter = mlm_RS(mlm_inter, .Xt2, output = "se"),
+    !! args[["hat_RS_M_R"]] := mlm_RS(mlm_inter, args[["X2"]]),
     # test statistic
-    dAIC_inter = diff(pull(df_aov, `AIC`)),
+    !! args[["dAIC_M_R"]] := diff(pull(IC_aov, `AIC`)),
     # p value
-    p_inter = zuur_cor(pull(df_aov, `L.Ratio`)[2])
+    !! args[["p_M_R"]] :=  zuur_cor(pull(IC_aov, `L.Ratio`)[2])
     )
-
-  return(ls_inter)
-
-}
-
-#-------------------------------------------------------------------------------
-# mlm model intra R variability
-#-------------------------------------------------------------------------------
-
-mlm_fun2 <- function(.df, .Xt1, .Xt2, .tf, .group) {
-
-  # mlm intra model
-  mlm_intra <- lm_form(.df, .Xt1, .Xt2, vorce = "intra", nest = .group,
-                      type = "LME"
-                      )
-
-  # anova to check whether interaction with execution number is significant
-  df_aov <- broom::tidy(car::Anova(mlm_intra, type = 3))
-
-  ls_intra <- lst(
-    # model relative standard deviation of group and associated standard error
-    RS_R_intra = mlm_dR(mlm_intra, .Xt2),
-    RS_R_se_intra = mlm_dR(mlm_intra, .Xt2, output = "se"),
-    # p value
-    p_intra = pull(df_aov, p.value)[2]
-    )
-  return(ls_intra)
 }
 
 #-------------------------------------------------------------------------------
 # output function
 #-------------------------------------------------------------------------------
 
-output_lm <- function(df, Xt, meta = NULL, label, output) {
+output_lm <- function(IC, args, model_args, meta = NULL, label = NULL, output) {
 
   # Output transform
-  trans_out <- function(output) {
+  trans_out <- function(IC, output) {
     switch(
       output,
-      sum = call2( "select", expr(.), expr(-data)),
-      complete = call2("unnest", expr(.), cols = expr(data))
-    )
-  }
-
-  df <- df %>%
-    eval_tidy(expr = trans_out(output))
-
-  # Latex labels
-  if (label == "latex") {
-    # Stat selection
-    vars1 <- purrr::keep(
-      colnames(df),
-      ~str_detect(
-        .,
-        str_c(paste0("^",  point::names_model$name), collapse = "|")
+      inference = call2( "select", IC, expr(-data)),
+      complete = call2("unnest", IC, cols = expr(data), .ns = "tidyr")
       )
-    )
-    vars2 <- paste(point::names_stat_R$name, "R", as_name(Xt), sep = "_")
-    # To render nice latex variable names in Rmarkdown/Latex
-    ls_latex <- set_names(vars1, nm = point::names_model$latex[1:length(vars1)])
-    if (output == "complete") {
-      ls_latex2 <- set_names(
-        vars2,
-        nm = purrr::map_chr(point::names_stat_R$name, ~stat_labeller(stat = .x))
-        )
-      ls_latex <- append(ls_latex, ls_latex2)
-    }
-    return(rename(df, !!!ls_latex))
-  }
-  # Return metadata
-  if (!is.null(meta)) df <- fold(df, type = ".mt",  meta = meta)
-  return(df)
   }
 
+  data_env <- env(data = IC)
+  IC <- eval(trans_out(IC, output), data_env)
+
+  #Latex labels
+  if (! is.null(label)) {
+    tb_model <- point::names_model
+    if (!is_symbol(get_expr(args[[".nest"]]))) {
+      tb_model <- filter(point::names_model, type == "Ratio method")
+      # Model args augment
+      model_args <- model_args[paste(tb_model$name, tb_model$derived, sep = "_")]
+    }
+    ls_latex <- set_names(
+      sapply(model_args, as_name),
+      tex_labeller(tb_model, tb_model$name, label)
+    )
+    IC <- rename(IC, !!! ls_latex)
+  }
+
+  # Return metadata
+  if (!is.null(meta)) IC <- fold(IC, type = ".mt",  meta = meta)
+
+  return(IC)
+  }
+
+# get coeffecients from mlm model
 coef_pull <- function(sum, data, arg, trans){
 
   cf <- unname(coef(sum))
@@ -356,45 +292,22 @@ coef_pull <- function(sum, data, arg, trans){
 
 # re-center outliers towards the fitted value by subtraction of residual
 # extremes
-cstd_var <- function(.df, .Xt1, .hat_Y, .flag, ...){
-
-  gr_by <- enquos(...)
-
-  group_by(.df, !!! gr_by) %>%
+cstd_var <- function(.IC, gr_by, args){
+  group_by(.IC, !!! gr_by) %>%
     mutate(
       # Residuals
-      E = !!.Xt1 - !!.hat_Y,
+      E = !! args[["X1"]] - !! args[["hat_X1"]],
       # Divide values in upper and lower sectors
-      sector = if_else(!!.Xt1 >= !!.hat_Y, "upper", "lower")
+      sector = if_else(!! args[["X1"]] >=  !! args[["hat_X1"]], "upper", "lower")
       ) %>%
-    group_by(!!! gr_by, !!.flag, .data$sector) %>%
+    group_by(!!! gr_by, !! args[[".flag"]], .data$sector) %>%
     mutate(
       min_bound = if_else(.data$sector == "upper", min(.data$E), max(.data$E)),
-      cstd_X = .data$E - min_bound + !!.hat_Y,
+      !! args[["Xe"]] := .data$E - .data$min_bound + !! args[["hat_X1"]],
       .keep = "unused"
       ) %>%
     ungroup()
    }
-
-# Temporal trend of the fixed coefficient
-mlm_dR <- function(sum, arg, output = "value") {
-
-  fix <- nlme::fixed.effects(sum) %>% unname()
-  dR <- fix[2] / fix[1]
-  if (output == "value") return(dR * 1000)
-  if (output == "se"){
-    fix.sd <- broom.mixed::tidy(sum) %>%
-      select(std.error) %>%
-      tidyr::drop_na() %>%
-      mutate(sd = std.error  * sqrt(nobs(sum)),
-             mean = dR)
-
-    dR.se <- ((sqrt(((fix.sd$sd[1]/ fix.sd$mean[1]) ^ 2) +
-                      ((fix.sd$sd[2]/ fix.sd$mean[2]) ^ 2)) * dR) /
-                sqrt(nobs(sum)))
-    return(dR.se  * 1000) # per mille
-  }
-}
 
 # Conditional coefficient back transformation
 trans_R <- function(data, arg, cf){
@@ -411,7 +324,7 @@ mlm_RS <- function(sum, arg, output = "value") {
 
   ran <- (nlme::VarCorr(sum))[,2] %>%
     tibble::enframe() %>%
-    filter(str_detect(name, (as_name(arg))))
+    filter(stringr::str_detect(name, (as_name(arg))))
 
   ran <- as.numeric(tibble::deframe(ran[2,2]))
   fix <- nlme::fixed.effects(sum) %>% unname()
@@ -420,33 +333,7 @@ mlm_RS <- function(sum, arg, output = "value") {
 
   if (output == "value") {return(RS * 1000)} # per mille
 
-  if (output == "se"){
-    # unequal distribution CI (95 %) converted to sd with delta-method
-    if (!is.null(nrow(sum$apVar))) {
-      var_matrix <- sum$apVar
-      par <- attr(var_matrix, "Pars")
-      ran_sd <- msm::deltamethod(~ exp(x1)^2, par, var_matrix) * sqrt(nobs(sum))
-      } else {
-      ran_sd <- 0
-        }
-
-    # fixed effect CI (95 %) converted to sd
-    fix_CI <- nlme::intervals(sum, which = "fixed")
-    fix_sd <- fix_CI$fixed %>%
-      tibble::as_tibble() %>%
-      mutate(se = (upper - lower) / 3.92) %>%
-      pull(se) *
-      sqrt(nobs(sum))
-
-    attr(fix_sd, "label") <- NULL
-
-    # propagation when calculating isotope RS
-    RS.se <- ((sqrt(((unique(ran_sd) / unique(ran)) ^ 2) +
-                      ((unique(fix_sd) / unique(fix)) ^ 2)) * RS) /
-                sqrt(nobs(sum)))
-    return(RS.se * 1000) # per mille
-  }
 }
 
 # correction for testing on the boundary Zuur et al 2008 (CH 5, p 123)
-zuur_cor <- function(L) 0.5 * (1 - pchisq(L, 1))
+zuur_cor <- function(L) {0.5 * (1 - pchisq(L, 1))}

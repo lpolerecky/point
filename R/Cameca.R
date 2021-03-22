@@ -5,18 +5,14 @@
 #'
 #' These functions perform a specific set of diagnostics to term anomalous
 #' values in raw ion count data of an isotope pair. The wrapper function
-#' \code{Diag_R} is more convenient as it defines all the ion- and isotope-wise
+#' \code{diag_R} is more convenient as it defines all the ion- and isotope-wise
 #' statistics required for the diagnostics.
 #'
-#' @param .df A tibble containing processed ion count data.
+#' @param .IC A tibble containing processed ion count data.
 #' @param .ion1 A character string constituting the heavy isotope ("13C").
 #' @param .ion2 A character string constituting the light isotope ("12C").
 #' @param ... Variables for grouping.
-#' @param .method Character string for the method for diagnostics (default =
-#' \code{"CooksD"}, see details).
-#' @param .reps Numeric setting the number of repeated iterations of outlier
-#' detection (default = 1).
-#' @param .Xt A variable constituting the ion count rate (defaults to
+#' @param .X A variable constituting the ion count rate (defaults to
 #' variables generated with \code{read_IC()})
 #' @param .N A variable constituting the ion counts (defaults to variables
 #' generated with \code{read_IC()}.).
@@ -29,10 +25,10 @@
 #' @param .alpha_level. The significance level of the hypothesis test and
 #' rejection level for outliers.
 #'
-#' @return A \code{\link[tibble:tibble]{tibble}} containing either the original
-#' dataset with new columns related to the diagnostics or only the diagnostics.
-#' The flag variable enables convenient filtering of the original tibble for an
-#' augmentation of the original dataset.
+#' @return A \code{tibble\link[tibble:tibble]{tibble}()} containing either the
+#' original dataset with new columns related to the diagnostics or only the
+#' diagnostics. The flag variable enables convenient filtering of the original
+#' tibble for an augmentation of the original dataset.
 #' @export
 #' @examples
 #' # Use point_example() to access the examples bundled with this package
@@ -49,44 +45,47 @@
 #'                .zero = TRUE)
 #'
 #' # CAMECA style augmentation of ion count data for isotope ratios
-#' tb_dia <- Cameca(tb_R,"13C", "12C", file.nm, .output = "flag")
-Cameca <- function(.df, .ion1, .ion2, ..., .Xt = Xt.pr, .t = t.nm,
-                   .output = "complete", .hyp = "none", .alpha_level = 0.05){
+#' Cameca(tb_R, "13C", "12C", file.nm, .output = "flag")
+Cameca <- function(.IC, .ion1, .ion2, ..., .X = Xt.pr, .N = N.pr, .t = t.nm,
+                   .output = "complete", .alpha_level = 0.05){
 
   # Grouping
   gr_by <- enquos(...)
 
   # Quoting the call (user-supplied expressions)
-  Xt <- enquo(.Xt)
-  t <- enquo(.t)
+  args <- enquos(.X = .X, .N = .N, .t = .t)
 
-  # Heavy isotope
-  Xt1 <- quo_updt(Xt, post = .ion1) # count rate
-  # Light isotope
-  Xt2 <- quo_updt(Xt, post = .ion2) # count rate
+  # R quosures
+  args <- list2(
+    !!! args,
+    X1 = quo_updt(args[[".X"]], post = .ion1), # count rate rare isotope
+    X2 = quo_updt(args[[".X"]], post = .ion2), # count rate common isotope
+    !!! arg_builder(args, "R"),
+    R  = quo_updt(args[[".X"]], pre = "R")
+    )
 
-  # R
-  R <- quo_updt(Xt, pre = "R")
-  M_R <- quo_updt(Xt, pre = "M_R")
+  # new quosures
+  args <- list2(
+    !!! args,
+    # Sigma cut-off bound
+    hat_s_R = quo_updt(args[["R"]], pre = "hat_s"),
+    # Predicted rare isotope count rate
+    hat_X1 = quo_updt(args[["X1"]], pre = "hat")
+    )
 
-  # Fitted isotope R (+ heavy isotope) and variance (sigma)
-  R <- quo_updt(Xt, pre = "R")
-  hat_R <- quo_updt(R, pre = "hat", post = .ion1)
-  hat_s_R <- quo_updt(R, pre = "hat_s", post = .ion1)
-  hat_Xt1 <- quo_updt(Xt, pre = "hat", post = .ion1)
-  hat_s_Xt1 <- quo_updt(Xt, pre = "hat_s", post = .ion1)
+  # quantiles for cut-off bound
+  fct_min <- qnorm((.alpha_level / 2))
+  fct_max <- qnorm(1 - (.alpha_level / 2))
 
-  group_by(.df, !!! gr_by) %>%
+  group_by(.IC, !!! gr_by) %>%
     mutate(
-      !! hat_s_R := sd(!!R),
-      !! hat_R := !! M_R,
-      !! hat_Xt1 := !! hat_R * !!Xt2,
-      !! hat_s_Xt1 := !! hat_s_R * !!Xt2,
+      !! args[["hat_s_R"]] := sd(!! args[["R"]]),
+      !! args[["hat_X1"]] := !! args[["M_R"]] * !! args[["X2"]],
       flag = if_else(
         between(
-          !! R,
-          !! hat_R + qnorm((.alpha_level / 2)) * !!hat_s_R, # mean - 2SD
-          !! hat_R + qnorm(1 - (.alpha_level / 2)) * !!hat_s_R  # mean + 2SD
+          !! args[["R"]],
+          unique(!! args[["M_R"]] + fct_min * !! args[["hat_s_R"]]),# mean - 2SD
+          unique(!! args[["M_R"]] + fct_max * !! args[["hat_s_R"]]) # mean + 2SD
           ),
         "confluent",
         "divergent"

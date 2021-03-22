@@ -1,9 +1,9 @@
 #' @rdname Cameca
 #'
 #' @export
-CV <- Rm <- norm_E <- CooksD <- QQ <- IR <- function(
-  .df, .ion1, .ion2, ..., .Xt = Xt.pr, .t = t.nm,
-  .output = "complete", .hyp = "none", .alpha_level = 0.05){
+CV <- Rm <- norm_E <- CooksD <- QQ <- IR <- function(.df, .ion1, .ion2, ...,
+  .X = Xt.pr, .t = t.nm, .output = "complete", .hyp = "none",
+  .alpha_level = 0.05){
 
   # Grouping
   gr_by <- enquos(...)
@@ -27,27 +27,28 @@ CV <- Rm <- norm_E <- CooksD <- QQ <- IR <- function(
     }
 
   # Quoting the call (user-supplied expressions)
-  Xt <- enquo(.Xt)
+  X <- enquo(.X)
   t <- enquo(.t)
 
-  # Heavy isotope
-  Xt1 <- quo_updt(Xt, post = .ion1) # count rate
-  # Light isotope
-  Xt2 <- quo_updt(Xt, post = .ion2) # count rate
+  # Rare isotope
+  X1 <- quo_updt(X, post = .ion1) # count rate
+  # Common isotope
+  X2 <- quo_updt(X, post = .ion2) # count rate
 
   # Execute
-  df <- nest_R_lm(.df, gr_by, Xt1, Xt2, t, method = fun_nm, .hyp = .hyp,
+  df <- nest_R_lm(.df, gr_by, X1, X2, t, method = fun_nm, .hyp = .hyp,
                   .alpha_level = .alpha_level)
+
 
   # Output
   if (fun_nm == "IR") {
-    return(unnest(select(df, -c(t, data)), cols = c(extr, flag)))
+    return(tidyr::unnest(select(df, -c(t, data)), cols = c(extr, flag)))
   }
   if (.output == "flag") {
-    return(unnest(select(df, -data), cols = c(t, extr, flag)))
+    return(tidyr::unnest(select(df, -data), cols = c(t, extr, flag)))
   }
   if (.output == "complete") {
-    return(unnest(select(df, -t), cols = c(data, extr, flag)))
+    return(tidyr::unnest(select(df, -t), cols = c(data, extr, flag)))
   }
 }
 
@@ -56,50 +57,47 @@ CV <- Rm <- norm_E <- CooksD <- QQ <- IR <- function(
 #-------------------------------------------------------------------------------
 
 # nest lm (args as quos)
-nest_R_lm <- function(df, gr_by, Xt1, Xt2, t, method, .hyp, .alpha_level){
+nest_R_lm <- function(df, gr_by, X1, X2, t, method, .hyp, .alpha_level){
 
   tidyr::nest(df, t = !!t, data = -c(!!! gr_by)) %>%
   mutate(
     R_lm =
-      purrr::map(data, ~lm_form(.x, Xt1, Xt2, type = "Rm")),
+      purrr::map(data, ~lm_form(.x, X1, X2, type = "Rm")),
     aug =
       purrr::map(R_lm, broom::augment),
     extr =
-      purrr::map(aug, ~transmute_reg(.x, Xt1, Xt2, method)),
+      purrr::map(aug, ~transmute_reg(.x, X1, X2, method)),
     extr =
       purrr::map(extr, ~QQ_trans(.x, method, .hyp, .alpha_level)),
     extr =
       purrr::map(extr, ~IR_trans(.x, method, .hyp, .alpha_level)),
     extr =
-      purrr::map2(aug, extr, ~bp_wrap(.x, .y, Xt2, method, .hyp, .alpha_level)),
+      purrr::map2(aug, extr, ~bp_wrap(.x, .y, X2, method, .hyp, .alpha_level)),
     flag =
-      purrr::map(extr, ~flag_set(.x, Xt1, Xt2, method, .alpha_level))
+      purrr::map(extr, ~flag_set(.x, method, .alpha_level))
     ) %>%
   select(-c(R_lm, aug))
 
 }
 
 # augment function transform  and rename variables to standards of point
-transmute_reg <- function(df, Xt1, Xt2, type){
+transmute_reg <- function(df, X1, X2, type){
 
   # predicted heavy isotope
-  hat_Xt1 <- quo_updt(Xt1, pre = "hat")
-  # residual standard deviation
-  hat_s_Xt1 <- quo_updt(Xt1, pre = "hat_s")
+  hat_X1 <- quo_updt(X1, pre = "hat")
 
   # model args
   args <- quos(
     hat_E = .data$.resid,
-    !! hat_Xt1 := .data$.fitted,
-    !! hat_s_Xt1 := .data$.sigma,
+    !! hat_X1 := .data$.fitted,
     studE = .data$.std.resid,
     hat_Xi = .data$.hat,
     CooksD = .data$.cooksd,
     )
 
-  if (type == "Rm"| type == "CV") args <- args[c(as_name(hat_Xt1), "studE")]
+  if (type == "Rm"| type == "CV") args <- args[c(as_name(hat_X1), "studE")]
   if (type == "norm_E") args <- args[c("studE", "hat_Xi", "CooksD")]
-  if (type == "CooksD") args <- args[c(as_name(hat_Xt1), "CooksD")]
+  if (type == "CooksD") args <- args[c(as_name(hat_X1), "CooksD")]
   if (type == "QQ"| type == "IR") args <- args["studE"]
 
   # Execute
@@ -107,10 +105,10 @@ transmute_reg <- function(df, Xt1, Xt2, type){
 }
 
 # create flag variable
-flag_set <- function(df, Xt1, Xt2, type, .alpha_level){
+flag_set <- function(df, type, .alpha_level){
 
   if (type == "Rm" | type == "CV") return(flagger(df, studE, 3.5))
-  if (type == "IR") return(flagger(df, acf, e_acf))
+  if (type == "IR") return(flagger(df, acf, unique(e_acf)))
   if (type == "CooksD" | type == "norm_E") {
    df <- transmute(
      df,
@@ -119,12 +117,15 @@ flag_set <- function(df, Xt1, Xt2, type, .alpha_level){
    return(df)
    }
   if (type == "QQ") {
-    df <- flagger(
+    df <- mutate(
       df,
-      QE,
-      hat_e_RQ,
-      fct = qt((1 - .alpha_level / 2), n() - 1)
-      )
+      lower = - qt((1 - .alpha_level / 2), n() - 1) * hat_e_RQ,
+      upper = qt((1 - .alpha_level / 2), n() - 1) * hat_e_RQ,
+      ) %>%
+      transmute(
+        flag = factor(QE < lower | QE > upper),
+        flag = recode_factor(flag, `FALSE` = "confluent", `TRUE` = "divergent")
+        )
     return(df)
    }
 }
@@ -165,7 +166,7 @@ QQ_trans <- function(df, type, .hyp, .alpha_level) {
 
   df <- transmute(
     df,
-    RQ = unname(quantile(studE, probs = ppoints(n()))), #vector_probs(n()))),
+    RQ = unname(quantile(studE, probs = ppoints(n()))),
     # Calculate normal (Theoretical) quantiles using mean and standard deviation
     TQ = qnorm(ppoints(n()), mean(RQ), sd(RQ)),
     QE = RQ - TQ,
@@ -211,11 +212,11 @@ IR_trans <- function(df, type, .hyp, .alpha_level) {
 
 # Hetroscadasticity test (Breusch Pagan test)(level of confidence 95%;
 # cut-off 0.05 for H0 rejection)
-bp_wrap <- function(df1, df2, Xt2, type, .hyp, .alpha_level){
+bp_wrap <- function(df1, df2, X2, type, .hyp, .alpha_level){
 
   # Breusch Pagan test
   if (type == "CV" & .hyp == "bp") {
-    Chi_R2 <- custom_bp(df1, Xt2)
+    Chi_R2 <- custom_bp(df1, X2)
     Ha <- "Ha (heteroskedasticity)"
     H0 <- "H0 (homoskedasticity)"
     df2 <- mutate(
@@ -229,28 +230,17 @@ bp_wrap <- function(df1, df2, Xt2, type, .hyp, .alpha_level){
 
   }
 
-custom_bp <- function(df, Xt2){
+# breusch pagan test
+custom_bp <- function(df, X2){
 
-  res_lm <- lm_form(df, quo(.std.resid), Xt2)
+  res_lm <- lm_form(df, quo(.std.resid), X2)
   R2 <- pull(broom::glance(res_lm), `r.squared`)
   SE_beta <- pull(broom::tidy(res_lm), std.error)[2]
 
   return(R2 * length(R2))
   }
 
-# sigma_calc <- function(res) sqrt(sum((res ^ 2)) / (length(res) - 1))
-
-# # use the formula i - 0.5/ in, for i = 1,..,n
-# # this is a vector of the n probabilities (theoretical cumulative distribution function CDF)
-# vector_probs <- function(n){
-#   ((1:unique(n)) - 0.5) / (unique(n))
-# }
-
 # standard error of quantiles model
 hat_QR_se <- function(RQ, TQ, pb, n){
   (sd(RQ) / dnorm(TQ)) * sqrt((pb * (1 - pb))/ unique(n))
 }
-# # confidence interval regression model
-# hat_Y_se <- function(sigma, hat_Xi){
-#   sigma * sqrt(hat_Xi)
-# }
