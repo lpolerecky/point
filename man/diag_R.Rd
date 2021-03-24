@@ -5,86 +5,119 @@
 \title{Diagnostics isotope count data}
 \usage{
 diag_R(
-  df,
-  method = "Cameca",
-  args = expr_R(NULL),
-  reps = 1,
+  .IC,
+  .ion1,
+  .ion2,
   ...,
-  output = "flag",
-  plot = TRUE,
-  plot_type = "interactive",
-  iso = TRUE,
-  isoscale = NULL
+  .nest = NULL,
+  .method = "CooksD",
+  .reps = 1,
+  .X = Xt.pr,
+  .N = N.pr,
+  .species = species.nm,
+  .t = t.nm,
+  .output = "inference",
+  .label = NULL,
+  .meta = TRUE,
+  .alpha_level = 0.05,
+  .plot = FALSE,
+  .plot_type = "static",
+  .plot_stat = NULL,
+  .plot_iso = FALSE
 )
 }
 \arguments{
-\item{df}{A tibble containing processed ion count data.}
+\item{.IC}{A tibble containing processed ion count data.}
 
-\item{method}{Character string for the type of diagnostics. "Cameca" pertains
-to the default Cameca software setting. "CooksD" pertains to global
-regression diagnostics based on Cook's D statistics.}
+\item{.ion1}{A character string constituting the rare isotope ("13C").}
 
-\item{args}{A list of quosures pertaining to the variables required for a
-call to stat_R. The function expr_R can be used to simplify setting this
-argument.}
-
-\item{reps}{The number of iterations of diagnostic-augmentation cycles.}
+\item{.ion2}{A character string constituting the common isotope ("12C").}
 
 \item{...}{Variables for grouping.}
 
-\item{plot}{Logical indicating whether plot is produced, if FALSE a list of
-tibbles with length `reps` is produced.}
+\item{.nest}{A variable hat identifies a series of analyses to calculate
+the significance of inter-isotope variability.}
 
-\item{plot_type}{Character string determining whether the returned a
-\code{"static"} plot or an \code{"interactive"} plot with
-\code{\link[plotly:ggplotly]{ggplotly}}.}
+\item{.method}{Character string for the method for diagnostics (default =
+\code{"CooksD"}, see details).}
 
-\item{iso}{Logical indicating whether the R value should be converted to the
-delta scale.}
+\item{.reps}{Numeric setting the number of repeated iterations of outlier
+detection (default = 1).}
 
-\item{isoscale}{If the argument \code{iso} is set to TRUE, a character string
-(e.g. \code{"VPDB"}) for the delta conversion should be given. See
-\code{?calib_R()} for options.}
+\item{.X}{A variable constituting the ion count rate (defaults to
+variables generated with \code{read_IC()})}
+
+\item{.N}{A variable constituting the ion counts (defaults to variables
+generated with \code{read_IC()}.).}
+
+\item{.species}{A variable constituting the species analysed (defaults to
+variables generated with \code{read_IC()}).}
+
+\item{.t}{A variable constituting the time of the analyses (defaults to
+variables generated with \code{read_IC()}).}
+
+\item{.output}{Can be set to \code{"complete"} which returns \code{stat_R()}
+and \code{stat_X()} statistics, diagnostics, and inference test results
+following the selected method (see above argument \code{.method});
+\code{"augmented"} for the augmented IC data after diagnostics, \code{"flag"}
+for only outlier detection results; \code{"diagnostic"} for statistics and
+outlier detection, or \code{"inference"} for only inference test statistics
+results (default = inference).}
+
+\item{.label}{For printing nice latex labels use \code{"latex"} (defualt is
+\code{NULL}.}
+
+\item{.meta}{Logical whether to preserve the metadata as an attribute
+(defaults to TRUE).}
+
+\item{.alpha_level}{Significance level of hypothesis test.}
+
+\item{.plot}{Logical indicating whether plot is generated.}
+
+\item{.plot_type}{Character string determining whether the returned plot is
+\code{"static"} \code{ggplot2::\link[ggplot2:ggplot2]{ggplot2}()}(currently
+only supported option).}
+
+\item{.plot_stat}{Adds a statistic label to the plot (e.g. . \code{"M"}), see
+\code{point::nm_stat_R} for the full selection of statistics available.}
+
+\item{.plot_iso}{A character string (e.g. \code{"VPDB"}) for the delta
+conversion of R (see \code{?calib_R()} for options).}
 }
 \value{
-A dynamic plot or static plot. If the argument plot is \code{FALSE},
-a list containing several \code{\link[tibble:tibble]{tibble}} is returned.
-The elements named df contain the original dataset and augmented versions
-from element position number 2 onward. The elements named results contain
-the flag variable for outlier detection as well as associated statistics of
-the selected procedure.
+A \code{ggplot2::\link[ggplot2:ggplot]{ggplot}()} is returned
+(if \code{.plot = TRUE}) along with a
+\code{tibble::\link[tibble:tibble]{tibble}()} which can contain statistics
+diagnostics, hypothesis test results associated with the chosen method and
+depending on the argument \code{.output}.
 }
 \description{
 \code{diag_R} wrapper function for diagnostics on isotope count data
 }
 \details{
 The \code{diag_R} function performs an internal call to stat_R to perform
-diagnostics on the influence of individual measurements on the blockwise or
+diagnostics on the influence of individual measurements on the block-wise or
 global (i.e., a complete analysis) statistics. It identifies potentially
 influential measurements that indicate heterogeneity in the analytical
-substrate. See \code{vignette("IC-diagnostics", package = "point")} for more
-information on how to use the function, and possible methods for diagnostics.
+substrate or measurement. See
+\code{vignette("IC-diagnostics", package = "point")} for more information on
+how to use the function, and possible methods for outlier detection. Options
+are \code{"CooksD"} (default), \code{"Cameca"}, \code{"Rm"}, \code{"norm_E"},
+\code{"CV"}, \code{"IR"}, and \code{"QQ"}, see the
+\code{vignette("IC-diagnostics", package = "point")} for examples and
+\code{point::\link[point:names_diag]{names_diag}}. The
+argument \code{.output} can be used to toggle between \code{"complete"};
+returning \code{stat_R()} and \code{stat_X()} statistics, diagnostics, and
+inference test results, \code{"augmented"}; returning the augmented IC after
+removing outliers, \code{"flag"}; for only outlier detection results;
+\code{"diagnostic"}; for statistics and outlier detection, or
+\code{"inference"}; returns only inference test statistics results
+(default = inference).
 }
 \examples{
 # Modelled ion count dataset
-# Create expression for mimicking R_stat() call
-expr_R_stat <- expr_R(Xt = "Xt.sim",
-                      N = "N.sim",
-                      species = "species",
-                      ion1 = "13C",
-                      ion2 = "12C"
-                      )
-
 # Cook's D style diagnostic-augmentation of ion count data for
-# isotope ratios; 3 repeats
-ls.dia <- diag_R(sim_IC_extremes,
-                 method = "CooksD",
-                 args = expr_R_stat,
-                 reps = 2,
-                 simulation,
-                 trend,
-                 iso_offset,
-                 output = "complete",
-                 plot = FALSE
-                 )
+# isotope ratios
+diag_R(simu_IC, "13C", "12C", type.nm, spot.nm, .plot = TRUE)
+
 }

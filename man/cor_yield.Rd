@@ -5,12 +5,12 @@
 \alias{cor_DT}
 \title{Correct ion detection bias}
 \usage{
-cor_yield(Xt, mean_PHD, SD_PHD, thr_PHD)
+cor_yield(x = NULL, mean_PHD, SD_PHD, thr_PHD, output = "ct")
 
-cor_DT(Xt, deadtime)
+cor_DT(x, deadtime)
 }
 \arguments{
-\item{Xt}{A numeric vector containing raw ion count data.}
+\item{x}{A numeric vector containing raw ion count data.}
 
 \item{mean_PHD}{A numeric vector coontaining the mean PHD value.}
 
@@ -19,6 +19,9 @@ PHD.}
 
 \item{thr_PHD}{A numeric value for the disrcriminator threshold of the EM
 system.}
+
+\item{output}{Character string indicating whether to return corrected count
+rates (\code{"ct"}) or yield value (\code{"Y"}).}
 
 \item{deadtime}{A numeric value for the deadtime of the EM system.}
 }

@@ -6,56 +6,63 @@
 \usage{
 calib_R(
   x,
-  y = NULL,
-  standard,
-  type = c("composition", "enrichment"),
-  input = c("R", "F", "delta", "delta_alpha"),
-  output = c("R", "F", "delta", "alpha")
+  reference,
+  isotope,
+  type = "composition",
+  input = "R",
+  output = "F",
+  y = NULL
 )
 }
 \arguments{
 \item{x}{A numeric value or vector.}
 
-\item{y}{A numeric value or vector of product when calculating enrichments (`type = enrichment`).}
+\item{reference}{A character or numeric value or vector.}
 
-\item{standard}{A character or numeric value or vector.}
+\item{isotope}{A character for the name of the isotope (e.g. \code{"13C"}).}
 
 \item{type}{Type of conversion, isotope composition or enrichment.}
 
-\item{input}{The type of input value, R, F or delta.}
+\item{input}{The type of input value, R, F, and delta.}
 
-\item{output}{Desired ouput value, R, F or delta.}
+\item{output}{Desired output value, R, F, and delta.}
+
+\item{y}{A numeric value or vector of the product when calculating enrichment
+factors, following the convention; x = R(product)/ y = R(substrate). Both x
+and y should have the same notation, either R, F or delta, as supplied to
+the argument input.}
 }
 \value{
 A numeric value or vector.
 }
 \description{
-\code{calib_R} function to convert isotope values back-and-forth between R and delta
+\code{calib_R} function to convert isotope values back-and-forth between R
+and delta
 }
 \details{
 A fundamental in publishing isotope data is the conversion of isotope the delta
 formulation comparing the obtained R to that of a standard. These values are
-reported on a per mill scale. However in IC calculations most often we use
-ratios (R) or fractional abundances (F). This functions provide an easy way
-of making these transformaitons for both the average composition but also
-fractionations as enrichment factors.
+reported on a per mill scale. However in IC calculations ratios (R) or
+fractional abundances (F) are most commonly used. This functions provide an easy way
+of making these transformations for both the average composition but also
+fractionations as enrichment factors (alpha and epsilon).
 }
 \examples{
 # R value of 0.0111 to delta on VPDB scale
-calib_R(0.0111, standard = 0.011237, type = "composition", input = "R", output = "delta")
+calib_R(0.0111, reference = 0.011237, type = "composition", input = "R",
+        output = "delta")
 # or
-calib_R(0.0111, standard = "VPDB", type = "composition", input = "R", output = "delta")
+calib_R(0.0111, reference = "VPDB", isotope = "13C",
+        type = "composition", input = "R", output = "delta")
 
 # Fractional abundance for a given R
-calib_R(0.0111, type = "composition", input = "R", output = "F")
+calib_R(0.0111, reference = 0.011237, type = "composition",
+        input = "R", output = "F")
 
-# Generates warning as input and output are equal
-calib_R(0.0111, type = "composition", input = "R", output = "R")
+# Alpha enrichment factors can also be calculated based on two delta/R/F
+# values, where the second value can be supplied as argument y (i.e.,
+# the product of a reaction)
+calib_R(-25, reference = "VPDB", isotope = "13C",
+        type = "enrichment", input = "delta", output = "alpha", y = -105)
 
-# Generates warning as standard is unknown
-calib_R(0.0111, standard = "somestandard", type = "composition", input = "R", output = "delta")
-
-# Find R values 60 per mille apart
-A <- calib_R(5, standard = "VPDB", type = "composition", input = "delta", output = "R")
-B <- calib_R(-55, standard = "VPDB", type = "composition", input = "delta", output = "R")
 }

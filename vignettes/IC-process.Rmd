@@ -17,7 +17,7 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
-)
+  )
 ```
 
 
@@ -35,12 +35,14 @@ Systematic bias can be introduced by the way secondary ions are generated from p
 * Analysis: $n$-series of measurements $N_{(i)} = M_j$ 
 * Study: $m$-series of analyses $M_{(j)}$, constituting the different spots on the analytical substrate 
 
+
 ```{r setup}
 library(point) # load package
-
 ```
 
+
 The following packages are used in the examples that follow.
+
 
 ```{r additional_packages, message = FALSE}
 library(dplyr) # manipulating data
@@ -51,20 +53,15 @@ library(tibble) # tibble dataframe
 
 
 ```{r ggplot, echo=FALSE}
-
 # Default ggplot theme
 theme_set(theme_classic())
-theme_replace(axis.title = element_text(size = 9),
-              axis.text = element_text(size = 8),
-              plot.background = element_rect(fill = "transparent",
-                                             color = NA),
-              panel.background = element_rect(fill = "transparent",
-                                              color = NA),
-              legend.background = element_rect(fill = "transparent",
-                                               color = NA)
-              )
- 
-
+theme_replace(
+  axis.title = element_text(size = 9),
+  axis.text = element_text(size = 8),
+  plot.background = element_rect(fill = "transparent", color = NA),
+  panel.background = element_rect(fill = "transparent", color = NA),
+  legend.background = element_rect(fill = "transparent", color = NA)
+  )
 ```
 
 
@@ -73,6 +70,7 @@ theme_replace(axis.title = element_text(size = 9),
 ### Analytical bias introduced by electron multipliers
 
 The EM gain is a measure of the electron output current relative to the ion input and the amplification after ion-to-electron conversion. In this process an incident secondary ion triggers the generation of an electron at the first dynode (conversion dynode) of the EM channel; in turn, the resultant secondary electron strikes a consecutive dynode thereby amplifying the signal, where the latter process of secondary electron amplification is repeated multiple times (for the *Cameca NanoSIMS 50L* this generally results in a gain of $10^8$ electrons). 
+
 
 ```{r EMdevice, out.width="80%", echo=FALSE, fig.cap="Graphic representation of the EM ion detection device"}
 knitr::include_graphics("EM-channel.png")
@@ -85,29 +83,32 @@ After this phase of successive cascading charge amplification, the signal is con
 
 The amplitude of EM secondary electron output to EMHV conversion follows the so-called Peak Height Distribution (PHD). In tuning the EM detection system, the EM secondary electron output to EMHV conversion is optimized so that the probability of an electron output to have a certain EMHV is higher than a pre-defined threshold. This discriminator threshold is set to filter-out the background noise (typically 5$\,$ct$\,$s^-^). However the discriminator threshold will inevitably also cut-off part of the genuine EM secondary electron output [@SLodzian2001].  
 
+
 ```{r PHDcurve, echo=FALSE, fig.cap="An example of a typical PHD distribution. The effect of the discriminator threshold on the EM Yield is examplified by the shaded area underneath the probability density function, which would pertain to the probability of an EM output to be larger than the threshold"}
 
-tb.ex <- tibble(PHD = 0:700, 
-                lambda = 14,
-                prob = 0.93,
-                density = dPolyaAeppli(PHD, 
-                                       lambda = lambda, 
-                                       prob = prob))  
+tb_ex <- tibble(
+  PHD = 0:700, 
+  lambda = 14,
+  prob = 0.93,
+  density = dPolyaAeppli(PHD, lambda = lambda, prob = prob)
+  )  
   
-ggplot(tb.ex, aes(x = PHD, y = density)) +
+ggplot(tb_ex, aes(x = PHD, y = density)) +
   geom_line() +
-  geom_polygon(data = tb.ex %>% 
-                        filter(PHD >= 50) %>% 
-                        tibble::add_row(PHD = 50, 
-                                        density = 0, 
-                                        .before = 1), 
-               aes(x = PHD, y = density)) +
+  geom_polygon(
+    data = filter(tb_ex, PHD >= 50) %>% 
+      tibble::add_row(PHD = 50, density = 0, .before = 1), 
+    aes(x = PHD, y = density)
+    ) +
   geom_vline(xintercept = 50, linetype = 2) +
-  annotate(geom = "text", x = 20, y = 0.003, 
-           label = "discriminator threshold", angle = 90) +
-  ggtitle("PHD") +
-  xlab("amplitude EM output (V)") 
-
+  annotate(
+    geom = "text", x = 20, y = 0.003, 
+    label = "discriminator threshold", angle = 90
+    ) +
+  labs(
+    title = "PHD",
+    x = "amplitude EM output (V)"
+    ) 
 ```
 
 
@@ -143,6 +144,7 @@ The $Y_{EM}$ can then be used to calculate the corrected counts and count rates.
   (\#eq:Yield)
 \end{equation}
 
+
 ```{r}
 # original count rate of a chemical species
 x <- 30000
@@ -152,6 +154,7 @@ cor_yield(x, mean_PHD = 210, SD_PHD = 60, thr_PHD = 50)
 
  
 The shape of the PHD distribution changes with the age of the EM but its deleterious effect on secondary ion-to-electron conversion can be alleviated by changing the EMHV. Tools for the assessment of EM deterioration is dealt with in a subsequent section. 
+
 
 #### Dead time
 
@@ -164,12 +167,14 @@ Another bias introduced by EM ion detection devices is the time associated for r
 
 The function `cor_DT` is implemented to correct for this systematic bias of EM devices.
 
+
 ```{r}
 # corrected count rate for a deadtime of 44 ns
 cor_DT(x, 44)
 ```
 
-For a convenient workflow the functions that correct for EM count biases are wrapped in the function `cor_IC`. This function takes the [tibble](https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html) as loaded with the function `read-IC` (see vignette [IC-read](IC-read.html)) and requires setting the following arguments: `N`, a variable for the raw ion count;`t`, a variable for the time increments; `Det` a character string or variable identifying the ion detection system: EM (`"EM"`) or FC (`"FC"`); `deadtime`, a numeric value for the deadtime in nanoseconds; and `thr_PHD`, a numeric value for the discriminator threshold.
+
+For a convenient workflow the functions that correct for EM count biases are wrapped in the function `cor_IC()`. This function takes the [tibble](https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html) as loaded with the function `read_IC()` (see vignette [IC-read](IC-read.html)) and requires setting the following arguments: `N`, a variable for the raw ion count;`t`, a variable for the time increments; `Det` a character string or variable identifying the ion detection system: EM (`"EM"`) or FC (`"FC"`); `deadtime`, a numeric value for the deadtime in nanoseconds; and `thr_PHD`, a numeric value for the discriminator threshold.
 
 
 ```{r}
@@ -179,11 +184,17 @@ For a convenient workflow the functions that correct for EM count biases are wra
 
 # Carry-out the routine point workflow
 # Raw data containing 13C and 12C counts on carbonate
-tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
+tb_rw <- read_IC(point_example("2018-01-19-GLENDON"))
 
 # processing raw ion count data
-head(cor_IC(tb.rw, N.rw, t.rw, det_type.mt))
+tb_pr <- cor_IC(tb_rw) 
 ```
+
+
+```{r process, include=FALSE}
+head(tb_pr)
+```
+
 
 The function returns the original tibble but adds the variables: `Xt.rw`, ion count rates uncorrected for detection device-specific biases; `Xt.pr`, ion count rates corrected for detection device-specific biases; and `N.pr`, counts corrected for detection device-specific biases. 
 
@@ -193,7 +204,9 @@ The function returns the original tibble but adds the variables: `Xt.rw`, ion co
 
 <!-- , where $f$ is 0.5 based on Poisson statistics, BTU has been shown to vary among matrices. At this stage it is hard assess what $K$ could have been. -->
 
+
 ### Analytical bias introduced by Faraday Cups
+
 To be included in the future.
 
 
@@ -211,7 +224,6 @@ To be included in the future.
 <!-- $$ s_{\delta_{\bar{x}}} = \sqrt{\left( \frac{ s_{\bar{x}_{R}} } { \bar{x}_R } \right)^2 + \left( \frac{ s_{\bar{x}_{R_{std}}}  } { \bar{x}_{R_{std}} } \right)^2 + \left( \frac{ s_{\delta_{std}} } { \delta_{std} +1000 } \right)^2} $$ -->
 
 
-
 ## Systematic bias by ionization yield fluctuations
 
 In contrast to EM yield, ionization yield defines the efficiency whereby secondary ions are generated per incident primary ion. The probability  whereby the primary beam produced secondary ions depends strongly on properties of the substrate (matrix effects) and the evolving sputter pit as well as the machine settings, such as the beam type (Cs^+^ and O^-^) and sample charging. The latter effect of sample charge build-up combined with the deepening of the sputter pit are  connected to large systematic biases seen in the count rates of individual ions (see Fig. \@ref(fig:ionR1)) throughout a single analysis [@Fitzsimons2000a]. 
@@ -219,83 +231,40 @@ In contrast to EM yield, ionization yield defines the efficiency whereby seconda
 
 ```{r ionR1, echo=FALSE, fig.width=8, fig.height=6, fig.cap="Changes in the ionization potential examplified by single ion monotonic trends in count rates over subsequent measurements of a single analysis with the NanoSIMS Cameca50L."}
 
-# raw data containing 13C and 12C counts on carbonate
-tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
-
-# Processing raw ion count data
-tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
-
+# ion pairs
 ion1 <-  c("13C", "12C 14N", "12C")
 ion2 <-  c("12C", "40Ca 16O", "40Ca 16O")
 
-
-tb.pr <- tb.pr %>% 
-  filter(file.nm == "2018-01-19-GLENDON_1_1")
+tb_pr <- filter(tb_pr, file.nm == "2018-01-19-GLENDON_1_1")
 
 # Remove analysis with zero counts in their sequence over ion ratio combinations  
-tb.zero <- purrr::map2(ion1, 
-                           ion2, 
-                           ~zeroCt(tb.pr, 
-                                   N.pr, 
-                                   species.nm, 
-                                   .x, 
-                                   .y, 
-                                   file.nm, 
-                                   warn = FALSE
-                                   ) %>% 
-  group_by(species.nm) %>% 
-  mutate(n = 1: n()) %>% 
-  ungroup())
+tb_0 <- purrr::map2_dfr(ion1, ion2, ~zeroCt(tb_pr, .x, .y, file.nm))
 
-a <- ggplotGrob(
-  
-  ggplot(tb.zero[[1]], aes(x = n, y = Xt.pr)) +
-      geom_point(alpha = 0.1) +
-      facet_wrap(vars(species.nm), scales = "free") +
-      ylab("X (ct/sec)")+
-      xlab("t")
-               ) 
-
-b <- ggplotGrob(
-  
-  ggplot(tb.zero[[2]], aes(x = n, y = Xt.pr)) +
-      geom_point(alpha = 0.1) +
-      facet_wrap(vars(species.nm), scales = "free") +
-      ylab("X (ct/sec)") +
-      xlab("t")
-                ) 
-      
-grid::grid.draw(rbind(a,b))
+ggplot(tb_0, aes(x = t.nm, y = Xt.pr)) +
+  geom_point(alpha = 0.1) +
+  facet_wrap(vars(species.nm), scales = "free") +
+  labs( y = "X (ct/sec)", x = "t (sec)")
 ```
+
 
 The systematic changes induced by ionization differences in count rate affect modulate count rates for both isotopes of the same equally (see Fig. \@ref(fig:ionR1)). From the *the formula for exact propagation of error* [@Ku1966] it can further be deduced that the error of co-variate ratios, such as for isotope ratios ($R$), will effectively be dampened by the co-variate term in the equation (see vignette [IC-precision](IC-precision.html)) and @Fitzsimons2000a. However, this is not the case for none-isotope ion ratios and so their propagated error is also largely an effect of this systematic variance induced by ionization trends (see Fig. \@ref(fig:ionR2)). 
 
 
 ```{r ionR2, echo=FALSE, fig.width=8, fig.height=3, fig.cap="Changes in the ratios of none-isotope and isotope ratios compared."}
-
 # Calculate ratios
-tb.R <- purrr::map2_dfr(ion1,
-                        ion2,
-                        ~stat_R(tb.pr,
-                                Xt.pr,
-                                N.pr,
-                                species.nm,
-                                ion1 = .x,
-                                ion2 = .y,
-                                file.nm,
-                                zero = TRUE,
-                                output = "stat"
-                                ) %>% 
-  group_by(R.nm) %>% 
-  mutate(n = 1: n()) %>% 
-  ungroup()
-  )
-                         
-ggplot(tb.R, aes(x = n, y = R_Xt.pr)) +
+tb_R <- purrr::map2_dfr(
+  ion1, 
+  ion2, 
+  ~stat_R(tb_pr, .x, .y, file.nm, .output = "complete")
+  )       
+                                
+lb <- purrr::map2(ion1, ion2, R_labeller, label = "expr") %>%
+  purrr::set_names(nm = paste(ion1, ion2, sep ="/"))
+
+ggplot(tb_R, aes(x = t.nm, y = R_Xt.pr)) +
   geom_point(alpha = 0.1) +
-  facet_wrap(vars(R.nm), scales = "free") +
-  ylab("R")+
-  xlab("t")
+  facet_wrap(vars(ratio.nm), scales = "free", labeller = labeller(R.nm = lb)) +
+  labs(y = "R", x = "t (sec)")
 ```
 
 
@@ -331,35 +300,17 @@ The function `predict_ionize()` provides a convenient implementation of GAM from
 The `point` package provides additional diagnostic tools to assess whether the model represents an under- or over-fit on the data (see vignette [IC-diagnostics](IC-diagnostics.html)).
 
 
-```{r ionR3, echo=FALSE, fig.width=8, fig.height=4, fig.cap="GAM predicted model fit (white line) to single ion count rates."}
-
-tb.mod <-predict_ionize(df = tb.zero[[2]], 
-                        Xt = Xt.pr, 
-                        N = N.pr, 
-                        t = t.rw, 
-                        species = species.nm, 
-                        file.nm
-                        ) 
-
-
-tb.R <- stat_R(tb.mod, Xt.pr.l0, N.pr.l0, species.nm, ion1[2], ion2[2], file.nm , output = "complete")
-
-ggplot(tb.mod, aes(x = t.rw, y = Xt.pr)) +
-  geom_point(alpha = 0.1) +
-  geom_line(aes(x = t.rw, y =  Xt.pr.model), color = "white") +
-  facet_wrap(vars(species.nm), scales = "free")  +
-  ylab("X (ct/sec)") +
-  xlab("t")
-
+```{r ionR3, fig.width=8, fig.height=8, fig.cap="GAM predicted model fit (dashed black line) to single ion count rates and median count rate (solid blue line)."}
+tb_dt <- predict_ionize(tb_pr, file.nm)
 ```
 
 
-```{r ionR4, echo=FALSE, fig.width=8, fig.height=4, fig.cap="An extraction of the $l0$ and $\\epsilon_t$ components, by appliciation of Eq. \\@ref(eq:detr), and thereby yielding corrected none-isotope ion coun ratios."}
-ggplot(tb.R, aes(x = t.rw.12C14N, y = R_Xt.pr.l0)) +
+```{r ionR4, echo=FALSE, fig.width=4, fig.height=4, fig.cap="An extraction of the $l0$ and $\\epsilon_t$ components, by appliciation of Eq. \\@ref(eq:detr), and thereby yielding corrected none-isotope ion count ratios."}
+tb_cov <- cov_R(tb_dt, c("12C", "40Ca 16O"), file.nm, sample.nm)
+
+ggplot(tb_cov, aes(x = t.nm, y = Xt.l0.12C / Xt.l0.40Ca_16O)) +
   geom_point(alpha = 0.1) +
-  facet_wrap(vars(R.nm), scales = "free") +
-  ylab("R") +
-  xlab("t")
+  labs(y = R_labeller("12C", "40Ca 16O", "expr"), x = "t")
 ```
 
 <!-- ## Assessors of analytical drift -->

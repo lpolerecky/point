@@ -2,7 +2,7 @@
 output: 
   github_document:
     pandoc_args: --webtex=http://chart.apis.google.com/chart?cht=tx&chl=
-bibliography: dependencies.bib   
+bibliography: packages.bib  
 ---
 
 <!--  use the --webtex argument in the YAML to render equations -->
@@ -33,66 +33,36 @@ This project was originally inspired by the lack of detailed insight in the inne
 The point package is still under development but the master branch is functioning. Functionality is automatically tested with Travis CI.
 
 
-```{r echo=FALSE, message=FALSE, eval=FALSE}
-# following code for loading and writing the bibtex references for the used 
-# packages is adapted from the blog post: //www.r-bloggers.com/bibliography-with-knitr-cite-your-references-and-packages/,
-# by Michael
-
-library(bibtex)
-
-# required packages
-packages <- c("dplyr", "tidyr", "tibble", "stringr", "readr", "magrittr",
-              "ggplot2", "polyaAeppli", "rlang", "purrr", "devtools", 
-              "roxygen2", "testthat", "knitr", "rmarkdown")    
-
-# load packages
-invisible(lapply(packages, library, character.only = TRUE))
-
-# get the packages version 
-packages_versions <- function(p) {
-  paste(packageDescription(p)$Package, packageDescription(p)$Version, sep = " ")
-}
-
-# get the R reference
+```{r pkgs, echo=FALSE, message=FALSE}
+# following code for loading and writing the bibtex references for the used pkgs
+pkgs <- c("dplyr", "tidyr", "tibble", "stringr", "readr", "magrittr",
+          "ggplot2", "polyaAeppli", "rlang", "purrr", "devtools", 
+          "roxygen2", "testthat", "knitr", "rmarkdown", "bookdown")    
+# Get the R reference
 rref <- citation()
-
-# create ref key
+# Create ref key
 rref$key <- "rversion"
-
-# write the R reference
-write.bib(rref, "rversion.bib")
-
-# get the packages references
-write.bib(packages, "packages.bib")
-
-# The R package book
-bref <-write.bib(
-        bibentry(
-          bibtype = "Book",  
-          key =  "Wickham2015",
-          title = "R packages: organize, test, document, and share your code",
-          author = as.person("Hadley Wickham"),
-          year = "2015",
-          publisher = " O'Reilly Media, Inc."),
-        "book.bib")
-
-
-# merge the R reference and the packages references
-cat(paste("% Automatically generated", Sys.time()), "\n% DO NOT EDIT",
-    { readLines("rversion.bib") %>% 
-      paste(collapse = "\n") },
-    { readLines("packages.bib") %>% 
-      paste(collapse = "\n") },
-    { readLines("book.bib") %>% 
-      paste(collapse = "\n") },
-    file = "dependencies.bib",
-    sep = "\n")
-
+hadley <- bibentry(
+  key = "Wickham2015",
+  bibtype = "Book",
+  title = "R packages: organize, test, document, and share your code",
+  author =  person("Hadley","Wickham"),
+  year = "2015",
+  publisher = " O'Reilly Media, Inc.",
+  url = "https://r-pkgs.org/"
+  )
+knitr::write_bib(pkgs, "packages.bib", prefix = "")
+pkgs <- bibtex::read.bib("packages.bib")
+bibtex::write.bib(
+  purrr::reduce(list(rref, hadley, pkgs), append), 
+  file = "packages.bib"
+  )
 ```
+
 
 ## Credits
 
-The construction of the R [@rversion] package *point* and associated documentation was aided by the packages; *devtools* [@devtools], *roxygen2* [@roxygen2], *testthat* [@testthat], *knitr* [@knitr1 ; @knitr2], *rmarkdown* [@rmarkdown1; @rmarkdown2], and the superb guidance in the book: *R packages: organize, test, document, and share your code*, by @Wickham2015. In addition, this package relies on a set of external packages from the tidyverse universe, including: *dplyr* [@dplyr], *tidyr* [@tidyr], *tibble* [@tibble], *stringr* [@stringr], *readr* [@readr], *magrittr* [@magrittr], *ggplot2* [@ggplot2], *rlang* [@rlang], and *purrr* [@purrr] for internal functioning as well as specialised statistics; *polyaAeppli* [@polyaAeppli].
+The construction of the R [@rversion] package *point* and associated documentation was aided by the packages; *devtools* [@devtools], *roxygen2* [@roxygen2], *testthat* [@testthat], *knitr* [@knitr2014 ; @knitr2015], *rmarkdown* [@rmarkdown2018; @rmarkdown2020], *bookdown* [@bookdown2016] and the superb guidance in the book: *R packages: organize, test, document, and share your code*, by @Wickham2015. In addition, this package relies on a set of external packages from the tidyverse universe, including: *dplyr* [@dplyr], *tidyr* [@tidyr], *tibble* [@tibble], *stringr* [@stringr], *readr* [@readr], *magrittr* [@magrittr], *ggplot2* [@ggplot2], *rlang* [@rlang], and *purrr* [@purrr] for internal functioning as well as specialised statistics; *polyaAeppli* [@polyaAeppli]. Plots are made with *ggplot2* [@ggplot22016]
 
 
 ## Installation
@@ -118,9 +88,7 @@ library(point)
 A more detailed outline of the general point workflow is given in the vignette *IC-introduction* (`vignette("IC-introduction")`). 
 
 ```{r workflow-graph, out.width="100%", echo=FALSE}
-
 knitr::include_graphics("vignettes/workflow.png")
-
 ```
 
 
@@ -131,14 +99,14 @@ To read, process and analyse raw ion count data use the functions:
 * `stat_Xt`: analyse single ion count data
 * `stat_R`: analyse ion ratios
 
+
 ## Example 1: internal precision of isotope ratios
 
-This is an example of how *Cameca NanoSIMS50L* raw data files can be extracted, processed and analysed for the ^13^C/^12^C isotope ratio ($R$). This produces a [tibble](https://tibble.tidyverse.org/) with descriptive and predictive (Poisson) statistics (demarcated with an $\\\hat{\\\phantom{,}}$) of the ion count data. This can be done for single analysis in order to obtain internal precision.
+This is an example of how *Cameca NanoSIMS50L* raw data files can be extracted, processed and analysed for the ^13^C/^12^C isotope ratio ($R$). This produces a [tibble](https://tibble.tidyverse.org/) with descriptive and predictive (Poisson) statistics (demarcated with an \^) of the ion count data. This can be done for single analysis in order to obtain internal precision.
 
-```{r setup-point, message=FALSE}
+
+```{r setup-point, message=FALSE, echo=FALSE}
 library(point)
-library(dplyr) # for data manipulation
-library(stringr) # character string manipulation
 ```
 
 
@@ -147,34 +115,18 @@ library(stringr) # character string manipulation
 # inst/extdata directory.
 
 # Raw data containing 13C and 12C counts on carbonate
-tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
+tb_rw <- read_IC(point_example("2018-01-19-GLENDON"))
 
 # Processing raw ion count data
-tb.pr <- cor_IC(tb.rw, 
-                N = N.rw, 
-                t = t.rw, 
-                Det = det_type.mt, 
-                deadtime = 44, 
-                thr_PHD = 50)
+tb_pr <- cor_IC(tb_rw)
 
-# Descriptive an predictive statistics for 13C/12C ratios
-tb.R <- stat_R(tb.pr, 
-               Xt = Xt.pr, 
-               N = N.pr, 
-               species = species.nm, 
-               ion1 = "13C", 
-               ion2 = "12C", 
-               sample.nm, 
-               file.nm, 
-               latex = TRUE)
+# Internal precision for 13C/12C ratios
+tb_R <- stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .label = "webtex")
 ```
 
 
-  ```{r echo=FALSE}
-knitr::kable(head(tb.R),
-             format.args = list(digits = 3, 
-                                format = "G", 
-                                flag = "0")) 
+```{r echo=FALSE}
+knitr::kable(tb_R, format.args = list(digits = 3, format = "G", flag = "0")) 
 ```
 
 
@@ -182,36 +134,18 @@ knitr::kable(head(tb.R),
 
 To calculate the external reproducibility of isotope ratios one needs to use the total ion counts and count rate of one analysis. The latter is equivalent to the mean ion count rate, which can be calculated with the function `stat_Xt`. 
   
-```{r exampl2}
-# Single ion descriptive an predictive statistics for all measured ions
-tb.Xt <- stat_Xt(tb.pr, 
-                 Xt = Xt.pr, 
-                 N = N.pr, 
-                 species = species.nm, 
-                 sample.nm, 
-                 file.nm,
-                 latex = FALSE)
-
-# For this particular study a belemnite was used as reference material. 
-tb.R.ext  <- stat_R(tb.Xt, 
-                    Xt = M_Xt.pr, 
-                    N = Ntot_Xt.pr, 
-                    species = species.nm, 
-                    ion1 = "13C", 
-                    ion2 = "12C",  
-                    sample.nm, 
-                    latex = TRUE)
+  
+```{r example2}
+# external precision for 13C/12C ratios
+tb_R <- stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .nest = sample.nm, 
+               .label = "webtex")
 ```
+
 
 ```{r echo=FALSE}
-knitr::kable(head(tb.R.ext %>% 
-                    filter(str_detect(sample.nm, "Belemnite"))
-                  ),
-             format.args = list(digits = 3, 
-                                format = "G", 
-                                flag = "0")
-             ) 
+knitr::kable(tb_R, format.args = list(digits = 3, format = "G", flag = "0")) 
 ```
+
 
 For more detailed information:
 
@@ -219,5 +153,6 @@ For more detailed information:
 *IC-process* (`vignette("IC-process")`): processing ion count data        
 *IC-precision* (`vignette("IC-precision")`): statistics concerning ion count precision    
 *IC-diagnostics* (`vignette("IC-diagnostics")`): diagnostics on internal variation
+
 
 # References
