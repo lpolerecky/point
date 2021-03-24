@@ -295,7 +295,7 @@ stat_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr, .N = N.pr,
   if (!is.null(.label)) {
     if (.label == "latex" | .label == "webtex") {
       IC <- mutate(IC, ratio.nm = R_labeller(.ion1, .ion2, label = .label)) %>%
-        select(!!! gr_by, ratio.nm, !!! ls_latex)
+        select(!!! gr_by, .data$ratio.nm, !!! ls_latex)
       return(IC)
       }
     }
@@ -391,14 +391,14 @@ mod_cal <- function(type, calcs) {
 }
 
 # Call specific to removal of zero count measurements with ZeroCt
-zeroCt_cal <- function(zero, IC, .ion1, .ion2, gr_by, args) {# .N, .species, .t){
+zeroCt_cal <- function(zero, IC, .ion1, .ion2, gr_by, args) {
   if (isTRUE(zero)) {
     call2("zeroCt", IC, .ion1 = .ion1, .ion2 = .ion2,
           !!! gr_by, .N = args[[".N"]], .species = args[[".species"]],
-           .warn = TRUE, .ns = "point")
+          .warn = TRUE, .ns = "point")
       } else {
         call2("invisible", IC)
-          }
+        }
 }
 
 # Build new quosures and names for calcs
@@ -415,14 +415,19 @@ arg_builder <- function(args, stat, ion = NULL, append = NULL){
 
   arg_names <- mutate(
     arg_names,
-    origin = if_else(is.na(origin), derived, origin),
+    origin = if_else(is.na(.data$origin), .data$derived, .data$origin),
     label =
       if_else(
-        origin == derived,
-        paste0(paste(name, origin, sep = "_"), append),
-        paste0(paste(name, derived, sep = "_"), append)
+        .data$origin == .data$derived,
+        paste0(paste(.data$name, .data$origin, sep = "_"), append),
+        paste0(paste(.data$name, .data$derived, sep = "_"), append)
         ),
-    name = if_else(origin == derived, name, paste(name, derived, sep = "_"))
+    name =
+      if_else(
+        .data$origin == .data$derived,
+        .data$name,
+        paste(.data$name, .data$derived, sep = "_")
+        )
     )
 
   # quosure update
@@ -440,14 +445,14 @@ arg_builder <- function(args, stat, ion = NULL, append = NULL){
 # latex labeller function
 tex_labeller <- function(vars, stat, label){
   if (!"origin" %in% colnames(vars)) vars$origin <- vars$derived
-  names_vars <- filter(vars, name %in% stat) %>%
+  names_vars <- filter(vars, .data$name %in% stat) %>%
     # if variable has a stat component
     mutate(
       derived =
         if_else(
-          stringr::str_detect(derived, "[[:punct:]]"),
+          stringr::str_detect(.data$derived, "[[:punct:]]"),
           stringr::str_extract("M_R", "(?<=[[:punct:]])[[:alpha:]]"),
-          derived
+          .data$derived
           )
        )
   purrr::pmap_chr(

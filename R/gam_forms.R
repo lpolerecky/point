@@ -27,8 +27,8 @@ gam_fun <- function(IC, args, X.mdl){
     ran_sh.m = sq_sh,
     fix_in.ml = unname(nlme::fixef(mlm_1_lme))[1],
     fix_sh.ml = unname(nlme::fixef(mlm_1_lme))[2],
-    p_intra.ml = purrr::discard(pull(mlm_aov, `p-value`), is.na),
-    dAIC.ml = purrr::discard(diff(pull(mlm_aov, AIC)), is.na),
+    p_intra.ml = purrr::discard(pull(mlm_aov, .data$`p-value`), is.na),
+    dAIC.ml = purrr::discard(diff(pull(mlm_aov, .data$AIC)), is.na),
     !! X.mdl := fit
     )
 

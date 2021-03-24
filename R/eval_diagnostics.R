@@ -122,7 +122,7 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr,
       !! args[["M_R"]] := purrr::map(data, ~distinct(.x, !! args[["M_R"]])),
       lm_out = purrr::map(data, lm_fun, args)
       ) %>%
-    tidyr::unnest_wider(lm_out)
+    tidyr::unnest_wider(.data$lm_out)
 
   if (.output == "inference") {
     IC_lm <- tidyr::unnest(
@@ -143,18 +143,18 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr,
       tidyr::nest(data = -c(!!! nest_gr)) %>%
       mutate(
         gls_out =
-          purrr::map(data, purrr::possibly(gls_fun, NA), args, .tf = .tf),
+          purrr::map(.data$data, purrr::possibly(gls_fun, NA), args, .tf = .tf),
         inter_out =
           purrr::map2(
-            data,
-            gls_out,
+            .data$data,
+            .data$gls_out,
             purrr::possibly(mlm_fun, NA),
             args,
             .tf = .tf
             )
         ) %>%
-      select(-c(gls_out, data)) %>%
-      tidyr::unnest_wider(inter_out)
+      select(-c(.data$gls_out, .data$data)) %>%
+      tidyr::unnest_wider(.data$inter_out)
 
     IC_mlm <- list(IC_lm, IC_mlm)
 
@@ -188,8 +188,8 @@ lm_fun <- function(.IC, args) {
   IC_aov <- broom::tidy(anova(lm_0 , lm_1))
 
   lst(
-    !! args[["F_R"]] := pull(IC_aov, statistic)[2],
-    !! args[["p_R"]] := pull(IC_aov, p.value)[2]
+    !! args[["F_R"]] := pull(IC_aov, .data$statistic)[2],
+    !! args[["p_R"]] := pull(IC_aov, .data$p.value)[2]
     )
 }
 
@@ -236,9 +236,9 @@ mlm_fun <- function(.IC, .gls, args, .tf) {
     # model relative standard deviation of group and associated standard error
     !! args[["hat_RS_M_R"]] := mlm_RS(mlm_inter, args[["X2"]]),
     # test statistic
-    !! args[["dAIC_M_R"]] := diff(pull(IC_aov, `AIC`)),
+    !! args[["dAIC_M_R"]] := diff(pull(IC_aov, .data$`AIC`)),
     # p value
-    !! args[["p_M_R"]] :=  zuur_cor(pull(IC_aov, `L.Ratio`)[2])
+    !! args[["p_M_R"]] :=  zuur_cor(pull(IC_aov, .data$`L.Ratio`)[2])
     )
 }
 
@@ -252,8 +252,8 @@ output_lm <- function(IC, args, model_args, meta = NULL, label = NULL, output) {
   trans_out <- function(IC, output) {
     switch(
       output,
-      inference = call2( "select", IC, expr(-data)),
-      complete = call2("unnest", IC, cols = expr(data), .ns = "tidyr")
+      inference = call2( "select", IC, expr(-.data$data)),
+      complete = call2("unnest", IC, cols = expr(.data$data), .ns = "tidyr")
       )
   }
 
@@ -264,7 +264,7 @@ output_lm <- function(IC, args, model_args, meta = NULL, label = NULL, output) {
   if (! is.null(label)) {
     tb_model <- point::names_model
     if (!is_symbol(get_expr(args[[".nest"]]))) {
-      tb_model <- filter(point::names_model, type == "Ratio method")
+      tb_model <- filter(point::names_model, .data$type == "Ratio method")
       # Model args augment
       model_args <- model_args[paste(tb_model$name, tb_model$derived, sep = "_")]
     }
@@ -276,7 +276,7 @@ output_lm <- function(IC, args, model_args, meta = NULL, label = NULL, output) {
   }
 
   # Return metadata
-  if (!is.null(meta)) IC <- fold(IC, type = ".mt",  meta = meta)
+  if (!is.null(meta)) IC <- fold(IC, type = ".mt", meta = meta)
 
   return(IC)
   }
@@ -324,11 +324,12 @@ mlm_RS <- function(sum, arg, output = "value") {
 
   ran <- (nlme::VarCorr(sum))[,2] %>%
     tibble::enframe() %>%
-    filter(stringr::str_detect(name, (as_name(arg))))
+    filter(stringr::str_detect(.data$name, (as_name(arg))))
 
+  # Coefs
   ran <- as.numeric(tibble::deframe(ran[2,2]))
   fix <- nlme::fixed.effects(sum) %>% unname()
-
+  # Relative variance of the slope
   RS <-  ran / fix
 
   if (output == "value") {return(RS * 1000)} # per mille

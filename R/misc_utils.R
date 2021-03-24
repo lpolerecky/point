@@ -177,10 +177,10 @@ stat_labeller <- function(var, org, stat, value, label = "latex"){
       return(substitute(chi^2 == ~ a, list(a = sprintf(fmt = "%.1f", value))))
     }
     if (stringr::str_detect(stat, "R")) {
-      sd_prefix <- expr(epsilon)
+      sd_prefix <- expression(epsilon)
       value <- paste(sprintf(fmt = "%.1f", value), "(\u2030)")
       } else {
-        sd_prefix <- expr(s)
+        sd_prefix <- expression(s)
         value <- sprintf(fmt = "%.3f", value)
         }
     if (stringr::str_detect(stat, "hat")) {
@@ -217,8 +217,7 @@ stat_labeller <- function(var, org, stat, value, label = "latex"){
 #' `zeroCt()`.
 #'
 #' @param .IC A tibble containing processed ion count data.
-#' @param .ion1 A character string or vector constituting ion names.
-#' @param .ion2 A character string or vector constituting ion names.
+#' @param .ion A character string or vector constituting ion names.
 #' @param ... Variables for grouping.
 #' @param .species A variable constituting the species analysed.
 #' @param .t A variable constituting the time of the analyses.
@@ -277,13 +276,12 @@ cov_R <- function(.IC, .ion, ..., .species = species.nm, .t = t.nm,
 #' isotope ratios.
 #'
 #' @param .IC A tibble containing processed ion count data.
-#' @param .ion1 A character string constituting the heavy isotope ("13C").
-#' @param .ion2 A character string constituting the light isotope ("12C").
+#' @param .ion1 A character string constituting the rare isotope ("13C").
+#' @param .ion2 A character string constituting the common isotope ("12C").
 #' @param ... Variables for grouping.
 #' @param .N A variable constituting the ion counts.
 #' @param .species A variable constituting the species analysed.
-#' @param .t A variable constituting the time of the analyses.
-#' @param warn A logical indicating whether to produce a warning.
+#' @param .warn A logical indicating whether to produce a warning.
 #'
 #' @return A \code{\link[tibble:tibble]{tibble}} containing the single ion count
 #' dataset for the specified ion ratio. The grouping variable specifies on
@@ -299,11 +297,7 @@ cov_R <- function(.IC, .ion, ..., .species = species.nm, .t = t.nm,
 #' tb_pr <- cor_IC(tb_rw)
 #'
 #' # Remove analyses with zero counts
-#' # Vectors of isotope ratios
-#' ion1 <-  c("13C", "12C 13C", "13C 14N", "12C 14N", "12C")
-#' ion2 <-  c("12C", "12C2", "12C 14N", "40Ca 16O", "40Ca 16O")
-#'
-#' tb_pr <- purrr::map2(ion1, ion2, ~zeroCt(tb_pr, .x, .y, file.nm))
+#' tb_pr <- zeroCt(tb_pr, "13C", "12C", file.nm)
 zeroCt <- function(.IC, .ion1, .ion2, ..., .N = N.pr, .species = species.nm,
                    .warn = TRUE){
 
@@ -320,12 +314,14 @@ zeroCt <- function(.IC, .ion1, .ion2, ..., .N = N.pr, .species = species.nm,
   if (isTRUE(.warn)) {
     if (any(pull(IC, !! N) == 0)) {
       warning("Zero counts present and removed", call. = FALSE)
-    }
-  }
+            }
+      }
 
   ls_0 <- filter(IC, !! N == 0) %>%
     select(!!! gr_by)
-  anti_join(IC, ls_0, by = sapply(gr_by, as_name))
+  IC <- anti_join(IC, ls_0, by = sapply(gr_by, as_name))
+  if(nrow(IC) == 0) warning("No more data left after removing zero count analysis.", call. = FALSE)
+  return(IC)
 }
 
 #-------------------------------------------------------------------------------

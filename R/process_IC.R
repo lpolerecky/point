@@ -30,7 +30,7 @@
 #' returned. If \code{TRUE} The raw data is contained as an attribute named
 #' \code{"rawdata"}.
 #'
-#' @return A \code{tibble::\link[tibble:tibble]{tibble}} containing the original
+#' @return A \code{tibble::\link[tibble:tibble]{tibble}()} containing the original
 #' dataset and adds the variables: \code{Xt.rw}, ion count rates uncorrected for
 #' detection device-specific biases; \code{Xt.pr}, ion count rates corrected for
 #' detection device-specific biases; and \code{N.pr}, counts corrected for
@@ -54,12 +54,7 @@ cor_IC <-function(.IC, ..., .N = N.rw, .t = t.nm, .bl_t = tc.mt,
 # Quoting the call (user-supplied expressions)
   args <- enquos(N = .N, t = .t, bl_t = .bl_t, det = .det, M_PHD = .mean_PHD,
                  SD_PHD = .SD_PHD)
-  # N <- enquo(.N)
-  # t <- enquo(.t)
-  # bl_t <- enquo(.bl_t)
-  # det <- enquo(.det)
-  # M_PHD <- enquo(.mean_PHD)
-  # SD_PHD <- enquo(.SD_PHD)
+
 # New quosure
   N.pr <- quo_updt(args[["N"]], post = "pr", update_post = TRUE)
 
@@ -100,7 +95,7 @@ cor_IC <-function(.IC, ..., .N = N.rw, .t = t.nm, .bl_t = tc.mt,
       SD_PHD <- quo(SD_PHD.mt)
       }
 
-    IC <- nest(IC, data = -c(!! args[["M_PHD"]], !! args[["SD_PHD"]])) %>%
+    IC <- tidyr::nest(IC, data = -c(!! args[["M_PHD"]], !! args[["SD_PHD"]])) %>%
       mutate(
         Y.mt =
           purrr::map2_dbl(
@@ -112,7 +107,7 @@ cor_IC <-function(.IC, ..., .N = N.rw, .t = t.nm, .bl_t = tc.mt,
             output = "Y"
             )
         ) %>%
-      unnest(cols = data) %>%
+      tidyr::unnest(cols = .data$data) %>%
       mutate(
         Xt.pr = .data$Xt.pr / .data$Y.mt,
         !! N.pr := .data$Xt.pr * .data$dt.rw
@@ -169,6 +164,8 @@ cor_IC <-function(.IC, ..., .N = N.rw, .t = t.nm, .bl_t = tc.mt,
 #' @param thr_PHD A numeric value for the disrcriminator threshold of the EM
 #' system.
 #' @param deadtime A numeric value for the deadtime of the EM system.
+#' @param output Character string indicating whether to return corrected count
+#' rates (\code{"ct"}) or yield value (\code{"Y"}).
 #'
 #' @return A numeric vector with the corrected count rates.
 #' @export
@@ -185,10 +182,9 @@ cor_yield <- function(x = NULL, mean_PHD, SD_PHD, thr_PHD, output = "ct"){
 
 # # Stop execution if threshold = 0 an return Xt
   if (thr_PHD == 0) {
-    warning("PHD discrimnator threshold 0; count rate or a yield of 1 is
-            returned."
-            )
-  }
+    warning("PHD discrimnator threshold 0; count rate or a yield of 1 is returned.",
+            call. = FALSE)
+    }
 
 # Lambda parameter
   lambda <- (2 * mean_PHD^2) / (SD_PHD^2 + mean_PHD)

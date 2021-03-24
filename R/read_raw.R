@@ -117,11 +117,7 @@ read_meta <- function(directory){
   PHD_n <- row_scanner(directory, ls_files[["optic"]], "PHDc(?=\\(Mass)")
 
 # List of function arguments for PHD
-  ls_PHD <- lst(
-    a = ls_files[["optic"]],
-    b = PHD_n,
-    c = lapply(.data$b, length)
-    )
+  ls_PHD <- lst(a = ls_files[["optic"]], b = PHD_n, c = lapply(.data$b, length))
 
 # Apply PHD reading function to list of arguments
   tb_PHD <- purrr::pmap_dfr(
@@ -136,18 +132,14 @@ read_meta <- function(directory){
 #-------------------------------------------------------------------------------
 # Minimum of metadata rows
   min_n <- row_scanner(directory, ls_files[["stat"]], "#") %>%
-    purrr::map_dbl(., 1)
+    purrr::map_dbl(1)
 
 # Maximum of metadata rows
   max_n <- row_scanner(directory, ls_files[["stat"]], "--") %>%
-    purrr::map_dbl(., 1)
+    purrr::map_dbl(1)
 
-# List of function arguments for metadat function
-  ls_ion <- lst(
-    a = ls_files[["stat"]],
-    b =  min_n,
-    c = (max_n - 3) - .data$b
-    )
+# List of function arguments for meta-data function
+  ls_ion <- lst(a = ls_files[["stat"]], b =  min_n, c = (max_n - 3) - .data$b)
 
 # Apply PHD reading function to list of arguments
   tb_ion <- purrr::pmap_dfr(
@@ -169,24 +161,10 @@ read_meta <- function(directory){
     )
 
 # Cameca parameters
-   vc_params <- set_names(point::names_meta$cam, nm = point::names_meta$point)
-# Select variables present
-   vc_params <- vc_params[vc_params %in% colnames(tb_meas)]
-# Add required variables
-   vc_params <- purrr::prepend(
-     vc_params,
-     c(
-       file.nm = "file.nm",
-       sample.nm = "sample.nm",
-       date.mt = "date.mt",
-       x.mt = "x.mt",
-       y.mt = "y.mt",
-       z.mt = "z.mt"
-       )
-     )
+   vc_params <- set_names(point::names_cameca$cameca, point::names_cameca$point)
 
 # Select variables
-   tb_meas <- select(tb_meas , !!! vc_params) %>%
+   tb_meas <- select(tb_meas , any_of(vc_params)) %>%
      mutate(
       across(contains(".mt"), readr::parse_guess),
 # Add measurement number
@@ -241,11 +219,10 @@ point_example <- function(path = NULL) {
 #' @examples
 #' ICdir_chk(point_example("2018-01-19-GLENDON"))
 ICdir_chk <-function(directory, types = c(".is_txt", ".chk_is", ".stat")){
-  purrr::map_lgl(
-    paste0(types, "$"),
-    ~any(stringr::str_detect(dir(directory), .x))
-    ) %>%
-    all()
+  ls_files <- list.files(directory)
+  ls_names <- unique(stringr::str_extract(ls_files, "(.)+(?=\\.)"))
+  purrr::cross(list(ls_names, types)) %>%
+    purrr::map_chr(purrr::lift(paste0)) %in% ls_files %>% all
 }
 
 #' Access and hide IC metadata
@@ -313,21 +290,22 @@ read_validator <- function(directory, types = c(".is_txt", ".chk_is", ".stat")){
     }
 # Check if directory contains specified file types
     if (!ICdir_chk(directory, types)) {
-      stop("`directory` does not contain required filetypes:
-           .is_txt, .chk_is, and .stat", call. = FALSE)
+      stop("`directory` does not contain required filetypes: .is_txt, .chk_is, and .stat",
+           call. = FALSE)
       }
 
 # Extract txt files with count data blocks of each single point measurement
   ls_files <- purrr::map(types, ~read_names(directory, .x)) %>%
     set_names(nm = c("ion", "optic", "stat"))
 
-  if (all.equal(names(ls_files[["ion"]]), names(ls_files[["optic"]])) &
-      all.equal(names(ls_files[["ion"]]), names(ls_files[["stat"]]))) {
+  if (!(all.equal(names(ls_files[["ion"]]), names(ls_files[["optic"]])) &
+      all.equal(names(ls_files[["ion"]]), names(ls_files[["stat"]])))) {
     ls_files[["optic"]] <- ls_files[["optic"]][names(ls_files[["optic"]]) %in%
                                                  names(ls_files[["ion"]])]
     ls_files[["stat"]] <- ls_files[["stat"]][names(ls_files[["stat"]]) %in%
                                                  names(ls_files[["ion"]])]
-    warning("Some metadata files have no matching data files and are omitted")
+    warning("Some metadata files have no matching data files and are omitted",
+            call. = FALSE)
   }
 
 # Length check of txt files
@@ -422,7 +400,7 @@ meas_fun <- function(directory, a , b) {
   loc <- pull(tb_meas, "var")[3]  %>% stringr::str_trim()
 
   tb_meas <- tidyr::separate_rows(
-    tb_meas[-c(1,3), 1],
+    slice(tb_meas, 4:nrow(tb_meas)),
     .data$var,
     sep = "(/(?=[[:blank:]])) | ="
     ) %>%
@@ -499,12 +477,12 @@ missing_col <- function(directory, files){
 }
 
 
-# Check analyses length consistency (IC data vs metadata)
-compare_length <- function(df) {
-  df_old <- mutate(df, n.rw = as.integer(n.rw))
-  df_new <- add_count(df, file.nm, species.nm, name = "n.rw")
-  waldo::compare(df_old, df_new)
-}
+# # Check analyses length consistency (IC data vs metadata)
+# compare_length <- function(df) {
+#   df_old <- mutate(df, n.rw = as.integer(n.rw))
+#   df_new <- add_count(df, file.nm, species.nm, name = "n.rw")
+#   waldo::compare(df_old, df_new)
+# }
 
 
 write_attr <- function(df1, df2, nm) {

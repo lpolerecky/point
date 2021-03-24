@@ -11,11 +11,15 @@
 #' how to use the function, and possible methods for outlier detection. Options
 #' are \code{"CooksD"} (default), \code{"Cameca"}, \code{"Rm"}, \code{"norm_E"},
 #' \code{"CV"}, \code{"IR"}, and \code{"QQ"}, see the
-#' \code{vignette("IC-diagnostics", package = "point")} for examples. The
-#' argument \code{.output = "diagnostics"} can be used to toggle between
-#' returning the augmented versions (with the original data labelled as
-#' execution 1) of the datasets and the results \code{.return = "results"} for
-#' outlier detection as well as associated statistics of the selected procedure.
+#' \code{vignette("IC-diagnostics", package = "point")} for examples and
+#' \code{point::\link[point:names_diag]{names_diag}}. The
+#' argument \code{.output} can be used to toggle between \code{"complete"};
+#' returning \code{stat_R()} and \code{stat_X()} statistics, diagnostics, and
+#' inference test results, \code{"augmented"}; returning the augmented IC after
+#' removing outliers, \code{"flag"}; for only outlier detection results;
+#' \code{"diagnostic"}; for statistics and outlier detection, or
+#' \code{"inference"}; returns only inference test statistics results
+#' (default = inference).
 #'
 #' @param .IC A tibble containing processed ion count data.
 #' @param .ion1 A character string constituting the rare isotope ("13C").
@@ -46,21 +50,21 @@
 #' \code{NULL}.
 #' @param .meta Logical whether to preserve the metadata as an attribute
 #' (defaults to TRUE).
-#' @param .hyp Hypothesis test. Only usable in combination with a selection of
-#' methods (see above argument \code{.method}) and details.
 #' @param .alpha_level Significance level of hypothesis test.
 #' @param .plot Logical indicating whether plot is generated.
 #' @param .plot_type Character string determining whether the returned plot is
-#' \code{"static"} \code{ggplot2::\link[ggplot2::ggplot2]{ggplot2}()}(currently
+#' \code{"static"} \code{ggplot2::\link[ggplot2:ggplot2]{ggplot2}()}(currently
 #' only supported option).
 #' @param .plot_stat Adds a statistic label to the plot (e.g. . \code{"M"}), see
 #' \code{point::nm_stat_R} for the full selection of statistics available.
 #' @param .plot_iso A character string (e.g. \code{"VPDB"}) for the delta
 #' conversion of R (see \code{?calib_R()} for options).
 #'
-#' @return A dynamic or static plot is returned along with a
-#' \code{tibble::\link[tibble::tibble]{tibble}()} containing \code{stat_R()}
-#' statistics and diagnostics associated with the chosen method.
+#' @return A \code{ggplot2::\link[ggplot2:ggplot]{ggplot}()} is returned
+#' (if \code{.plot = TRUE}) along with a
+#' \code{tibble::\link[tibble:tibble]{tibble}()} which can contain statistics
+#' diagnostics, hypothesis test results associated with the chosen method and
+#' depending on the argument \code{.output}.
 #'
 #' @export
 #' @examples
@@ -90,7 +94,7 @@ diag_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .method = "CooksD",
   # warnings
   if (.plot & .output == "augmented") {
      warning("If `plot` is `TRUE`, `.output` cannot be `augmented`",
-            call. = FALSE)
+             call. = FALSE)
   }
 
   # Metadata
@@ -140,24 +144,26 @@ diag_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .method = "CooksD",
                           !!! args, !!! plot_args)
     }
     if (.method == "IR") {
-      plot_call <- call2("gg_IR", IC, .lag = expr(lag), .acf = expr(acf),
-                         .flag = expr(flag), !!! gr_by, .sd = expr(e_acf))
+      plot_call <- call2("gg_IR", IC, .lag = parse_quo("lag", env = data_env),
+                         .acf = parse_quo("acf", env = data_env),
+                         .flag = parse_quo("flag", env = data_env), !!! gr_by,
+                         .sd = parse_quo("e_acf", env = data_env))
     }
     print(eval(plot_call, data_env))
   }
 
-
   # Inferences
   if (.output == "inference" | .output == "complete") {
-    if (.method %in% filter(names_diag, inference == "eval_diag")$name) {
+    if (.method %in% filter(point::names_diag, .data$inference == "eval_diag")$name) {
+      data_env <- env(data = IC)
       eval_call <- call2("eval_diag", IC, .ion1 = .ion1, .ion2 = .ion2,
                           !!! gr_by, .nest = enquo(.nest), !!! args,
-                         .flag = expr(flag), .output = .output, .label = .label)
-      data_env <- env(data = IC)
+                         .flag = parse_quo("flag", env = data_env),
+                         .output = .output, .label = .label)
       return(eval(eval_call, data_env))
       }
-    if (.method %in% filter(names_diag, inference == "external")$name) {
-      distinct(IC, !!!gr_by, hyp)
+    if (.method %in% filter(point::names_diag, .data$inference == "external")$name) {
+      distinct(IC, !!!gr_by, .data$hyp)
       }
     } else {
       return(IC)
@@ -180,7 +186,8 @@ rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .method, .X = Xt.pr,
   # stat_R variables
   args <- enquos(.X = .X, .N = .N, .species = .species, .t = .t)
   # diagnostics variables
-  diag_args <- list2(.method = .method, .hyp = .hyp, .alpha_level = .alpha_level)
+  diag_args <- list2(.method = .method, .hyp = .hyp,
+                     .alpha_level = .alpha_level)
 
   # Rare isotope
   X1 <- quo_updt(args[[".X"]], post = .ion1) # count rate
@@ -207,7 +214,7 @@ rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .method, .X = Xt.pr,
 
   # Save augmented data frame for next cycle
   aug <- select(
-    filter(out, flag == "confluent"),
+    filter(out, .data$flag == "confluent"),
     !!! gr_by, !! args[[".t"]], !! X1, !! X2, !! N1, !! N2
     ) %>%
     tidyr::pivot_longer(
@@ -265,7 +272,10 @@ reduce_diag <- function(ls, output){
   purrr::transpose(ls) %>%
     purrr::pluck(ifelse(output == "augmented", "IC", "results")) %>%
     bind_rows(.id = "execution")  %>%
-    mutate(execution = as.numeric(execution) - ifelse(output == "augmented", 0, 1))
+    mutate(
+      execution =
+        as.numeric(.data$execution) - ifelse(output == "augmented", 0, 1)
+      )
 }
 
 # Select arguments
@@ -280,7 +290,7 @@ all_args <- function(args, ion1, ion2, except = NULL, chr = TRUE) {
   args_R <- list2(
     !!! arg_builder(args, "R"),
     R = quo_updt(args[[".X"]], pre = "R"),
-    ratio = quo(ratio.nm)
+    ratio = parse_quo("ratio.nm", env = quo_get_env(args[[".X"]]))
     )
   args <- append(args_Xt, args_R)
   if (isTRUE(chr)) {

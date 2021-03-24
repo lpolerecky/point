@@ -29,20 +29,15 @@
 #' tb_pr <- cor_IC(tb_rw)
 #'
 #' # remove zero count analysis
-#' tb_0 <- zeroCt(tb_pr, "12C", "40Ca 16O", file.nm, .warn = FALSE)
+#' tb_0 <- zeroCt(tb_pr, "12C", "40Ca 16O", sample.nm, file.nm, .warn = FALSE)
 #'
 #' # predict ionization trends
 #' predict_ionize(tb_0, file.nm)
-#'
-#' # predict ionization trends mixed type
-#' tb_bel <- filter(tb_0, stringr::str_detect(sample.nm, "Belemnite"))
-#'
-#' predict_ionize(tb_bel, sample.nm, file.nm, .nest = file.nm)
 predict_ionize <- function(.IC, ..., .nest = NULL, .X = Xt.pr, .N = N.pr,
                            .species = species.nm, .t = t.nm, .plot = TRUE,
                            .method = "median", .hide = TRUE){
 
-  #Quoting the call (user-supplied expressions)
+  # Quoting the call (user-supplied expressions)
   args <- enquos(.X = .X, .N = .N, .species = .species, .t = .t, .nest  = .nest)
 
   # Grouping
@@ -71,23 +66,23 @@ predict_ionize <- function(.IC, ..., .nest = NULL, .X = Xt.pr, .N = N.pr,
   # Group-wise
   if (is_symbol(get_expr(args[[".nest"]]))) {
     IC <- tidyr::nest(.IC, data = -c(!!! nest_gr)) %>%
-      mutate(gam_out = purrr::map(data, ~gam_fun(.x, args, X.mdl))) %>%
-      tidyr::unnest(cols = c(data, gam_out)) %>%
+      mutate(gam_out = purrr::map(.data$data, ~gam_fun(.x, args, X.mdl))) %>%
+      tidyr::unnest(cols = c(.data$data, .data$gam_out)) %>%
       group_by(!!! nest_gr) %>%
       mutate(
         # Group wise mean
         !! M_X.l0 := mth_switch(.method,!! X.mdl),
         # mean plus random intercept correction
-        !! X.l0 := !! M_X.l0 + (!! args[[".X"]] - !! X.mdl) + ran_in.ml,
+        !! X.l0 := !! M_X.l0 + (!! args[[".X"]] - !! X.mdl) + .data$ran_in.ml,
         !! N.l0 := !! X.l0 * (min(!! args[[".t"]]) - .data$tc.mt)
         )
     # Single analysis
     } else {
       IC <- tidyr::nest(.IC, data = -c(!!! gr_by)) %>%
         mutate(
-          !! X.mdl := purrr::map(data, ~as.vector(gam_form(.x, args)))
+          !! X.mdl := purrr::map(.data$data, ~as.vector(gam_form(.x, args)))
           ) %>%
-        tidyr::unnest(cols = c(data, !! X.mdl)) %>%
+        tidyr::unnest(cols = c(.data$data, !! X.mdl)) %>%
         group_by(!!! gr_by) %>%
         mutate(
           !! M_X.l0 := mth_switch(.method, !! X.mdl),

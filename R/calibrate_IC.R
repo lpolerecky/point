@@ -11,7 +11,6 @@
 #' fractionations as enrichment factors (alpha and epsilon).
 #'
 #' @param x  A numeric value or vector.
-#' (\code{`type = enrichment`}).
 #' @param reference A character or numeric value or vector.
 #' @param isotope A character for the name of the isotope (e.g. \code{"13C"}).
 #' @param type Type of conversion, isotope composition or enrichment.
@@ -48,19 +47,16 @@ calib_R <- function(x, reference, isotope, type = "composition",
   if (input == output) stop("Input and output are equal.", call. = FALSE)
   if (type == "enrichment") {
     if (!c(output == "epsilon" | output == "alpha")) {
-      stop("For enrichment conversion at least output has to be an enrichment
-           factor.", call. = FALSE)
+      stop("For enrichment conversion at least output has to be an enrichment factor.", call. = FALSE)
       } else {
         if(!is.null(y) & c(input == "epsilon" | input == "alpha")) {
-           stop("Input epsilon or alpha is only meaningfull when converting
-                between enrichment factors.", call. = FALSE)
-        }
+           stop("Input epsilon or alpha is only meaningfull when converting between enrichment factors.", call. = FALSE)
+          }
         if (is.null(y) & !c(input == "epsilon" | input == "alpha")) {
-           stop("For enrichment conversion of one value input has to be alpha or
-                epsilon.", call. = FALSE)
+           stop("For enrichment conversion of one value input has to be alpha or epsilon.", call. = FALSE)
+          }
         }
       }
-    }
 
 
   # Transformations for compositions
@@ -74,7 +70,7 @@ calib_R <- function(x, reference, isotope, type = "composition",
       delta_R = calib_delta_R(value, reference, isotope),
       delta_F = calib_delta_F(value, reference, isotope)
       )
-  }
+    }
 
   # Calculations of enrichment factors for kinetic reactions
   conv_enrichment <- function(method, value){
@@ -82,8 +78,8 @@ calib_R <- function(x, reference, isotope, type = "composition",
       method,
       epsilon_alpha = calib_epsilon_alpha(value),
       alpha_epsilon = calib_alpha_epsilon(value)
-    )
-  }
+      )
+    }
 
   conv_output <- function(type, input, output, value, reference, isotope){
     switch(
@@ -144,24 +140,17 @@ find_reference <- function(.reference, .isotope){
 
   if (is_character(.reference)) {
     if (.reference %in% tb_ref$reference) {
-      tb_ref <- filter(tb_ref, reference == .reference)
+      tb_ref <- filter(tb_ref, .data$reference == .reference)
       if (.isotope %in% tb_ref$isotope) {
-        return(pull(filter(tb_ref, isotope == .isotope), value))
+        return(pull(filter(tb_ref, .data$isotope == .isotope), .data$value))
         } else {
-          stop(
-            "Isotope unkown for reference standard, provide numeric value
-            manually",
-            call. = FALSE
-            )
+          stop("Isotope unkown for reference standard, provide numeric value manually", call. = FALSE)
           }
       } else {
-        stop(
-          "Reference standard unkown, provide numeric value manually",
-          call. = FALSE
-          )
+        stop("Reference standard unkown, provide numeric value manually", call. = FALSE)
         }
     } else {
-    return(reference)
+    return(.reference)
   }
 }
 

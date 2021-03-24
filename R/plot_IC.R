@@ -21,26 +21,27 @@ gg_IC <- function(.IC, .ion1, .ion2, .method, .plot_type, ..., .X = Xt.pr,
   hat_S_N1 <- quo_updt(args[[".N"]], pre = "hat_S", post = .ion1)
 
   # Filter execution
-  if (.plot_type == "static") .IC <- filter(.IC, execution == .rep)
+  if (.plot_type == "static") .IC <- filter(.IC, .data$execution == .rep)
 
   # Plotting arguments
   plot_args <- list2(.IC = .IC, .x = X2, .y = X1, .flag = flag,
                      .diag_type = .method, .plot_type = .plot_type, !!! gr_by,
                      .labels = .labels, .hat = hat_X1, .sd = hat_S_N1 ,
                      .alpha_level = .alpha_level)
-
+  # environment
+  data_env <- env(data = .IC)
   # Residual leverage plot
   if(.method == "norm_E") {
-      plot_args[[".y"]] <- quo(studE)
-      plot_args[[".x"]] <- quo(hat_Xi)
+      plot_args[[".y"]] <- parse_quo("studE", env = data_env)
+      plot_args[[".x"]] <- parse_quo("hat_Xi", env = data_env)
       plot_args[[".hat"]] <- NULL
       plot_args[[".sd"]] <- NULL
     }
 
   # Normal QQ plot
   if (.method == "QQ"){
-      plot_args[[".y"]] <- quo(RQ)
-      plot_args[[".x"]] <- quo(TQ)
+      plot_args[[".y"]] <- parse_quo("RQ", env = data_env)
+      plot_args[[".x"]] <- parse_quo("TQ", env = data_env)
       plot_args[[".hat"]] <- quo_updt(plot_args[[".y"]], pre = "hat")
       plot_args[[".sd"]] <- NULL
       plot_args[[".se"]] <- quo_updt(plot_args[[".y"]], pre = "hat_e")
@@ -48,7 +49,7 @@ gg_IC <- function(.IC, .ion1, .ion2, .method, .plot_type, ..., .X = Xt.pr,
 
   # Scale location plot
   if (.method  == "CV"){
-      plot_args[[".y"]] <- quo(studE)
+      plot_args[[".y"]] <- parse_quo("studE", env = data_env)
       plot_args[[".x"]] <- hat_X1
       plot_args[[".hat"]] <- 0
       plot_args[[".sd"]] <- NULL
@@ -56,7 +57,6 @@ gg_IC <- function(.IC, .ion1, .ion2, .method, .plot_type, ..., .X = Xt.pr,
   }
 
   # Execute
-  data_env <- env(data = .IC)
   p <- eval(expr(gg_base(!!!plot_args)), data_env)
   if (.plot_type == "static") return(p)
   }
@@ -73,11 +73,12 @@ gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
   ion2 <- detect_ion(.x, .diag_type)
   ion1 <- detect_ion(.y)
 
+
   # 2D density
-  if (is_symbol(get_expr(.flag))) .IC <- twodens(.IC, .x, .y, gr_by, .flag)
+  .IC <- twodens(.IC, !!.x, !!.y, !!! gr_by, .flag = !! .flag)
 
   # Filter correct titles
-  ttl <- filter(point::names_diag, name == .diag_type)
+  ttl <- filter(point::names_diag, .data$name == .diag_type)
 
   # R statistics labels for geom_text
   if (!is.null(.labels)) tb_labs <- stat_labs(.IC, gr_by)
@@ -94,32 +95,19 @@ gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
   p <- p + facet_wrap(vars(!!! gr_by), scales = "free")
 
   # Geom for "point" data
-  if (is_symbol(get_expr(.flag)) & .geom == "point") {
-    p <- p + geom_point(aes(color = .data$dens, alpha = .data$alpha_sc)) +
-      scale_color_gradientn(
-        "",
-        breaks = range(.IC$dens),
-        labels =  c("divergent", "confluent"),
-        colors = colorspace::diverge_hcl(7, rev = TRUE),
-        na.value = "transparent",
-        guide = guide_colourbar(ticks = FALSE, barwidth = plot_width)
-        ) +
-      scale_alpha_identity(guide = FALSE, limits = c(1e-5, 1))
-    } else {
-      p <- p + geom_point(alpha = 0.01)
-      }
+  if (.geom == "point") p <- dens_point(p, .flag, .IC, plot_width)
 
-  if (.geom == "hexbin") p <- p + geom_hexbin()
+  if (.geom == "hex") p <- p + geom_hex()
 
   if (.rug) p <- p + geom_rug(sides = "tr", alpha = 0.01)
 
   if (!is.null(.labels)) {
     p <- p + geom_text(
-      data = filter(tb_labs, stat %in% .labels),
+      data = filter(tb_labs, .data$stat %in% .labels),
       aes(
         x = -Inf,
         y = Inf,
-        label = lbs
+        label = .data$lbs
         ),
       vjust = "inward",
       hjust = "inward",
@@ -165,8 +153,9 @@ gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
       y = axis_labs(ttl$yaxis, ion1, .plot_type),
       title = ttl$label
       ) +
-    theme_classic() +
+    theme_classic()+
     theme(legend.position = "top")
+
   }
 
 
@@ -177,7 +166,6 @@ gg_IR <- function(.df, .lag, .acf, .flag, ..., .sd = NULL){
     geom_segment(mapping = aes(xend = {{.lag}}, yend = 0)) +
     geom_hline(aes(yintercept = -{{.sd}}), color = "darkblue") +
     geom_hline(aes(yintercept = {{.sd}}), color = "darkblue") +
-    scale_color_manual(values = c(ggplotColours(2)[2], ggplotColours(2)[1])) +
     facet_wrap(vars(...), scales = "free") +
     labs(title = "ACF plot") +
     theme_classic() +
@@ -218,23 +206,6 @@ axis_labs <- function(type, ion, plot_type){
 }
 
 
-ggplotColours <- function(n = 6, h = c(0, 360) + 15){
-  if ((diff(h) %% 360) < 1) h[2] <- h[2] - 360 / n
-  hcl(h = (seq(h[1], h[2], length = n)),
-      c = 100,
-      l = 65
-      )
-}
-
-extract_diff_dens <- function(IC, dens_x, dens_y, dens_z, x, y) {
-  x <- pull(IC, !!x)
-  y <- pull(IC, !!y)
-  int_x <- findInterval(x, dens_x)
-  int_y <- findInterval(y, dens_y)
-  comb_int <- cbind(int_x, int_y)
-  dens_z[comb_int]
-}
-
 # creat ion labels from variables
 detect_ion <- function(var, diag_type = ""){
 
@@ -245,85 +216,19 @@ detect_ion <- function(var, diag_type = ""){
       }
 }
 
-# density calculation function (https://themockup.blog/posts/2020-08-28-heatmaps-in-ggplot2/)
-twodens <- function(IC, x, y, grps, flag){
-  # Ranges for alpha and density
-  ran_z <- range(pull(count(IC, !!! grps), n))
-
-  # Calculate density for x and y frame
-  diff_dens <- group_by(IC, !!! grps) %>%
-    mutate(
-      # Group-wise ranges x and y
-      min_x = min(!! x),
-      max_x = max(!! x),
-      min_y = min(!! y),
-      max_y = max(!! y),
-      # Bandwidths
-      h_x = if_else(MASS::bandwidth.nrd(!!x) == 0, 0.1, MASS::bandwidth.nrd(!!x)),
-      h_y = if_else(MASS::bandwidth.nrd(!!y) == 0, 0.1, MASS::bandwidth.nrd(!!y)),
-      # Calculate bins for density
-      bin_n = log(ran_z[2]) / log(n()) * 100
-      ) %>%
-    ungroup() %>%
-    tidyr::nest(data = -c(!!! grps, !! flag)) %>%
-    mutate(dens = purrr::map(data, nest_dens, x, y), .keep ="unused") %>%
-    tidyr::pivot_wider(names_from = flag, values_from = dens) %>%
-    mutate(
-      dens_x = purrr::map(confluent, list("x")),
-      dens_y = purrr::map(confluent, list("y")),
-      # Take care off case when no outliers
-      divergent = tidyr::replace_na(divergent, list(list(z = 0))),
-      # Cubed density to accentuate the outliers density
-      dens_z = purrr::map2(confluent, divergent, ~{(.x$z - .y$z) ^ 3}),
-      .keep ="unused"
-      )
-
-  left_join(
-    tidyr::nest(IC, IC = -c(!!! grps)),
-    diff_dens,
-    by = sapply(grps, as_name)
-    ) %>%
-    mutate(
-      dens =
-        purrr::pmap(
-          list(IC, dens_x, dens_y, dens_z),
-          extract_diff_dens,
-          x = x,
-          y = y
-          )
-      ) %>%
-    select(!!!grps, IC, dens) %>%
-    tidyr::unnest(cols = c(IC, dens)) %>%
-    group_by(!!! grps) %>%
-    # Adjust alpha
-    mutate(alpha_sc = (ran_z[1] / n()) / 4)
-
-}
-
-
-nest_dens <- function(IC, x, y) {
-    x <- pull(IC, !!x)
-    y <- pull(IC, !!y)
-    ran_x <- c(unique(IC$min_x), unique(IC$max_x))
-    ran_y <- c(unique(IC$min_y), unique(IC$max_y))
-    # Calculate density
-    MASS::kde2d(x, y, h = c(IC$h_x, IC$h_y), n = IC$bin_n,
-                lims = c(ran_x, ran_y))
-}
-
 stat_labs <- function(.IC, gr_by){
 
   tb_labs <- distinct(.IC, !!! gr_by, .keep_all = TRUE) %>%
-    select(!!!gr_by, starts_with(paste0(point::names_stat_R$name, "_R"))) %>%
+    select(!!! gr_by, starts_with(paste0(point::names_stat_R$name, "_R"))) %>%
     tidyr::pivot_longer(
       -c(!!! gr_by),
       names_to = c("stat", ".value"),
       names_sep = "\\_R\\_"
       ) %>%
-    tidyr::unite(col = "value", - c(!!!gr_by, stat), na.rm = TRUE)
+    tidyr::unite(col = "value", - c(!!! gr_by, .data$stat), na.rm = TRUE)
   lbs <- purrr::map2(
     tb_labs$stat,
-    pull(tb_labs, value),
+    pull(tb_labs, .data$value),
     ~stat_labeller("R", stat = .x, value = as.numeric(.y), label = "expr")
     )
   tibble::add_column(tb_labs, lbs = lbs)
@@ -350,3 +255,31 @@ ribbon_stat <- function(IC, hat, bound, alpha_level){
   }
 
 
+dens_point <- function (p, flag, IC, width) {
+  # colors
+  div_col <- c("#8E063B", "#BB7784", "#D6BCC0", "#E2E2E2", "#BEC1D4", "#7D87B9",
+               "#023FA5") # colorspace::diverge_hcl(7, rev = TRUE)
+  p <- p + geom_point(aes(color = .data$dens, alpha = .data$alpha_sc))
+  if (is_symbol(get_expr(flag))) {
+    p <- p + scale_color_gradientn(
+        "",
+        breaks = range(IC$dens),
+        labels =  c("divergent", "confluent"),
+        colors = div_col,
+        na.value = "transparent",
+        guide = guide_colourbar(ticks = FALSE, barwidth = width)
+        )
+      } else {
+      p <- p + scale_color_distiller(
+        "",
+        breaks = seq(0, 1, length.out = 100),
+        palette = "YlOrRd",
+        direction = 1,
+        na.value = "transparent",
+        guide = FALSE
+        )
+        }
+  # alpha
+  p <- p + scale_alpha_identity(guide = FALSE, limits = c(1e-5, 1))
+  return(p)
+}

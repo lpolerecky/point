@@ -10,6 +10,8 @@
 #' @param .ion1 A character string constituting the heavy isotope ("13C").
 #' @param .ion2 A character string constituting the light isotope ("12C").
 #' @param ... Variables for grouping.
+#' @param .nest A variable hat identifies a series of analyses to calculate
+#' the significance of QSA.
 #' @param .X A variable constituting the ion count rate (defaults to
 #' variables generated with \code{read_IC()}.)
 #' @param .N A variable constituting the ion counts (defaults to variables
@@ -41,7 +43,7 @@
 #' # QSA test
 #' tb_QSA <- QSA_test(tb_pr, "13C", "12C", file.nm)
 QSA_test <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr,
-                     .N = N.pr, .species = species.nm, .t = t.nm, plot = TRUE){
+                     .N = N.pr, .species = species.nm, .t = t.nm, .plot = TRUE){
 
   # Quoting the call (user-supplied expressions)
   args <- enquos(.X = .X, .N = .N, .species = .species, .t = .t, .nest  = .nest)
@@ -66,14 +68,14 @@ QSA_test <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr,
     mutate(
       lm_out =
         purrr::map(
-          data,
+          .data$data,
           purrr::possibly(mlm_QSA, NA),
-          .Xt1 = R_X,
-          .Xt2 = X2
+          .X1 = R_X,
+          .X2 = X2
           )
       ) %>%
-    tidyr::unnest_wider(lm_out) %>%
-    tidyr::unnest(cols = data)
+    tidyr::unnest_wider(.data$lm_out) %>%
+    tidyr::unnest(cols = .data$data)
 
   if (is_symbol(get_expr(args[[".nest"]]))) {
     # Groups for nested data
@@ -83,15 +85,15 @@ QSA_test <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr,
       mutate(
         mlm_out =
           purrr::map(
-            data,
+            .data$data,
             purrr::possibly(mlm_QSA, NA),
-            .X1 = R_Xt,
+            .X1 = R_X,
             .X2 = X2,
             .group = nest
           )
         ) %>%
-      select(-data) %>%
-      tidyr::unnest_wider(mlm_out)
+      select(-.data$data) %>%
+      tidyr::unnest_wider(.data$mlm_out)
 
     ls_mlm <- lst(df_lm, df_mlm)
     # Prepare output
@@ -114,7 +116,7 @@ mlm_QSA <- function(.IC, .X1, .X2, .group = NULL) {
     td <- broom::tidy(lm_QSA) %>% mutate(effect = "fixed")
     min <-  min(fitted(lm_QSA))
     max <-  max(fitted(lm_QSA))
-    label <- .Xt2
+    label <- .X2
   }
   # mlm  model
   if (!is.null(get_expr(.group))) {
@@ -127,14 +129,30 @@ mlm_QSA <- function(.IC, .X1, .X2, .group = NULL) {
 
   ls_QSA <- lst(
     # model params
-    "alpha_{{label}}" := pull(filter(td, effect == "fixed" & term == "(Intercept)"), estimate),
-    "beta_{{label}}" := pull(filter(td, effect == "fixed" & term == as_name(.X2)), estimate),
-    "t_{{label}}" := pull(filter(td, effect == "fixed" & term == as_name(.X2)), statistic),
-    "p_{{label}}" := pull(filter(td, effect == "fixed" & term == as_name(.X2)), `p.value`),
+    "alpha_{{label}}" :=
+      pull(
+        filter(td, .data$effect == "fixed" & .data$term == "(Intercept)"),
+        .data$estimate
+        ),
+    "beta_{{label}}" :=
+      pull(
+        filter(td, .data$effect == "fixed" & .data$term == as_name(.X2)),
+        .data$estimate
+        ),
+    "t_{{label}}" :=
+      pull(
+        filter(td, .data$effect == "fixed" & .data$term == as_name(.X2)),
+        .data$statistic
+        ),
+    "p_{{label}}" :=
+      pull(
+        filter(td, .data$effect == "fixed" & .data$term == as_name(.X2)),
+        .data$`p.value`
+        ),
     # modelled delta value
     "delta_{{label}}" := (min / max - 1) * 1e3
   )
-  return(  ls_QSA)
+  return(ls_QSA)
 }
 
 

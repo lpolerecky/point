@@ -16,14 +16,15 @@
 #' variables generated with \code{read_IC()})
 #' @param .N A variable constituting the ion counts (defaults to variables
 #' generated with \code{read_IC()}.).
+#' @param .t A variable constituting the time of the analyses (defaults to
+#' variables generated with \code{read_IC()}.).
 #' @param .output Character string determining whether the returned values in a
 #' minimal version `"flag"` (original dataset + diagnostics) or an extended
 #' version with all the intermediate steps of ion- and isotope-wise summary
 #' statistics `"complete"`.
-#' @param .hyp Hypothesis test. Only usable in combination with a selection of
-#' methods (see above argument \code{.method}) and details.
-#' @param .alpha_level. The significance level of the hypothesis test and
+#' @param .alpha_level The significance level of the hypothesis test and
 #' rejection level for outliers.
+#' @param .hyp Hypothesis test appropriate for the selected method.
 #'
 #' @return A \code{tibble\link[tibble:tibble]{tibble}()} containing either the
 #' original dataset with new columns related to the diagnostics or only the
@@ -90,7 +91,7 @@ Cameca <- function(.IC, .ion1, .ion2, ..., .X = Xt.pr, .N = N.pr, .t = t.nm,
         "confluent",
         "divergent"
         ),
-      flag = as.factor(flag)
+      flag = as.factor(.data$flag)
       ) %>%
     ungroup()
 
