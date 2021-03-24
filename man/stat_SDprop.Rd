@@ -2,56 +2,34 @@
 % Please edit documentation in R/analyse_IC.R
 \name{stat_SDprop}
 \alias{stat_SDprop}
-\alias{stat_hSDprop}
 \title{Propagation of error for isotope ratios}
 \usage{
-stat_SDprop(M_R, ion1, ion2, M_ion1, M_ion2, S_ion1, S_ion2, n, type = "sd")
-
-stat_hSDprop(M_R, ion1, ion2, N_ion1, N_ion2, n, type = "sd")
+stat_SDprop(ion1, ion2, type = "sd", predicted = FALSE)
 }
 \arguments{
-\item{M_R}{A numeric vector constituting the mean isotope ratio.}
-
 \item{ion1}{A numeric vector constituting the single ion count rate of the
-heavy isotope.}
+heavy isotope if argument predicted is set to \code{FALSE}, otherwise counts
+are required.}
 
 \item{ion2}{A numeric vector constituting the single ion count rate of the
-light isotope}
-
-\item{M_ion1}{A numeric vector constituting the mean ion count of the heavy
-isotope.}
-
-\item{M_ion2}{A numeric vector constituting the mean ion count of the light
-isotope.}
-
-\item{S_ion1}{A numeric vector constituting the standard deviation of the ion
-counts of the heavy isotope.}
-
-\item{S_ion2}{A numeric vector constituting the standard deviation of the ion
-counts of the light isotope.}
-
-\item{n}{A numeric vector constituting the length of the count block
-\emph{n}.}
+light isotope if argument predicted is set to \code{FALSE}, otherwise counts
+are required.}
 
 \item{type}{A character string for the type of uncertainty estimate:
 \code{"sd"}, standard deviation; \code{"rsd"}, relative standard deviation in
 per mille; \code{"se"}, standard error of the mean; \code{"rse"}, relative
 standard error of the mean in per mille.}
 
-\item{N_ion1}{A numeric vector constituting the single ion counts of the
-heavy isotope}
-
-\item{N_ion2}{A numeric vector constituting the single ion counts of the
-light isotope.}
+\item{predicted}{Logical indicating whether sd is descriptive \code{FALSE},
+or based on predicted Poisson value \code{TRUE}.}
 }
 \value{
 A numeric vector containing the propagated uncertainty of the isotope
 ratio.
 }
 \description{
-\code{stat_SDprop} function for propagation of descriptive error statistics
-for isotope ratios (R). \code{stat_hSDprop} function for propagation of
-predictive (Poisson) error statistics for isotope ratios (R).
+\code{stat_SDprop} function for propagation of descriptive and predictive
+(Poisson) error statistics for isotope ratios (R).
 }
 \details{
 Isotope ratios are based on two measured variables, i.e., two isotopes of a
@@ -62,28 +40,11 @@ with the compounded variable (i.e. isotope ratio).
 }
 \examples{
 # Light isotope count rates
-`32S` <- c(22318.19, 22151.20, 22429.52, 22143.78, 22574.25, 22455.50,
-         22516.73, 22414.68, 22288.50, 22327.47)
+`32S` <- c(22318.19, 22151.20, 22429.52, 22143.78, 22574.25, 22455.50)
 
 # Heavy isotope count rate
-`34S` <- c(231.4838, 220.3725, 255.5584, 237.0395, 244.4471, 238.8914,
-         238.8914, 237.0395, 262.9660, 264.8179)
-
-# Mean 32S
-M_32S <- mean(`32S`)
-
-# Mean 34S
-M_34S <- mean(`34S`)
-
-# Mean R
-M_R <- M_34S / M_32S
-
-# Standard deviation 32S
-S_32S <- sd(`32S`)
-
-# Standard deviation 34S
-S_34S <- sd(`34S`)
+`34S` <- c(231.4838, 220.3725, 255.5584, 237.0395, 244.4471, 238.8914)
 
 # Propagation
-stat_SDprop(M_R, `34S`, `32S`, M_34S, M_32S, S_34S, S_32S, 10, "rse")
+stat_SDprop(`34S`, `32S`, "rse")
 }

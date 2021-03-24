@@ -4,26 +4,51 @@
 \alias{cor_IC}
 \title{Process raw ion count data}
 \usage{
-cor_IC(df, N, t, Det, deadtime = 0, thr_PHD = 0)
+cor_IC(
+  .IC,
+  ...,
+  .N = N.rw,
+  .t = t.nm,
+  .bl_t = tc.mt,
+  .det = det_type.mt,
+  .deadtime = NULL,
+  .thr_PHD = NULL,
+  .mean_PHD = mean_PHD.mt,
+  .SD_PHD = SD_PHD.mt,
+  .hide = TRUE
+)
 }
 \arguments{
-\item{df}{A tibble containing raw ion count data.}
+\item{.IC}{A tibble containing raw ion count data.}
 
-\item{N}{A variable constituting the ion counts.}
+\item{...}{Currently not supported.}
 
-\item{t}{A variable constituting the time increments.}
+\item{.N}{A variable constituting the ion counts.}
 
-\item{Det}{A character string or variable for the detection system ("EM" or
-"FC").}
+\item{.t}{A variable constituting the time increments.}
 
-\item{deadtime}{A numeric value for the deadtime of the EM system.}
+\item{.bl_t}{A variable or numeric value for the blanking time}
 
-\item{thr_PHD}{A numeric value for the disrcriminator threshold of the EM.
+\item{.det}{Variable or character string or variable for the detection
+system ("EM" or "FC").}
+
+\item{.deadtime}{A numeric value for the deadtime of the EM system.}
+
+\item{.thr_PHD}{A numeric value for the discriminator threshold of the EM.
 system}
+
+\item{.mean_PHD}{A value or numeric valie of the mean PHD value}
+
+\item{.SD_PHD}{A value or numeric valie of standard deviation of the PHD
+value}
+
+\item{.hide}{A logical indicating whether only processed data should be
+returned. If \code{TRUE} The raw data is contained as an attribute named
+\code{"rawdata"}.}
 }
 \value{
-A \code{\link[tibble:tibble]{tibble}} containing the original dataset
-and adds the variables: \code{Xt.rw}, ion count rates uncorrected for
+A \code{tibble::\link[tibble:tibble]{tibble}()} containing the original
+dataset and adds the variables: \code{Xt.rw}, ion count rates uncorrected for
 detection device-specific biases; \code{Xt.pr}, ion count rates corrected for
 detection device-specific biases; and \code{N.pr}, counts corrected for
 detection device-specific biases.
@@ -47,8 +72,8 @@ certain voltage amplitude.
 # Use point_example() to access the examples bundled with this package
 
 # raw data containing 13C and 12C counts on carbonate
-tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
+tb_rw <- read_IC(point_example("2018-01-19-GLENDON"))
 
 # Processing raw ion count data
-tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt, deadtime = 44, thr_PHD = 50)
+cor_IC(tb_rw)
 }

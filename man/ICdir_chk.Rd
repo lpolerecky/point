@@ -4,7 +4,7 @@
 \alias{ICdir_chk}
 \title{Check if directory is suitable for point}
 \usage{
-ICdir_chk(directory, types = c(".is_txt$", ".chk_is$", ".stat$"))
+ICdir_chk(directory, types = c(".is_txt", ".chk_is", ".stat"))
 }
 \arguments{
 \item{directory}{A path or connection to a directory containing raw ion count
@@ -17,7 +17,7 @@ searches for files ending with .is_txt, .chk_is, and .stat}
 A logical indicating whether the directory is suitable for `point`
 }
 \description{
-This function checks whether the necesarry files for the `point` read
+This function checks whether the necessary files for the `point` read
 functions are included in the directory.
 }
 \examples{

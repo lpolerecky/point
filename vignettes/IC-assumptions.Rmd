@@ -1,0 +1,198 @@
+---
+title: "IC-assumptions"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{IC-assumptions}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(point)
+```
+
+<!-- **Assumption 1: Constant variance** -->
+
+<!-- The studentized residuals provide a more effective means of detecting the outliers and provide a means to validate the first assumption of equal variance. This has been graphically visualized in a *scale location plot* (Fig. \@ref(fig:ScLoc)) of $\hat{e}_i^*$, where values of above 3.5 can be considered as outliers ("the green band"). -->
+
+
+<!-- ```{r ScLoc, echo=FALSE, fig.cap = "Scale-Location plot, can be used to check for systematic relationships between $\\hat{e}_i^*$ and the independent value ^13^C (Heteroscedasticity) or the homogeneity of variance (Homoscedasticity). Blue dots demarcate data-points that can be considered outliers based on $\\hat{e}_i^*$  < -3.5 and 3.5 > $\\hat{e}_i^*$. The dashed line and green area denotes the value and spread for studentized residuals if Homoscedasticity exists.",  fig.width=8, fig.height=4} -->
+
+<!-- # Diagnostics and plots of simulations (load SIM_IC_ideal) -->
+<!-- plot_CV <- diag_R(sim_IC_ideal,  -->
+<!--                   method = "CV", -->
+<!--                   args = expr_R_stat, -->
+<!--                   reps = 1, -->
+<!--                   simulation, -->
+<!--                   trend, -->
+<!--                   plot = TRUE, -->
+<!--                   plot_type = "static", -->
+<!--                   iso = TRUE, -->
+<!--                   isoscale = "VPDB" -->
+<!--                   ) -->
+
+
+<!-- ``` -->
+
+<!-- Patterns in the homogeneity of variance on the *scale-location* plot can indicate whether the linear model suffers from systematic variations in the residuals that are dependent on the fitted variable ($\hat{X}^b$), termed heteroscedasticity. When an heteroscedastic error occurs the estimates of coefficient can be compromised, and might suggest that a linear model does not fit the data. By plotting a linear least square model on the location-scale plots the systematic relation between $\hat{Y}_i$ and $\hat{e}_i$ (Eq. \@ref(eq:conmean)) can be further analysed.  This method can be further formalized with a hypothesis test known as the *Breusch-Pagan test*.  -->
+
+<!-- ```{r bptest, echo=FALSE, fig.cap="Breusch Pagan $\\chi^2$ values for the ideal simulation for several linear trends in the ionization efficiency.", fig.width=6, fig.height=4} -->
+
+<!-- df <- 1 -->
+<!-- upper <- 10 -->
+<!-- # curve -->
+<!-- df_den <- tibble::tibble(vec_den = seq(0.001, upper, by = 0.001)) -->
+
+<!-- #find upper  95% of distribution -->
+<!-- upper95 <- qchisq(.95, df) -->
+
+<!-- jitter <- position_jitter(width = 0, height = 0.1) -->
+
+<!-- # factor -->
+<!-- vc_lvls <-  c("linear trend (var: 0)", -->
+<!--               "linear trend (var: 50)", -->
+<!--               "linear trend (var: 100)",  -->
+<!--               "linear trend (var: 150)",  -->
+<!--               "linear trend (var: 200)", -->
+<!--               "linear trend (var: 250)", -->
+<!--               "linear trend (var: 300)",  -->
+<!--               "linear trend (var: 350)",  -->
+<!--               "linear trend (var: 400)",  -->
+<!--               "linear trend (var: 450)",   -->
+<!--               "linear trend (var: 500)" -->
+<!--               ) -->
+
+<!-- CD_ideal <- CD_ideal %>%  -->
+<!--   mutate(trend = factor(trend, levels = vc_lvls, order = TRUE))  -->
+
+<!-- ggplot(df_den, aes(x=vec_den)) + -->
+<!--   stat_function(fun = dchisq, args = list(df = df)) + -->
+<!--   stat_function(fun = dchisq,  -->
+<!--                       args = list(df = df), -->
+<!--                       xlim = c(upper95, upper), -->
+<!--                       geom = "area", -->
+<!--                       alpha = 0.2 -->
+<!--                 ) + -->
+<!--   geom_vline(xintercept = upper95 , linetype = 2)+ -->
+<!--   geom_point(data = CD_ideal,  -->
+<!--              aes(x = Chi_R2, y = dchisq(Chi_R2, df = df), -->
+<!--                  color = trend -->
+<!--                  ) -->
+<!--              ) + -->
+<!--   annotate("text", label = "95% confidence limit", x = upper95 * 1.2,  -->
+<!--            y = 0.7, angle = 90 -->
+<!--            ) + -->
+<!--   ylim(0, 1) + -->
+<!--   xlim(0, 10) + -->
+<!--   xlab(expression(chi^2~"(df =1)")) + -->
+<!--   ylab("probability-density") -->
+
+<!-- ``` -->
+
+<!-- The output of this test has a $\chi^2$-distribution of 1 degrees of freedom so that a 95% confidence level for $H0$ rejection can be chosen from the $\chi^2$-distribution (see Fig. \@ref(fig:bptest)). Performing this test on the studentized residuals and fitted values suggests homogeneity of variance for the ideal model for most situations, unless when no linear trend in ionization efficiency is evident. However, the correlation between $\chi^2$ probability and the linear ionization trend seems spurious, and is likely an artefact related to the relative large uncertainty in the OLS estimate which is an effect of the small variation in the independent variable ($X^a$)(see Fig. \@ref(fig:coeftest)). So, for the ion count originating from the *ideal* simulation, it can be concluded that there no strong reason to reject the $H0$ of homoscedasticity, and the assumption of **constant variance** holds.  -->
+
+<!-- ```{r coeftest, echo=FALSE, fig.cap="Comparison of the standard error of the $\\beta_1$ coefficient of an OLS for estimating the studentized residuals and the variation in the dependent variable $S_{X^b}$ for several linear trends in the ionization efficiency.", fig.width=6, fig.height=4} -->
+
+<!-- ggplot(CD_ideal, aes(y = SE_beta , x = readr::parse_number(as.character(trend)), color = trend)) + -->
+<!--   geom_point() + -->
+<!--   xlab(expression(epsilon[""^12*C]~"(\u2030)")) + -->
+<!--   ylab(expression(S[beta[1]])) -->
+
+<!-- ``` -->
+
+
+<!-- <!-- In the future I will test what the lower limit of n is so that this assumption is violated --> -->
+
+<!-- **Assumption 2: Normality of residuals** -->
+
+<!-- A second test validates the assumption of normality of the $\hat{e}_i^*$. This can be achieved by means of a Quantile-Quantile comparison plot (QQ normality plot; Fig. \@ref(fig:QQnorm)), where the empirical sample distribution is compared with a theoretical distribution. The theoretical cumulative distribution function $P(x)$ (or CDF) is used to compare the empirical sample distribution with, so that $Pr(X \le x) = P(x)$. To achieve this the studentized residuals are ordered from smallest to largest, denoted $\hat{e}_1^*$, $\hat{e}_2^*$, ..., $\hat{e}_i^*$. The cumulative probabilities of the empirical sample distribution for the $i$-th follows: -->
+
+<!-- \begin{equation} -->
+<!--   P_i = \frac{i - \frac{1}{2}}{n}  -->
+<!--   (\#eq:probs) -->
+<!-- \end{equation}   -->
+
+<!-- And by inverting the CDF we can find the theoretical quantiles $z_i$ (from $\mathrm{N}(0,1)$) that correspond with the cumulative probability, by using: -->
+
+<!-- \begin{equation} -->
+<!--   z_i = P^{-1} \left( \frac{i - \frac{1}{2}}{n} \right) -->
+<!--   (\#eq:quant) -->
+<!-- \end{equation} -->
+
+<!-- The obtained $z_i$ values are plotted as horizontal coordinates against the ordered $\hat{e}_i^*$ values in Figure \@ref(fig:QQnorm) (QQ normality plot). Here $P^{-1}$ is the inverse CDF. The straight line in the plot is a model estimate for $\hat{e}_i^*$ for comparison because if the residuals were a normal sample, the observations should lie on a straight line: -->
+
+<!-- \begin{equation} -->
+<!--  \hat{\eta}_i = \hat{\mu} + \hat{\sigma}z_i  -->
+<!--  (\#eq:predQQ)  -->
+<!-- \end{equation} -->
+
+<!-- , where $\hat{\mu}$ and $\hat{\sigma}$ can be calculated from the mean and standard deviation of $\hat{e}_i^*$. As there is an expected departure from this line because of sampling variation, a standard error for the order statistic $\eta_{i}$ is required: -->
+
+<!-- \begin{equation} -->
+<!--   S_{\eta_i} = \frac{\hat{\sigma}}{\Phi(z_i)} \times \sqrt{\frac{P_i(1- P_i)}{n}}  -->
+<!--   (\#eq:seQQ) -->
+<!-- \end{equation} -->
+
+<!-- where $\Phi$ is a density of $\mathrm{N}(0,1)$, so with the appropriate standard error being: -->
+
+<!-- \begin{equation} -->
+<!--   \hat{\eta}_i \pm 2 \times S_{\eta_i} -->
+<!--   (\#eq:seQQ2) -->
+<!-- \end{equation} -->
+
+<!-- Thereby providing a means to distinguish $\hat{e}_i^*$ that deviate significantly from the normal assumption (Fig. \@ref(fig:QQnorm)). The differences between the empirical and theoretical quantiles can also be formalized as an hypothesis test, where the *Anderson-Darling test* is one example of such test. Based on this test, there is no reason to reject the $H0$ of normality in the case of an "ideal" analysis.     -->
+
+<!-- ```{r QQnorm, echo=FALSE, fig.cap = "QQ normality plot, comparing the sample quantiles with the theoretical quantiles of a density distribution with N(0,1). Blue dots denote data-points that fall outside the 95% confidence range of the predicted relationship between the theoretical and sample quantiles", fig.width=8, fig.height=4} -->
+
+<!-- plot_QQ <- diag_R(sim_IC_ideal,  -->
+<!--                   method = "QQ", -->
+<!--                   args = expr_R_stat, -->
+<!--                   reps = 1, -->
+<!--                   simulation, -->
+<!--                   trend, -->
+<!--                   plot = TRUE, -->
+<!--                   plot_type = "static", -->
+<!--                   iso = TRUE, -->
+<!--                   isoscale = "VPDB" -->
+<!--                   ) -->
+<!-- ``` -->
+
+
+<!-- One can further deduce from Figure \@ref(fig:QQnorm), that the variance around the linear line centers around zero with most of the data spread in an area encompassing the 95% confidence of this regression line. This can be further confirmed by a two sided one-sample t-test on the studentized result with  $H0$: $\mu_0 = 0$, and  $Ha$: $\mu_0 \neq 0$. The assumption of **normality of residuals** with a conditional mean of zero (Eq. \@ref(eq:linmodR)) seems to be valid for the "ideal" simulation.   -->
+
+<!-- **Assumption 3: Independence of residuals** -->
+
+<!-- Count data from one measurement to another should be truly independent distributions, thus without machine bias and sample heterogeneity the difference between consecutive measurements (differencing) should be uncorrelated (autocorrelation). Autocorrelation can be expressed as the relative strength of the co-variance of a variable with it's own $k$-lagged time series ($T$) over the total variance in that variable: -->
+
+<!-- \begin{equation} -->
+<!--   r_k = \frac{ \sum_{t=k+1}^T \left(x_t-\bar{x} \right)\left(x_{t-k}-\bar{x} \right)}{\sum_{t=1}^T \left(x_t - \bar{x} \right)^2}  -->
+<!--   (\#eq:auto) -->
+<!-- \end{equation} -->
+
+<!-- This measure takes upon values between $+1$; indicating strong autocorrelation, and $-1$; suggesting weak autocorrelation. This can be graphically displayed as a correlogram (see Fig. \@ref(fig:acf)) with the horizontal blues indicating whether the $r_k$ is significantly different from the average. In addition, this graph can be extended to encompass not only differencing with one lag ($k = 1$) but also the next and the one thereafter (see Fig. \@ref(fig:acf)).  -->
+
+
+<!-- ```{r acf, echo=FALSE, fig.cap = "The ACF plot of the studentized residuals.", fig.width=8, fig.height=4}  -->
+
+<!-- tb.R <- stat_R(sim_IC_ideal, Xt.sim, N.sim, species, "13C", "12C", simulation, trend, output = "complete") %>%  -->
+<!--   group_by(simulation, trend) %>%  -->
+<!--   mutate(t.sim.13C = row_number()) %>%  -->
+<!--   ungroup -->
+
+<!-- plot_IR <- IR(tb.R,  -->
+<!--               args = expr_R_stat, -->
+<!--               time_steps = t.sim, -->
+<!--               simulation,  -->
+<!--               trend, -->
+<!--               plot = TRUE -->
+<!--               ) -->
+<!-- ``` -->
+
+<!-- For a white noise time series we expect that about 95% of the spikes in the correlogram fall within the area demarcated with the blue horizontal lines in Figure \@ref(fig:acf). This approach can be formalized with a *Ljung-Box Q test*, where the $H0$ is a white noise series (i.e. no autocorrelation). This supports the last of the three assumptions, and suggests that the residuals appear to be truly independent (*independence of residuals*) from one to the next observation in the "ideal" simulation. -->

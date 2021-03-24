@@ -2,58 +2,122 @@
 % Please edit documentation in R/diagnostics_IC.R
 \name{diag_R}
 \alias{diag_R}
-\title{Diagnostics raw ion count data}
+\title{Diagnostics isotope count data}
 \usage{
-diag_R(df, method = "standard", args = expr_R(NULL), ...)
+diag_R(
+  .IC,
+  .ion1,
+  .ion2,
+  ...,
+  .nest = NULL,
+  .method = "CooksD",
+  .reps = 1,
+  .X = Xt.pr,
+  .N = N.pr,
+  .species = species.nm,
+  .t = t.nm,
+  .output = "inference",
+  .label = NULL,
+  .meta = TRUE,
+  .alpha_level = 0.05,
+  .plot = FALSE,
+  .plot_type = "static",
+  .plot_stat = NULL,
+  .plot_iso = FALSE
+)
 }
 \arguments{
-\item{df}{A tibble containing processed ion count data.}
+\item{.IC}{A tibble containing processed ion count data.}
 
-\item{method}{Character string for the type of diagnostics. Currently only
-"standard" is supported, which pertains to the default Cameca software
-setting.}
+\item{.ion1}{A character string constituting the rare isotope ("13C").}
 
-\item{args}{A list of quosures pertaining to the variables required for a
-call to stat_R. The function expr_R can be used to simplify setting this
-argument.}
+\item{.ion2}{A character string constituting the common isotope ("12C").}
 
 \item{...}{Variables for grouping.}
+
+\item{.nest}{A variable hat identifies a series of analyses to calculate
+the significance of inter-isotope variability.}
+
+\item{.method}{Character string for the method for diagnostics (default =
+\code{"CooksD"}, see details).}
+
+\item{.reps}{Numeric setting the number of repeated iterations of outlier
+detection (default = 1).}
+
+\item{.X}{A variable constituting the ion count rate (defaults to
+variables generated with \code{read_IC()})}
+
+\item{.N}{A variable constituting the ion counts (defaults to variables
+generated with \code{read_IC()}.).}
+
+\item{.species}{A variable constituting the species analysed (defaults to
+variables generated with \code{read_IC()}).}
+
+\item{.t}{A variable constituting the time of the analyses (defaults to
+variables generated with \code{read_IC()}).}
+
+\item{.output}{Can be set to \code{"complete"} which returns \code{stat_R()}
+and \code{stat_X()} statistics, diagnostics, and inference test results
+following the selected method (see above argument \code{.method});
+\code{"augmented"} for the augmented IC data after diagnostics, \code{"flag"}
+for only outlier detection results; \code{"diagnostic"} for statistics and
+outlier detection, or \code{"inference"} for only inference test statistics
+results (default = inference).}
+
+\item{.label}{For printing nice latex labels use \code{"latex"} (defualt is
+\code{NULL}.}
+
+\item{.meta}{Logical whether to preserve the metadata as an attribute
+(defaults to TRUE).}
+
+\item{.alpha_level}{Significance level of hypothesis test.}
+
+\item{.plot}{Logical indicating whether plot is generated.}
+
+\item{.plot_type}{Character string determining whether the returned plot is
+\code{"static"} \code{ggplot2::\link[ggplot2:ggplot2]{ggplot2}()}(currently
+only supported option).}
+
+\item{.plot_stat}{Adds a statistic label to the plot (e.g. . \code{"M"}), see
+\code{point::nm_stat_R} for the full selection of statistics available.}
+
+\item{.plot_iso}{A character string (e.g. \code{"VPDB"}) for the delta
+conversion of R (see \code{?calib_R()} for options).}
 }
 \value{
-A t\code{\link[tibble:tibble]{tibble}} containing the original
-dataset and new columns related to the diagnostics. The flag variable enables
-convenient filtering of the original tibble for an augmentation of the
-original dataset.
+A \code{ggplot2::\link[ggplot2:ggplot]{ggplot}()} is returned
+(if \code{.plot = TRUE}) along with a
+\code{tibble::\link[tibble:tibble]{tibble}()} which can contain statistics
+diagnostics, hypothesis test results associated with the chosen method and
+depending on the argument \code{.output}.
 }
 \description{
-\code{diag_R} function for propagation of uncertainty for single ions
+\code{diag_R} wrapper function for diagnostics on isotope count data
 }
 \details{
 The \code{diag_R} function performs an internal call to stat_R to perform
-diagnostics on the influence of individial measurements on the blockwise or
-global (i.e., a complete analysis) stastics. It identifies potentially
-influential measurements that can subsequentally be filtered from the
-original dataset to improve the precision. See
-\code{vignette("IC-diagnostics", package = "point")} for more information
-on how to use the function, and possible methods for diagnostics.
+diagnostics on the influence of individual measurements on the block-wise or
+global (i.e., a complete analysis) statistics. It identifies potentially
+influential measurements that indicate heterogeneity in the analytical
+substrate or measurement. See
+\code{vignette("IC-diagnostics", package = "point")} for more information on
+how to use the function, and possible methods for outlier detection. Options
+are \code{"CooksD"} (default), \code{"Cameca"}, \code{"Rm"}, \code{"norm_E"},
+\code{"CV"}, \code{"IR"}, and \code{"QQ"}, see the
+\code{vignette("IC-diagnostics", package = "point")} for examples and
+\code{point::\link[point:names_diag]{names_diag}}. The
+argument \code{.output} can be used to toggle between \code{"complete"};
+returning \code{stat_R()} and \code{stat_X()} statistics, diagnostics, and
+inference test results, \code{"augmented"}; returning the augmented IC after
+removing outliers, \code{"flag"}; for only outlier detection results;
+\code{"diagnostic"}; for statistics and outlier detection, or
+\code{"inference"}; returns only inference test statistics results
+(default = inference).
 }
 \examples{
-# Use point_example() to access the examples bundled with this package
+# Modelled ion count dataset
+# Cook's D style diagnostic-augmentation of ion count data for
+# isotope ratios
+diag_R(simu_IC, "13C", "12C", type.nm, spot.nm, .plot = TRUE)
 
-# raw data containing 13C and 12C counts on carbonate
-tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
-
-# Processing raw ion count data
-tb.pr <- cor_IC(tb.rw, N.rw, t.rw, det_type.mt)
-
-# CAMECA style augmentatio of ion count data for isotope ratios
-tb.aug <- diag_R(tb.pr,
-                 method = "standard",
-                 args = expr_R(Xt = "Xt.pr",
-                               N = "N.pr",
-                               species = "species.nm",
-                               ion1 = "13C",
-                               ion2 = "12C"),
-                 file.nm,
-                 bl.mt)
 }

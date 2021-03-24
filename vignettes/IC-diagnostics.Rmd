@@ -17,12 +17,16 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  warning = FALSE
 )
 ```
 
+
 # Diagnostics for Ion Count Data
-The random nature of secondary ions emitted from a sample is described by Poisson statistics, which can be used to predict the precision of SIMS measurements under ideal circumstances (e.g., the predicted standard error can be deduced from the total counts of secondary ions). However, besides this fundamental source of imprecision, real SIMS measurements are additionally affected by other factors such as sample heterogeneity, instrument instability, the development and geometry of the sputter pit, and sample charging. Although some of these biases can be avoided by proper instrument tuning and sample documentation (e.g. T/SEM to characterise the textural properties of a rock sample) prior to SIMS measurement, factors such as instrument instability or sample heterogeneity can never be fully eliminated. In this vignette, diagnostic tools are showcased which can help evaluate the potential impact of such factors on the precision of ion count data.
+
+The random nature of secondary ions emitted from a sample is described by Poisson statistics, and can be used to predict the precision of SIMS measurements under ideal circumstances (e.g., the predicted standard error can be deduced from the total counts of secondary ions). However, besides this fundamental source of imprecision, real SIMS measurements are additionally affected by other factors such as sample heterogeneity, instrument instability, the development and geometry of the sputter pit, and sample charging. Although some of these biases can be avoided by proper instrument tuning and sample documentation (e.g. T/SEM to characterise the textural properties of a rock sample) prior to SIMS measurement, factors such as instrument instability or sample heterogeneity can never be fully eliminated. In this vignette, diagnostic tools are showcased which can help evaluate the potential impact of such factors on the precision of ion count data.
+
 
 ```{r setup}
 library(point)
@@ -37,182 +41,318 @@ library(ggplot2) # graphics
 ```
 
 
+```{r plot_defaults, echo=FALSE}
+# Default ggplot theme
+theme_set(theme_classic())
+theme_replace(
+  axis.title = element_text(size = 11),
+  axis.text = element_text(size = 9),
+  plot.background = element_rect(fill = "transparent", color = NA),
+  panel.background = element_rect(fill = "transparent", color = NA),
+  legend.background = element_rect(fill = "transparent", color = NA)
+  )
+```
+
+
 ## Nomenclature
 
 * Sample: sample of the true population
-* Analytical substrate: Physical sample measured during SIMS analysis
+* Analytical substrate: physical sample measured during SIMS analysis
 * Event: single event of an ion hitting the detector
 * Measurement: single count cycle $N_i$
 * Analysis: $n$-series of measurements $N_{(i)} = M_j$ 
 * Study: $m$-series of analyses $M_{(j)}$, constituting the different spots on the analytical substrate 
 
-## Isotope ratios: A special case
-Isotopes of the same element should have more-or-less the same ionization efficiency [@Fitzsimons2000a]. It thus follows, that in an isotopically homogeneous analytical substrate the count rates of two isotope from the same element should be dependent on each. From this it can be deduced that large deviations in count rate ratios of an isotope system between consecutive measurements indicate a potential discrepancy (e.g., sample heterogeneity and instrument instability).  
 
-## Count block based count optimization (Default Cameca software procedure)
-The default method to account for these discrepancies as incorporated in the Cameca software entails a blockwise check for variability. If values fall outside of a pre-defined range of variance (for example two standard deviations; named $\sigma$ in the Cameca software), the measurement will be rejected.  
+## Basic functionality
+
+The function `diag_R()` is designed to be a flexible wrapper for isotope count diagnostics. Non-isotope pairs are supported as well but the outcome is not necessarily meaningful due to variation caused by the ionization efficiency differences among elements, check the vignette [IC-process](IC-process.html) for solutions. For basic functionality, `diag_R()` requires the following arguments: `.IC`, which should be a [tibble](https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html) containing processed ion count data (ideally, following the routine `point` work-flow), and arguments `.ion1` and `.ion2` which link to the rare isotope and common isotope, respectively (as character strings). The dots `...` should be used to define a grouping variable to e.g. identify individual analysis or sets of analyses. The argument `.method` enables selection of diagnostic methods, which are outlined in this vignette. A range of other arguments dictate features of the returned statistics and plotting of the outcome (as a [ggplot](https://ggplot2.tidyverse.org/)). Check `?diag_R()` for all options.
+
+In the following example the grouping structure of the data frame is defined as the file-names and block numbers, which recreates the default Cameca^TM^ software diagnostics. 
 
 
 ```{r warning=FALSE}
-
 # Use point_example() to access the examples bundled with this package 
-
-# Carry-out the routine point workflow
+# Carry-out the routine point work-flow
 # Raw data containing 13C and 12C counts on carbonate
-tb.rw <- read_IC(point_example("2018-01-19-GLENDON"))
+tb_rw <- read_IC(point_example("2018-01-19-GLENDON"))
 
 # Processing raw ion count data
-tb.pr <- cor_IC(tb.rw, 
-                N = N.rw, 
-                t = t.rw, 
-                Det = det_type.mt, 
-                deadtime = 0, 
-                thr_PHD = 0)
+tb_pr <- cor_IC(tb_rw)
 
-# CAMECA style augmented datafile
-# Vectors of isotope ratios 
-ion1 <-  c("13C", "12C 13C", "13C 14N", "12C") 
-ion2 <-  c("12C", "12C2", "12C 14N", "40Ca 16O")
-
-# Call function Diag_R over all ion ratio combinations  
-tb.aug <- purrr::map2(ion1, ion2, ~(diag_R(tb.pr,
-                                           method = "standard",
-                                           args = expr_R(Xt = "Xt.pr",
-                                                         N = "N.pr",
-                                                         species = "species.nm",
-                                                         ion1 = .x,
-                                                         ion2 = .y),
-                                           file.nm,
-                                           bl.mt) %>%
-                                      filter(flag == "good")
-                                    )
-                      )
-                                   
-# Reproduce Cameca stat file: descriptive an predictive statistics for  
-# ratios (blockwise)
-
-# List variables
-ls.CAMECA <- lst(df = tb.aug, a = ion1, b = ion2)
-
-# Function to transform to calculate block wise and produce CAMECA output style
-fun_CAMECA <-function(df, a, b){
-  
-               df <- stat_R(df, Xt.pr, N.pr, species.nm, 
-                                            a, b, file.nm, bl.mt,
-                                            output = "complete") %>%   
-                       filter(file.nm == "2018-01-19-GLENDON_1_1") %>% 
-                       distinct(bl.mt, .keep_all = TRUE) %>% 
-                       mutate_at(vars(contains("meas_bl.mt")), ~(. - n_R_Xt.pr)) %>% 
-                       mutate(`Err_mean (%)` = RSeM_R_Xt.pr / 10,
-                              `Poisson (%)` = hat_RSeM_R_Xt.pr / 10,
-                              `Ratio#` = paste(a, b, sep = "/")) %>% 
-                       select(`Block#` = bl.mt, 
-                              `Ratio#` , 
-                              "Mean" = M_R_Xt.pr, 
-                              "SD" = S_R_Xt.pr, 
-                              N_rej = contains("meas_bl.mt")[1], 
-                              `Err_mean (%)`,
-                              `Poisson (%)`,
-                              "Khi2" = chi2_R_Xt.pr)
-}
-
-# Call the function
-tb.CAMECA <- purrr::pmap_dfr(ls.CAMECA, fun_CAMECA) %>% 
-              arrange(`Block#`)
-              
+# CAMECA style diagnostics
+tb_dia <- diag_R(tb_pr, "13C", "12C", file.nm, bl.nm, .method = "Cameca", .reps = 2, 
+                 .output = "diagnostic") 
 ```
 
+
+```{r include=FALSE}
+# CAMECA style augmented datafile
+# Vectors of isotope ratios 
+ion1 <-  c("13C", "12C 14N", "12C")
+ion2 <-  c("12C", "40Ca 16O", "40Ca 16O")
+
+# Call function Diag_R over all ion ratio combinations  
+ls_dia <- purrr::map2(
+  ion1, 
+  ion2, 
+  ~diag_R(tb_pr, .x, .y, file.nm, bl.nm, .method = "Cameca", .reps = 2, .output = "diagnostic") 
+  )       
+```
+
+
+The output consist of a `tibble` containing the single ion count statistics for each ion and the isotope ratio statistics. In addition, the specific diagnostics (selected with `.method =  "Cameca"`) is appended to the tibble. Here the procedure was repeated two times (`.reps = 2`) and `.output` set to `"diagnostic"` to get the augmented summary statistics of $R$ following the Cameca^TM^ output.
+
+
+# Isotope ratios: A special case
+
+Isotopes of the same element should have more-or-less the same ionization efficiency [@Fitzsimons2000a]. It thus follows, that in an isotopically homogeneous analytical substrate the count rates of two isotope from the same element should be dependent on each. From this it can be deduced that large deviations in count rate ratios of an isotope system between consecutive measurements indicate a potential discrepancy (e.g., sample heterogeneity and instrument instability). This unique property enables the detection of situations in which the analysed substrate contains isotopic heterogeneity at a smaller scale than the beam size, or where machine instability causes a discrepancy in count rates between detectors.
+
+
+## Count block-based diagnostics (Cameca^TM^)
+
+The default method to account for such discrepancies, as incorporated in the Cameca^TM^ software, entails a block-wise (blocks represent sub-units of the complete analysis) check for variability. If values fall outside of a pre-defined range of variance (e.g. two standard deviations, referred to as $\sigma$ in the Cameca^TM^ software), the measurement will be rejected ($N\_rej$ in the excerpt of the Cameca output files; Fig. \@ref(fig:xcpcameca)).  
+
+
+```{r echo=FALSE}                                    
+# Reproduce Cameca stat file: descriptive and predictive statistics for  
+# ion ratios (block-wise)
+fun_CAMECA <- function(IC){
+  # get metadata for detector numbers
+  meta <- unfold(IC, merge = FALSE) %>% 
+    distinct(species.nm, det.mt) %>% 
+    mutate(
+      species.nm = map_chr(
+        species.nm,
+        ~stringr::str_replace_all(stringr::str_trim(.x), "\\s", "_")),
+      det.mt = readr::parse_number(det.mt)
+      )
+    
+  filter(IC, file.nm  == "2018-01-19-GLENDON_1_1", execution == "2") %>%
+    distinct(file.nm, bl.nm, .keep_all = TRUE) %>%
+    transmute(
+      `Block#` = bl.nm,
+      # parse detector combinations
+      `Ratio#` = purrr::map_chr(ratio.nm, ~det_fun(.x, meta)),
+      "Mean" = M_R_Xt.pr,
+      "SD" = S_R_Xt.pr,
+       N_rej = 65 - n_R_t.nm,
+      `Err_mean (%)` = RSeM_R_Xt.pr / 10,
+      `Poisson (%)` = hat_RSeM_R_N.pr / 10,
+      "Khi2" = chi2_R_N.pr
+      )
+}
+
+det_fun <- function(R, meta) {
+  ls_R <-stringr::str_split(R, "/") 
+  paste0(
+    pull(filter(meta, species.nm == ls_R[[1]][1]), det.mt), 
+    "/", 
+    pull(filter(meta, species.nm == ls_R[[1]][2]), det.mt)
+    )
+  }
+
+# Call the function
+tb_CM <- purrr::map_dfr(ls_dia, fun_CAMECA) %>% 
+  group_by(`Ratio#`) %>% 
+  arrange(`Block#`)
+```
 
 
 ```{r xcpcameca, out.width="90%", echo=FALSE, fig.cap="An excerpt of the Cameca stat-file for count block based 2$\\sigma$-rejection and associated blockwise statistics"}
-
 knitr::include_graphics("excerpt_stat.png")
-
-knitr::kable(tb.CAMECA[1:13, ],
-             format.args = list(digits = 2, 
-                                format = "G", 
-                                flag = "0"),
-              caption = "Blockwise statistics for augmented dataset (replication of Fig.1).") 
-```
-
-Note, that in the above example of the Cameca diagnostics (Fig. \@ref(fig:xcpcameca)), ratios of none-isotope pairs have been calculated.
-
-```{r ion, fig.width=8, fig.height=6, fig.cap="The blockwise mean plotted against consecutive blocks. Note that the non-isotope ratios show a decreasing trend over time.", echo=FALSE}
-
-ggplot(tb.CAMECA, aes(x =`Block#`, y = Mean)) +
-  geom_point() +
-  facet_wrap(vars(`Ratio#`), scales = "free") +
-  theme_classic()
-
 ```
 
 
-Upon plotting the blockwise mean against the block number (Fig. \@ref(fig:ion)), it becomes apparent that the none-isotope ratios display a monotonic decreasing trend over the duration of the analysis. This effect likely reflects the differential ionization potentials and trajectories of secondary beam stabilization over the analysis.
-
-Based on the Cameca $\sigma$-rejection, it is possible to augment the dataset for each of the analyses by simply removing the anomalous measurements ($N_i$), which pertains to the $N\_rej$ in Fig. \@ref(fig:xcpcameca).   
-
-````{r}
-# Augmented descriptive an predictive statistics (global dataset)
-
-# Function to transform to calculate block wise and produce CAMECA output style
-fun_CAMECA_gl <-function(df, a, b){
-  
-               df <- stat_R(df, Xt.pr, N.pr, species.nm, 
-                                            a, b, file.nm, 
-                                            output = "complete") %>%   
-                       filter(file.nm == "2018-01-19-GLENDON_1_1") %>%
-                       
-                       mutate(`Err_mean (%)` = RSeM_R_Xt.pr / 10,
-                              `Poisson (%)` = hat_RSeM_R_Xt.pr / 10,
-                              `Ratio#` = paste(a, b, sep = "/"),
-                              SD_bl = sd(R_Xt.pr) /
-                                      mean(R_Xt.pr) * 100) %>% 
-                       distinct(file.nm, .keep_all = TRUE) %>% 
-                       select(`Ratio#` , 
-                              "Ratios" = M_R_Xt.pr, 
-                              `Poisson (%)`,
-                              `Err_mean (%)`,
-                              "Khi2" = chi2_R_Xt.pr,
-                              `SD_Block(%)`= SD_bl)
-}
-
-# Call the function
-tb.CAMECA_aug <- purrr::pmap_dfr(ls.CAMECA, fun_CAMECA_gl)
-
-# And the same without augmentation of the dataset
-ls.CAMECA$df <- replicate(length(ion1), tb.pr, simplify = FALSE)
-
-tb.CAMECA_org <- purrr::pmap_dfr(ls.CAMECA, fun_CAMECA_gl)
-
-```
-
-```{r xcpcameca2, out.width="90%", echo=FALSE, fig.cap="An excerpt of the Cameca stat-file for count block based 2$\\sigma$-rejection and associated blockwise statistics"}
-
-knitr::include_graphics("excerpt_stat_global.png")
-```
-
-```{r aug, echo=FALSE}
-knitr::kable(tb.CAMECA_aug,
-             format.args = list(digits = 2, 
-                                format = "G", 
-                                flag = "0"),
-             caption = "Summary stats for augmented dataset"
-             ) 
+```{r echo=FALSE}
+knitr::kable(
+  head(tb_CM),
+  format.args = list(digits = 2, format = "G", flag = "0"),
+  caption = "Blockwise statistics for augmented dataset (replication of Fig. \\@ref(fig:xcpcameca) with the point package)."
+  ) 
 ```
 
 
-```{r org,echo=FALSE}
-knitr::kable(tb.CAMECA_org,
-             format.args = list(digits = 2, 
-                                format = "G", 
-                                flag = "0"),
-             caption = "Summary stats for original dataset"
-             ) 
+## Regression-based diagnostics
+
+The solution provided by the Cameca^TM^ software seems straightforward and effective, just compare the $R$ values of the individual measurements of an $n$-series ($N_{(i)}$), and check whether there are significant deviations at some points during the analysis. However, the situation is more complex than that, as illustrated with the following examples. 
+
+For these examples, isotope count rates have been simulated (`simu_IC` provide along with the package) for three hypothetical types of materials (Fig. \@ref(fig:simulations)). 
+
+1) An **"ideal"** substrate with a completely homogeneous isotopic composition  
+2) A substrate with a **"symmetric gradient"**, which has a isotope gradient spanning the whole depth covered by the analysis 
+3) A substrate with an **"asymmetric gradient"**, which has a sudden offset in isotope composition at a specific depth  
+
+In the two simulations with a heterogeneous isotope composition the total span of isotope variability is set to 60‰. A linear trend is superimposed on the count rates of both isotope species, as this is an inherent phenomenon of SIMS analysis. This relates to changes in the ionization potential resulting from the sputter pit development and charge build-up (see vignette: [IC-process](IC-process.html)). This **systematic bias** afflicts both isotope species to a similar degree thereby leaving $R$ unaltered [see @Fitzsimons2000a].  
+
+
+```{r simulations, echo=FALSE, fig.width=12, fig.height=4, fig.cap="Histograms comparing input and output $R$ values for simulations of an ideal isotopically homogenous material, a gradual gradient in $R$ (symmetric gradient), and a sudden shift in $R$ (asymmetric gradient)."}
+# Compare input value of R with output (load dataset simu_IC)
+tb_R <- stat_R(simu_IC, "13C", "12C", type.nm, trend.nm, base.nm, 
+               force.nm, .output = "complete") 
+
+# Re-calculate R from delta value with calib_R()
+tb_R <- mutate(
+  tb_R, 
+  # main component
+  base.nm = calib_R(base.nm, "VPDB", "13C", input = "delta", output = "R"),
+  # R anomaly
+  force.nm =
+    if_else(
+      type.nm == "ideal",
+      base.nm,
+      calib_R(force.nm, "VPDB", "13C", input = "delta", output = "R")
+      )
+  )
+
+# Plot
+ggplot(tb_R, aes(x = R_Xt.pr)) +
+  geom_histogram(alpha = 0.4, binwidth = 1e-4) +
+  geom_vline(aes(xintercept = force.nm), color = "red") +
+  geom_vline(aes(xintercept = base.nm)) +
+  facet_grid(cols = vars(type.nm)) +
+  xlab("R")
 ```
 
-However, when comparing the summary statistics of the augmented dataset (Table \@ref(tab:aug)) with the excerpt from the Cameca stat-file (Fig. \@ref(fig:xcpcameca2)) their seems to be a substantial difference. Instead upon comparison with Table \@ref(tab:org), which consist of summary statistics calculated on the original dataset (without $\sigma$-rejection of measurements), the replication is surprisingly consistent. This heralds the question whether their might be a mistake in the Cameca software for calculating statistics on ion ratios for complete analyses. Otherwise the blockwise $\sigma$-rejection of measurements seems rather obfuscated, as it does not seem to serve an obvious purpose.
 
-## Regression diagnostic based count optimization
-This will be included in future release.
+From Figure \@ref(fig:simulations) it is evident that the real variation in $R$ (input R; black and red lines) are indistinguishable when viewing the derived distribution of the ion count ratios (output R; histogram). This is an effect related to the relative large **random bias** induced by the ionization of the substrate. So, even for these large variations in isotopic composition, it cannot be confidently said whether the measured $R$ is representative for the analysed site, or if the underlying data structure is skewed with one, or more, isotopically distinguishable components comprising the pooled $R$ value. This effect is, furthermore, hardly observable in the precision of the data, where the $\epsilon_R$ of the simulation referred to as "asymmetric" is `r filter(tb_R, type.nm == "asymmetric") %>% pull(RSeM_R_Xt.pr) %>% unique() %>% round(2)`‰, whereas the "ideal" simulation has only a marginally better precision of `r tb_R %>% filter(type.nm == "ideal") %>% pull(RSeM_R_Xt.pr) %>% unique() %>% round(2)`‰. 
+
+From the previous examples, it becomes apparent that heterogeneous substrates cause minimal deviation in the internal precision. Hence, a lot of hidden variation in nominal SIMS isotope analyses can go undetected. So, clearly, a different approach must be adopted to identify these isotopically highly variable substrates.
+
+
+### Linear relationship of isotope counts 
+
+In an "ideal" isotopically homogeneous substrate the count rates of two isotope from the same element should be dependent on each other [@Fitzsimons2000a]. Thus, even though the ionization efficiency might vary within a single analysis, the count rate of an isotope species $b$ can be deduced from the count rate of isotope species $a$ through a linear combination with the isotope ratio $R$:
+
+\begin{equation}
+\hat{X}_i^b = \hat{R}X_i^a +  \hat{e}_i \qquad \text{where} \quad  e_i \sim N \left(0,\sigma^2 \right) (\#eq:linmodR)
+\end{equation}
+
+In this ideal linear count rate relationship, variation in $R$ is only caused by the random nature of secondary ion generation, which follows a Poisson distribution (see vignette [IC-precision](IC-precision.html)). Instead of using Ordinary Least Squares (OLS) to obtain estimates for the regression coefficients, the ratio of mean ion count rates, or $\bar{R}$, can be used as the single coefficient in this function (ratio estimation). Although the residuals ($e_i$) of the  linear model is unobserved, it can then be approximated, as follows:
+
+\begin{equation}
+ \hat{e}_i =  X_i^b - \hat{R}X_i^a \text{.} (\#eq:resR)
+\end{equation}
+
+The component $\hat{e}_i$ gives a measure of the fit of the model (or the performance of this "ideal linear model) to the sampled data. This is known as residual analysis or regression diagnostics; see for example [@Fox2018]. Residual analysis yield estimates about the data points that could have unduly influenced the coefficient $\hat{R}$ of Equation \@ref(eq:linmodR). Outliers detected in linear regression can therefore be described as an observation with a response variable (isotope species; $X_i^b$) that is conditionally unusual when regarding the independent variable (isotope species; $X_i^a$).
+
+To demonstrate this we can use again `diag_R()` and the simulated data according to the previous specifications ("ideal", "symmetric", and "asymmetric" isotope variance), and supply the nominal arguments `.IC`, `.ion1`, `.ion2`, `...` to define again the ion count data, the isotope system to be analysed, as well as a grouping structure defining the individual analyses. We leave the `.method` as the default method, and plot the outcome with `.plot = TRUE`. The argument `.label` produces latex or webtex parsable labels for the data frame containing the statistics results.
+
+```{r regression, fig.cap = "Scatter-plot of ^13^C and ^12^C count rates and the regression line following equation \\@ref(eq:linmodR) and with 2 times the predicted standard deviation of the ^13^C represented as the area around the regression line demarcated with dashed lines. Here the red points identify abnormal section of the analysis with many outliers.", fig.width=12, fig.height=12}
+tb_dia <- diag_R(simu_IC, "13C", "12C", type.nm, spot.nm, .plot = TRUE, 
+                 .label = "webtex")
+```
+
+
+The simulated scenarios in Fig. \@ref(fig:regression) visualise the comparison of the model following Eq. \@ref(eq:linmodR) and hypothetical bivariate ^13^C-^12^C ion count rates. Anomalous sections of data-points about the model (red areas in Fig. \@ref(fig:regression)) can already be observed in the simulations of isotopically heterogeneous substrates merely by this visualization.
+
+For more information and a validation of this method, see the preprint:
+
+**Martin Schobben, Michiel Kienhuis, and Lubos Polerecky. 2021. New methods to detect isotopic heterogeneity with Secondary Ion Mass Spectrometry, preprint on [Eartharxiv](https://eartharxiv.org/).**
+
+
+### Outlier detection (Cook's D)
+
+The residuals will first be normalized to over come scale-dependence. This can be done by using the *studentized* residuals ($\hat{e}_{i}^*$) [see for example @Fox2018]. A studentized residual is obtained by dividing the residual by an independent estimate of the standard deviation of the residuals. To ensure independence, the standard deviation of the residuals is calculated by leaving the residual of the $i$-th observation out:
+
+\begin{equation}
+  \hat{e}_i^* = \frac{\hat{e}_i}{S_{\hat{e}_{(-i)}} \sqrt{(1-h_i)}} \text{,}
+  (\#eq:studres)
+\end{equation}
+
+where the standard error of the regression (standard deviation of the residuals) is also calculated by leaving the $i$-th residual out:
+
+\begin{equation}
+  S_{\hat{e}_{(-i)}} = \sqrt{\frac{1}{n-k-1} \sum_{i = 1}^{n}\hat{e}_i^2}
+  (\#eq:SEminusi)
+\end{equation}
+
+In Eq. \@ref(eq:studres) $h_i$ represents the leverage of the independent variable ($X^a$), or *hat-value*. The hat-value measures the distance from the mean of the independent variable $X_i^a$:
+
+\begin{equation}
+ h_i = \frac{1}{n} + \frac{ \left( X_i^a - \bar{X}_a \right)^2 }{\sum_{j=1}^n \left(X_j^a -  \bar{X}_a \right)^2}
+ (\#eq:hatvalue)
+\end{equation}
+
+The larger the deviation $X_i^a$ from the mean ($\bar{X}_a$) the more leverage the data-point has on the regression line. Given that the "ideal"  simulation satisfies the conditions as initially described for the "ideal" linear model (Eq. \@ref(eq:linmodR)), the estimated $\hat{e}$ can be used to assess deviations from this "ideal linear model", and thereby provide a measure of how representative the $\bar{R}$ is for the sampled spot. The goal of residual analysis would therefore be to identify the influence of the coefficient; in this case the influence on $\bar{R}$, by determining the leverage and discrepancy (outlyingness) of variable $X^a$, such that:
+
+\begin{equation}
+  \text{Influence} = \text{Leverage} + \text{Discrepancy}
+    (\#eq:influence)
+\end{equation}
+
+Having already determined the outlyingness; as the studentized residuals, and the leverage; as hat-values, of the independent variable, it is possible to determine the influence of $X^a$ have on the linear model (Eq. \@ref(eq:influence)). This influence can be quantified with *Cook's Distance* (or *Cook's D*). This formulation overcomes the effect that high leverage does not necessarily require the data-point to be influential, as *Cook's D* combines the hat-values (Eq. \@ref(eq:hatvalue)) with studentized residuals (Eq. \@ref(eq:studres)), in a new equation:
+
+\begin{equation}
+  D_i = \frac{e_{i}^{*}\phantom{}^2}{k + 1} \times \frac{h_i}{1- h_i}
+  (\#eq:CD)
+\end{equation}
+
+Here, the $k$ stands for the number of coefficients in the regression model. To quantify whether $D_i$ is substantially larger then the rest of the sample's $D$ a cut-off value can be defined as follows.
+
+\begin{equation}
+  D_c =4/ (n-k-1)
+  (\#eq:CDcut)
+\end{equation}
+
+These calculations are internally performed by a consecutive call to base `lm()` and `broom::augment()`.
+
+
+### Detecting intra-isotope varaibility with significant outliers
+
+The effectiveness of recognising and differentiating the "ideal" substrate from compromised measurements detected with e.g. Cook's D (or other outlier detection methods) can now be calculated by assessing the impact on the averaged $R$ value. This can be achieved by applying a joint model coefficient hypothesis test (or Fisher test), where the `diag_R()` function is designed to measure this deviation from the ideal "homogeneous" model (Eq. \@ref(eq:linmodR) by default.
+
+\begin{equation}
+F_{(q-p),(n-q)} = \frac{ (RSS_{\theta_{0}}-RSS_{\theta_{1}}) / (q-p) }{RSS_{\theta_{1}} / (n-q)} (\#eq:Fisher)
+\end{equation}
+
+The default settings of the `diag_R()` function produces the following outcome.
+
+```{r eval, echo=FALSE}
+knitr::kable(
+  tb_dia,
+  escape = FALSE,
+  digits = c(0, NA, 1, NA, 4, 0, 2),
+  fig.cap = " Summary of intra-isotope variability test."
+)
+```
+
+
+Here, the $F_{R}$ refers to the Fisher test statistic and the associated significance value as $p_{R}$. 
+
+Sensitivity runs (outlined in Schobben, Kienhuis and Polerecky, in prep) show that the Cook's D outlier detection method performs best when compared to other methods. Hence, problematic analyses with possible intra-isotope variability can be detected, even if this is not obvious from the descriptive and predictive statistics alone.
+
+
+## Inter-isotope variability
+
+The `diag_R()` is designed in resemblance to the `stat_R()` function, and thus also includes an option to check the external structure of the the $m$-series of analyses usually comprised in a SIMS-based study (i.e. severeal sputter pits). For this purpose, again an `.nest` argument is included to define the grouping structure of individual analysis. In the simulated example this could refer to the different scenarios of isotopic variations ("ideal", "symmetric", and "asymmetric" isotope variance). And, this then provides a test for inter-isotope variability (among the sputter pits), and can be conducted as follows.
+
+```{r mlm}
+tb_ext <- diag_R(simu_IC, "13C", "12C", type.nm, spot.nm, .nest = type.nm, 
+                 .label = "webtex")
+```
+
+
+```{r, echo=FALSE}
+knitr::kable(
+  tb_ext,
+  escape = FALSE,
+  digits = c(0, NA, 1, NA, 4, 0, 2, 4, 1, 0, 2),
+  fig.cap = " Summary of intra and inter-isotope variability tests."
+)
+```
+
+This test provides and approximation of the "grand mean" ($\bar{\bar{R}} = \frac{1}{m}\sum_{j =1}^{m}\bar{R}_j$) of the study $\hat{\bar{R}}$. If the substrate would be isotopically homogeneous across its surface, then each analysis would approach $\bar{\bar{R}}$. This can again be described by the ideal "homogeneous" model of Equation \@ref(eq:linmodR), where the $m$-series is viewed as one long analysis of $n$-measurements ($m\sum_{i=1}^{n}X_{i}^{a \mid b}$). Introduction of a nominal factorial that interacts with $\hat{R}$ can therefore again be used, but now to account for inter-isotope variability. The major difference of this approach is that in this case the levels are encoded to represent the $j$-th analysis of the $m$-series of analyses. Encoding of this nominal variable can in theory constitute as many analyses as needed, potentially creating excessive parameters when considered as a fix component. This grouping structure, that is of no particular interest, is therefore instead represented as a random effect. This introduces a second level in Equation \@ref(eq:linmodR), where each group ($j$-th analysis) can assume a different $\hat{R}$, that is, different $\bar{R}$ may exist among the various analysis.
+
+\begin{equation}
+ \text{level 1:} \quad \hat{X}_{ij}^b = \hat{R}_{j}X_{ij}^a +  e_{ij} \qquad \text{where} \quad  e_{ij} \sim N(0,\sigma^2)   
+\end{equation}
+
+\begin{equation}
+\text{level 2:} \quad \hat{R}_{j} = \hat{\bar{R}} + u_{j} \qquad \text{where} \quad u_{j} \sim N(0, t^2) (\#eq:mlm)
+\end{equation}
+
+Coefficients for this mixed linear model are obtained by Restricted Maximum Likelihood (REML) optimization using the `lme()` function of the `nlme` package. The ratio of the obtained log-likelihood (i.e., maximized likelihood functions) for the restricted model and the unrestricted model, or likelihood-ratio test (LR), can the be applied to deduce the significance of including a random component in Equation \@ref(eq:linmodR). Here, a larger difference in the AIC ($\Delta AIC_{\bar{R}}$) and thus lower $p_{\bar{R}}$ indicates that the null model of no inter-isotope variability becomes less appropriate.
+
 
 # References
