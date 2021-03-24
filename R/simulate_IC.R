@@ -1,5 +1,7 @@
 #' Simulate ion count data
 #'
+#' @param .sys  ionization trend based on relative change in common isotope
+#' in per mille.
 #' @param .n Numeric for the number of measurements.
 #' @param .N Numeric for total ion count of the light isotope.
 #' @param .bl Numeric for block number.
@@ -26,7 +28,7 @@
 #' @examples
 #'
 #' # Gradient in 13C/12C over measurement transect
-#' simu_R(500, "symmetric", "13C", "12C", "VPDB", 1)
+#' simu_R(50, "symmetric", "13C", "12C", "VPDB", 1)
 #'
 simu_R <- function(.sys, .type, .ion1, .ion2, .reference, .seed, .n = 3e3,
                    .N = 1e6,  .bl = 50, .reps = 1, .baseR = 0, .devR = 0, ...){
@@ -42,18 +44,31 @@ simu_R <- function(.sys, .type, .ion1, .ion2, .reference, .seed, .n = 3e3,
   tibble::tibble(
     type.nm = .type,
     trend.nm = .sys,
+    base.nm = .baseR,
     force.nm = .devR,
     t.nm = 1:.n,
     bl.nm = blocks,
     n.rw = .n,
-    N.in = as.integer(.N),
-    R.in = R_gen(ini_n, .baseR, .devR, reference = .reference, isotope = .ion1, input = "delta", type = .type),
-    drift = seq(
-      M_N * (1 - (.sys / 1000)),
-      M_N * (1 + (.sys / 1000)),
-      length.out = ini_n
-      ),
-    intercept =  M_N
+    M_N.in = M_N * (1 + (.sys / 100) / 2),
+    # Systematic variation (Ionization differences)
+    N.in =
+      as.integer(
+        seq(
+          unique(.data$M_N.in) * (1 - (.sys / 100) / 2),
+          unique(.data$M_N.in) * (1 + (.sys / 100) / 2),
+          length.out = ini_n
+        )
+        ),
+    # Isotopic variation
+    R.in = R_gen(
+      ini_n,
+      .baseR,
+      .devR,
+      reference = .reference,
+      isotope = .ion1,
+      input = "delta",
+      type = .type
+      )
     ) %>%
     # Expand over species and repetition (virtual samples)
     tidyr::expand_grid(spot.nm = c(1:.reps), species.nm = c(.ion1, .ion2)) %>%
@@ -69,31 +84,20 @@ simu_R <- function(.sys, .type, .ion1, .ion2, .reference, .seed, .n = 3e3,
     mutate(
       N.sm =
         purrr::pmap_dbl(
-          list(N = .data$N.in, n = .data$n.rw, seed = .data$seed), N_gen)
-      ) %>%
-    # Systematic variation (Ionization differences)
-    mutate(
-      diff = .data$drift - .data$intercept,
-      diff =
-        if_else(
-          species.nm == .ion2,
-          as.double(R_conv(.data$diff, .data$R.in)),
-          .data$diff
-          ),
-      N.sm = .data$N.sm + .data$diff,
+          list(M_N = .data$N.in, seed = .data$seed), N_gen),
       Xt.sm = .data$N.sm
       ) %>%
-    ungroup() %>%
-    select(-c(drift, intercept, diff, seed , N.in, R.in))
+    ungroup()%>%
+    select(-c(.data$seed, .data$N.in, .data$M_N.in, .data$R.in))
 
 }
 
 #-------------------------------------------------------------------------------
 # Random Poisson ion count generator
 #-------------------------------------------------------------------------------
-N_gen <- function(N, n, seed) {
+N_gen <- function(M_N, seed) {
   set.seed(seed)
-  as.double(rpois(n = 1, lambda = N / n))
+  as.double(rpois(n = 1, lambda = M_N))
 }
 
 #-------------------------------------------------------------------------------
@@ -130,7 +134,7 @@ R_gen <- function(reps, baseR, devR, reference, isotope, input = "delta", type) 
     }
   if (type == "asymmetric") {
     R_simu <- approx(
-      c(1, 5 * reps /6, reps),
+      c(1, 5 * reps / 6, reps),
       c(baseR, devR, devR),
       n = reps ,
       method = "constant"
