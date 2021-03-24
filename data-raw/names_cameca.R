@@ -125,4 +125,3 @@ names_cameca <- tibble::tibble(
   )
 
 usethis::use_data(names_cameca, overwrite = TRUE)
-usethis::use_data(names_cameca, internal = TRUE, overwrite = TRUE)
