@@ -22,5 +22,4 @@ vignettes/excerpt_stat\.pdf
 vignettes/IC-assumptions\.Rmd
 
 
-^paper\.Rmd$
 ^packages\.bib$

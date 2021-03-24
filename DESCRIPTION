@@ -36,6 +36,8 @@ Suggests:
     polyaAeppli (>= 2.0),
     nortest,
     broom.mixed,
-    bookdown
+    bookdown,
+    rmarkdown,
+    knitr
 RoxygenNote: 7.1.1
 VignetteBuilder: knitr
