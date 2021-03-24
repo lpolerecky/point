@@ -38,6 +38,7 @@ Suggests:
     broom.mixed,
     bookdown,
     rmarkdown,
-    knitr
+    knitr,
+    testthat
 RoxygenNote: 7.1.1
 VignetteBuilder: knitr
