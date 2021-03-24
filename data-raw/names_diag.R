@@ -9,8 +9,10 @@ names_diag <- tibble(
     "QQ",
     "CV",
     "QSA",
+    "IR",
     "timeseries"
     ),
+  inference = c(rep("eval_diag", 4), rep("external", 5)),
   label = c(
     "Cameca (R sigma rejection)",
     "Linear R model (residual sigma rejection)",
@@ -19,13 +21,11 @@ names_diag <- tibble(
     "Normal QQ plot",
     "Scale-location plot",
     "QSA test",
+    "ACF plot",
     "timeseries"
     ),
-  xaxis = c("ionct", "ionct", "hat_Xi", "ionct", "TQ", "hat_Y", "ionct", "time"),
-  yaxis = c("ionct", "ionct", "studE", "ionct", "RQ", "studE", "R", "Xct")
+  xaxis = c("ionct", "ionct", "hat_Xi", "ionct", "TQ", "hat_Y", "ionct", "", "time"),
+  yaxis = c("ionct", "ionct", "studE", "ionct", "RQ", "studE", "R", "", "Xct")
   )
 
 usethis::use_data(names_diag, overwrite = TRUE)
-
-
-
