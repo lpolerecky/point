@@ -30,21 +30,23 @@ functioning. Functionality is automatically tested with Travis CI.
 
 ## Credits
 
-The construction of the R (R Core Team 2020) package *point* and
+The construction of the R (R Core Team 2021) package *point* and
 associated documentation was aided by the packages; *devtools* (Wickham,
 Hester, and Chang 2020), *roxygen2* (Wickham, Danenberg, et al. 2020),
-*testthat* (Wickham 2020a), *knitr* (Xie 2014 , 2015), *rmarkdown* (Xie,
+*testthat* (Wickham 2021a), *knitr* (Xie 2014 , 2015), *rmarkdown* (Xie,
 Allaire, and Grolemund 2018; Xie, Dervieux, and Riederer 2020),
 *bookdown* (Xie 2016) and the superb guidance in the book: *R packages:
 organize, test, document, and share your code*, by Wickham (2015). In
 addition, this package relies on a set of external packages from the
-tidyverse universe, including: *dplyr* (Wickham et al. 2021), *tidyr*
-(Wickham 2020b), *tibble* (Müller and Wickham 2021), *stringr* (Wickham
-2019), *readr* (Wickham and Hester 2020), *magrittr* (Bache and Wickham
-2020), *ggplot2* (Wickham, Chang, et al. 2020), *rlang* (Henry and
-Wickham 2020b), and *purrr* (Henry and Wickham 2020a) for internal
-functioning as well as specialised statistics; *polyaAeppli* (Burden
-2014). Plots are made with *ggplot2* (Wickham 2016)
+tidyverse universe, including: *dplyr* (Wickham, François, et al. 2021),
+*tidyr* (Wickham 2021b), *tibble* (Müller and Wickham 2021), *stringr*
+(Wickham 2019), *readr* (Wickham and Hester 2020), *magrittr* (Bache and
+Wickham 2020), *rlang* (Henry and Wickham 2020b), and *purrr* (Henry and
+Wickham 2020a) for internal functioning as well as specialised
+statistics; *polyaAeppli* (Burden 2014), *broom* (Robinson, Hayes, and
+Couch 2021), *broom.mixed* (Bolker and Robinson 2020), *nlme* (Pinheiro,
+Bates, and R-core 2021), and *mgcv* (Wood 2021). Plots are made with
+*ggplot2* (Wickham 2016)
 
 ## Installation
 
@@ -73,10 +75,11 @@ vignette *IC-introduction* (`vignette("IC-introduction")`).
 
 To read, process and analyse raw ion count data use the functions:
 
-  - `read_IC`: raw ion count data
-  - `cor_IC`: process ion count data
-  - `stat_Xt`: analyse single ion count data
-  - `stat_R`: analyse ion ratios
+  - `read_IC()`: raw ion count data (Cameca NanoSIMS 50L)
+  - `cor_IC()`: process ion count data
+  - `stat_X()`: analyse single ion count data
+  - `stat_R()`: analyse ion ratios
+  - `diag_R()`: diagnose ion ratios
 
 ## Example 1: internal precision of isotope ratios
 
@@ -111,9 +114,7 @@ tb_R <- stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .label = "webtex")
 ## Example 2: external precision of isotope ratios
 
 To calculate the external reproducibility of isotope ratios one needs to
-use the total ion counts and count rate of one analysis. The latter is
-equivalent to the mean ion count rate, which can be calculated with the
-function `stat_Xt`.
+use the `.nest` argument to define sets of analyses.
 
 ``` r
 # external precision for 13C/12C ratios
@@ -146,6 +147,13 @@ Forward-Pipe Operator for R*.
 
 </div>
 
+<div id="ref-broom.mixed">
+
+Bolker, Ben, and David Robinson. 2020. *Broom.mixed: Tidying Methods for
+Mixed Models*. <http://github.com/bbolker/broom.mixed>.
+
+</div>
+
 <div id="ref-polyaAeppli">
 
 Burden, Conrad. 2014. *PolyaAeppli: Implementation of the Polya-Aeppli
@@ -174,11 +182,27 @@ Müller, Kirill, and Hadley Wickham. 2021. *Tibble: Simple Data Frames*.
 
 </div>
 
+<div id="ref-nlme">
+
+Pinheiro, José, Douglas Bates, and R-core. 2021. *Nlme: Linear and
+Nonlinear Mixed Effects Models*.
+<https://svn.r-project.org/R-packages/trunk/nlme/>.
+
+</div>
+
 <div id="ref-rversion">
 
-R Core Team. 2020. *R: A Language and Environment for Statistical
+R Core Team. 2021. *R: A Language and Environment for Statistical
 Computing*. Vienna, Austria: R Foundation for Statistical Computing.
 <https://www.R-project.org/>.
+
+</div>
+
+<div id="ref-broom">
+
+Robinson, David, Alex Hayes, and Simon Couch. 2021. *Broom: Convert
+Statistical Objects into Tidy Tibbles*.
+<https://CRAN.R-project.org/package=broom>.
 
 </div>
 
@@ -205,24 +229,15 @@ Operations*. <https://CRAN.R-project.org/package=stringr>.
 
 <div id="ref-testthat">
 
-———. 2020a. *Testthat: Unit Testing for R*.
+———. 2021a. *Testthat: Unit Testing for R*.
 <https://CRAN.R-project.org/package=testthat>.
 
 </div>
 
 <div id="ref-tidyr">
 
-———. 2020b. *Tidyr: Tidy Messy Data*.
+———. 2021b. *Tidyr: Tidy Messy Data*.
 <https://CRAN.R-project.org/package=tidyr>.
-
-</div>
-
-<div id="ref-ggplot2">
-
-Wickham, Hadley, Winston Chang, Lionel Henry, Thomas Lin Pedersen,
-Kohske Takahashi, Claus Wilke, Kara Woo, Hiroaki Yutani, and Dewey
-Dunnington. 2020. *Ggplot2: Create Elegant Data Visualisations Using the
-Grammar of Graphics*. <https://CRAN.R-project.org/package=ggplot2>.
 
 </div>
 
@@ -254,6 +269,13 @@ Data*. <https://CRAN.R-project.org/package=readr>.
 Wickham, Hadley, Jim Hester, and Winston Chang. 2020. *Devtools: Tools
 to Make Developing R Packages Easier*.
 <https://CRAN.R-project.org/package=devtools>.
+
+</div>
+
+<div id="ref-mgcv">
+
+Wood, Simon. 2021. *Mgcv: Mixed Gam Computation Vehicle with Automatic
+Smoothness Estimation*. <https://CRAN.R-project.org/package=mgcv>.
 
 </div>
 

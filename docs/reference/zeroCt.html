@@ -73,7 +73,7 @@ counts." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">point</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.0.9002</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.0.9003</span>
       </span>
     </div>
 
@@ -81,7 +81,7 @@ counts." />
       <ul class="nav navbar-nav">
         <li>
   <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
+    <span class="fas fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -138,37 +138,37 @@ counts." />
 counts.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>zeroCt</span>(<span class='no'>df</span>, <span class='no'>N</span>, <span class='no'>species</span>, <span class='no'>ion1</span>, <span class='no'>ion2</span>, <span class='no'>...</span>, <span class='kw'>warn</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</pre>
+    <pre class="usage"><span class='fu'>zeroCt</span><span class='op'>(</span><span class='va'>.IC</span>, <span class='va'>.ion1</span>, <span class='va'>.ion2</span>, <span class='va'>...</span>, .N <span class='op'>=</span> <span class='va'>N.pr</span>, .species <span class='op'>=</span> <span class='va'>species.nm</span>, .warn <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>df</th>
+      <th>.IC</th>
       <td><p>A tibble containing processed ion count data.</p></td>
     </tr>
     <tr>
-      <th>N</th>
-      <td><p>A variable constituting the ion counts.</p></td>
+      <th>.ion1</th>
+      <td><p>A character string constituting the rare isotope ("13C").</p></td>
     </tr>
     <tr>
-      <th>species</th>
-      <td><p>A variable constituting the species analysed.</p></td>
-    </tr>
-    <tr>
-      <th>ion1</th>
-      <td><p>A character string constituting the heavy isotope ("13C").</p></td>
-    </tr>
-    <tr>
-      <th>ion2</th>
-      <td><p>A character string constituting the light isotope ("12C").</p></td>
+      <th>.ion2</th>
+      <td><p>A character string constituting the common isotope ("12C").</p></td>
     </tr>
     <tr>
       <th>...</th>
       <td><p>Variables for grouping.</p></td>
     </tr>
     <tr>
-      <th>warn</th>
+      <th>.N</th>
+      <td><p>A variable constituting the ion counts.</p></td>
+    </tr>
+    <tr>
+      <th>.species</th>
+      <td><p>A variable constituting the species analysed.</p></td>
+    </tr>
+    <tr>
+      <th>.warn</th>
       <td><p>A logical indicating whether to produce a warning.</p></td>
     </tr>
     </table>
@@ -187,14 +187,14 @@ isotope ratios.</p>
     <pre class="examples"><div class='input'><span class='co'># Use point_example() to access the examples bundled with this package</span>
 
 <span class='co'># raw data containing 13C and 12C counts on carbonate</span>
-<span class='no'>tb.rw</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='read_IC.html'>read_IC</a></span>(<span class='fu'><a href='point_example.html'>point_example</a></span>(<span class='st'>"2018-01-19-GLENDON"</span>))
+<span class='va'>tb_rw</span> <span class='op'>&lt;-</span> <span class='fu'><a href='read_IC.html'>read_IC</a></span><span class='op'>(</span><span class='fu'><a href='point_example.html'>point_example</a></span><span class='op'>(</span><span class='st'>"2018-01-19-GLENDON"</span><span class='op'>)</span><span class='op'>)</span>
+
+<span class='co'># Processing raw ion count data</span>
+<span class='va'>tb_pr</span> <span class='op'>&lt;-</span> <span class='fu'><a href='cor_IC.html'>cor_IC</a></span><span class='op'>(</span><span class='va'>tb_rw</span><span class='op'>)</span>
 
 <span class='co'># Remove analyses with zero counts</span>
-<span class='co'># Vectors of isotope ratios</span>
-<span class='no'>ion1</span> <span class='kw'>&lt;-</span>  <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"13C"</span>, <span class='st'>"12C 13C"</span>, <span class='st'>"13C 14N"</span>, <span class='st'>"12C 14N"</span>, <span class='st'>"12C"</span>)
-<span class='no'>ion2</span> <span class='kw'>&lt;-</span>  <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"12C"</span>, <span class='st'>"12C2"</span>, <span class='st'>"12C 14N"</span>, <span class='st'>"40Ca 16O"</span>, <span class='st'>"40Ca 16O"</span>)
-<span class='no'>tb.pr</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>purrr</span><span class='kw ns'>::</span><span class='fu'><a href='https://purrr.tidyverse.org/reference/map2.html'>map2</a></span>(<span class='no'>ion1</span>, <span class='no'>ion2</span>,
-         ~<span class='fu'>zeroCt</span>(<span class='no'>tb.rw</span>, <span class='no'>N.rw</span>, <span class='no'>species.nm</span>, <span class='no'>.x</span>, <span class='no'>.y</span>, <span class='no'>file.nm</span>))</div><div class='output co'>#&gt; <span class='warning'>Warning: Zero counts present and removed</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Zero counts present and removed</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Zero counts present and removed</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Zero counts present and removed</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Zero counts present and removed</span></div></pre>
+<span class='va'>tb_pr</span> <span class='op'>&lt;-</span> <span class='fu'>zeroCt</span><span class='op'>(</span><span class='va'>tb_pr</span>, <span class='st'>"13C"</span>, <span class='st'>"12C"</span>, <span class='va'>file.nm</span><span class='op'>)</span>
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -210,7 +210,7 @@ isotope ratios.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

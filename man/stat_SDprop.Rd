@@ -2,7 +2,7 @@
 % Please edit documentation in R/analyse_IC.R
 \name{stat_SDprop}
 \alias{stat_SDprop}
-\title{Propagation of error for isotope ratios}
+\title{Propagation of errors for isotope ratios}
 \usage{
 stat_SDprop(ion1, ion2, type = "sd", predicted = FALSE)
 }

@@ -1,1 +1,32 @@
 destination: docs
+reference:
+- title: "Reading ion count data"
+  desc: "Checking files, and loading ion count data and associated meta-data."
+- contents:
+  - ICdir_chk
+  - starts_with("read")
+  - matches("fold")
+- title: "Correcting ion count data"
+  desc: "Functions to correct pulsed ion coun data for systematic machine-induced biases."
+- contents:
+  - starts_with("cor")
+  - matches("test")
+  - starts_with("predict")
+  - zeroCt
+- title: "Analysing ion count data"
+  desc: "Functions to calculate internal and external precision of pulsed ion count data of single ions and ion ratios."
+- contents:
+  - stat_X
+  - stat_R
+  - stat_SDprop
+- title: "Diagnostics of ion count data"
+  desc: "Functions to check for internal consistency of ion count ratio data; enabling detection of isotopic variability in the analyte."
+- contents:
+  - diag_R
+  - Cameca
+  - CV
+- title: "Miscellaneous tools to handle ion count data"
+  desc: "Functions for easy plotting and printing of ion count data."
+- contents:
+  - cov_R
+  - matches("labeller")

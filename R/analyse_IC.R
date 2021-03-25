@@ -302,7 +302,7 @@ stat_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr, .N = N.pr,
   mutate(IC, ratio.nm = paste(.ion1, .ion2, sep = "/"))
 }
 
-#' Propagation of error for isotope ratios
+#' Propagation of errors for isotope ratios
 #'
 #' \code{stat_SDprop} function for propagation of descriptive and predictive
 #' (Poisson) error statistics for isotope ratios (R).

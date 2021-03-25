@@ -4,7 +4,7 @@ author: "Martin Schobben"
 output: 
   bookdown::html_document2:
     toc: true
-bibliography: SIMS.bib
+bibliography: ["SIMS.bib", "packages.bib"]
 pkgdown:
   as_is: true
 vignette: >
@@ -215,7 +215,7 @@ ggplot(tb_R, aes(x = R_Xt.pr)) +
 ```
 
 
-From Figure \@ref(fig:simulations) it is evident that the real variation in $R$ (input R; black and red lines) are indistinguishable when viewing the derived distribution of the ion count ratios (output R; histogram). This is an effect related to the relative large **random bias** induced by the ionization of the substrate. So, even for these large variations in isotopic composition, it cannot be confidently said whether the measured $R$ is representative for the analysed site, or if the underlying data structure is skewed with one, or more, isotopically distinguishable components comprising the pooled $R$ value. This effect is, furthermore, hardly observable in the precision of the data, where the $\epsilon_R$ of the simulation referred to as "asymmetric" is `r filter(tb_R, type.nm == "asymmetric") %>% pull(RSeM_R_Xt.pr) %>% unique() %>% round(2)`‰, whereas the "ideal" simulation has only a marginally better precision of `r tb_R %>% filter(type.nm == "ideal") %>% pull(RSeM_R_Xt.pr) %>% unique() %>% round(2)`‰. 
+From Figure \@ref(fig:simulations) it is evident that the real variation in $R$ (input R; black and red lines) are indistinguishable when viewing the derived distribution of the ion count ratios (output R; histogram). This is an effect related to the relative large **random bias** induced by the ionization of the substrate. So, even for these large variations in isotopic composition, it cannot be confidently said whether the measured $R$ is representative for the analysed site, or if the underlying data structure is skewed with one, or more, isotopically distinguishable components comprising the pooled $R$ value. This effect is, furthermore, hardly observable in the precision of the data, where the $\epsilon_{\bar{R}}$ of the simulation referred to as "asymmetric" is `r filter(tb_R, type.nm == "asymmetric") %>% pull(RSeM_R_Xt.pr) %>% unique() %>% round(2)`‰, whereas the "ideal" simulation has only a marginally better precision of `r tb_R %>% filter(type.nm == "ideal") %>% pull(RSeM_R_Xt.pr) %>% unique() %>% round(2)`‰. 
 
 From the previous examples, it becomes apparent that heterogeneous substrates cause minimal deviation in the internal precision. Hence, a lot of hidden variation in nominal SIMS isotope analyses can go undetected. So, clearly, a different approach must be adopted to identify these isotopically highly variable substrates.
 
@@ -295,7 +295,7 @@ Here, the $k$ stands for the number of coefficients in the regression model. To 
   (\#eq:CDcut)
 \end{equation}
 
-These calculations are internally performed by a consecutive call to base `lm()` and `broom::augment()`.
+These calculations are internally performed by a consecutive call to base `lm()` and `broom::augment()` [@broom].
 
 
 ### Detecting intra-isotope varaibility with significant outliers
@@ -352,7 +352,7 @@ This test provides and approximation of the "grand mean" ($\bar{\bar{R}} = \frac
 \text{level 2:} \quad \hat{R}_{j} = \hat{\bar{R}} + u_{j} \qquad \text{where} \quad u_{j} \sim N(0, t^2) (\#eq:mlm)
 \end{equation}
 
-Coefficients for this mixed linear model are obtained by Restricted Maximum Likelihood (REML) optimization using the `lme()` function of the `nlme` package. The ratio of the obtained log-likelihood (i.e., maximized likelihood functions) for the restricted model and the unrestricted model, or likelihood-ratio test (LR), can the be applied to deduce the significance of including a random component in Equation \@ref(eq:linmodR). Here, a larger difference in the AIC ($\Delta AIC_{\bar{R}}$) and thus lower $p_{\bar{R}}$ indicates that the null model of no inter-isotope variability becomes less appropriate.
+Coefficients for this mixed linear model are obtained by Restricted Maximum Likelihood (REML) optimization using the `lme()` function of the `nlme` package [@nlme]. The ratio of the obtained log-likelihood (i.e., maximized likelihood functions) for the restricted model and the unrestricted model, or likelihood-ratio test (LR), can the be applied to deduce the significance of including a random component in Equation \@ref(eq:linmodR). Here, a larger difference in the AIC ($\Delta AIC_{\bar{R}}$) and thus lower $p_{\bar{R}}$ indicates that the null model of no inter-isotope variability becomes less appropriate.
 
 
 # References

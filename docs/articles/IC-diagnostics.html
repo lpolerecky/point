@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">point</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.0.9002</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.0.9003</span>
       </span>
     </div>
 
@@ -39,7 +39,7 @@
       <ul class="nav navbar-nav">
 <li>
   <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
+    <span class="fas fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -81,7 +81,18 @@
 
       
 
-      </header><div class="row">
+      </header><script src="IC-diagnostics_files/jquery-1.11.3/jquery.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="IC-diagnostics_files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet">
+<script src="IC-diagnostics_files/bootstrap-3.3.5/js/bootstrap.min.js"></script><script src="IC-diagnostics_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script><script src="IC-diagnostics_files/bootstrap-3.3.5/shim/respond.min.js"></script><style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="IC-diagnostics_files/navigation-1.1/tabsets.js"></script><script src="IC-diagnostics_files/accessible-code-block-0.0.1/empty-anchor.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>IC-diagnostics</h1>
@@ -98,18 +109,20 @@
 <div id="diagnostics-for-ion-count-data" class="section level1">
 <h1 class="hasAnchor">
 <a href="#diagnostics-for-ion-count-data" class="anchor"></a><span class="header-section-number">1</span> Diagnostics for Ion Count Data</h1>
-<p>The random nature of secondary ions emitted from a sample is described by Poisson statistics, which can be used to predict the precision of SIMS measurements under ideal circumstances (e.g., the predicted standard error can be deduced from the total counts of secondary ions). However, besides this fundamental source of imprecision, real SIMS measurements are additionally affected by other factors such as sample heterogeneity, instrument instability, the development and geometry of the sputter pit, and sample charging. Although some of these biases can be avoided by proper instrument tuning and sample documentation (e.g. T/SEM to characterise the textural properties of a rock sample) prior to SIMS measurement, factors such as instrument instability or sample heterogeneity can never be fully eliminated. In this vignette, diagnostic tools are showcased which can help evaluate the potential impact of such factors on the precision of ion count data.</p>
-<div class="sourceCode" id="cb1"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">point</span>)</pre></body></html></div>
+<p>The random nature of secondary ions emitted from a sample is described by Poisson statistics, and can be used to predict the precision of SIMS measurements under ideal circumstances (e.g., the predicted standard error can be deduced from the total counts of secondary ions). However, besides this fundamental source of imprecision, real SIMS measurements are additionally affected by other factors such as sample heterogeneity, instrument instability, the development and geometry of the sputter pit, and sample charging. Although some of these biases can be avoided by proper instrument tuning and sample documentation (e.g. T/SEM to characterise the textural properties of a rock sample) prior to SIMS measurement, factors such as instrument instability or sample heterogeneity can never be fully eliminated. In this vignette, diagnostic tools are showcased which can help evaluate the potential impact of such factors on the precision of ion count data.</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va">point</span><span class="op">)</span></code></pre></div>
 <p>The following packages are used in the examples that follow.</p>
-<div class="sourceCode" id="cb2"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">purrr</span>) <span class="co"># functional programming</span>
-<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">dplyr</span>) <span class="co"># manipulating data</span>
-<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">ggplot2</span>) <span class="co"># graphics</span></pre></body></html></div>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="http://purrr.tidyverse.org">purrr</a></span><span class="op">)</span> <span class="co"># functional programming</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org">dplyr</a></span><span class="op">)</span> <span class="co"># manipulating data</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org">ggplot2</a></span><span class="op">)</span> <span class="co"># graphics</span></code></pre></div>
 <div id="nomenclature" class="section level2">
 <h2 class="hasAnchor">
 <a href="#nomenclature" class="anchor"></a><span class="header-section-number">1.1</span> Nomenclature</h2>
 <ul>
 <li>Sample: sample of the true population</li>
-<li>Analytical substrate: Physical sample measured during SIMS analysis</li>
+<li>Analytical substrate: physical sample measured during SIMS analysis</li>
 <li>Event: single event of an ion hitting the detector</li>
 <li>Measurement: single count cycle <span class="math inline">\(N_i\)</span>
 </li>
@@ -118,89 +131,43 @@
 <li>Study: <span class="math inline">\(m\)</span>-series of analyses <span class="math inline">\(M_{(j)}\)</span>, constituting the different spots on the analytical substrate</li>
 </ul>
 </div>
-<div id="isotope-ratios-a-special-case" class="section level2">
+<div id="basic-functionality" class="section level2">
 <h2 class="hasAnchor">
-<a href="#isotope-ratios-a-special-case" class="anchor"></a><span class="header-section-number">1.2</span> Isotope ratios: A special case</h2>
-<p>Isotopes of the same element should have more-or-less the same ionization efficiency <span class="citation">(Fitzsimons, Harte, and Clark 2000)</span>. It thus follows, that in an isotopically homogeneous analytical substrate the count rates of two isotope from the same element should be dependent on each. From this it can be deduced that large deviations in count rate ratios of an isotope system between consecutive measurements indicate a potential discrepancy (e.g., sample heterogeneity and instrument instability).</p>
-</div>
-<div id="count-block-based-count-optimization-default-cameca-software-procedure" class="section level2">
-<h2 class="hasAnchor">
-<a href="#count-block-based-count-optimization-default-cameca-software-procedure" class="anchor"></a><span class="header-section-number">1.3</span> Count block based count optimization (Default Cameca software procedure)</h2>
-<p>The default method to account for these discrepancies as incorporated in the Cameca software entails a blockwise check for variability. If values fall outside of a pre-defined range of variance (for example two standard deviations; named <span class="math inline">\(\sigma\)</span> in the Cameca software), the measurement will be rejected.</p>
-<div class="sourceCode" id="cb3"><html><body><pre class="r">
-<span class="co"># Use point_example() to access the examples bundled with this package </span>
-
-<span class="co"># Carry-out the routine point workflow</span>
+<a href="#basic-functionality" class="anchor"></a><span class="header-section-number">1.2</span> Basic functionality</h2>
+<p>The function <code><a href="../reference/diag_R.html">diag_R()</a></code> is designed to be a flexible wrapper for isotope count diagnostics. Non-isotope pairs are supported as well but the outcome is not necessarily meaningful due to variation caused by the ionization efficiency differences among elements, check the vignette <a href="IC-process.html">IC-process</a> for solutions. For basic functionality, <code><a href="../reference/diag_R.html">diag_R()</a></code> requires the following arguments: <code>.IC</code>, which should be a <a href="https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html">tibble</a> containing processed ion count data (ideally, following the routine <code>point</code> work-flow), and arguments <code>.ion1</code> and <code>.ion2</code> which link to the rare isotope and common isotope, respectively (as character strings). The dots <code>...</code> should be used to define a grouping variable to e.g. identify individual analysis or sets of analyses. The argument <code>.method</code> enables selection of diagnostic methods, which are outlined in this vignette. A range of other arguments dictate features of the returned statistics and plotting of the outcome (as a <a href="https://ggplot2.tidyverse.org/">ggplot</a>). Check <code>?diag_R()</code> for all options.</p>
+<p>In the following example the grouping structure of the data frame is defined as the file-names and block numbers, which recreates the default Cameca<sup>TM</sup> software diagnostics.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Use point_example() to access the examples bundled with this package </span>
+<span class="co"># Carry-out the routine point work-flow</span>
 <span class="co"># Raw data containing 13C and 12C counts on carbonate</span>
-<span class="no">tb.rw</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/read_IC.html">read_IC</a></span>(<span class="fu"><a href="../reference/point_example.html">point_example</a></span>(<span class="st">"2018-01-19-GLENDON"</span>))
+<span class="va">tb_rw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_IC.html">read_IC</a></span><span class="op">(</span><span class="fu"><a href="../reference/point_example.html">point_example</a></span><span class="op">(</span><span class="st">"2018-01-19-GLENDON"</span><span class="op">)</span><span class="op">)</span>
 
 <span class="co"># Processing raw ion count data</span>
-<span class="no">tb.pr</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/cor_IC.html">cor_IC</a></span>(<span class="no">tb.rw</span>,
-                <span class="kw">N</span> <span class="kw">=</span> <span class="no">N.rw</span>,
-                <span class="kw">t</span> <span class="kw">=</span> <span class="no">t.rw</span>,
-                <span class="kw">Det</span> <span class="kw">=</span> <span class="no">det_type.mt</span>,
-                <span class="kw">deadtime</span> <span class="kw">=</span> <span class="fl">0</span>,
-                <span class="kw">thr_PHD</span> <span class="kw">=</span> <span class="fl">0</span>)
+<span class="va">tb_pr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cor_IC.html">cor_IC</a></span><span class="op">(</span><span class="va">tb_rw</span><span class="op">)</span>
 
-<span class="co"># CAMECA style augmented datafile</span>
-<span class="co"># Vectors of isotope ratios </span>
-<span class="no">ion1</span> <span class="kw">&lt;-</span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"13C"</span>, <span class="st">"12C 13C"</span>, <span class="st">"13C 14N"</span>, <span class="st">"12C"</span>)
-<span class="no">ion2</span> <span class="kw">&lt;-</span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"12C"</span>, <span class="st">"12C2"</span>, <span class="st">"12C 14N"</span>, <span class="st">"40Ca 16O"</span>)
-
-<span class="co"># Call function Diag_R over all ion ratio combinations  </span>
-<span class="no">tb.aug</span> <span class="kw">&lt;-</span> <span class="kw pkg">purrr</span><span class="kw ns">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map2.html">map2</a></span>(<span class="no">ion1</span>, <span class="no">ion2</span>, ~(<span class="fu"><a href="../reference/diag_R.html">diag_R</a></span>(<span class="no">tb.pr</span>,
-                                           <span class="kw">method</span> <span class="kw">=</span> <span class="st">"standard"</span>,
-                                           <span class="kw">args</span> <span class="kw">=</span> <span class="fu"><a href="../reference/expr_R.html">expr_R</a></span>(<span class="kw">Xt</span> <span class="kw">=</span> <span class="st">"Xt.pr"</span>,
-                                                         <span class="kw">N</span> <span class="kw">=</span> <span class="st">"N.pr"</span>,
-                                                         <span class="kw">species</span> <span class="kw">=</span> <span class="st">"species.nm"</span>,
-                                                         <span class="kw">ion1</span> <span class="kw">=</span> <span class="no">.x</span>,
-                                                         <span class="kw">ion2</span> <span class="kw">=</span> <span class="no">.y</span>),
-                                           <span class="no">file.nm</span>,
-                                           <span class="no">bl.mt</span>) <span class="kw">%&gt;%</span>
-                                      <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span>(<span class="no">flag</span> <span class="kw">==</span> <span class="st">"good"</span>)
-                                    )
-                      )
-
-<span class="co"># Reproduce Cameca stat file: descriptive an predictive statistics for  </span>
-<span class="co"># ratios (blockwise)</span>
-
-<span class="co"># List variables</span>
-<span class="no">ls.CAMECA</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/reexports.html">lst</a></span>(<span class="kw">df</span> <span class="kw">=</span> <span class="no">tb.aug</span>, <span class="kw">a</span> <span class="kw">=</span> <span class="no">ion1</span>, <span class="kw">b</span> <span class="kw">=</span> <span class="no">ion2</span>)
-
-<span class="co"># Function to transform to calculate block wise and produce CAMECA output style</span>
-<span class="no">fun_CAMECA</span> <span class="kw">&lt;-</span><span class="kw">function</span>(<span class="no">df</span>, <span class="no">a</span>, <span class="no">b</span>){
-
-               <span class="no">df</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/stat_Xt.html">stat_R</a></span>(<span class="no">df</span>, <span class="no">Xt.pr</span>, <span class="no">N.pr</span>, <span class="no">species.nm</span>,
-                                            <span class="no">a</span>, <span class="no">b</span>, <span class="no">file.nm</span>, <span class="no">bl.mt</span>,
-                                            <span class="kw">output</span> <span class="kw">=</span> <span class="st">"complete"</span>) <span class="kw">%&gt;%</span>
-                       <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span>(<span class="no">file.nm</span> <span class="kw">==</span> <span class="st">"2018-01-19-GLENDON_1_1"</span>) <span class="kw">%&gt;%</span>
-                       <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html">distinct</a></span>(<span class="no">bl.mt</span>, <span class="kw">.keep_all</span> <span class="kw">=</span> <span class="fl">TRUE</span>) <span class="kw">%&gt;%</span>
-                       <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate_all.html">mutate_at</a></span>(<span class="fu"><a href="https://dplyr.tidyverse.org/reference/vars.html">vars</a></span>(<span class="fu"><a href="https://dplyr.tidyverse.org/reference/reexports.html">contains</a></span>(<span class="st">"meas_bl.mt"</span>)), ~(<span class="no">.</span> - <span class="no">n_R_Xt.pr</span>)) <span class="kw">%&gt;%</span>
-                       <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span>(<span class="kw">`Err_mean (%)`</span> <span class="kw">=</span> <span class="no">RSeM_R_Xt.pr</span> / <span class="fl">10</span>,
-                              <span class="kw">`Poisson (%)`</span> <span class="kw">=</span> <span class="no">hat_RSeM_R_Xt.pr</span> / <span class="fl">10</span>,
-                              <span class="kw">`Ratio#`</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste</a></span>(<span class="no">a</span>, <span class="no">b</span>, <span class="kw">sep</span> <span class="kw">=</span> <span class="st">"/"</span>)) <span class="kw">%&gt;%</span>
-                       <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html">select</a></span>(<span class="kw">`Block#`</span> <span class="kw">=</span> <span class="no">bl.mt</span>,
-                              <span class="no">`Ratio#`</span> ,
-                              <span class="st">"Mean"</span> <span class="kw">=</span> <span class="no">M_R_Xt.pr</span>,
-                              <span class="st">"SD"</span> <span class="kw">=</span> <span class="no">S_R_Xt.pr</span>,
-                              <span class="kw">N_rej</span> <span class="kw">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/reexports.html">contains</a></span>(<span class="st">"meas_bl.mt"</span>)[<span class="fl">1</span>],
-                              <span class="no">`Err_mean (%)`</span>,
-                              <span class="no">`Poisson (%)`</span>,
-                              <span class="st">"Khi2"</span> <span class="kw">=</span> <span class="no">chi2_R_Xt.pr</span>)
-}
-
-<span class="co"># Call the function</span>
-<span class="no">tb.CAMECA</span> <span class="kw">&lt;-</span> <span class="kw pkg">purrr</span><span class="kw ns">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map2.html">pmap_dfr</a></span>(<span class="no">ls.CAMECA</span>, <span class="no">fun_CAMECA</span>) <span class="kw">%&gt;%</span>
-              <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html">arrange</a></span>(<span class="no">`Block#`</span>)</pre></body></html></div>
+<span class="co"># CAMECA style diagnostics</span>
+<span class="va">tb_dia</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/diag_R.html">diag_R</a></span><span class="op">(</span><span class="va">tb_pr</span>, <span class="st">"13C"</span>, <span class="st">"12C"</span>, <span class="va">file.nm</span>, <span class="va">bl.nm</span>, .method <span class="op">=</span> <span class="st">"Cameca"</span>, .reps <span class="op">=</span> <span class="fl">2</span>, 
+                 .output <span class="op">=</span> <span class="st">"diagnostic"</span><span class="op">)</span> </code></pre></div>
+<p>The output consist of a <code>tibble</code> containing the single ion count statistics for each ion and the isotope ratio statistics. In addition, the specific diagnostics (selected with <code>.method =  "Cameca"</code>) is appended to the tibble. Here the procedure was repeated two times (<code>.reps = 2</code>) and <code>.output</code> set to <code>"diagnostic"</code> to get the augmented summary statistics of <span class="math inline">\(R\)</span> following the Cameca<sup>TM</sup> output.</p>
+</div>
+</div>
+<div id="isotope-ratios-a-special-case" class="section level1">
+<h1 class="hasAnchor">
+<a href="#isotope-ratios-a-special-case" class="anchor"></a><span class="header-section-number">2</span> Isotope ratios: A special case</h1>
+<p>Isotopes of the same element should have more-or-less the same ionization efficiency <span class="citation">(Fitzsimons, Harte, and Clark 2000)</span>. It thus follows, that in an isotopically homogeneous analytical substrate the count rates of two isotope from the same element should be dependent on each. From this it can be deduced that large deviations in count rate ratios of an isotope system between consecutive measurements indicate a potential discrepancy (e.g., sample heterogeneity and instrument instability). This unique property enables the detection of situations in which the analysed substrate contains isotopic heterogeneity at a smaller scale than the beam size, or where machine instability causes a discrepancy in count rates between detectors.</p>
+<div id="count-block-based-diagnostics-camecatm" class="section level2">
+<h2 class="hasAnchor">
+<a href="#count-block-based-diagnostics-camecatm" class="anchor"></a><span class="header-section-number">2.1</span> Count block-based diagnostics (Cameca<sup>TM</sup>)</h2>
+<p>The default method to account for such discrepancies, as incorporated in the Cameca<sup>TM</sup> software, entails a block-wise (blocks represent sub-units of the complete analysis) check for variability. If values fall outside of a pre-defined range of variance (e.g. two standard deviations, referred to as <span class="math inline">\(\sigma\)</span> in the Cameca<sup>TM</sup> software), the measurement will be rejected (<span class="math inline">\(N\_rej\)</span> in the excerpt of the Cameca output files; Fig. <a href="#fig:xcpcameca">2.1</a>).</p>
 <div class="figure">
 <span id="fig:xcpcameca"></span>
 <img src="excerpt_stat.png" alt="An excerpt of the Cameca stat-file for count block based 2$\sigma$-rejection and associated blockwise statistics" width="90%"><p class="caption">
-Figure 1.1: An excerpt of the Cameca stat-file for count block based 2<span class="math inline">\(\sigma\)</span>-rejection and associated blockwise statistics
+Figure 2.1: An excerpt of the Cameca stat-file for count block based 2<span class="math inline">\(\sigma\)</span>-rejection and associated blockwise statistics
 </p>
 </div>
 <table class="table">
 <caption>
-<span id="tab:xcpcameca">Table 1.1: </span>Blockwise statistics for augmented dataset (replication of Fig.1).</caption>
+<span id="tab:unnamed-chunk-5">Table 2.1: </span>Blockwise statistics for augmented dataset (replication of Fig. <a href="#fig:xcpcameca">2.1</a> with the point package).</caption>
 <thead><tr class="header">
 <th align="right">Block#</th>
 <th align="left">Ratio#</th>
@@ -214,7 +181,7 @@ Figure 1.1: An excerpt of the Cameca stat-file for count block based 2<span clas
 <tbody>
 <tr class="odd">
 <td align="right">1</td>
-<td align="left">13C/12C</td>
+<td align="left">2/1</td>
 <td align="right">0.011</td>
 <td align="right">0.00085</td>
 <td align="right">3</td>
@@ -224,27 +191,17 @@ Figure 1.1: An excerpt of the Cameca stat-file for count block based 2<span clas
 </tr>
 <tr class="even">
 <td align="right">1</td>
-<td align="left">12C 13C/12C2</td>
-<td align="right">0.021</td>
-<td align="right">0.00619</td>
-<td align="right">2</td>
-<td align="right">3.67</td>
-<td align="right">3.96</td>
-<td align="right">0.86</td>
+<td align="left">5/7</td>
+<td align="right">0.110</td>
+<td align="right">0.00671</td>
+<td align="right">3</td>
+<td align="right">0.77</td>
+<td align="right">0.72</td>
+<td align="right">1.16</td>
 </tr>
 <tr class="odd">
 <td align="right">1</td>
-<td align="left">13C 14N/12C 14N</td>
-<td align="right">0.016</td>
-<td align="right">0.00513</td>
-<td align="right">5</td>
-<td align="right">4.25</td>
-<td align="right">5.57</td>
-<td align="right">0.58</td>
-</tr>
-<tr class="even">
-<td align="right">1</td>
-<td align="left">12C/40Ca 16O</td>
+<td align="left">1/7</td>
 <td align="right">3.887</td>
 <td align="right">0.07454</td>
 <td align="right">3</td>
@@ -252,9 +209,9 @@ Figure 1.1: An excerpt of the Cameca stat-file for count block based 2<span clas
 <td align="right">0.25</td>
 <td align="right">0.92</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="right">2</td>
-<td align="left">13C/12C</td>
+<td align="left">2/1</td>
 <td align="right">0.011</td>
 <td align="right">0.00092</td>
 <td align="right">1</td>
@@ -262,29 +219,19 @@ Figure 1.1: An excerpt of the Cameca stat-file for count block based 2<span clas
 <td align="right">1.09</td>
 <td align="right">0.93</td>
 </tr>
-<tr class="even">
-<td align="right">2</td>
-<td align="left">12C 13C/12C2</td>
-<td align="right">0.022</td>
-<td align="right">0.00600</td>
-<td align="right">4</td>
-<td align="right">3.50</td>
-<td align="right">4.04</td>
-<td align="right">0.75</td>
-</tr>
 <tr class="odd">
 <td align="right">2</td>
-<td align="left">13C 14N/12C 14N</td>
-<td align="right">0.017</td>
-<td align="right">0.00708</td>
-<td align="right">1</td>
-<td align="right">5.29</td>
-<td align="right">5.41</td>
-<td align="right">0.96</td>
+<td align="left">5/7</td>
+<td align="right">0.100</td>
+<td align="right">0.00488</td>
+<td align="right">5</td>
+<td align="right">0.63</td>
+<td align="right">0.75</td>
+<td align="right">0.70</td>
 </tr>
 <tr class="even">
 <td align="right">2</td>
-<td align="left">12C/40Ca 16O</td>
+<td align="left">1/7</td>
 <td align="right">3.753</td>
 <td align="right">0.07794</td>
 <td align="right">4</td>
@@ -292,202 +239,359 @@ Figure 1.1: An excerpt of the Cameca stat-file for count block based 2<span clas
 <td align="right">0.25</td>
 <td align="right">1.11</td>
 </tr>
-<tr class="odd">
-<td align="right">3</td>
-<td align="left">13C/12C</td>
-<td align="right">0.011</td>
-<td align="right">0.00081</td>
-<td align="right">3</td>
-<td align="right">0.95</td>
-<td align="right">1.10</td>
-<td align="right">0.74</td>
-</tr>
-<tr class="even">
-<td align="right">3</td>
-<td align="left">12C 13C/12C2</td>
-<td align="right">0.020</td>
-<td align="right">0.00665</td>
-<td align="right">2</td>
-<td align="right">4.16</td>
-<td align="right">4.23</td>
-<td align="right">0.96</td>
-</tr>
-<tr class="odd">
-<td align="right">3</td>
-<td align="left">13C 14N/12C 14N</td>
-<td align="right">0.016</td>
-<td align="right">0.00708</td>
-<td align="right">2</td>
-<td align="right">5.73</td>
-<td align="right">5.77</td>
-<td align="right">0.98</td>
-</tr>
-<tr class="even">
-<td align="right">3</td>
-<td align="left">12C/40Ca 16O</td>
-<td align="right">3.655</td>
-<td align="right">0.05899</td>
-<td align="right">5</td>
-<td align="right">0.21</td>
-<td align="right">0.25</td>
-<td align="right">0.69</td>
-</tr>
-<tr class="odd">
-<td align="right">4</td>
-<td align="left">13C/12C</td>
-<td align="right">0.011</td>
-<td align="right">0.00076</td>
-<td align="right">3</td>
-<td align="right">0.90</td>
-<td align="right">1.10</td>
-<td align="right">0.66</td>
-</tr>
 </tbody>
 </table>
-<p>Note, that in the above example of the Cameca diagnostics (Fig. <a href="#fig:xcpcameca">1.1</a>), ratios of none-isotope pairs have been calculated.</p>
-<div class="figure">
-<span id="fig:ion"></span>
-<img src="IC-diagnostics_files/figure-html/ion-1.png" alt="The blockwise mean plotted against consecutive blocks. Note that the non-isotope ratios show a decreasing trend over time." width="768"><p class="caption">
-Figure 1.2: The blockwise mean plotted against consecutive blocks. Note that the non-isotope ratios show a decreasing trend over time.
-</p>
 </div>
-<p>Upon plotting the blockwise mean against the block number (Fig. <a href="#fig:ion">1.2</a>), it becomes apparent that the none-isotope ratios display a monotonic decreasing trend over the duration of the analysis. This effect likely reflects the differential ionization potentials and trajectories of secondary beam stabilization over the analysis.</p>
-<p>Based on the Cameca <span class="math inline">\(\sigma\)</span>-rejection, it is possible to augment the dataset for each of the analyses by simply removing the anomalous measurements (<span class="math inline">\(N_i\)</span>), which pertains to the <span class="math inline">\(N\_rej\)</span> in Fig. <a href="#fig:xcpcameca">1.1</a>.</p>
-<div class="sourceCode" id="cb4"><html><body><pre class="r"><span class="co"># Augmented descriptive an predictive statistics (global dataset)</span>
-
-<span class="co"># Function to transform to calculate block wise and produce CAMECA output style</span>
-<span class="no">fun_CAMECA_gl</span> <span class="kw">&lt;-</span><span class="kw">function</span>(<span class="no">df</span>, <span class="no">a</span>, <span class="no">b</span>){
-
-               <span class="no">df</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/stat_Xt.html">stat_R</a></span>(<span class="no">df</span>, <span class="no">Xt.pr</span>, <span class="no">N.pr</span>, <span class="no">species.nm</span>,
-                                            <span class="no">a</span>, <span class="no">b</span>, <span class="no">file.nm</span>,
-                                            <span class="kw">output</span> <span class="kw">=</span> <span class="st">"complete"</span>) <span class="kw">%&gt;%</span>
-                       <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span>(<span class="no">file.nm</span> <span class="kw">==</span> <span class="st">"2018-01-19-GLENDON_1_1"</span>) <span class="kw">%&gt;%</span>
-
-                       <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span>(<span class="kw">`Err_mean (%)`</span> <span class="kw">=</span> <span class="no">RSeM_R_Xt.pr</span> / <span class="fl">10</span>,
-                              <span class="kw">`Poisson (%)`</span> <span class="kw">=</span> <span class="no">hat_RSeM_R_Xt.pr</span> / <span class="fl">10</span>,
-                              <span class="kw">`Ratio#`</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste</a></span>(<span class="no">a</span>, <span class="no">b</span>, <span class="kw">sep</span> <span class="kw">=</span> <span class="st">"/"</span>),
-                              <span class="kw">SD_bl</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/sd.html">sd</a></span>(<span class="no">R_Xt.pr</span>) /
-                                      <span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span>(<span class="no">R_Xt.pr</span>) * <span class="fl">100</span>) <span class="kw">%&gt;%</span>
-                       <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html">distinct</a></span>(<span class="no">file.nm</span>, <span class="kw">.keep_all</span> <span class="kw">=</span> <span class="fl">TRUE</span>) <span class="kw">%&gt;%</span>
-                       <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html">select</a></span>(<span class="no">`Ratio#`</span> ,
-                              <span class="st">"Ratios"</span> <span class="kw">=</span> <span class="no">M_R_Xt.pr</span>,
-                              <span class="no">`Poisson (%)`</span>,
-                              <span class="no">`Err_mean (%)`</span>,
-                              <span class="st">"Khi2"</span> <span class="kw">=</span> <span class="no">chi2_R_Xt.pr</span>,
-                              <span class="kw">`SD_Block(%)`</span><span class="kw">=</span> <span class="no">SD_bl</span>)
-}
-
-<span class="co"># Call the function</span>
-<span class="no">tb.CAMECA_aug</span> <span class="kw">&lt;-</span> <span class="kw pkg">purrr</span><span class="kw ns">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map2.html">pmap_dfr</a></span>(<span class="no">ls.CAMECA</span>, <span class="no">fun_CAMECA_gl</span>)
-
-<span class="co"># And the same without augmentation of the dataset</span>
-<span class="no">ls.CAMECA</span>$<span class="no">df</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html">replicate</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/length.html">length</a></span>(<span class="no">ion1</span>), <span class="no">tb.pr</span>, <span class="kw">simplify</span> <span class="kw">=</span> <span class="fl">FALSE</span>)
-
-<span class="no">tb.CAMECA_org</span> <span class="kw">&lt;-</span> <span class="kw pkg">purrr</span><span class="kw ns">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map2.html">pmap_dfr</a></span>(<span class="no">ls.CAMECA</span>, <span class="no">fun_CAMECA_gl</span>)</pre></body></html></div>
-<div class="figure">
-<span id="fig:xcpcameca2"></span>
-<img src="excerpt_stat_global.png" alt="An excerpt of the Cameca stat-file for count block based 2$\sigma$-rejection and associated blockwise statistics" width="90%"><p class="caption">
-Figure 1.3: An excerpt of the Cameca stat-file for count block based 2<span class="math inline">\(\sigma\)</span>-rejection and associated blockwise statistics
-</p>
-</div>
-<table class="table">
-<caption>
-<span id="tab:aug">Table 1.2: </span>Summary stats for augmented dataset</caption>
-<thead><tr class="header">
-<th align="left">Ratio#</th>
-<th align="right">Ratios</th>
-<th align="right">Poisson (%)</th>
-<th align="right">Err_mean (%)</th>
-<th align="right">Khi2</th>
-<th align="right">SD_Block(%)</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="left">13C/12C</td>
-<td align="right">0.011</td>
-<td align="right">0.152</td>
-<td align="right">0.14</td>
-<td align="right">0.80</td>
-<td align="right">8.3</td>
-</tr>
-<tr class="even">
-<td align="left">12C 13C/12C2</td>
-<td align="right">0.021</td>
-<td align="right">0.850</td>
-<td align="right">0.78</td>
-<td align="right">0.83</td>
-<td align="right">57.2</td>
-</tr>
-<tr class="odd">
-<td align="left">13C 14N/12C 14N</td>
-<td align="right">0.017</td>
-<td align="right">1.114</td>
-<td align="right">1.01</td>
-<td align="right">0.83</td>
-<td align="right">70.9</td>
-</tr>
-<tr class="even">
-<td align="left">12C/40Ca 16O</td>
-<td align="right">2.305</td>
-<td align="right">0.029</td>
-<td align="right">0.37</td>
-<td align="right">162.36</td>
-<td align="right">24.8</td>
-</tr>
-</tbody>
-</table>
-<table class="table">
-<caption>
-<span id="tab:org">Table 1.3: </span>Summary stats for original dataset</caption>
-<thead><tr class="header">
-<th align="left">Ratio#</th>
-<th align="right">Ratios</th>
-<th align="right">Poisson (%)</th>
-<th align="right">Err_mean (%)</th>
-<th align="right">Khi2</th>
-<th align="right">SD_Block(%)</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="left">13C/12C</td>
-<td align="right">0.011</td>
-<td align="right">0.149</td>
-<td align="right">0.15</td>
-<td align="right">1.0</td>
-<td align="right">9.3</td>
-</tr>
-<tr class="even">
-<td align="left">12C 13C/12C2</td>
-<td align="right">0.022</td>
-<td align="right">0.819</td>
-<td align="right">0.83</td>
-<td align="right">1.0</td>
-<td align="right">62.7</td>
-</tr>
-<tr class="odd">
-<td align="left">13C 14N/12C 14N</td>
-<td align="right">0.018</td>
-<td align="right">1.054</td>
-<td align="right">1.08</td>
-<td align="right">1.1</td>
-<td align="right">78.0</td>
-</tr>
-<tr class="even">
-<td align="left">12C/40Ca 16O</td>
-<td align="right">2.307</td>
-<td align="right">0.028</td>
-<td align="right">0.36</td>
-<td align="right">163.4</td>
-<td align="right">24.9</td>
-</tr>
-</tbody>
-</table>
-<p>However, when comparing the summary statistics of the augmented dataset (Table <a href="#tab:aug">1.2</a>) with the excerpt from the Cameca stat-file (Fig. <a href="#fig:xcpcameca2">1.3</a>) their seems to be a substantial difference. Instead upon comparison with Table <a href="#tab:org">1.3</a>, which consist of summary statistics calculated on the original dataset (without <span class="math inline">\(\sigma\)</span>-rejection of measurements), the replication is surprisingly consistent. This heralds the question whether their might be a mistake in the Cameca software for calculating statistics on ion ratios for complete analyses. Otherwise the blockwise <span class="math inline">\(\sigma\)</span>-rejection of measurements seems rather obfuscated, as it does not seem to serve an obvious purpose.</p>
-</div>
-<div id="regression-diagnostic-based-count-optimization" class="section level2">
+<div id="regression-based-diagnostics" class="section level2">
 <h2 class="hasAnchor">
-<a href="#regression-diagnostic-based-count-optimization" class="anchor"></a><span class="header-section-number">1.4</span> Regression diagnostic based count optimization</h2>
-<p>This will be included in future release.</p>
+<a href="#regression-based-diagnostics" class="anchor"></a><span class="header-section-number">2.2</span> Regression-based diagnostics</h2>
+<p>The solution provided by the Cameca<sup>TM</sup> software seems straightforward and effective, just compare the <span class="math inline">\(R\)</span> values of the individual measurements of an <span class="math inline">\(n\)</span>-series (<span class="math inline">\(N_{(i)}\)</span>), and check whether there are significant deviations at some points during the analysis. However, the situation is more complex than that, as illustrated with the following examples.</p>
+<p>For these examples, isotope count rates have been simulated (<code>simu_IC</code> provide along with the package) for three hypothetical types of materials (Fig. <a href="#fig:simulations">2.2</a>).</p>
+<ol style="list-style-type: decimal">
+<li>An <strong>“ideal”</strong> substrate with a completely homogeneous isotopic composition<br>
+</li>
+<li>A substrate with a <strong>“symmetric gradient”</strong>, which has a isotope gradient spanning the whole depth covered by the analysis</li>
+<li>A substrate with an <strong>“asymmetric gradient”</strong>, which has a sudden offset in isotope composition at a specific depth</li>
+</ol>
+<p>In the two simulations with a heterogeneous isotope composition the total span of isotope variability is set to 60‰. A linear trend is superimposed on the count rates of both isotope species, as this is an inherent phenomenon of SIMS analysis. This relates to changes in the ionization potential resulting from the sputter pit development and charge build-up (see vignette: <a href="IC-process.html">IC-process</a>). This <strong>systematic bias</strong> afflicts both isotope species to a similar degree thereby leaving <span class="math inline">\(R\)</span> unaltered <span class="citation">(see Fitzsimons, Harte, and Clark 2000)</span>.</p>
+<div class="figure">
+<span id="fig:simulations"></span>
+<img src="IC-diagnostics_files/figure-html/simulations-1.png" alt="Histograms comparing input and output $R$ values for simulations of an ideal isotopically homogenous material, a gradual gradient in $R$ (symmetric gradient), and a sudden shift in $R$ (asymmetric gradient)." width="1152"><p class="caption">
+Figure 2.2: Histograms comparing input and output <span class="math inline">\(R\)</span> values for simulations of an ideal isotopically homogenous material, a gradual gradient in <span class="math inline">\(R\)</span> (symmetric gradient), and a sudden shift in <span class="math inline">\(R\)</span> (asymmetric gradient).
+</p>
+</div>
+<p>From Figure <a href="#fig:simulations">2.2</a> it is evident that the real variation in <span class="math inline">\(R\)</span> (input R; black and red lines) are indistinguishable when viewing the derived distribution of the ion count ratios (output R; histogram). This is an effect related to the relative large <strong>random bias</strong> induced by the ionization of the substrate. So, even for these large variations in isotopic composition, it cannot be confidently said whether the measured <span class="math inline">\(R\)</span> is representative for the analysed site, or if the underlying data structure is skewed with one, or more, isotopically distinguishable components comprising the pooled <span class="math inline">\(R\)</span> value. This effect is, furthermore, hardly observable in the precision of the data, where the <span class="math inline">\(\epsilon_{\bar{R}}\)</span> of the simulation referred to as “asymmetric” is 0.57‰, whereas the “ideal” simulation has only a marginally better precision of 0.46‰.</p>
+<p>From the previous examples, it becomes apparent that heterogeneous substrates cause minimal deviation in the internal precision. Hence, a lot of hidden variation in nominal SIMS isotope analyses can go undetected. So, clearly, a different approach must be adopted to identify these isotopically highly variable substrates.</p>
+<div id="linear-relationship-of-isotope-counts" class="section level3">
+<h3 class="hasAnchor">
+<a href="#linear-relationship-of-isotope-counts" class="anchor"></a><span class="header-section-number">2.2.1</span> Linear relationship of isotope counts</h3>
+<p>In an “ideal” isotopically homogeneous substrate the count rates of two isotope from the same element should be dependent on each other <span class="citation">(Fitzsimons, Harte, and Clark 2000)</span>. Thus, even though the ionization efficiency might vary within a single analysis, the count rate of an isotope species <span class="math inline">\(b\)</span> can be deduced from the count rate of isotope species <span class="math inline">\(a\)</span> through a linear combination with the isotope ratio <span class="math inline">\(R\)</span>:</p>
+<p><span class="math display" id="eq:linmodR">\[\begin{equation}
+\hat{X}_i^b = \hat{R}X_i^a +  \hat{e}_i \qquad \text{where} \quad  e_i \sim N \left(0,\sigma^2 \right) \tag{2.1}
+\end{equation}\]</span></p>
+<p>In this ideal linear count rate relationship, variation in <span class="math inline">\(R\)</span> is only caused by the random nature of secondary ion generation, which follows a Poisson distribution (see vignette <a href="IC-precision.html">IC-precision</a>). Instead of using Ordinary Least Squares (OLS) to obtain estimates for the regression coefficients, the ratio of mean ion count rates, or <span class="math inline">\(\bar{R}\)</span>, can be used as the single coefficient in this function (ratio estimation). Although the residuals (<span class="math inline">\(e_i\)</span>) of the linear model is unobserved, it can then be approximated, as follows:</p>
+<p><span class="math display" id="eq:resR">\[\begin{equation}
+ \hat{e}_i =  X_i^b - \hat{R}X_i^a \text{.} \tag{2.2}
+\end{equation}\]</span></p>
+<p>The component <span class="math inline">\(\hat{e}_i\)</span> gives a measure of the fit of the model (or the performance of this "ideal linear model) to the sampled data. This is known as residual analysis or regression diagnostics; see for example <span class="citation">(Fox and Weisberg 2018)</span>. Residual analysis yield estimates about the data points that could have unduly influenced the coefficient <span class="math inline">\(\hat{R}\)</span> of Equation <a href="#eq:linmodR">(2.1)</a>. Outliers detected in linear regression can therefore be described as an observation with a response variable (isotope species; <span class="math inline">\(X_i^b\)</span>) that is conditionally unusual when regarding the independent variable (isotope species; <span class="math inline">\(X_i^a\)</span>).</p>
+<p>To demonstrate this we can use again <code><a href="../reference/diag_R.html">diag_R()</a></code> and the simulated data according to the previous specifications (“ideal”, “symmetric”, and “asymmetric” isotope variance), and supply the nominal arguments <code>.IC</code>, <code>.ion1</code>, <code>.ion2</code>, <code>...</code> to define again the ion count data, the isotope system to be analysed, as well as a grouping structure defining the individual analyses. We leave the <code>.method</code> as the default method, and plot the outcome with <code>.plot = TRUE</code>. The argument <code>.label</code> produces latex or webtex parsable labels for the data frame containing the statistics results.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">tb_dia</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/diag_R.html">diag_R</a></span><span class="op">(</span><span class="va">simu_IC</span>, <span class="st">"13C"</span>, <span class="st">"12C"</span>, <span class="va">type.nm</span>, <span class="va">spot.nm</span>, .plot <span class="op">=</span> <span class="cn">TRUE</span>, 
+                 .label <span class="op">=</span> <span class="st">"webtex"</span><span class="op">)</span></code></pre></div>
+<div class="figure">
+<span id="fig:regression"></span>
+<img src="IC-diagnostics_files/figure-html/regression-1.png" alt="Scatter-plot of ^13^C and ^12^C count rates and the regression line following equation \@ref(eq:linmodR) and with 2 times the predicted standard deviation of the ^13^C represented as the area around the regression line demarcated with dashed lines. Here the red points identify abnormal section of the analysis with many outliers." width="1152"><p class="caption">
+Figure 2.3: Scatter-plot of <sup>13</sup>C and <sup>12</sup>C count rates and the regression line following equation <a href="#eq:linmodR">(2.1)</a> and with 2 times the predicted standard deviation of the <sup>13</sup>C represented as the area around the regression line demarcated with dashed lines. Here the red points identify abnormal section of the analysis with many outliers.
+</p>
+</div>
+<p>The simulated scenarios in Fig. <a href="#fig:regression">2.3</a> visualise the comparison of the model following Eq. <a href="#eq:linmodR">(2.1)</a> and hypothetical bivariate <sup>13</sup>C-<sup>12</sup>C ion count rates. Anomalous sections of data-points about the model (red areas in Fig. <a href="#fig:regression">2.3</a>) can already be observed in the simulations of isotopically heterogeneous substrates merely by this visualization.</p>
+<p>For more information and a validation of this method, see the preprint:</p>
+<p><strong>Martin Schobben, Michiel Kienhuis, and Lubos Polerecky. 2021. New methods to detect isotopic heterogeneity with Secondary Ion Mass Spectrometry, preprint on <a href="https://eartharxiv.org/">Eartharxiv</a>.</strong></p>
+</div>
+<div id="outlier-detection-cooks-d" class="section level3">
+<h3 class="hasAnchor">
+<a href="#outlier-detection-cooks-d" class="anchor"></a><span class="header-section-number">2.2.2</span> Outlier detection (Cook’s D)</h3>
+<p>The residuals will first be normalized to over come scale-dependence. This can be done by using the <em>studentized</em> residuals (<span class="math inline">\(\hat{e}_{i}^*\)</span>) <span class="citation">(see for example Fox and Weisberg 2018)</span>. A studentized residual is obtained by dividing the residual by an independent estimate of the standard deviation of the residuals. To ensure independence, the standard deviation of the residuals is calculated by leaving the residual of the <span class="math inline">\(i\)</span>-th observation out:</p>
+<p><span class="math display" id="eq:studres">\[\begin{equation}
+  \hat{e}_i^* = \frac{\hat{e}_i}{S_{\hat{e}_{(-i)}} \sqrt{(1-h_i)}} \text{,}
+  \tag{2.3}
+\end{equation}\]</span></p>
+<p>where the standard error of the regression (standard deviation of the residuals) is also calculated by leaving the <span class="math inline">\(i\)</span>-th residual out:</p>
+<p><span class="math display" id="eq:SEminusi">\[\begin{equation}
+  S_{\hat{e}_{(-i)}} = \sqrt{\frac{1}{n-k-1} \sum_{i = 1}^{n}\hat{e}_i^2}
+  \tag{2.4}
+\end{equation}\]</span></p>
+<p>In Eq. <a href="#eq:studres">(2.3)</a> <span class="math inline">\(h_i\)</span> represents the leverage of the independent variable (<span class="math inline">\(X^a\)</span>), or <em>hat-value</em>. The hat-value measures the distance from the mean of the independent variable <span class="math inline">\(X_i^a\)</span>:</p>
+<p><span class="math display" id="eq:hatvalue">\[\begin{equation}
+ h_i = \frac{1}{n} + \frac{ \left( X_i^a - \bar{X}_a \right)^2 }{\sum_{j=1}^n \left(X_j^a -  \bar{X}_a \right)^2}
+ \tag{2.5}
+\end{equation}\]</span></p>
+<p>The larger the deviation <span class="math inline">\(X_i^a\)</span> from the mean (<span class="math inline">\(\bar{X}_a\)</span>) the more leverage the data-point has on the regression line. Given that the “ideal” simulation satisfies the conditions as initially described for the “ideal” linear model (Eq. <a href="#eq:linmodR">(2.1)</a>), the estimated <span class="math inline">\(\hat{e}\)</span> can be used to assess deviations from this “ideal linear model”, and thereby provide a measure of how representative the <span class="math inline">\(\bar{R}\)</span> is for the sampled spot. The goal of residual analysis would therefore be to identify the influence of the coefficient; in this case the influence on <span class="math inline">\(\bar{R}\)</span>, by determining the leverage and discrepancy (outlyingness) of variable <span class="math inline">\(X^a\)</span>, such that:</p>
+<p><span class="math display" id="eq:influence">\[\begin{equation}
+  \text{Influence} = \text{Leverage} + \text{Discrepancy}
+    \tag{2.6}
+\end{equation}\]</span></p>
+<p>Having already determined the outlyingness; as the studentized residuals, and the leverage; as hat-values, of the independent variable, it is possible to determine the influence of <span class="math inline">\(X^a\)</span> have on the linear model (Eq. <a href="#eq:influence">(2.6)</a>). This influence can be quantified with <em>Cook’s Distance</em> (or <em>Cook’s D</em>). This formulation overcomes the effect that high leverage does not necessarily require the data-point to be influential, as <em>Cook’s D</em> combines the hat-values (Eq. <a href="#eq:hatvalue">(2.5)</a>) with studentized residuals (Eq. <a href="#eq:studres">(2.3)</a>), in a new equation:</p>
+<p><span class="math display" id="eq:CD">\[\begin{equation}
+  D_i = \frac{e_{i}^{*}\phantom{}^2}{k + 1} \times \frac{h_i}{1- h_i}
+  \tag{2.7}
+\end{equation}\]</span></p>
+<p>Here, the <span class="math inline">\(k\)</span> stands for the number of coefficients in the regression model. To quantify whether <span class="math inline">\(D_i\)</span> is substantially larger then the rest of the sample’s <span class="math inline">\(D\)</span> a cut-off value can be defined as follows.</p>
+<p><span class="math display" id="eq:CDcut">\[\begin{equation}
+  D_c =4/ (n-k-1)
+  \tag{2.8}
+\end{equation}\]</span></p>
+<p>These calculations are internally performed by a consecutive call to base <code><a href="https://rdrr.io/r/stats/lm.html">lm()</a></code> and <code><a href="https://generics.r-lib.org/reference/augment.html">broom::augment()</a></code> <span class="citation">(Robinson, Hayes, and Couch 2021)</span>.</p>
+</div>
+<div id="detecting-intra-isotope-varaibility-with-significant-outliers" class="section level3">
+<h3 class="hasAnchor">
+<a href="#detecting-intra-isotope-varaibility-with-significant-outliers" class="anchor"></a><span class="header-section-number">2.2.3</span> Detecting intra-isotope varaibility with significant outliers</h3>
+<p>The effectiveness of recognising and differentiating the “ideal” substrate from compromised measurements detected with e.g. Cook’s D (or other outlier detection methods) can now be calculated by assessing the impact on the averaged <span class="math inline">\(R\)</span> value. This can be achieved by applying a joint model coefficient hypothesis test (or Fisher test), where the <code><a href="../reference/diag_R.html">diag_R()</a></code> function is designed to measure this deviation from the ideal “homogeneous” model (Eq. <a href="#eq:linmodR">(2.1)</a> by default.</p>
+<p><span class="math display" id="eq:Fisher">\[\begin{equation}
+F_{(q-p),(n-q)} = \frac{ (RSS_{\theta_{0}}-RSS_{\theta_{1}}) / (q-p) }{RSS_{\theta_{1}} / (n-q)} \tag{2.9}
+\end{equation}\]</span></p>
+<p>The default settings of the <code><a href="../reference/diag_R.html">diag_R()</a></code> function produces the following outcome.</p>
+<table class="table">
+<thead><tr class="header">
+<th align="right">execution</th>
+<th align="left">type.nm</th>
+<th align="right">spot.nm</th>
+<th align="left">ratio.nm</th>
+<th align="right"><span class="math inline">\(\bar{R}\)</span></th>
+<th align="right"><span class="math inline">\(F_{R}\)</span></th>
+<th align="right"><span class="math inline">\(p_{R}\)</span></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="left">symmetric</td>
+<td align="right">1</td>
+<td align="left">13C/12C</td>
+<td align="right">0.0110</td>
+<td align="right">105</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="even">
+<td align="right">1</td>
+<td align="left">symmetric</td>
+<td align="right">2</td>
+<td align="left">13C/12C</td>
+<td align="right">0.0110</td>
+<td align="right">127</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="odd">
+<td align="right">1</td>
+<td align="left">symmetric</td>
+<td align="right">3</td>
+<td align="left">13C/12C</td>
+<td align="right">0.0110</td>
+<td align="right">122</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="even">
+<td align="right">1</td>
+<td align="left">asymmetric</td>
+<td align="right">1</td>
+<td align="left">13C/12C</td>
+<td align="right">0.0111</td>
+<td align="right">63</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="odd">
+<td align="right">1</td>
+<td align="left">asymmetric</td>
+<td align="right">2</td>
+<td align="left">13C/12C</td>
+<td align="right">0.0111</td>
+<td align="right">75</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="even">
+<td align="right">1</td>
+<td align="left">asymmetric</td>
+<td align="right">3</td>
+<td align="left">13C/12C</td>
+<td align="right">0.0111</td>
+<td align="right">72</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="odd">
+<td align="right">1</td>
+<td align="left">ideal</td>
+<td align="right">1</td>
+<td align="left">13C/12C</td>
+<td align="right">0.0112</td>
+<td align="right">0</td>
+<td align="right">0.85</td>
+</tr>
+<tr class="even">
+<td align="right">1</td>
+<td align="left">ideal</td>
+<td align="right">2</td>
+<td align="left">13C/12C</td>
+<td align="right">0.0112</td>
+<td align="right">0</td>
+<td align="right">0.88</td>
+</tr>
+<tr class="odd">
+<td align="right">1</td>
+<td align="left">ideal</td>
+<td align="right">3</td>
+<td align="left">13C/12C</td>
+<td align="right">0.0112</td>
+<td align="right">2</td>
+<td align="right">0.16</td>
+</tr>
+</tbody>
+</table>
+<p>Here, the <span class="math inline">\(F_{R}\)</span> refers to the Fisher test statistic and the associated significance value as <span class="math inline">\(p_{R}\)</span>.</p>
+<p>Sensitivity runs (outlined in Schobben, Kienhuis and Polerecky, in prep) show that the Cook’s D outlier detection method performs best when compared to other methods. Hence, problematic analyses with possible intra-isotope variability can be detected, even if this is not obvious from the descriptive and predictive statistics alone.</p>
+</div>
+</div>
+<div id="inter-isotope-variability" class="section level2">
+<h2 class="hasAnchor">
+<a href="#inter-isotope-variability" class="anchor"></a><span class="header-section-number">2.3</span> Inter-isotope variability</h2>
+<p>The <code><a href="../reference/diag_R.html">diag_R()</a></code> is designed in resemblance to the <code><a href="../reference/stat_X.html">stat_R()</a></code> function, and thus also includes an option to check the external structure of the the <span class="math inline">\(m\)</span>-series of analyses usually comprised in a SIMS-based study (i.e. severeal sputter pits). For this purpose, again an <code>.nest</code> argument is included to define the grouping structure of individual analysis. In the simulated example this could refer to the different scenarios of isotopic variations (“ideal”, “symmetric”, and “asymmetric” isotope variance). And, this then provides a test for inter-isotope variability (among the sputter pits), and can be conducted as follows.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">tb_ext</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/diag_R.html">diag_R</a></span><span class="op">(</span><span class="va">simu_IC</span>, <span class="st">"13C"</span>, <span class="st">"12C"</span>, <span class="va">type.nm</span>, <span class="va">spot.nm</span>, .nest <span class="op">=</span> <span class="va">type.nm</span>, 
+                 .label <span class="op">=</span> <span class="st">"webtex"</span><span class="op">)</span></code></pre></div>
+<table class="table">
+<colgroup>
+<col width="7%">
+<col width="7%">
+<col width="5%">
+<col width="6%">
+<col width="7%">
+<col width="5%">
+<col width="5%">
+<col width="11%">
+<col width="17%">
+<col width="16%">
+<col width="9%">
+</colgroup>
+<thead><tr class="header">
+<th align="right">execution</th>
+<th align="left">type.nm</th>
+<th align="right">spot.nm</th>
+<th align="left">ratio.nm</th>
+<th align="right"><span class="math inline">\(\bar{R}\)</span></th>
+<th align="right"><span class="math inline">\(F_{R}\)</span></th>
+<th align="right"><span class="math inline">\(p_{R}\)</span></th>
+<th align="right"><span class="math inline">\(\hat{\bar{R}}\)</span></th>
+<th align="right">
+<span class="math inline">\(\epsilon_{\bar{R}}\)</span> (‰)</th>
+<th align="right"><span class="math inline">\(\Delta AIC_{\bar{R}}\)</span></th>
+<th align="right"><span class="math inline">\(p_{\bar{R}}\)</span></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="left">symmetric</td>
+<td align="right">1</td>
+<td align="left">13C/12C</td>
+<td align="right">0.0110</td>
+<td align="right">105</td>
+<td align="right">0.00</td>
+<td align="right">0.0111</td>
+<td align="right">14.7</td>
+<td align="right">606</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="right">1</td>
+<td align="left">symmetric</td>
+<td align="right">2</td>
+<td align="left">13C/12C</td>
+<td align="right">0.0110</td>
+<td align="right">127</td>
+<td align="right">0.00</td>
+<td align="right">0.0111</td>
+<td align="right">14.3</td>
+<td align="right">592</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="right">1</td>
+<td align="left">symmetric</td>
+<td align="right">3</td>
+<td align="left">13C/12C</td>
+<td align="right">0.0110</td>
+<td align="right">122</td>
+<td align="right">0.00</td>
+<td align="right">0.0111</td>
+<td align="right">14.3</td>
+<td align="right">595</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="right">1</td>
+<td align="left">asymmetric</td>
+<td align="right">1</td>
+<td align="left">13C/12C</td>
+<td align="right">0.0111</td>
+<td align="right">63</td>
+<td align="right">0.00</td>
+<td align="right">0.0111</td>
+<td align="right">14.7</td>
+<td align="right">606</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="right">1</td>
+<td align="left">asymmetric</td>
+<td align="right">2</td>
+<td align="left">13C/12C</td>
+<td align="right">0.0111</td>
+<td align="right">75</td>
+<td align="right">0.00</td>
+<td align="right">0.0111</td>
+<td align="right">14.3</td>
+<td align="right">592</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="right">1</td>
+<td align="left">asymmetric</td>
+<td align="right">3</td>
+<td align="left">13C/12C</td>
+<td align="right">0.0111</td>
+<td align="right">72</td>
+<td align="right">0.00</td>
+<td align="right">0.0111</td>
+<td align="right">14.3</td>
+<td align="right">595</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="right">1</td>
+<td align="left">ideal</td>
+<td align="right">1</td>
+<td align="left">13C/12C</td>
+<td align="right">0.0112</td>
+<td align="right">0</td>
+<td align="right">0.85</td>
+<td align="right">0.0111</td>
+<td align="right">14.7</td>
+<td align="right">606</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="right">1</td>
+<td align="left">ideal</td>
+<td align="right">2</td>
+<td align="left">13C/12C</td>
+<td align="right">0.0112</td>
+<td align="right">0</td>
+<td align="right">0.88</td>
+<td align="right">0.0111</td>
+<td align="right">14.3</td>
+<td align="right">592</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="right">1</td>
+<td align="left">ideal</td>
+<td align="right">3</td>
+<td align="left">13C/12C</td>
+<td align="right">0.0112</td>
+<td align="right">2</td>
+<td align="right">0.16</td>
+<td align="right">0.0111</td>
+<td align="right">14.3</td>
+<td align="right">595</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<p>This test provides and approximation of the “grand mean” (<span class="math inline">\(\bar{\bar{R}} = \frac{1}{m}\sum_{j =1}^{m}\bar{R}_j\)</span>) of the study <span class="math inline">\(\hat{\bar{R}}\)</span>. If the substrate would be isotopically homogeneous across its surface, then each analysis would approach <span class="math inline">\(\bar{\bar{R}}\)</span>. This can again be described by the ideal “homogeneous” model of Equation <a href="#eq:linmodR">(2.1)</a>, where the <span class="math inline">\(m\)</span>-series is viewed as one long analysis of <span class="math inline">\(n\)</span>-measurements (<span class="math inline">\(m\sum_{i=1}^{n}X_{i}^{a \mid b}\)</span>). Introduction of a nominal factorial that interacts with <span class="math inline">\(\hat{R}\)</span> can therefore again be used, but now to account for inter-isotope variability. The major difference of this approach is that in this case the levels are encoded to represent the <span class="math inline">\(j\)</span>-th analysis of the <span class="math inline">\(m\)</span>-series of analyses. Encoding of this nominal variable can in theory constitute as many analyses as needed, potentially creating excessive parameters when considered as a fix component. This grouping structure, that is of no particular interest, is therefore instead represented as a random effect. This introduces a second level in Equation <a href="#eq:linmodR">(2.1)</a>, where each group (<span class="math inline">\(j\)</span>-th analysis) can assume a different <span class="math inline">\(\hat{R}\)</span>, that is, different <span class="math inline">\(\bar{R}\)</span> may exist among the various analysis.</p>
+<p><span class="math display">\[\begin{equation}
+ \text{level 1:} \quad \hat{X}_{ij}^b = \hat{R}_{j}X_{ij}^a +  e_{ij} \qquad \text{where} \quad  e_{ij} \sim N(0,\sigma^2)   
+\end{equation}\]</span></p>
+<p><span class="math display" id="eq:mlm">\[\begin{equation}
+\text{level 2:} \quad \hat{R}_{j} = \hat{\bar{R}} + u_{j} \qquad \text{where} \quad u_{j} \sim N(0, t^2) \tag{2.10}
+\end{equation}\]</span></p>
+<p>Coefficients for this mixed linear model are obtained by Restricted Maximum Likelihood (REML) optimization using the <code>lme()</code> function of the <code>nlme</code> package <span class="citation">(Pinheiro, Bates, and R-core 2021)</span>. The ratio of the obtained log-likelihood (i.e., maximized likelihood functions) for the restricted model and the unrestricted model, or likelihood-ratio test (LR), can the be applied to deduce the significance of including a random component in Equation <a href="#eq:linmodR">(2.1)</a>. Here, a larger difference in the AIC (<span class="math inline">\(\Delta AIC_{\bar{R}}\)</span>) and thus lower <span class="math inline">\(p_{\bar{R}}\)</span> indicates that the null model of no inter-isotope variability becomes less appropriate.</p>
 </div>
 </div>
 <div id="references" class="section level1 unnumbered">
@@ -496,6 +600,15 @@ Figure 1.3: An excerpt of the Cameca stat-file for count block based 2<span clas
 <div id="refs" class="references">
 <div id="ref-Fitzsimons2000a">
 <p>Fitzsimons, I. C. W., B. Harte, and R. M. Clark. 2000. “SIMS stable isotope measurement: counting statistics and analytical precision.” <em>Mineralogical Magazine</em> 64 (01): 59–83. <a href="https://doi.org/10.1180/002646100549139">https://doi.org/10.1180/002646100549139</a>.</p>
+</div>
+<div id="ref-Fox2018">
+<p>Fox, John, and Sanford Weisberg. 2018. <em>An R companion to applied regression</em>. Sage publications.</p>
+</div>
+<div id="ref-nlme">
+<p>Pinheiro, José, Douglas Bates, and R-core. 2021. <em>Nlme: Linear and Nonlinear Mixed Effects Models</em>. <a href="https://svn.r-project.org/R-packages/trunk/nlme/">https://svn.r-project.org/R-packages/trunk/nlme/</a>.</p>
+</div>
+<div id="ref-broom">
+<p>Robinson, David, Alex Hayes, and Simon Couch. 2021. <em>Broom: Convert Statistical Objects into Tidy Tibbles</em>. <a href="https://CRAN.R-project.org/package=broom">https://CRAN.R-project.org/package=broom</a>.</p>
 </div>
 </div>
 </div>
@@ -516,7 +629,7 @@ Figure 1.3: An excerpt of the Cameca stat-file for count block based 2<span clas
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

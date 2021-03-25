@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="pkgdown.css" rel="stylesheet">
 <script src="pkgdown.js"></script><meta property="og:title" content="Reading, Processing, and Analysing Raw Ion Count Data">
-<meta property="og:description" content="The point functions provide a convenient way to work with and evaluate pulsed ion count data. The package offers solution to loading and collating raw ion count text files into a convenient dataframe (tibble). The core of the package revolves around correcting ion counts for systematic biases related to detection device and calculating of statistics to gaug the analytical precision. Finally, the package contain options to evaluate what factors might haved caused random variations that impair the precision.">
+<meta property="og:description" content="The point functions provide a convenient way to work with, and evaluate pulsed ion count data. The package offers solution to loading and collating raw ion count text files into a convenient dataframe (tibble). The core of the package revolves around correcting ion counts for systematic biases related to detection device and calculating of statistics to gaug the analytical precision. Finally, the package contain options to evaluate what factors might haved caused random variations that impair the precision.">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">point</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.0.9002</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.0.9003</span>
       </span>
     </div>
 
@@ -39,7 +39,7 @@
       <ul class="nav navbar-nav">
 <li>
   <a href="index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
+    <span class="fas fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -93,21 +93,23 @@
 <div id="credits" class="section level2">
 <h2 class="hasAnchor">
 <a href="#credits" class="anchor"></a>Credits</h2>
-<p>The construction of the R (R Core Team 2020) package <em>point</em> and associated documentation was aided by the packages; <em>devtools</em> (Wickham, Hester, and Chang 2019), <em>roxygen2</em> (Wickham, Danenberg, et al. 2019), <em>testthat</em> (Wickham 2011), <em>knitr</em> (Xie 2020 , 2015), <em>rmarkdown</em> (Allaire et al. 2020; Xie, Allaire, and Grolemund 2018), and the superb guidance in the book: <em>R packages: organize, test, document, and share your code</em>, by Wickham (2015). In addition, this package relies on a set of external packages from the tidyverse universe, including: <em>dplyr</em> (Wickham, François, et al. 2019), <em>tidyr</em> (Wickham and Henry 2019), <em>tibble</em> (Müller and Wickham 2019), <em>stringr</em> (Wickham 2019), <em>readr</em> (Wickham, Hester, and Francois 2018), <em>magrittr</em> (Bache and Wickham 2014), <em>ggplot2</em> (Wickham 2016), <em>rlang</em> (Henry and Wickham 2020), and <em>purrr</em> (Henry and Wickham 2019) for internal functioning as well as specialised statistics; <em>polyaAeppli</em> (Burden 2014).</p>
+<p>The construction of the R (R Core Team 2021) package <em>point</em> and associated documentation was aided by the packages; <em>devtools</em> (Wickham, Hester, and Chang 2020), <em>roxygen2</em> (Wickham, Danenberg, et al. 2020), <em>testthat</em> (Wickham 2021a), <em>knitr</em> (Xie 2014 , 2015), <em>rmarkdown</em> (Xie, Allaire, and Grolemund 2018; Xie, Dervieux, and Riederer 2020), <em>bookdown</em> (Xie 2016) and the superb guidance in the book: <em>R packages: organize, test, document, and share your code</em>, by Wickham (2015). In addition, this package relies on a set of external packages from the tidyverse universe, including: <em>dplyr</em> (Wickham, François, et al. 2021), <em>tidyr</em> (Wickham 2021b), <em>tibble</em> (Müller and Wickham 2021), <em>stringr</em> (Wickham 2019), <em>readr</em> (Wickham and Hester 2020), <em>magrittr</em> (Bache and Wickham 2020), <em>rlang</em> (Henry and Wickham 2020b), and <em>purrr</em> (Henry and Wickham 2020a) for internal functioning as well as specialised statistics; <em>polyaAeppli</em> (Burden 2014), <em>broom</em> (Robinson, Hayes, and Couch 2021), <em>broom.mixed</em> (Bolker and Robinson 2020), <em>nlme</em> (Pinheiro, Bates, and R-core 2021), and <em>mgcv</em> (Wood 2021). Plots are made with <em>ggplot2</em> (Wickham 2016)</p>
 </div>
 <div id="installation" class="section level2">
 <h2 class="hasAnchor">
 <a href="#installation" class="anchor"></a>Installation</h2>
 <p>You can install the released version of point</p>
-<div class="sourceCode" id="cb1"><pre class="r"><span class="co"># Install point from GitHub:</span>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Install point from GitHub:</span>
 <span class="co"># install.packages("devtools")</span>
-<span class="kw pkg">devtools</span><span class="kw ns">::</span><span class="fu"><a href="https://rdrr.io/pkg/devtools/man/remote-reexports.html">install_github</a></span>(<span class="st">"MartinSchobben/point"</span>)</pre></div>
+<span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span><span class="op">(</span><span class="st">"MartinSchobben/point"</span><span class="op">)</span></code></pre></div>
 </div>
 <div id="usage" class="section level2">
 <h2 class="hasAnchor">
 <a href="#usage" class="anchor"></a>Usage</h2>
 <p>Load point with <code>library</code>.</p>
-<div class="sourceCode" id="cb2"><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">point</span>)</pre></div>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va">point</span><span class="op">)</span></code></pre></div>
 </div>
 <div id="the-point-workflow" class="section level2">
 <h2 class="hasAnchor">
@@ -117,82 +119,69 @@
 <p>To read, process and analyse raw ion count data use the functions:</p>
 <ul>
 <li>
-<code>read_IC</code>: raw ion count data</li>
+<code><a href="reference/read_IC.html">read_IC()</a></code>: raw ion count data (Cameca NanoSIMS 50L)</li>
 <li>
-<code>cor_IC</code>: process ion count data</li>
+<code><a href="reference/cor_IC.html">cor_IC()</a></code>: process ion count data</li>
 <li>
-<code>stat_Xt</code>: analyse single ion count data</li>
+<code><a href="reference/stat_X.html">stat_X()</a></code>: analyse single ion count data</li>
 <li>
-<code>stat_R</code>: analyse ion ratios</li>
+<code><a href="reference/stat_X.html">stat_R()</a></code>: analyse ion ratios</li>
+<li>
+<code><a href="reference/diag_R.html">diag_R()</a></code>: diagnose ion ratios</li>
 </ul>
 </div>
 <div id="example-1-internal-precision-of-isotope-ratios" class="section level2">
 <h2 class="hasAnchor">
 <a href="#example-1-internal-precision-of-isotope-ratios" class="anchor"></a>Example 1: internal precision of isotope ratios</h2>
-<p>This is an example of how <em>Cameca NanoSIMS50L</em> raw data files can be extracted, processed and analysed for the <sup>13</sup>C/<sup>12</sup>C isotope ratio (<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=R%20%22R%22" alt="R">). This produces a <a href="https://tibble.tidyverse.org/">tibble</a> with descriptive and predictive (Poisson) statistics (demarcated with an <img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5C%5C%5Chat%7B%5C%5C%5Cphantom%7B%2C%7D%7D%20%22%5C%5C%5Chat%7B%5C%5C%5Cphantom%7B,%7D%7D%22" alt="\\\hat{\\\phantom{,}}">) of the ion count data. This can be done for single analysis in order to obtain internal precision.</p>
-<div class="sourceCode" id="cb3"><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">point</span>)
-<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">dplyr</span>) <span class="co"># for data manipulation</span>
-<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">stringr</span>) <span class="co"># character string manipulation</span></pre></div>
-<div class="sourceCode" id="cb4"><pre class="r"><span class="co"># Use point_example() to access the examples bundled with this package in the</span>
+<p>This is an example of how <em>Cameca NanoSIMS50L</em> raw data files can be extracted, processed and analysed for the <sup>13</sup>C/<sup>12</sup>C isotope ratio (<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=R%20%22R%22" alt="R">). This produces a <a href="https://tibble.tidyverse.org/">tibble</a> with descriptive and predictive (Poisson) statistics (demarcated with an ^) of the ion count data. This can be done for single analysis in order to obtain internal precision.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Use point_example() to access the examples bundled with this package in the</span>
 <span class="co"># inst/extdata directory.</span>
 
 <span class="co"># Raw data containing 13C and 12C counts on carbonate</span>
-<span class="no">tb.rw</span> <span class="kw">&lt;-</span> <span class="fu"><a href="reference/read_IC.html">read_IC</a></span>(<span class="fu"><a href="reference/point_example.html">point_example</a></span>(<span class="st">"2018-01-19-GLENDON"</span>))
+<span class="va">tb_rw</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/read_IC.html">read_IC</a></span><span class="op">(</span><span class="fu"><a href="reference/point_example.html">point_example</a></span><span class="op">(</span><span class="st">"2018-01-19-GLENDON"</span><span class="op">)</span><span class="op">)</span>
 
 <span class="co"># Processing raw ion count data</span>
-<span class="no">tb.pr</span> <span class="kw">&lt;-</span> <span class="fu"><a href="reference/cor_IC.html">cor_IC</a></span>(<span class="no">tb.rw</span>,
-                <span class="kw">N</span> <span class="kw">=</span> <span class="no">N.rw</span>,
-                <span class="kw">t</span> <span class="kw">=</span> <span class="no">t.rw</span>,
-                <span class="kw">Det</span> <span class="kw">=</span> <span class="no">det_type.mt</span>,
-                <span class="kw">deadtime</span> <span class="kw">=</span> <span class="fl">44</span>,
-                <span class="kw">thr_PHD</span> <span class="kw">=</span> <span class="fl">50</span>)
+<span class="va">tb_pr</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/cor_IC.html">cor_IC</a></span><span class="op">(</span><span class="va">tb_rw</span><span class="op">)</span>
 
-<span class="co"># Descriptive an predictive statistics for 13C/12C ratios</span>
-<span class="no">tb.R</span> <span class="kw">&lt;-</span> <span class="fu"><a href="reference/stat_Xt.html">stat_R</a></span>(<span class="no">tb.pr</span>,
-               <span class="kw">Xt</span> <span class="kw">=</span> <span class="no">Xt.pr</span>,
-               <span class="kw">N</span> <span class="kw">=</span> <span class="no">N.pr</span>,
-               <span class="kw">species</span> <span class="kw">=</span> <span class="no">species.nm</span>,
-               <span class="kw">ion1</span> <span class="kw">=</span> <span class="st">"13C"</span>,
-               <span class="kw">ion2</span> <span class="kw">=</span> <span class="st">"12C"</span>,
-               <span class="no">sample.nm</span>,
-               <span class="no">file.nm</span>,
-               <span class="kw">latex</span> <span class="kw">=</span> <span class="fl">TRUE</span>)</pre></div>
+<span class="co"># Internal precision for 13C/12C ratios</span>
+<span class="va">tb_R</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/stat_X.html">stat_R</a></span><span class="op">(</span><span class="va">tb_pr</span>, <span class="st">"13C"</span>, <span class="st">"12C"</span>, <span class="va">sample.nm</span>, <span class="va">file.nm</span>, .label <span class="op">=</span> <span class="st">"webtex"</span><span class="op">)</span></code></pre></div>
 <table class="table">
 <colgroup>
 <col width="1%">
 <col width="1%">
-<col width="22%">
+<col width="23%">
 <col width="3%">
 <col width="5%">
 <col width="4%">
-<col width="7%">
+<col width="6%">
 <col width="6%">
 <col width="8%">
 <col width="6%">
 <col width="8%">
 <col width="7%">
-<col width="10%">
-<col width="5%">
+<col width="9%">
+<col width="6%">
 </colgroup>
 <thead><tr class="header">
 <th align="left">sample.nm</th>
 <th align="left">file.nm</th>
-<th align="left">R</th>
+<th align="left">ratio.nm</th>
 <th align="right"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=n" title="n" alt="n"></th>
 <th align="right"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cbar%7BR%7D" title="\bar{R}" alt="\bar{R}"></th>
 <th align="right"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=s_%7BR%7D" title="s_{R}" alt="s_{R}"></th>
 <th align="right">
-<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cepsilon_%7BR%7D%20%5C%2C" title="\epsilon_{R} \," alt="\epsilon_{R} \,"> (‰)</th>
+<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cepsilon_%7BR%7D" title="\epsilon_{R}" alt="\epsilon_{R}"> (‰)</th>
 <th align="right"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=s_%7B%5Cbar%7BR%7D%7D" title="s_{\bar{R}}" alt="s_{\bar{R}}"></th>
 <th align="right">
-<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cepsilon_%7B%5Cbar%7BR%7D%7D%20%5C%2C" title="\epsilon_{\bar{R}} \," alt="\epsilon_{\bar{R}} \,"> (‰)</th>
+<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cepsilon_%7B%5Cbar%7BR%7D%7D" title="\epsilon_{\bar{R}}" alt="\epsilon_{\bar{R}}"> (‰)</th>
 <th align="right"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Chat%7Bs%7D_%7BR%7D" title="\hat{s}_{R}" alt="\hat{s}_{R}"></th>
 <th align="right">
-<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Chat%7B%5Cepsilon%7D_%7BR%7D%20%5C%2C" title="\hat{\epsilon}_{R} \," alt="\hat{\epsilon}_{R} \,"> (‰)</th>
+<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Chat%7B%5Cepsilon%7D_%7BR%7D" title="\hat{\epsilon}_{R}" alt="\hat{\epsilon}_{R}"> (‰)</th>
 <th align="right"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Chat%7Bs%7D_%7B%5Cbar%7BR%7D%7D" title="\hat{s}_{\bar{R}}" alt="\hat{s}_{\bar{R}}"></th>
 <th align="right">
-<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Chat%7B%5Cepsilon%7D_%7B%5Cbar%7BR%7D%7D%20%5C%2C" title="\hat{\epsilon}_{\bar{R}} \," alt="\hat{\epsilon}_{\bar{R}} \,"> (‰)</th>
-<th align="right"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cchi%5E%7B2%7D" title="\chi^{2}" alt="\chi^{2}"></th>
+<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Chat%7B%5Cepsilon%7D_%7B%5Cbar%7BR%7D%7D" title="\hat{\epsilon}_{\bar{R}}" alt="\hat{\epsilon}_{\bar{R}}"> (‰)</th>
+<th align="right"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cchi%5E%7B2%7D_%7BR%7D" title="\chi^{2}_{R}" alt="\chi^{2}_{R}"></th>
 </tr></thead>
 <tbody>
 <tr class="odd">
@@ -202,16 +191,16 @@
 <img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cphantom%7B%2C%7D%5E%7B13%7D" title="\phantom{,}^{13}" alt="\phantom{,}^{13}">C<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=_%7B%7D" title="_{}" alt="_{}">/<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cphantom%7B%2C%7D%5E%7B12%7D" title="\phantom{,}^{12}" alt="\phantom{,}^{12}">C<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=_%7B%7D" title="_{}" alt="_{}">
 </td>
 <td align="right">3900</td>
-<td align="right">0.01097</td>
-<td align="right">0.001020</td>
+<td align="right">0.011</td>
+<td align="right">0.001021</td>
 <td align="right">93.0</td>
 <td align="right">1.63e-05</td>
 <td align="right">1.49</td>
-<td align="right">0.001017</td>
+<td align="right">0.001019</td>
 <td align="right">92.8</td>
 <td align="right">1.63e-05</td>
 <td align="right">1.49</td>
-<td align="right">1.004</td>
+<td align="right">1.00</td>
 </tr>
 <tr class="even">
 <td align="left">Belemnite, Indium</td>
@@ -220,16 +209,16 @@
 <img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cphantom%7B%2C%7D%5E%7B13%7D" title="\phantom{,}^{13}" alt="\phantom{,}^{13}">C<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=_%7B%7D" title="_{}" alt="_{}">/<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cphantom%7B%2C%7D%5E%7B12%7D" title="\phantom{,}^{12}" alt="\phantom{,}^{12}">C<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=_%7B%7D" title="_{}" alt="_{}">
 </td>
 <td align="right">3900</td>
-<td align="right">0.01097</td>
-<td align="right">0.000777</td>
+<td align="right">0.011</td>
+<td align="right">0.000779</td>
 <td align="right">70.8</td>
-<td align="right">1.24e-05</td>
+<td align="right">1.25e-05</td>
 <td align="right">1.13</td>
-<td align="right">0.000769</td>
+<td align="right">0.000771</td>
 <td align="right">70.1</td>
 <td align="right">1.23e-05</td>
 <td align="right">1.12</td>
-<td align="right">1.020</td>
+<td align="right">1.02</td>
 </tr>
 <tr class="odd">
 <td align="left">Belemnite, Indium</td>
@@ -238,70 +227,16 @@
 <img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cphantom%7B%2C%7D%5E%7B13%7D" title="\phantom{,}^{13}" alt="\phantom{,}^{13}">C<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=_%7B%7D" title="_{}" alt="_{}">/<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cphantom%7B%2C%7D%5E%7B12%7D" title="\phantom{,}^{12}" alt="\phantom{,}^{12}">C<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=_%7B%7D" title="_{}" alt="_{}">
 </td>
 <td align="right">3900</td>
-<td align="right">0.01099</td>
-<td align="right">0.000731</td>
+<td align="right">0.011</td>
+<td align="right">0.000733</td>
 <td align="right">66.5</td>
 <td align="right">1.17e-05</td>
-<td align="right">1.07</td>
-<td align="right">0.000721</td>
+<td align="right">1.06</td>
+<td align="right">0.000722</td>
 <td align="right">65.5</td>
-<td align="right">1.15e-05</td>
+<td align="right">1.16e-05</td>
 <td align="right">1.05</td>
-<td align="right">1.030</td>
-</tr>
-<tr class="even">
-<td align="left">W12, Indium (W12_Indium_1_1)</td>
-<td align="left">2018-01-19-GLENDON_2_1</td>
-<td align="left">
-<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cphantom%7B%2C%7D%5E%7B13%7D" title="\phantom{,}^{13}" alt="\phantom{,}^{13}">C<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=_%7B%7D" title="_{}" alt="_{}">/<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cphantom%7B%2C%7D%5E%7B12%7D" title="\phantom{,}^{12}" alt="\phantom{,}^{12}">C<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=_%7B%7D" title="_{}" alt="_{}">
-</td>
-<td align="right">4000</td>
-<td align="right">0.01077</td>
-<td align="right">0.000759</td>
-<td align="right">70.5</td>
-<td align="right">1.20e-05</td>
-<td align="right">1.11</td>
-<td align="right">0.000759</td>
-<td align="right">70.5</td>
-<td align="right">1.20e-05</td>
-<td align="right">1.11</td>
-<td align="right">1.000</td>
-</tr>
-<tr class="odd">
-<td align="left">W12, Indium (W12_Indium_1_10)</td>
-<td align="left">2018-01-19-GLENDON_2_10</td>
-<td align="left">
-<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cphantom%7B%2C%7D%5E%7B13%7D" title="\phantom{,}^{13}" alt="\phantom{,}^{13}">C<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=_%7B%7D" title="_{}" alt="_{}">/<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cphantom%7B%2C%7D%5E%7B12%7D" title="\phantom{,}^{12}" alt="\phantom{,}^{12}">C<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=_%7B%7D" title="_{}" alt="_{}">
-</td>
-<td align="right">4000</td>
-<td align="right">0.00503</td>
-<td align="right">0.318830</td>
-<td align="right">63447.2</td>
-<td align="right">5.04e-03</td>
-<td align="right">1003.19</td>
-<td align="right">0.318614</td>
-<td align="right">63404.3</td>
-<td align="right">5.04e-03</td>
-<td align="right">1002.51</td>
-<td align="right">1.001</td>
-</tr>
-<tr class="even">
-<td align="left">W12, Indium (W12_Indium_1_10)</td>
-<td align="left">2018-01-19-GLENDON_3_1</td>
-<td align="left">
-<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cphantom%7B%2C%7D%5E%7B13%7D" title="\phantom{,}^{13}" alt="\phantom{,}^{13}">C<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=_%7B%7D" title="_{}" alt="_{}">/<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cphantom%7B%2C%7D%5E%7B12%7D" title="\phantom{,}^{12}" alt="\phantom{,}^{12}">C<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=_%7B%7D" title="_{}" alt="_{}">
-</td>
-<td align="right">4000</td>
-<td align="right">0.01094</td>
-<td align="right">0.000916</td>
-<td align="right">83.8</td>
-<td align="right">1.45e-05</td>
-<td align="right">1.32</td>
-<td align="right">0.000919</td>
-<td align="right">84.0</td>
-<td align="right">1.45e-05</td>
-<td align="right">1.33</td>
-<td align="right">0.996</td>
+<td align="right">1.03</td>
 </tr>
 </tbody>
 </table>
@@ -309,59 +244,45 @@
 <div id="example-2-external-precision-of-isotope-ratios" class="section level2">
 <h2 class="hasAnchor">
 <a href="#example-2-external-precision-of-isotope-ratios" class="anchor"></a>Example 2: external precision of isotope ratios</h2>
-<p>To calculate the external reproducibility of isotope ratios one needs to use the total ion counts and count rate of one analysis. The latter is equivalent to the mean ion count rate, which can be calculated with the function <code>stat_Xt</code>.</p>
-<div class="sourceCode" id="cb5"><pre class="r"><span class="co"># Single ion descriptive an predictive statistics for all measured ions</span>
-<span class="no">tb.Xt</span> <span class="kw">&lt;-</span> <span class="fu"><a href="reference/stat_Xt.html">stat_Xt</a></span>(<span class="no">tb.pr</span>,
-                 <span class="kw">Xt</span> <span class="kw">=</span> <span class="no">Xt.pr</span>,
-                 <span class="kw">N</span> <span class="kw">=</span> <span class="no">N.pr</span>,
-                 <span class="kw">species</span> <span class="kw">=</span> <span class="no">species.nm</span>,
-                 <span class="no">sample.nm</span>,
-                 <span class="no">file.nm</span>,
-                 <span class="kw">latex</span> <span class="kw">=</span> <span class="fl">FALSE</span>)
-
-<span class="co"># For this particular study a belemnite was used as reference material. </span>
-<span class="no">tb.R.ext</span>  <span class="kw">&lt;-</span> <span class="fu"><a href="reference/stat_Xt.html">stat_R</a></span>(<span class="no">tb.Xt</span>,
-                    <span class="kw">Xt</span> <span class="kw">=</span> <span class="no">M_Xt.pr</span>,
-                    <span class="kw">N</span> <span class="kw">=</span> <span class="no">Ntot_Xt.pr</span>,
-                    <span class="kw">species</span> <span class="kw">=</span> <span class="no">species.nm</span>,
-                    <span class="kw">ion1</span> <span class="kw">=</span> <span class="st">"13C"</span>,
-                    <span class="kw">ion2</span> <span class="kw">=</span> <span class="st">"12C"</span>,
-                    <span class="no">sample.nm</span>,
-                    <span class="kw">latex</span> <span class="kw">=</span> <span class="fl">TRUE</span>)</pre></div>
+<p>To calculate the external reproducibility of isotope ratios one needs to use the <code>.nest</code> argument to define sets of analyses.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># external precision for 13C/12C ratios</span>
+<span class="va">tb_R</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/stat_X.html">stat_R</a></span><span class="op">(</span><span class="va">tb_pr</span>, <span class="st">"13C"</span>, <span class="st">"12C"</span>, <span class="va">sample.nm</span>, <span class="va">file.nm</span>, .nest <span class="op">=</span> <span class="va">sample.nm</span>, 
+               .label <span class="op">=</span> <span class="st">"webtex"</span><span class="op">)</span></code></pre></div>
 <table class="table">
 <colgroup>
-<col width="1%">
-<col width="23%">
+<col width="0%">
+<col width="20%">
 <col width="3%">
+<col width="6%">
 <col width="5%">
-<col width="4%">
 <col width="7%">
 <col width="6%">
-<col width="9%">
+<col width="8%">
 <col width="6%">
+<col width="8%">
+<col width="8%">
 <col width="9%">
 <col width="7%">
-<col width="10%">
-<col width="5%">
 </colgroup>
 <thead><tr class="header">
 <th align="left">sample.nm</th>
-<th align="left">R</th>
+<th align="left">ratio.nm</th>
 <th align="right"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=n" title="n" alt="n"></th>
-<th align="right"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cbar%7BR%7D" title="\bar{R}" alt="\bar{R}"></th>
-<th align="right"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=s_%7BR%7D" title="s_{R}" alt="s_{R}"></th>
-<th align="right">
-<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cepsilon_%7BR%7D%20%5C%2C" title="\epsilon_{R} \," alt="\epsilon_{R} \,"> (‰)</th>
+<th align="right"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cbar%7B%5Cbar%7BR%7D%7D" title="\bar{\bar{R}}" alt="\bar{\bar{R}}"></th>
 <th align="right"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=s_%7B%5Cbar%7BR%7D%7D" title="s_{\bar{R}}" alt="s_{\bar{R}}"></th>
 <th align="right">
-<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cepsilon_%7B%5Cbar%7BR%7D%7D%20%5C%2C" title="\epsilon_{\bar{R}} \," alt="\epsilon_{\bar{R}} \,"> (‰)</th>
-<th align="right"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Chat%7Bs%7D_%7BR%7D" title="\hat{s}_{R}" alt="\hat{s}_{R}"></th>
+<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cepsilon_%7B%5Cbar%7BR%7D%7D" title="\epsilon_{\bar{R}}" alt="\epsilon_{\bar{R}}"> (‰)</th>
+<th align="right"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=s_%7B%5Cbar%7B%5Cbar%7BR%7D%7D%7D" title="s_{\bar{\bar{R}}}" alt="s_{\bar{\bar{R}}}"></th>
 <th align="right">
-<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Chat%7B%5Cepsilon%7D_%7BR%7D%20%5C%2C" title="\hat{\epsilon}_{R} \," alt="\hat{\epsilon}_{R} \,"> (‰)</th>
+<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cepsilon_%7B%5Cbar%7B%5Cbar%7BR%7D%7D%7D" title="\epsilon_{\bar{\bar{R}}}" alt="\epsilon_{\bar{\bar{R}}}"> (‰)</th>
 <th align="right"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Chat%7Bs%7D_%7B%5Cbar%7BR%7D%7D" title="\hat{s}_{\bar{R}}" alt="\hat{s}_{\bar{R}}"></th>
 <th align="right">
-<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Chat%7B%5Cepsilon%7D_%7B%5Cbar%7BR%7D%7D%20%5C%2C" title="\hat{\epsilon}_{\bar{R}} \," alt="\hat{\epsilon}_{\bar{R}} \,"> (‰)</th>
-<th align="right"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cchi%5E%7B2%7D" title="\chi^{2}" alt="\chi^{2}"></th>
+<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Chat%7B%5Cepsilon%7D_%7B%5Cbar%7BR%7D%7D" title="\hat{\epsilon}_{\bar{R}}" alt="\hat{\epsilon}_{\bar{R}}"> (‰)</th>
+<th align="right"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Chat%7Bs%7D_%7B%5Cbar%7B%5Cbar%7BR%7D%7D%7D" title="\hat{s}_{\bar{\bar{R}}}" alt="\hat{s}_{\bar{\bar{R}}}"></th>
+<th align="right">
+<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Chat%7B%5Cepsilon%7D_%7B%5Cbar%7B%5Cbar%7BR%7D%7D%7D" title="\hat{\epsilon}_{\bar{\bar{R}}}" alt="\hat{\epsilon}_{\bar{\bar{R}}}"> (‰)</th>
+<th align="right"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cchi%5E%7B2%7D_%7B%5Cbar%7BR%7D%7D" title="\chi^{2}_{\bar{R}}" alt="\chi^{2}_{\bar{R}}"></th>
 </tr></thead>
 <tbody><tr class="odd">
 <td align="left">Belemnite, Indium</td>
@@ -370,15 +291,15 @@
 </td>
 <td align="right">3</td>
 <td align="right">0.011</td>
-<td align="right">1.55e-05</td>
-<td align="right">1.41</td>
-<td align="right">8.9e-06</td>
-<td align="right">0.814</td>
+<td align="right">2.03e-05</td>
+<td align="right">1.85</td>
+<td align="right">1.17e-05</td>
+<td align="right">1.07</td>
 <td align="right">1.3e-05</td>
 <td align="right">1.18</td>
 <td align="right">7.5e-06</td>
 <td align="right">0.681</td>
-<td align="right">1.43</td>
+<td align="right">2.45</td>
 </tr></tbody>
 </table>
 <p>For more detailed information:</p>
@@ -389,38 +310,47 @@
 <h1 class="hasAnchor">
 <a href="#references" class="anchor"></a>References</h1>
 <div id="refs" class="references">
-<div id="ref-rmarkdown1">
-<p>Allaire, JJ, Yihui Xie, Jonathan McPherson, Javier Luraschi, Kevin Ushey, Aron Atkins, Hadley Wickham, Joe Cheng, Winston Chang, and Richard Iannone. 2020. <em>Rmarkdown: Dynamic Documents for R</em>. <a href="https://github.com/rstudio/rmarkdown" class="uri">https://github.com/rstudio/rmarkdown</a>.</p>
-</div>
 <div id="ref-magrittr">
-<p>Bache, Stefan Milton, and Hadley Wickham. 2014. <em>Magrittr: A Forward-Pipe Operator for R</em>. <a href="https://CRAN.R-project.org/package=magrittr" class="uri">https://CRAN.R-project.org/package=magrittr</a>.</p>
+<p>Bache, Stefan Milton, and Hadley Wickham. 2020. <em>Magrittr: A Forward-Pipe Operator for R</em>. <a href="https://CRAN.R-project.org/package=magrittr" class="uri">https://CRAN.R-project.org/package=magrittr</a>.</p>
+</div>
+<div id="ref-broom-mixed">
+<p>Bolker, Ben, and David Robinson. 2020. <em>Broom.mixed: Tidying Methods for Mixed Models</em>. <a href="http://github.com/bbolker/broom.mixed" class="uri">http://github.com/bbolker/broom.mixed</a>.</p>
 </div>
 <div id="ref-polyaAeppli">
 <p>Burden, Conrad. 2014. <em>PolyaAeppli: Implementation of the Polya-Aeppli Distribution</em>. <a href="https://CRAN.R-project.org/package=polyaAeppli" class="uri">https://CRAN.R-project.org/package=polyaAeppli</a>.</p>
 </div>
 <div id="ref-purrr">
-<p>Henry, Lionel, and Hadley Wickham. 2019. <em>Purrr: Functional Programming Tools</em>. <a href="https://CRAN.R-project.org/package=purrr" class="uri">https://CRAN.R-project.org/package=purrr</a>.</p>
+<p>Henry, Lionel, and Hadley Wickham. 2020a. <em>Purrr: Functional Programming Tools</em>. <a href="https://CRAN.R-project.org/package=purrr" class="uri">https://CRAN.R-project.org/package=purrr</a>.</p>
 </div>
 <div id="ref-rlang">
-<p>———. 2020. <em>Rlang: Functions for Base Types and Core R and ’Tidyverse’ Features</em>. <a href="https://CRAN.R-project.org/package=rlang" class="uri">https://CRAN.R-project.org/package=rlang</a>.</p>
+<p>———. 2020b. <em>Rlang: Functions for Base Types and Core R and Tidyverse Features</em>. <a href="https://CRAN.R-project.org/package=rlang" class="uri">https://CRAN.R-project.org/package=rlang</a>.</p>
 </div>
 <div id="ref-tibble">
-<p>Müller, Kirill, and Hadley Wickham. 2019. <em>Tibble: Simple Data Frames</em>. <a href="https://CRAN.R-project.org/package=tibble" class="uri">https://CRAN.R-project.org/package=tibble</a>.</p>
+<p>Müller, Kirill, and Hadley Wickham. 2021. <em>Tibble: Simple Data Frames</em>. <a href="https://CRAN.R-project.org/package=tibble" class="uri">https://CRAN.R-project.org/package=tibble</a>.</p>
+</div>
+<div id="ref-nlme">
+<p>Pinheiro, José, Douglas Bates, and R-core. 2021. <em>Nlme: Linear and Nonlinear Mixed Effects Models</em>. <a href="https://svn.r-project.org/R-packages/trunk/nlme/" class="uri">https://svn.r-project.org/R-packages/trunk/nlme/</a>.</p>
 </div>
 <div id="ref-rversion">
-<p>R Core Team. 2020. <em>R: A Language and Environment for Statistical Computing</em>. Vienna, Austria: R Foundation for Statistical Computing. <a href="https://www.R-project.org/" class="uri">https://www.R-project.org/</a>.</p>
+<p>R Core Team. 2021. <em>R: A Language and Environment for Statistical Computing</em>. Vienna, Austria: R Foundation for Statistical Computing. <a href="https://www.R-project.org/" class="uri">https://www.R-project.org/</a>.</p>
 </div>
-<div id="ref-testthat">
-<p>Wickham, Hadley. 2011. “Testthat: Get Started with Testing.” <em>The R Journal</em> 3: 5–10. <a href="https://journal.r-project.org/archive/2011-1/RJournal_2011-1_Wickham.pdf" class="uri">https://journal.r-project.org/archive/2011-1/RJournal_2011-1_Wickham.pdf</a>.</p>
+<div id="ref-broom">
+<p>Robinson, David, Alex Hayes, and Simon Couch. 2021. <em>Broom: Convert Statistical Objects into Tidy Tibbles</em>. <a href="https://CRAN.R-project.org/package=broom" class="uri">https://CRAN.R-project.org/package=broom</a>.</p>
 </div>
 <div id="ref-Wickham2015">
-<p>———. 2015. <em>R Packages: Organize, Test, Document, and Share Your Code</em>. O’Reilly Media, Inc.</p>
+<p>Wickham, Hadley. 2015. <em>R Packages: Organize, Test, Document, and Share Your Code</em>. O’Reilly Media, Inc. <a href="https://r-pkgs.org/" class="uri">https://r-pkgs.org/</a>.</p>
 </div>
-<div id="ref-ggplot2">
+<div id="ref-ggplot22016">
 <p>———. 2016. <em>Ggplot2: Elegant Graphics for Data Analysis</em>. Springer-Verlag New York. <a href="https://ggplot2.tidyverse.org" class="uri">https://ggplot2.tidyverse.org</a>.</p>
 </div>
 <div id="ref-stringr">
 <p>———. 2019. <em>Stringr: Simple, Consistent Wrappers for Common String Operations</em>. <a href="https://CRAN.R-project.org/package=stringr" class="uri">https://CRAN.R-project.org/package=stringr</a>.</p>
+</div>
+<div id="ref-testthat">
+<p>———. 2021a. <em>Testthat: Unit Testing for R</em>. <a href="https://CRAN.R-project.org/package=testthat" class="uri">https://CRAN.R-project.org/package=testthat</a>.</p>
+</div>
+<div id="ref-tidyr">
+<p>———. 2021b. <em>Tidyr: Tidy Messy Data</em>. <a href="https://CRAN.R-project.org/package=tidyr" class="uri">https://CRAN.R-project.org/package=tidyr</a>.</p>
 </div>
 <div id="ref-roxygen2">
 <p>Wickham, Hadley, Peter Danenberg, Gábor Csárdi, and Manuel Eugster.</p>
@@ -430,25 +360,31 @@
 </ol>
 </div>
 <div id="ref-dplyr">
-<p>Wickham, Hadley, Romain François, Lionel Henry, and Kirill Müller. 2019. <em>Dplyr: A Grammar of Data Manipulation</em>. <a href="https://CRAN.R-project.org/package=dplyr" class="uri">https://CRAN.R-project.org/package=dplyr</a>.</p>
-</div>
-<div id="ref-tidyr">
-<p>Wickham, Hadley, and Lionel Henry. 2019. <em>Tidyr: Tidy Messy Data</em>. <a href="https://CRAN.R-project.org/package=tidyr" class="uri">https://CRAN.R-project.org/package=tidyr</a>.</p>
-</div>
-<div id="ref-devtools">
-<p>Wickham, Hadley, Jim Hester, and Winston Chang. 2019. <em>Devtools: Tools to Make Developing R Packages Easier</em>. <a href="https://CRAN.R-project.org/package=devtools" class="uri">https://CRAN.R-project.org/package=devtools</a>.</p>
+<p>Wickham, Hadley, Romain François, Lionel Henry, and Kirill Müller. 2021. <em>Dplyr: A Grammar of Data Manipulation</em>. <a href="https://CRAN.R-project.org/package=dplyr" class="uri">https://CRAN.R-project.org/package=dplyr</a>.</p>
 </div>
 <div id="ref-readr">
-<p>Wickham, Hadley, Jim Hester, and Romain Francois. 2018. <em>Readr: Read Rectangular Text Data</em>. <a href="https://CRAN.R-project.org/package=readr" class="uri">https://CRAN.R-project.org/package=readr</a>.</p>
+<p>Wickham, Hadley, and Jim Hester. 2020. <em>Readr: Read Rectangular Text Data</em>. <a href="https://CRAN.R-project.org/package=readr" class="uri">https://CRAN.R-project.org/package=readr</a>.</p>
 </div>
-<div id="ref-knitr2">
-<p>Xie, Yihui. 2015. <em>Dynamic Documents with R and Knitr</em>. 2nd ed. Boca Raton, Florida: Chapman; Hall/CRC. <a href="https://yihui.org/knitr/" class="uri">https://yihui.org/knitr/</a>.</p>
+<div id="ref-devtools">
+<p>Wickham, Hadley, Jim Hester, and Winston Chang. 2020. <em>Devtools: Tools to Make Developing R Packages Easier</em>. <a href="https://CRAN.R-project.org/package=devtools" class="uri">https://CRAN.R-project.org/package=devtools</a>.</p>
 </div>
-<div id="ref-knitr1">
-<p>———. 2020. <em>Knitr: A General-Purpose Package for Dynamic Report Generation in R</em>. <a href="https://yihui.org/knitr/" class="uri">https://yihui.org/knitr/</a>.</p>
+<div id="ref-mgcv">
+<p>Wood, Simon. 2021. <em>Mgcv: Mixed Gam Computation Vehicle with Automatic Smoothness Estimation</em>. <a href="https://CRAN.R-project.org/package=mgcv" class="uri">https://CRAN.R-project.org/package=mgcv</a>.</p>
 </div>
-<div id="ref-rmarkdown2">
-<p>Xie, Yihui, J.J. Allaire, and Garrett Grolemund. 2018. <em>R Markdown: The Definitive Guide</em>. Boca Raton, Florida: Chapman; Hall/CRC. <a href="https://bookdown.org/yihui/rmarkdown" class="uri">https://bookdown.org/yihui/rmarkdown</a>.</p>
+<div id="ref-knitr2014">
+<p>Xie, Yihui. 2014. “Knitr: A Comprehensive Tool for Reproducible Research in R.” In <em>Implementing Reproducible Computational Research</em>, edited by Victoria Stodden, Friedrich Leisch, and Roger D. Peng. Chapman; Hall/CRC. <a href="http://www.crcpress.com/product/isbn/9781466561595" class="uri">http://www.crcpress.com/product/isbn/9781466561595</a>.</p>
+</div>
+<div id="ref-knitr2015">
+<p>———. 2015. <em>Dynamic Documents with R and Knitr</em>. 2nd ed. Boca Raton, Florida: Chapman; Hall/CRC. <a href="https://yihui.org/knitr/" class="uri">https://yihui.org/knitr/</a>.</p>
+</div>
+<div id="ref-bookdown2016">
+<p>———. 2016. <em>Bookdown: Authoring Books and Technical Documents with R Markdown</em>. Boca Raton, Florida: Chapman; Hall/CRC. <a href="https://github.com/rstudio/bookdown" class="uri">https://github.com/rstudio/bookdown</a>.</p>
+</div>
+<div id="ref-rmarkdown2018">
+<p>Xie, Yihui, J. J. Allaire, and Garrett Grolemund. 2018. <em>R Markdown: The Definitive Guide</em>. Boca Raton, Florida: Chapman; Hall/CRC. <a href="https://bookdown.org/yihui/rmarkdown" class="uri">https://bookdown.org/yihui/rmarkdown</a>.</p>
+</div>
+<div id="ref-rmarkdown2020">
+<p>Xie, Yihui, Christophe Dervieux, and Emily Riederer. 2020. <em>R Markdown Cookbook</em>. Boca Raton, Florida: Chapman; Hall/CRC. <a href="https://bookdown.org/yihui/rmarkdown-cookbook" class="uri">https://bookdown.org/yihui/rmarkdown-cookbook</a>.</p>
 </div>
 </div>
 </div>
@@ -487,7 +423,7 @@
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

@@ -1,7 +1,7 @@
 #' @rdname Cameca
 #'
 #' @export
-CV <- Rm <- norm_E <- CooksD <- QQ <- IR <- function(.IC, .ion1, .ion2, ...,
+CooksD <- CV <- Rm <- norm_E <- QQ <- IR <- function(.IC, .ion1, .ion2, ...,
   .X = Xt.pr, .t = t.nm, .output = "complete", .hyp = "none",
   .alpha_level = 0.05){
 

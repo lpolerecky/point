@@ -2,7 +2,7 @@
 % Please edit documentation in R/Cameca.R, R/CooksD.R
 \name{Cameca}
 \alias{Cameca}
-\alias{CV}
+\alias{CooksD}
 \title{Family of diagnostics functions for isotope count ratios}
 \usage{
 Cameca(
@@ -17,7 +17,7 @@ Cameca(
   .alpha_level = 0.05
 )
 
-CV(
+CooksD(
   .IC,
   .ion1,
   .ion2,

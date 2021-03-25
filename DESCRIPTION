@@ -1,7 +1,7 @@
 Package: point
 Type: Package
 Title: Reading, Processing, and Analysing Raw Ion Count Data
-Year: 2020
+Year: 2021
 Version: 0.0.0.9003
 Authors@R: 
     person(given = "Martin", 
@@ -10,7 +10,7 @@ Authors@R:
            role = "cre", 
            comment = c(ORCID = "0000-0001-8560-0037"))
 Maintainer: Martin Schobben <schobbenmartin@gmail.com>
-Description: The point functions provide a convenient way to work with and evaluate pulsed ion count data. The package offers solution to loading and collating raw ion count text files into a convenient dataframe (tibble). The core of the package revolves around correcting ion counts for systematic biases related to detection device and calculating of statistics to gaug the analytical precision. Finally, the package contain options to evaluate what factors might haved caused random variations that impair the precision.
+Description: The point functions provide a convenient way to work with, and evaluate pulsed ion count data. The package offers solution to loading and collating raw ion count text files into a convenient dataframe (tibble). The core of the package revolves around correcting ion counts for systematic biases related to detection device and calculating of statistics to gaug the analytical precision. Finally, the package contain options to evaluate what factors might haved caused random variations that impair the precision.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
@@ -30,7 +30,8 @@ Imports:
     nlme (>= 3.1),
     broom,
     MASS,
-    scales
+    scales,
+    pkgdown
 Suggests: 
     roxygen2,
     polyaAeppli (>= 2.0),

@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">point</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.0.9002</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.0.9003</span>
       </span>
     </div>
 
@@ -39,7 +39,7 @@
       <ul class="nav navbar-nav">
 <li>
   <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
+    <span class="fas fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -81,7 +81,18 @@
 
       
 
-      </header><div class="row">
+      </header><script src="IC-precision_files/jquery-1.11.3/jquery.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="IC-precision_files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet">
+<script src="IC-precision_files/bootstrap-3.3.5/js/bootstrap.min.js"></script><script src="IC-precision_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script><script src="IC-precision_files/bootstrap-3.3.5/shim/respond.min.js"></script><style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="IC-precision_files/navigation-1.1/tabsets.js"></script><script src="IC-precision_files/accessible-code-block-0.0.1/empty-anchor.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>IC-precision</h1>
@@ -98,13 +109,14 @@
 <div id="precision-of-ion-count-data" class="section level1">
 <h1 class="hasAnchor">
 <a href="#precision-of-ion-count-data" class="anchor"></a><span class="header-section-number">1</span> Precision of Ion Count Data</h1>
-<!-- Secondary ion mass spectrometry (SIMS) have become an increasingly popular tool for Earth scientists to investigate natural phenomena such as biomineralization and sediment diagenesis, or to track the fate of labelled tracers in stable isotope probing experiments.  -->
 <p>The random nature of secondary ions emitted from an analytical substrate (e.g. rock sample) during sputtering can be described by Poisson statistics, which can be used to predict the precision of pulsed ion counts (e.g. measurements with a <em>Cameca NanoSIMS 50L</em>) under ideal circumstances. More specifically, the variation can be deduced from the total counts of secondary ions. Usefully, we can compare these predictive values with the descriptive statistics; essentially estimates of the true population location (e.g. mean) and spread (variance). This requires the assumption that the sample is taken from an infinite population. In the package <code>point</code>, tools are provided that perform these statistical tests on raw ion count data with appropriate error propagation in the case of isotope ratios. Working with raw ion count data has certain benefits as it allows subsetting of certain parts of the analysis by checking for anomalous measurements. The latter is more detailed in the vignette <a href="IC-diagnostics.html">IC-diagnostics</a>, which itself heavily relies on the here outlined functions.</p>
-<div class="sourceCode" id="cb1"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">point</span>) <span class="co"># load package</span></pre></body></html></div>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va">point</span><span class="op">)</span> <span class="co"># load package</span></code></pre></div>
 <p>The following packages are used in the examples that follow.</p>
-<div class="sourceCode" id="cb2"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">dplyr</span>) <span class="co"># manipulating data</span>
-<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">purrr</span>) <span class="co"># functional programming</span>
-<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">stringr</span>) <span class="co"># manipulating strings</span></pre></body></html></div>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org">dplyr</a></span><span class="op">)</span> <span class="co"># manipulating data</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="http://purrr.tidyverse.org">purrr</a></span><span class="op">)</span> <span class="co"># functional programming</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="http://stringr.tidyverse.org">stringr</a></span><span class="op">)</span> <span class="co"># manipulating strings</span></code></pre></div>
 <div id="nomenclature" class="section level2">
 <h2 class="hasAnchor">
 <a href="#nomenclature" class="anchor"></a><span class="header-section-number">1.1</span> Nomenclature</h2>
@@ -123,38 +135,31 @@
 <h2 class="hasAnchor">
 <a href="#example-dataset" class="anchor"></a><span class="header-section-number">1.2</span> Example dataset</h2>
 <p>Example datatsets can be accessed as follows with the function <code>read_IC</code> (more information on reading raw ion count data can be found in the vignette <a href="IC-read.html">IC-read</a>).</p>
-<div class="sourceCode" id="cb3"><html><body><pre class="r"><span class="co"># Use point_example() to access the examples bundled with this package </span>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Use point_example() to access the examples bundled with this package </span>
 
-<span class="co"># Carry-out the routine point workflow</span>
-
+<span class="co"># Carry-out the routine point work-flow</span>
 <span class="co"># Raw data containing 13C and 12C counts on carbonate</span>
-<span class="no">tb.rw</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/read_IC.html">read_IC</a></span>(<span class="fu"><a href="../reference/point_example.html">point_example</a></span>(<span class="st">"2018-01-19-GLENDON"</span>))
+<span class="va">tb_rw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_IC.html">read_IC</a></span><span class="op">(</span><span class="fu"><a href="../reference/point_example.html">point_example</a></span><span class="op">(</span><span class="st">"2018-01-19-GLENDON"</span><span class="op">)</span>, hide <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>
 
 <span class="co"># Vectors of isotope ratios </span>
-<span class="no">ion1</span> <span class="kw">&lt;-</span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"13C"</span>, <span class="st">"12C 13C"</span>, <span class="st">"13C 14N"</span>, <span class="st">"12C 14N"</span>, <span class="st">"12C"</span>)
-<span class="no">ion2</span> <span class="kw">&lt;-</span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"12C"</span>, <span class="st">"12C2"</span>, <span class="st">"12C 14N"</span>, <span class="st">"40Ca 16O"</span>, <span class="st">"40Ca 16O"</span>)
+<span class="va">ion1</span> <span class="op">&lt;-</span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"13C"</span>, <span class="st">"12C 13C"</span>, <span class="st">"13C 14N"</span>, <span class="st">"12C 14N"</span>, <span class="st">"12C"</span><span class="op">)</span>
+<span class="va">ion2</span> <span class="op">&lt;-</span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"12C"</span>, <span class="st">"12C2"</span>, <span class="st">"12C 14N"</span>, <span class="st">"40Ca 16O"</span>, <span class="st">"40Ca 16O"</span><span class="op">)</span>
 
 <span class="co"># Call function over vectors</span>
-<span class="no">tb.rw</span> <span class="kw">&lt;-</span> <span class="kw pkg">purrr</span><span class="kw ns">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map2.html">map2</a></span>(<span class="no">ion1</span>, <span class="no">ion2</span>, ~<span class="fu"><a href="../reference/zeroCt.html">zeroCt</a></span>(<span class="no">tb.rw</span>,
-                                         <span class="no">N.rw</span>, <span class="no">species.nm</span>,
-                                         <span class="no">.x</span>, <span class="no">.y</span>, <span class="no">file.nm</span>,
-                                         <span class="kw">warn</span> <span class="kw">=</span> <span class="fl">FALSE</span>)) <span class="kw">%&gt;%</span>
+<span class="va">tb_rw</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map2.html">map2</a></span><span class="op">(</span><span class="va">ion1</span>, <span class="va">ion2</span>, <span class="op">~</span><span class="fu"><a href="../reference/zeroCt.html">zeroCt</a></span><span class="op">(</span><span class="va">tb_rw</span>, <span class="va">.x</span>, <span class="va">.y</span>, <span class="va">file.nm</span>, <span class="va">sample.nm</span>, .N <span class="op">=</span> <span class="va">N.rw</span><span class="op">)</span><span class="op">)</span> 
 <span class="co"># Combine but remove duplicate observations (related isotope pairs)  </span>
-           <span class="kw pkg">purrr</span><span class="kw ns">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/reduce.html">reduce</a></span>(<span class="no">.</span> , <span class="no">union</span>)</pre></body></html></div>
+<span class="va">tb_rw</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/reduce.html">reduce</a></span><span class="op">(</span><span class="va">tb_rw</span>, <span class="va">union</span><span class="op">)</span>  </code></pre></div>
 <p>The ion counts obtained from the 2018-01-19-GLENDON dataset includes the species: <span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>, <span class="math inline">\(\phantom{,}^{13}\)</span>C<span class="math inline">\(_{}\)</span>, <span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>–<span class="math inline">\(\phantom{,}^{14}\)</span>N<span class="math inline">\(_{}\)</span>, <span class="math inline">\(\phantom{,}^{40}\)</span>Ca<span class="math inline">\(_{}\)</span>–<span class="math inline">\(\phantom{,}^{16}\)</span>O<span class="math inline">\(_{}\)</span>, of which some are poly-atomic.</p>
 <p>As a first step, the counts of a single count cycle (<span class="math inline">\(N_i\)</span>) are normalised against the time it took to complete the cycle (<span class="math inline">\(0.541\)</span> s) to account for differences in the count times for two different isotopes during stable isotopic SIMS analysis. Hence, for the time period (<span class="math inline">\(t\)</span>) over which an isotope species <span class="math inline">\(a\)</span> during measurement <span class="math inline">\(i\)</span> accumulated, the count rate is given by</p>
 <p><span class="math display" id="eq:Nrate">\[\begin{equation}
   X_i^{a} = N_i^{a} / t_i^{a}
   \tag{1.1}
 \end{equation}\]</span></p>
-<p>The function <code>cor_IC</code> can perform this transformation.</p>
-<div class="sourceCode" id="cb4"><html><body><pre class="r"><span class="co"># Processing raw ion count data</span>
-<span class="no">tb.pr</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/cor_IC.html">cor_IC</a></span>(<span class="no">tb.rw</span>,
-                <span class="kw">N</span> <span class="kw">=</span> <span class="no">N.rw</span>,
-                <span class="kw">t</span> <span class="kw">=</span> <span class="no">t.rw</span>,
-                <span class="kw">Det</span> <span class="kw">=</span> <span class="no">det_type.mt</span>,
-                <span class="kw">deadtime</span> <span class="kw">=</span> <span class="fl">0</span>,
-                <span class="kw">thr</span> <span class="kw">=</span> <span class="fl">0</span>)</pre></body></html></div>
+<p>The function <code><a href="../reference/cor_IC.html">cor_IC()</a></code> can perform this transformation.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Processing raw ion count data</span>
+<span class="va">tb_pr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cor_IC.html">cor_IC</a></span><span class="op">(</span><span class="va">tb_rw</span><span class="op">)</span></code></pre></div>
 <p>This function can also correct the ion counts for effects associated with the machine setup, such as, artifacts induced by the ion detector type. These settings mostly affect the accuracy of the analysis. For more information on this topic see the vignette <a href="IC-process.html">IC-process</a>.</p>
 </div>
 <div id="internal-precision-of-ion-count-data" class="section level2">
@@ -164,100 +169,102 @@
 <div id="descriptive-and-predictive-statistics-for-single-ions" class="section level3">
 <h3 class="hasAnchor">
 <a href="#descriptive-and-predictive-statistics-for-single-ions" class="anchor"></a><span class="header-section-number">1.3.1</span> Descriptive and predictive statistics for single ions</h3>
-<p>The function <code>stat_Xt</code> can be applied to the previously processed dataset and gives descriptive and predictive statistics of all the individual ions. The function requires the following arguments: <code>df</code>, which is a <a href="https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html">tibble</a> containing the processed ion count data; <code>Xt</code>, which refers to the column in the tibble containing the ion count rates; <code>N</code>, are the counts; and <code>species</code>, which refers to the column containing a reference for the chemical species under investigation. The dots <code>...</code> should be used to define a grouping variable for an analysis (here defined as the sample- and file-names of the loaded data). In addition, it is possible to choose whether the variable names can be rendered with <span class="math inline">\(\LaTeX\)</span>; and whether to create a <code>tibble</code> that contains only statistics as a summary table <code>"sum"</code>; a <code>tibble</code> with the same number of observations as the input dataset <code>"stat"</code>; or return a <code>tibble</code> complete with both the statistics and the original dataset.</p>
-<div class="sourceCode" id="cb5"><html><body><pre class="r"><span class="co"># Single ion descriptive an predictive statistics for all measured ions</span>
-<span class="no">tb.Xt</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/stat_Xt.html">stat_Xt</a></span>(<span class="no">tb.pr</span>,
-                 <span class="kw">Xt</span> <span class="kw">=</span> <span class="no">Xt.pr</span>,
-                 <span class="kw">N</span> <span class="kw">=</span> <span class="no">N.pr</span>,
-                 <span class="kw">species</span> <span class="kw">=</span> <span class="no">species.nm</span>,
-                 <span class="no">sample.nm</span>,
-                 <span class="no">file.nm</span>,
-                 <span class="kw">latex</span> <span class="kw">=</span> <span class="fl">TRUE</span>,
-                 <span class="kw">output</span> <span class="kw">=</span> <span class="st">"sum"</span>)</pre></body></html></div>
+<p>The function <code><a href="../reference/stat_X.html">stat_X()</a></code> can be applied to the previously processed dataset and gives descriptive and predictive statistics of all the individual ions. The function requires the following arguments: <code>.IC</code>, which is a <a href="https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html">tibble</a> containing the processed ion counts (<code>N.pr</code> by default), ion count rates (<code>X.pr</code> by default), the ion species name (<code>species.nm</code> by default), and the time increments of the measurement (<code>t.nm</code> by default). The dots <code>...</code> should be used to define a grouping variable for identifying e.g. individual analysis (here defined as the <code>sample.nm</code> and <code>file.nm</code> names of the loaded data). In addition, it is possible to choose whether the variable names can be rendered with <span class="math inline">\(\LaTeX\)</span>; and whether to create a <code>tibble</code> that contains only statistics as a summary table <code>"sum"</code>; a <code>tibble</code> with the same number of observations as the input dataset <code>"stat"</code>; or return a <code>tibble</code> complete with both the statistics and the original dataset <code>"complete"</code>. Lastly one can decide to only produce a subset of statistic transformations with <code>.stat</code>. The overview of avalaible statistical transformations can be found in <code>names_stat_X</code></p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Single ion descriptive an predictive statistics for all measured ions</span>
+<span class="va">tb_X</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stat_X.html">stat_X</a></span><span class="op">(</span><span class="va">tb_pr</span>, <span class="va">sample.nm</span>, <span class="va">file.nm</span>, .stat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"tot"</span>, <span class="st">"M"</span>, <span class="st">"S"</span>, <span class="st">"SeM"</span><span class="op">)</span>, 
+               .label <span class="op">=</span> <span class="st">"webtex"</span><span class="op">)</span></code></pre></div>
 <table class="table">
 <caption>
-<span id="tab:unnamed-chunk-5">Table 1.1: </span>Summary statistics for internal precision of single ions with stat_Xt.</caption>
+<span id="tab:unnamed-chunk-5">Table 1.1: </span>Summary statistics for internal precision of single ions with <code><a href="../reference/stat_X.html">stat_X()</a></code>.</caption>
+<colgroup>
+<col width="13%">
+<col width="17%">
+<col width="38%">
+<col width="7%">
+<col width="7%">
+<col width="5%">
+<col width="10%">
+</colgroup>
 <thead><tr class="header">
 <th align="left">sample.nm</th>
 <th align="left">file.nm</th>
-<th align="right"><span class="math inline">\(n\)</span></th>
+<th align="left">species.nm</th>
 <th align="right"><span class="math inline">\(N_{tot}\)</span></th>
 <th align="right"><span class="math inline">\(\bar{X}\)</span></th>
-<th align="right"><span class="math inline">\(s_X\)</span></th>
-<th align="right"><span class="math inline">\(s_\bar{X}\)</span></th>
-<th align="right"><span class="math inline">\(\hat{s}_N\)</span></th>
-<th align="right"><span class="math inline">\(\hat{s}_\bar{N}\)</span></th>
+<th align="right"><span class="math inline">\(s_{X}\)</span></th>
+<th align="right"><span class="math inline">\(s_{\bar{X}}\)</span></th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td align="left">Belemnite, Indium</td>
 <td align="left">2018-01-19-GLENDON_1_1</td>
-<td align="right">3900</td>
+<td align="left">
+<span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>
+</td>
 <td align="right">41718475</td>
 <td align="right">30651</td>
 <td align="right">2741.2</td>
 <td align="right">43.894</td>
-<td align="right">6459</td>
-<td align="right">103.43</td>
 </tr>
 <tr class="even">
 <td align="left">Belemnite, Indium</td>
 <td align="left">2018-01-19-GLENDON_1_1</td>
-<td align="right">3900</td>
+<td align="left">
+<span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>–<span class="math inline">\(\phantom{,}^{14}\)</span>N<span class="math inline">\(_{}\)</span>
+</td>
 <td align="right">511093</td>
 <td align="right">375</td>
 <td align="right">220.6</td>
 <td align="right">3.532</td>
-<td align="right">715</td>
-<td align="right">11.45</td>
 </tr>
 <tr class="odd">
 <td align="left">Belemnite, Indium</td>
 <td align="left">2018-01-19-GLENDON_1_1</td>
-<td align="right">3900</td>
+<td align="left">
+<span class="math inline">\(\phantom{,}^{13}\)</span>C<span class="math inline">\(_{}\)</span>
+</td>
 <td align="right">458139</td>
 <td align="right">337</td>
 <td align="right">42.5</td>
 <td align="right">0.681</td>
-<td align="right">677</td>
-<td align="right">10.84</td>
 </tr>
 <tr class="even">
 <td align="left">Belemnite, Indium</td>
 <td align="left">2018-01-19-GLENDON_1_1</td>
-<td align="right">3900</td>
+<td align="left">
+<span class="math inline">\(\phantom{,}^{40}\)</span>Ca<span class="math inline">\(_{}\)</span>–<span class="math inline">\(\phantom{,}^{16}\)</span>O<span class="math inline">\(_{}\)</span>
+</td>
 <td align="right">18082538</td>
 <td align="right">13285</td>
 <td align="right">1858.1</td>
 <td align="right">29.754</td>
-<td align="right">4252</td>
-<td align="right">68.09</td>
 </tr>
 <tr class="odd">
 <td align="left">Belemnite, Indium</td>
 <td align="left">2018-01-19-GLENDON_1_2</td>
-<td align="right">3900</td>
+<td align="left">
+<span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>
+</td>
 <td align="right">72956119</td>
 <td align="right">53601</td>
 <td align="right">4077.5</td>
 <td align="right">65.291</td>
-<td align="right">8541</td>
-<td align="right">136.77</td>
 </tr>
 <tr class="even">
 <td align="left">Belemnite, Indium</td>
 <td align="left">2018-01-19-GLENDON_1_2</td>
-<td align="right">3900</td>
+<td align="left">
+<span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>–<span class="math inline">\(\phantom{,}^{14}\)</span>N<span class="math inline">\(_{}\)</span>
+</td>
 <td align="right">362709</td>
 <td align="right">266</td>
 <td align="right">114.3</td>
 <td align="right">1.831</td>
-<td align="right">602</td>
-<td align="right">9.64</td>
 </tr>
 </tbody>
 </table>
-<p>The following statistics are calculated with the function <code>stat_Xt</code>: the number of measurements (<span class="math inline">\(n\)</span>), total number of counts (<span class="math inline">\(N_{tot} = \sum_{i=1}^{n}N_i\)</span>), the arithmetic mean (<span class="math inline">\(\bar{X}\)</span>), the standard deviation (<span class="math inline">\(s_X\)</span>), the standard error of the mean (<span class="math inline">\(s_{\bar{X}}\)</span>), the predicted standard deviation (<span class="math inline">\(\hat{s}_X\)</span>), and the predicted standard error of the mean (<span class="math inline">\(\hat{s}_{\bar{X}}\)</span>) for which the underlying principals are delineated in detail below.</p>
+<p>The underlying principals for the statistics calculated with the function <code><a href="../reference/stat_X.html">stat_X()</a></code> are delineated in detail below.</p>
 <div id="arithmetic-mean" class="section level4">
 <h4 class="hasAnchor">
 <a href="#arithmetic-mean" class="anchor"></a><span class="header-section-number">1.3.1.1</span> Arithmetic mean</h4>
@@ -281,7 +288,7 @@
 <div id="standard-error-of-the-mean" class="section level4">
 <h4 class="hasAnchor">
 <a href="#standard-error-of-the-mean" class="anchor"></a><span class="header-section-number">1.3.1.3</span> Standard error of the mean</h4>
-<p>The standard error of the mean (<span class="math inline">\(s_{\bar{X}^a}\)</span>) provides a measure of how well the mean of a limited sample (i.e., analysis) approximates the actual population mean. This measure can be used to gauge the precision of the analysis with <span class="math inline">\(n\)</span> measurement cycles. This value is dependent on the number of measurements (<span class="math inline">\(n\)</span>) and thus becomes smaller with increasing measurement numbers (i.e. <span class="math inline">\(\bar{X}\)</span> becomes more precise). The standard error of the mean is given by the following equation.</p>
+<p>The standard error of the mean (<span class="math inline">\(s_{\bar{X}^a}\)</span>) provides a measure of how well the mean of a limited sample (i.e., analysis) approximates the actual population mean. This measure can be used to gauge the precision of the analysis with <span class="math inline">\(n\)</span> measurement cycles. This value is dependent on the number of measurements (<span class="math inline">\(n\)</span>) and thus becomes smaller with increasing measurement numbers (i.e. <span class="math inline">\(\bar{X}\)</span> becomes more precise). The standard error of the mean is given by the following equation.</p>
 <p><span class="math display" id="eq:se">\[\begin{equation}
   s_{\bar{X}^a} = \frac{s_{X^a}}{\sqrt{n}}
   \tag{1.4}
@@ -321,41 +328,39 @@
 <div id="descriptive-and-predictive-statistics-for-isotope-ratios" class="section level3">
 <h3 class="hasAnchor">
 <a href="#descriptive-and-predictive-statistics-for-isotope-ratios" class="anchor"></a><span class="header-section-number">1.3.2</span> Descriptive and predictive statistics for isotope ratios</h3>
-<p>The function <code>stat_R</code> can be used on the previously processed dataset and gives descriptive and predictive statistics for a pre-specified isotope ratio (<span class="math inline">\(R\)</span>); e.g. <span class="math inline">\(^{13}\)</span>C/<span class="math inline">\(^{12}\)</span>C. Note that only isotope pairs give sensible statistical results as the ionization potential for two isotope of one element should be relatively similar. The function requires the following arguments; <code>df</code>, which is a tibble containing the ion count data; <code>Xt</code>, which is the column in the tibble containing the ion count rates; <code>N</code>, which is column with the processed counts; <code>species</code>, which refers to the column containing a reference for the chemical species under investigation; <code>ion1</code>, a character string representing the heavy ion of <span class="math inline">\(R\)</span> (e.g. <code>"13C"</code>); and <code>ion2</code>, the light isotope of <span class="math inline">\(R\)</span> (e.g. <code>"12C"</code>). The dots <code>...</code> should be used to define a grouping variable for an analysis (here defined as the sample- and file-names of the loaded data). Again for this function, the arguments <code>latex</code> and <code>output</code> tailor the generated <code>tibble</code> to the specific need; and follows the same definitions as outlined for <code>stat_Xt</code> (see above). This function has on additional argument named <code>zero</code>, which removes analysis that contain measurements with zero counts, and prevents the generation of <code>NaN</code> in the output statistics.</p>
-<div class="sourceCode" id="cb6"><html><body><pre class="r"><span class="co"># Descriptive an predictive statistics for 13C/12C ratios</span>
-<span class="no">tb.R</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/stat_Xt.html">stat_R</a></span>(<span class="no">tb.pr</span>,
-               <span class="kw">Xt</span> <span class="kw">=</span> <span class="no">Xt.pr</span>,
-               <span class="kw">N</span> <span class="kw">=</span> <span class="no">N.pr</span>,
-               <span class="kw">species</span> <span class="kw">=</span> <span class="no">species.nm</span>,
-               <span class="kw">ion1</span> <span class="kw">=</span> <span class="st">"13C"</span>,
-               <span class="kw">ion2</span> <span class="kw">=</span> <span class="st">"12C"</span>,
-               <span class="no">sample.nm</span>,
-               <span class="no">file.nm</span>,
-               <span class="kw">latex</span> <span class="kw">=</span> <span class="fl">TRUE</span>,
-               <span class="kw">output</span> <span class="kw">=</span> <span class="st">"sum"</span>,
-               <span class="kw">zero</span> <span class="kw">=</span> <span class="fl">TRUE</span>)</pre></body></html></div>
+<p>The function <code><a href="../reference/stat_X.html">stat_R()</a></code> can be used on the previously processed dataset and gives descriptive and predictive statistics for a pre-specified isotope ratio (<span class="math inline">\(R\)</span>); e.g. <span class="math inline">\(^{13}\)</span>C/<span class="math inline">\(^{12}\)</span>C. Note that only isotope pairs give sensible statistical results as the ionization potential for two isotope of one element should be relatively similar. The function requires the following arguments; the ion count data (<code>.IC</code>) in a tibble as outlined for <code><a href="../reference/stat_X.html">stat_X()</a></code>, but now also <code>.ion1</code>, a character string representing the rare isotope (e.g. <code>"13C"</code>); and <code>.ion2</code>, the common isotope (e.g. <code>"12C"</code>) are required. The dots <code>...</code> should again be used to define a grouping variable for an analysis (here defined as the sample- and file-names of the loaded data). Again for this function, the arguments <code>.label</code> and <code>.output</code> tailor the generated <code>tibble</code> to the specific needs; and follows the same definitions as outlined for <code><a href="../reference/stat_X.html">stat_X()</a></code> (see above). This function has an additional argument named <code>.zero</code> (default is <code>TRUE</code>), which removes analysis that contain measurements with zero counts, but generates a warning to inform about this operation. Setting <code>.zero</code> to <code>TRUE</code> prevents the generation of <code>NaN</code> in the output statistics be division through zero.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Descriptive an predictive statistics for 13C/12C ratios</span>
+<span class="va">tb_R</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stat_X.html">stat_R</a></span><span class="op">(</span><span class="va">tb_pr</span>, <span class="st">"13C"</span>, <span class="st">"12C"</span>, <span class="va">sample.nm</span>, <span class="va">file.nm</span>, .label <span class="op">=</span> <span class="st">"webtex"</span>, 
+               .stat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"M"</span>, <span class="st">"RS"</span>, <span class="st">"RSeM"</span>, <span class="st">"hat_RS"</span>, <span class="st">"hat_RSeM"</span>, <span class="st">"chi2"</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <table class="table">
 <caption>
-<span id="tab:unnamed-chunk-7">Table 1.2: </span>Summary statistics for internal precision of isotope ratios with stat_R.</caption>
+<span id="tab:unnamed-chunk-7">Table 1.2: </span>Summary statistics for internal precision of isotope ratios with <code><a href="../reference/stat_X.html">stat_R()</a></code>.</caption>
+<colgroup>
+<col width="8%">
+<col width="10%">
+<col width="23%">
+<col width="4%">
+<col width="8%">
+<col width="11%">
+<col width="11%">
+<col width="14%">
+<col width="6%">
+</colgroup>
 <thead><tr class="header">
 <th align="left">sample.nm</th>
 <th align="left">file.nm</th>
-<th align="left">R</th>
-<th align="right"><span class="math inline">\(n\)</span></th>
+<th align="left">ratio.nm</th>
 <th align="right"><span class="math inline">\(\bar{R}\)</span></th>
-<th align="right"><span class="math inline">\(s_{R}\)</span></th>
 <th align="right">
-<span class="math inline">\(\epsilon_{R} \,\)</span> (‰)</th>
-<th align="right"><span class="math inline">\(s_{\bar{R}}\)</span></th>
+<span class="math inline">\(\epsilon_{R}\)</span> (‰)</th>
 <th align="right">
-<span class="math inline">\(\epsilon_{\bar{R}} \,\)</span> (‰)</th>
-<th align="right"><span class="math inline">\(\hat{s}_{R}\)</span></th>
+<span class="math inline">\(\epsilon_{\bar{R}}\)</span> (‰)</th>
 <th align="right">
-<span class="math inline">\(\hat{\epsilon}_{R} \,\)</span> (‰)</th>
-<th align="right"><span class="math inline">\(\hat{s}_{\bar{R}}\)</span></th>
+<span class="math inline">\(\hat{\epsilon}_{R}\)</span> (‰)</th>
 <th align="right">
-<span class="math inline">\(\hat{\epsilon}_{\bar{R}} \,\)</span> (‰)</th>
-<th align="right"><span class="math inline">\(\chi^{2}\)</span></th>
+<span class="math inline">\(\hat{\epsilon}_{\bar{R}}\)</span> (‰)</th>
+<th align="right"><span class="math inline">\(\chi^{2}_{R}\)</span></th>
 </tr></thead>
 <tbody>
 <tr class="odd">
@@ -364,17 +369,12 @@
 <td align="left">
 <span class="math inline">\(\phantom{,}^{13}\)</span>C<span class="math inline">\(_{}\)</span>/<span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>
 </td>
-<td align="right">3900</td>
-<td align="right">0.0110</td>
-<td align="right">0.001021</td>
+<td align="right">0.011</td>
 <td align="right">93.0</td>
-<td align="right">1.63e-05</td>
 <td align="right">1.49</td>
-<td align="right">0.001019</td>
 <td align="right">92.8</td>
-<td align="right">1.63e-05</td>
 <td align="right">1.49</td>
-<td align="right">1.004</td>
+<td align="right">1.00</td>
 </tr>
 <tr class="even">
 <td align="left">Belemnite, Indium</td>
@@ -382,17 +382,12 @@
 <td align="left">
 <span class="math inline">\(\phantom{,}^{13}\)</span>C<span class="math inline">\(_{}\)</span>/<span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>
 </td>
-<td align="right">3900</td>
-<td align="right">0.0110</td>
-<td align="right">0.000779</td>
+<td align="right">0.011</td>
 <td align="right">70.8</td>
-<td align="right">1.25e-05</td>
 <td align="right">1.13</td>
-<td align="right">0.000771</td>
 <td align="right">70.1</td>
-<td align="right">1.23e-05</td>
 <td align="right">1.12</td>
-<td align="right">1.020</td>
+<td align="right">1.02</td>
 </tr>
 <tr class="odd">
 <td align="left">Belemnite, Indium</td>
@@ -400,75 +395,16 @@
 <td align="left">
 <span class="math inline">\(\phantom{,}^{13}\)</span>C<span class="math inline">\(_{}\)</span>/<span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>
 </td>
-<td align="right">3900</td>
-<td align="right">0.0110</td>
-<td align="right">0.000733</td>
+<td align="right">0.011</td>
 <td align="right">66.5</td>
-<td align="right">1.17e-05</td>
 <td align="right">1.06</td>
-<td align="right">0.000722</td>
 <td align="right">65.5</td>
-<td align="right">1.16e-05</td>
 <td align="right">1.05</td>
-<td align="right">1.029</td>
-</tr>
-<tr class="even">
-<td align="left">W12, Indium (W12_Indium_1_1)</td>
-<td align="left">2018-01-19-GLENDON_2_1</td>
-<td align="left">
-<span class="math inline">\(\phantom{,}^{13}\)</span>C<span class="math inline">\(_{}\)</span>/<span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>
-</td>
-<td align="right">4000</td>
-<td align="right">0.0108</td>
-<td align="right">0.000761</td>
-<td align="right">70.5</td>
-<td align="right">1.20e-05</td>
-<td align="right">1.11</td>
-<td align="right">0.000761</td>
-<td align="right">70.5</td>
-<td align="right">1.20e-05</td>
-<td align="right">1.11</td>
-<td align="right">1.000</td>
-</tr>
-<tr class="odd">
-<td align="left">W12, Indium (W12_Indium_1_10)</td>
-<td align="left">2018-01-19-GLENDON_3_1</td>
-<td align="left">
-<span class="math inline">\(\phantom{,}^{13}\)</span>C<span class="math inline">\(_{}\)</span>/<span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>
-</td>
-<td align="right">4000</td>
-<td align="right">0.0110</td>
-<td align="right">0.000918</td>
-<td align="right">83.7</td>
-<td align="right">1.45e-05</td>
-<td align="right">1.32</td>
-<td align="right">0.000920</td>
-<td align="right">84.0</td>
-<td align="right">1.45e-05</td>
-<td align="right">1.33</td>
-<td align="right">0.995</td>
-</tr>
-<tr class="even">
-<td align="left">W12, Indium (W12_Indium_1_11)</td>
-<td align="left">2018-01-19-GLENDON_3_2</td>
-<td align="left">
-<span class="math inline">\(\phantom{,}^{13}\)</span>C<span class="math inline">\(_{}\)</span>/<span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>
-</td>
-<td align="right">4000</td>
-<td align="right">0.0108</td>
-<td align="right">0.000733</td>
-<td align="right">68.0</td>
-<td align="right">1.16e-05</td>
-<td align="right">1.08</td>
-<td align="right">0.000724</td>
-<td align="right">67.2</td>
-<td align="right">1.15e-05</td>
-<td align="right">1.06</td>
-<td align="right">1.024</td>
+<td align="right">1.03</td>
 </tr>
 </tbody>
 </table>
-<p>The following statistics are calculated with the function <code>stat_R</code> for a specific isotope ratio: number of measurements (<span class="math inline">\(n\)</span>); the arithmetic mean (<span class="math inline">\(\bar{R}\)</span>); the standard deviation and relative standard deviation (<span class="math inline">\(s_R\)</span> and <span class="math inline">\(\epsilon_R\)</span>); the standard error of the mean and its relative counterpart (<span class="math inline">\(s_{\bar{R}}\)</span> and <span class="math inline">\(\epsilon_{\bar{R}}\)</span>), the predicted standard deviation and the predicted relative standard deviation (<span class="math inline">\(\hat{s}_R\)</span> and <span class="math inline">\(\hat{\epsilon}_R\)</span>); and the predicted standard error of the mean and its relative counterpart (<span class="math inline">\(\hat{s}_{\bar{X}}\)</span> and <span class="math inline">\(\hat{\epsilon}_{\bar{R}}\)</span>); as well as the reduced <span class="math inline">\(\chi^2\)</span>-squared, for which the underlying principals are delineated in detail below.</p>
+<p>The underlying principals are again delineated in detail below.</p>
 <div id="descriptive-statistics-with-error-propagation-for-isotope-ratios" class="section level4">
 <h4 class="hasAnchor">
 <a href="#descriptive-statistics-with-error-propagation-for-isotope-ratios" class="anchor"></a><span class="header-section-number">1.3.2.1</span> Descriptive statistics with error propagation for isotope ratios</h4>
@@ -477,7 +413,7 @@
   \bar{R} = \frac{\frac{1}{n}\sum_{i = 1}^{n} X_i^{b}}{\frac{1}{n}\sum_{i = 1}^{n} X_i^{a}} 
   \tag{1.9}
 \end{equation}\]</span></p>
-<p>and this value can be considered as an estimate of the true isotopic value (<span class="math inline">\(\mu_R\)</span>). The uncertainties associated with the pulsed ion count rates of the individual variables <span class="math inline">\(X^{b}\)</span> (e.g. <sup>13</sup>C) and <span class="math inline">\(X^{a}\)</span> (e.g. <sup>12</sup>C) need to be combined. This can be achieved by applying; <em>The formula for exact propagation of error</em> <span class="citation">(Ku 1966)</span>.</p>
+<p>and this value can be considered as an estimate of the true isotopic value (<span class="math inline">\(\mu_R\)</span>). The uncertainties associated with the pulsed ion count rates of the individual variables <span class="math inline">\(X^{b}\)</span> (e.g. <sup>13</sup>C) and <span class="math inline">\(X^{a}\)</span> (e.g. <sup>12</sup>C) need to be combined. This can be achieved by applying; <em>The formula for exact propagation of error</em> <span class="citation">(Ku 1966)</span>.</p>
 <p><span class="math display" id="eq:erprop">\[\begin{equation}
   s_x^{2} \approx \sum_{i = 1}^{n} \left[ \left( \frac{\partial F}{\partial z_i} \right) s_i^{2} \right] + 2 \sum_{j = 1}^{n} \sum_{k = 1}^{n} \left[ \left( \frac{\partial F}{\partial z_j} \right) \left( \frac{\partial F}{\partial z_k} \right) s_j s_k r_{(z_j, z_k)} \right] 
  \tag{1.10}
@@ -488,7 +424,7 @@
   \tag{1.11}
 \end{equation}\]</span></p>
 <p>and yields an estimate for the sample correlation coefficient, where values can range between <span class="math inline">\(-1\)</span> and <span class="math inline">\(+1\)</span>, and thereby recording a inverse or positive linear correlation between the variables, and no correlation if <span class="math inline">\(r\)</span> falls close to zero. The product of <span class="math inline">\(r_{(z_j, z_k)}\)</span>, <span class="math inline">\(s_j\)</span>, and <span class="math inline">\(s_k\)</span> is the same as the co-variance between of the two input variables, as such, the variable simplifies to <span class="math inline">\(s_{jk}\)</span>. For this calculation the <code>stat</code> function <code><a href="https://rdrr.io/r/stats/cor.html">cov()</a></code> was used, with the <code>method</code> argument set to <code>"pearson"</code> and <code>use</code> to <code>"everything"</code>.</p>
-<p>Recasting Eq. <a href="#eq:erprop">(1.10)</a> for when <span class="math inline">\(F(...)\)</span> is <span class="math inline">\(R\)</span>, and with the variables <span class="math inline">\(\bar{X}^{b}\)</span> (e.g. <sup>13</sup>C) and <span class="math inline">\(\bar{X}^{a}\)</span> (e.g. <sup>12</sup>C), yields the following equation:</p>
+<p>Recasting Eq. <a href="#eq:erprop">(1.10)</a> for when <span class="math inline">\(F(...)\)</span> is <span class="math inline">\(R\)</span>, and with the variables <span class="math inline">\(\bar{X}^{b}\)</span> (e.g. <sup>13</sup>C) and <span class="math inline">\(\bar{X}^{a}\)</span> (e.g. <sup>12</sup>C), yields the following equation:</p>
 <p><span class="math display" id="eq:erpropad">\[\begin{equation}
   s_{R} = \sqrt{ \left( \frac{ s_{X^{b}}}{\bar{X}^{b}} \right)^2 + \left( \frac{ s_{X^{a}}}{\bar{X}^{a}} \right)^2 - 2 \frac{s_{\bar{X}^{a} \bar{X}^{b}}}{\bar{X}^{b}\bar{X}^{a}}} \times \bar{R}
   \tag{1.12}
@@ -553,140 +489,57 @@
   \chi^2 = \left( \frac{s_{\bar{R}}} {\hat{s}_{\bar{R}}} \right)^2   
   \tag{1.20}
 \end{equation}\]</span></p>
-<p>where values close to <span class="math inline">\(1\)</span> suggest good agreement between the actual measurement and the predicted value. Values lower than <span class="math inline">\(1\)</span> suggest that the analysis was better than predicted, and values higher than <span class="math inline">\(1\)</span> indicate that the analysis was worse than predicted by Poisson statistics.</p>
+<p>where values close to <span class="math inline">\(1\)</span> suggest good agreement between the actual measurement and the predicted value <span class="citation">(Kilburn and Wacey 2015)</span>. Values lower than <span class="math inline">\(1\)</span> suggest that the analysis was better than predicted, and values higher than <span class="math inline">\(1\)</span> indicate that the analysis was worse than predicted by Poisson statistics.</p>
 </div>
 </div>
 </div>
 <div id="external-precision-of-ion-count-data" class="section level2">
 <h2 class="hasAnchor">
 <a href="#external-precision-of-ion-count-data" class="anchor"></a><span class="header-section-number">1.4</span> External precision of ion count data</h2>
-<p>A series of several ion count analyses is usually performed in a study. The consistency of such <span class="math inline">\(m\)</span>-series of analyses is usually gauged with a homogeneous reference material; the so-called external precision, repeatability or reproducivbility of the study <span class="citation">(Fitzsimons, Harte, and Clark 2000)</span>. This value is usually reported as the standard deviation of the <span class="math inline">\(m\)</span>-series of analyses on the reference material. In calculating this statistic the <span class="math inline">\(n\)</span> in Eq. <a href="#eq:std">(1.3)</a> is replaced by <span class="math inline">\(m\)</span>. The standard deviation is reported as we are interested in how a single analysis relates to the variability of the study, where variability is the sum of the random nature of counting statistics, machine performance and homogeneity of the analytical substrate. Conversely, we are not interested in how precisely we can approach the mean of an <span class="math inline">\(m\)</span>-series of analysis (i.e. the mean of the study).</p>
+<p>A series of several ion count analyses is usually performed in a study. The consistency of such <span class="math inline">\(m\)</span>-series of analyses is usually gauged with a homogeneous reference material; the so-called external precision, repeatability or reproducibility of the study <span class="citation">(Fitzsimons, Harte, and Clark 2000)</span>. This value is usually reported as the standard deviation of the <span class="math inline">\(m\)</span>-series of analyses on the reference material. In calculating this statistic the <span class="math inline">\(n\)</span> in Eq. <a href="#eq:std">(1.3)</a> is replaced by <span class="math inline">\(m\)</span>. The standard deviation is reported as we are interested in how a single analysis relates to the variability of the study, where variability is the sum of the random nature of counting statistics, machine performance and homogeneity of the analytical substrate. Conversely, we are not interested in how precisely we can approach the mean of an <span class="math inline">\(m\)</span>-series of analysis (i.e. the mean of the study).</p>
 <p>Similarly the predicted standard deviation of an <span class="math inline">\(m\)</span>-series of analyses can be calculated following similar conventions as outlined above. Here, we substitute <span class="math inline">\(\bar{N}^a\)</span> of a chemical species <span class="math inline">\(a\)</span> by <span class="math inline">\(\bar{M}^a\)</span> (i.e., the mean counts for an <span class="math inline">\(m\)</span>-series of analyses) in Eq. <a href="#eq:stdpois">(1.6)</a> for single ions and <a href="#eq:stdpoisR1">(1.14)</a> (and subsequent derivations of the equation) for isotope ratios. Note, that these formulations consider counts per analysis and <em>not</em> counts per measurement.</p>
-<p>To calculate the external precision for single ion counts with the package <code>point</code> apply the function <code>stat_Xt</code> two times on the same dataset (i.e. a raw ion count dataset containing replicate measurements on a reference material). Note, that the second call should calculate the statistics over the summary table of the first iteration.</p>
-<div class="sourceCode" id="cb7"><html><body><pre class="r"><span class="co"># summary statistics of the dataset (set latex to FALSE and output to SUM)</span>
-<span class="no">tb.Xt</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/stat_Xt.html">stat_Xt</a></span>(<span class="no">tb.pr</span>,
-                 <span class="kw">Xt</span> <span class="kw">=</span> <span class="no">Xt.pr</span>,
-                 <span class="kw">N</span> <span class="kw">=</span> <span class="no">N.pr</span>,
-                 <span class="kw">species</span> <span class="kw">=</span> <span class="no">species.nm</span>,
-                 <span class="no">sample.nm</span>,
-                 <span class="no">file.nm</span>,
-                 <span class="kw">latex</span> <span class="kw">=</span> <span class="fl">FALSE</span>,
-                 <span class="kw">output</span> <span class="kw">=</span> <span class="st">"sum"</span>)
-
-<span class="co"># external reproducibility use the mean ion count rate and total counts of the</span>
-<span class="co"># single analyses. Note that the grouping variable is needed to identify the </span>
-<span class="co"># reference standard</span>
-<span class="no">tb.Xt.ext</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/stat_Xt.html">stat_Xt</a></span>(<span class="no">tb.Xt</span>,
-                 <span class="kw">Xt</span> <span class="kw">=</span> <span class="no">M_Xt.pr</span>,
-                 <span class="kw">N</span> <span class="kw">=</span> <span class="no">Ntot_Xt.pr</span>,
-                 <span class="kw">species</span> <span class="kw">=</span> <span class="no">species.nm</span>,
-                 <span class="no">sample.nm</span>,
-                 <span class="kw">latex</span> <span class="kw">=</span> <span class="fl">TRUE</span>,
-                 <span class="kw">output</span> <span class="kw">=</span> <span class="st">"sum"</span>)</pre></body></html></div>
+<p>To calculate the external precision for ion ratios with the package <code>point</code>, use the <code>.nest</code> argument of <code><a href="../reference/stat_X.html">stat_R()</a></code> to define groupings of analyses (e.g. a raw ion count dataset containing replicate measurements on a reference material).</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># external precision of the dataset </span>
+<span class="va">tb_R_ext</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stat_X.html">stat_R</a></span><span class="op">(</span><span class="va">tb_pr</span>, <span class="st">"13C"</span>, <span class="st">"12C"</span>, <span class="va">sample.nm</span>, <span class="va">file.nm</span>, .nest <span class="op">=</span> <span class="va">sample.nm</span>, 
+                    .stat <span class="op">=</span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"M"</span>, <span class="st">"RS"</span>, <span class="st">"RSeM"</span>, <span class="st">"hat_RS"</span>, <span class="st">"hat_RSeM"</span>, <span class="st">"chi2"</span><span class="op">)</span>, 
+                    .label <span class="op">=</span> <span class="st">"webtex"</span><span class="op">)</span></code></pre></div>
 <table class="table">
 <caption>
-<span id="tab:unnamed-chunk-9">Table 1.3: </span>Summary statistics for external precision of single ions.</caption>
+<span id="tab:unnamed-chunk-9">Table 1.3: </span>Summary statistics for external precision of isotope ratios.</caption>
+<colgroup>
+<col width="7%">
+<col width="21%">
+<col width="6%">
+<col width="10%">
+<col width="13%">
+<col width="13%">
+<col width="16%">
+<col width="9%">
+</colgroup>
 <thead><tr class="header">
 <th align="left">sample.nm</th>
-<th align="right"><span class="math inline">\(n\)</span></th>
-<th align="right"><span class="math inline">\(N_{tot}\)</span></th>
-<th align="right"><span class="math inline">\(\bar{X}\)</span></th>
-<th align="right"><span class="math inline">\(s_X\)</span></th>
-<th align="right"><span class="math inline">\(s_\bar{X}\)</span></th>
-<th align="right"><span class="math inline">\(\hat{s}_N\)</span></th>
-<th align="right"><span class="math inline">\(\hat{s}_\bar{N}\)</span></th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="left">Belemnite, Indium</td>
-<td align="right">3</td>
-<td align="right">1.98e+08</td>
-<td align="right">48476</td>
-<td align="right">15895.6</td>
-<td align="right">9177.3</td>
-<td align="right">14069</td>
-<td align="right">8123</td>
-</tr>
-<tr class="even">
-<td align="left">Belemnite, Indium</td>
-<td align="right">3</td>
-<td align="right">1.28e+06</td>
-<td align="right">315</td>
-<td align="right">55.6</td>
-<td align="right">32.1</td>
-<td align="right">1133</td>
-<td align="right">654</td>
-</tr>
-<tr class="odd">
-<td align="left">Belemnite, Indium</td>
-<td align="right">3</td>
-<td align="right">2.18e+06</td>
-<td align="right">533</td>
-<td align="right">175.7</td>
-<td align="right">101.4</td>
-<td align="right">1476</td>
-<td align="right">852</td>
-</tr>
-<tr class="even">
-<td align="left">Belemnite, Indium</td>
-<td align="right">3</td>
-<td align="right">9.06e+07</td>
-<td align="right">22197</td>
-<td align="right">8876.8</td>
-<td align="right">5125.0</td>
-<td align="right">9520</td>
-<td align="right">5497</td>
-</tr>
-</tbody>
-</table>
-<p>The same workflow applies for isotope ratios, but the second call should now be to the function <code>stat_R</code>.</p>
-<div class="sourceCode" id="cb8"><html><body><pre class="r"><span class="co"># Same as previous chunk but now with stat_R</span>
-<span class="no">tb.R.ext</span>  <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/stat_Xt.html">stat_R</a></span>(<span class="no">tb.Xt</span>,
-                    <span class="kw">Xt</span> <span class="kw">=</span> <span class="no">M_Xt.pr</span>,
-                    <span class="kw">N</span> <span class="kw">=</span> <span class="no">Ntot_Xt.pr</span>,
-                    <span class="kw">species</span> <span class="kw">=</span> <span class="no">species.nm</span>,
-                    <span class="kw">ion1</span> <span class="kw">=</span> <span class="st">"13C"</span>,
-                    <span class="kw">ion2</span> <span class="kw">=</span> <span class="st">"12C"</span>,
-                    <span class="no">sample.nm</span>,
-                    <span class="kw">latex</span> <span class="kw">=</span> <span class="fl">TRUE</span>,
-                    <span class="kw">output</span> <span class="kw">=</span> <span class="st">"sum"</span>,
-                    <span class="kw">zero</span> <span class="kw">=</span> <span class="fl">TRUE</span>)</pre></body></html></div>
-<table class="table">
-<caption>
-<span id="tab:unnamed-chunk-11">Table 1.4: </span>Summary statistics for external precision of isotope ratios.</caption>
-<thead><tr class="header">
-<th align="left">sample.nm</th>
-<th align="left">R</th>
-<th align="right"><span class="math inline">\(n\)</span></th>
-<th align="right"><span class="math inline">\(\bar{R}\)</span></th>
-<th align="right"><span class="math inline">\(s_{R}\)</span></th>
+<th align="left">ratio.nm</th>
+<th align="right"><span class="math inline">\(\bar{\bar{R}}\)</span></th>
 <th align="right">
-<span class="math inline">\(\epsilon_{R} \,\)</span> (‰)</th>
-<th align="right"><span class="math inline">\(s_{\bar{R}}\)</span></th>
+<span class="math inline">\(\epsilon_{\bar{R}}\)</span> (‰)</th>
 <th align="right">
-<span class="math inline">\(\epsilon_{\bar{R}} \,\)</span> (‰)</th>
-<th align="right"><span class="math inline">\(\hat{s}_{R}\)</span></th>
+<span class="math inline">\(\epsilon_{\bar{\bar{R}}}\)</span> (‰)</th>
 <th align="right">
-<span class="math inline">\(\hat{\epsilon}_{R} \,\)</span> (‰)</th>
-<th align="right"><span class="math inline">\(\hat{s}_{\bar{R}}\)</span></th>
+<span class="math inline">\(\hat{\epsilon}_{\bar{R}}\)</span> (‰)</th>
 <th align="right">
-<span class="math inline">\(\hat{\epsilon}_{\bar{R}} \,\)</span> (‰)</th>
-<th align="right"><span class="math inline">\(\chi^{2}\)</span></th>
+<span class="math inline">\(\hat{\epsilon}_{\bar{\bar{R}}}\)</span> (‰)</th>
+<th align="right"><span class="math inline">\(\chi^{2}_{\bar{R}}\)</span></th>
 </tr></thead>
 <tbody><tr class="odd">
 <td align="left">Belemnite, Indium</td>
 <td align="left">
 <span class="math inline">\(\phantom{,}^{13}\)</span>C<span class="math inline">\(_{}\)</span>/<span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>
 </td>
-<td align="right">3</td>
 <td align="right">0.011</td>
-<td align="right">2.03e-05</td>
 <td align="right">1.85</td>
-<td align="right">1.17e-05</td>
 <td align="right">1.07</td>
-<td align="right">1.3e-05</td>
 <td align="right">1.18</td>
-<td align="right">7.5e-06</td>
 <td align="right">0.681</td>
 <td align="right">2.45</td>
 </tr></tbody>
@@ -696,47 +549,27 @@
   \sum_{j=1}^m M_j^a = m \sum_{i=1}^n N_i^a 
   \tag{1.21}
 \end{equation}\]</span></p>
-<p>Given the previous relationship, the average predicted standard error of the mean of a single analysis should approximate the predicted standard deviation of an <span class="math inline">\(m\)</span>-series of analyses <span class="citation">(see Fitzsimons, Harte, and Clark 2000)</span>.</p>
+<p>Given the previous relationship, the average predicted standard error of the mean of single analyses should approximate the predicted standard deviation if viewed as one single continuous analysis, or <span class="math inline">\(m\)</span>-series of analyses <span class="citation">(see Fitzsimons, Harte, and Clark 2000)</span>.</p>
 <p>We can validate this derivation as follows:</p>
-<div class="sourceCode" id="cb9"><html><body><pre class="r"><span class="co"># Prove of the previous statement with the example dataset</span>
-<span class="no">tb.R</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/stat_Xt.html">stat_R</a></span>(<span class="no">tb.pr</span>,
-               <span class="kw">Xt</span> <span class="kw">=</span> <span class="no">Xt.pr</span>,
-               <span class="kw">N</span> <span class="kw">=</span> <span class="no">N.pr</span>,
-               <span class="kw">species</span> <span class="kw">=</span> <span class="no">species.nm</span>,
-               <span class="kw">ion1</span> <span class="kw">=</span> <span class="st">"13C"</span>,
-               <span class="kw">ion2</span> <span class="kw">=</span> <span class="st">"12C"</span>,
-               <span class="no">sample.nm</span>,
-               <span class="no">file.nm</span>,
-               <span class="kw">latex</span> <span class="kw">=</span>  <span class="fl">FALSE</span>,
-               <span class="kw">output</span> <span class="kw">=</span> <span class="st">"sum"</span>,
-               <span class="kw">zero</span> <span class="kw">=</span> <span class="fl">TRUE</span>)
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Prove of the previous statement with the example dataset</span>
+<span class="va">tb_R_int</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stat_X.html">stat_R</a></span><span class="op">(</span><span class="va">tb_pr</span>, <span class="st">"13C"</span>, <span class="st">"12C"</span>, <span class="va">sample.nm</span>,  <span class="va">file.nm</span>, .stat <span class="op">=</span> <span class="st">"hat_RSeM"</span>,
+                   .zero <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
 
-<span class="no">tb.R.ext</span>  <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/stat_Xt.html">stat_R</a></span>(<span class="no">tb.Xt</span>,
-                    <span class="kw">Xt</span> <span class="kw">=</span> <span class="no">M_Xt.pr</span>,
-                    <span class="kw">N</span> <span class="kw">=</span> <span class="no">Ntot_Xt.pr</span>,
-                    <span class="kw">species</span> <span class="kw">=</span> <span class="no">species.nm</span>,
-                    <span class="kw">ion1</span> <span class="kw">=</span> <span class="st">"13C"</span>,
-                    <span class="kw">ion2</span> <span class="kw">=</span> <span class="st">"12C"</span>,
-                    <span class="no">sample.nm</span>,
-                    <span class="kw">latex</span> <span class="kw">=</span> <span class="fl">FALSE</span>,
-                    <span class="kw">output</span> <span class="kw">=</span> <span class="st">"sum"</span>,
-                    <span class="kw">zero</span> <span class="kw">=</span> <span class="fl">TRUE</span>)
+<span class="va">tb_R_ext</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stat_X.html">stat_R</a></span><span class="op">(</span><span class="va">tb_pr</span>, <span class="st">"13C"</span>, <span class="st">"12C"</span>, <span class="va">sample.nm</span>, <span class="va">file.nm</span>, .nest <span class="op">=</span> <span class="va">sample.nm</span>, 
+                   .stat <span class="op">=</span> <span class="st">"hat_RS"</span>,.zero <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
 
 <span class="co"># The average of the internal relative predicted standard error of the mean </span>
 <span class="co"># (per mille)</span>
-<span class="no">tb.R</span> <span class="kw">%&gt;%</span>
-  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span>(<span class="fu"><a href="https://stringr.tidyverse.org/reference/str_detect.html">str_detect</a></span>(<span class="no">sample.nm</span>, <span class="st">"Belemnite"</span>)) <span class="kw">%&gt;%</span>
-  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/pull.html">pull</a></span>(<span class="no">hat_RSeM_R_Xt.pr</span>) <span class="kw">%&gt;%</span>
-  <span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span>() <span class="kw">%&gt;%</span>
-  <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="fl">1</span>)
+<span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">tb_R_int</span>, <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_detect.html">str_detect</a></span><span class="op">(</span><span class="va">sample.nm</span>, <span class="st">"Belemnite"</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span>  
+  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/pull.html">pull</a></span><span class="op">(</span><span class="va">hat_RSeM_R_N.pr</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>
 <span class="co">#&gt; [1] 1.2</span>
 
 <span class="co"># The external predicted standard deviation (per mille)</span>
-<span class="no">tb.R.ext</span> <span class="kw">%&gt;%</span>
-  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span>(<span class="fu"><a href="https://stringr.tidyverse.org/reference/str_detect.html">str_detect</a></span>(<span class="no">sample.nm</span>, <span class="st">"Belemnite"</span>)) <span class="kw">%&gt;%</span>
-  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/pull.html">pull</a></span>(<span class="no">hat_RS_R_M_Xt.pr</span>) <span class="kw">%&gt;%</span>
-  <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="fl">1</span>)
-<span class="co">#&gt; [1] 1.2</span></pre></body></html></div>
+<span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span><span class="va">tb_R_ext</span><span class="op">$</span><span class="va">hat_RS_R_tot_N.pr</span>, <span class="fl">1</span><span class="op">)</span>
+<span class="co">#&gt; [1] 1.2</span></code></pre></div>
 <p>The values match and confirm the previous relationship for this study.</p>
 </div>
 </div>
@@ -747,8 +580,11 @@
 <div id="ref-Fitzsimons2000a">
 <p>Fitzsimons, I. C. W., B. Harte, and R. M. Clark. 2000. “SIMS stable isotope measurement: counting statistics and analytical precision.” <em>Mineralogical Magazine</em> 64 (01): 59–83. <a href="https://doi.org/10.1180/002646100549139">https://doi.org/10.1180/002646100549139</a>.</p>
 </div>
+<div id="ref-Kilburn2015">
+<p>Kilburn, Matt R., and David Wacey. 2015. “Nanoscale secondary ion mass spectrometry (NanoSIMS) as an analytical tool in the geosciences.” <em>RSC Detection Science</em> 2015-Janua (4): 1–34. <a href="https://doi.org/10.1039/9781782625025-00001">https://doi.org/10.1039/9781782625025-00001</a>.</p>
+</div>
 <div id="ref-Ku1966">
-<p>Ku, H.H. 1966. “Notes on the use of propagation of error formulas.” <em>Journal of Research of the National Bureau of Standards, Section C: Engineering and Instrumentation</em> 70C (4): 263. <a href="https://doi.org/10.6028/jres.070c.025">https://doi.org/10.6028/jres.070c.025</a>.</p>
+<p>Ku, H. H. 1966. “Notes on the use of propagation of error formulas.” <em>Journal of Research of the National Bureau of Standards, Section C: Engineering and Instrumentation</em> 70C (4): 263. <a href="https://doi.org/10.6028/jres.070c.025">https://doi.org/10.6028/jres.070c.025</a>.</p>
 </div>
 </div>
 </div>
@@ -769,7 +605,7 @@
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

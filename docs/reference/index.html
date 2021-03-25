@@ -71,7 +71,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">point</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.0.9002</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.0.9003</span>
       </span>
     </div>
 
@@ -79,7 +79,7 @@
       <ul class="nav navbar-nav">
         <li>
   <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
+    <span class="fas fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -140,8 +140,39 @@
     <tbody>
       <tr>
         <th colspan="2">
-          <h2 id="section-all-functions" class="hasAnchor"><a href="#section-all-functions" class="anchor"></a>All functions</h2>
-          <p class="section-desc"></p>
+          <h2 id="section-reading-ion-count-data" class="hasAnchor"><a href="#section-reading-ion-count-data" class="anchor"></a>Reading ion count data</h2>
+          <p class="section-desc"><p>Checking files, and loading ion count data and associated meta-data.</p></p>
+        </th>
+      </tr>
+      
+      
+    </tbody><tbody>
+      
+      
+      <tr>
+        
+        <td>
+          <p><code><a href="ICdir_chk.html">ICdir_chk()</a></code> </p>
+        </td>
+        <td><p>Check if directory is suitable for point</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="read_IC.html">read_IC()</a></code> <code><a href="read_IC.html">read_meta()</a></code> </p>
+        </td>
+        <td><p>Read raw ion count data</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="unfold.html">unfold()</a></code> <code><a href="unfold.html">fold()</a></code> </p>
+        </td>
+        <td><p>Access and hide IC metadata</p></td>
+      </tr>
+    </tbody><tbody>
+      <tr>
+        <th colspan="2">
+          <h2 id="section-correcting-ion-count-data" class="hasAnchor"><a href="#section-correcting-ion-count-data" class="anchor"></a>Correcting ion count data</h2>
+          <p class="section-desc"><p>Functions to correct pulsed ion coun data for systematic machine-induced biases.</p></p>
         </th>
       </tr>
       
@@ -164,57 +195,96 @@
       </tr><tr>
         
         <td>
-          <p><code><a href="diag_R.html">diag_R()</a></code> </p>
+          <p><code><a href="QSA_test.html">QSA_test()</a></code> </p>
         </td>
-        <td><p>Diagnostics raw ion count data</p></td>
+        <td><p>QSA test</p></td>
       </tr><tr>
         
         <td>
-          <p><code><a href="expr_R.html">expr_R()</a></code> </p>
+          <p><code><a href="predict_ionize.html">predict_ionize()</a></code> </p>
         </td>
-        <td><p>Create stat_R call quosure</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="latex_parser.html">latex_parser()</a></code> </p>
-        </td>
-        <td><p>Latex parsable chemical species names</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="point.html">point</a></code> </p>
-        </td>
-        <td><p>point: A package for reading, processing, and analysing raw ion count data.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="point_example.html">point_example()</a></code> </p>
-        </td>
-        <td><p>Get path to point example</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="read_IC.html">read_IC()</a></code> <code><a href="read_IC.html">read_meta()</a></code> </p>
-        </td>
-        <td><p>Read raw ion count data</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="stat_SDprop.html">stat_SDprop()</a></code> <code><a href="stat_SDprop.html">stat_hSDprop()</a></code> </p>
-        </td>
-        <td><p>Propagation of error for isotope ratios</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="stat_Xt.html">stat_Xt()</a></code> <code><a href="stat_Xt.html">stat_R()</a></code> </p>
-        </td>
-        <td><p>Analyse raw ion count data</p></td>
+        <td><p>Predicting trends in ionization efficiency</p></td>
       </tr><tr>
         
         <td>
           <p><code><a href="zeroCt.html">zeroCt()</a></code> </p>
         </td>
         <td><p>Remove analytical runs with zero counts</p></td>
+      </tr>
+    </tbody><tbody>
+      <tr>
+        <th colspan="2">
+          <h2 id="section-analysing-ion-count-data" class="hasAnchor"><a href="#section-analysing-ion-count-data" class="anchor"></a>Analysing ion count data</h2>
+          <p class="section-desc"><p>Functions to calculate internal and external precision of pulsed ion count data of single ions and ion ratios.</p></p>
+        </th>
+      </tr>
+      
+      
+    </tbody><tbody>
+      
+      
+      <tr>
+        
+        <td>
+          <p><code><a href="stat_X.html">stat_X()</a></code> <code><a href="stat_X.html">stat_R()</a></code> </p>
+        </td>
+        <td><p>Analyse raw ion count data</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="stat_SDprop.html">stat_SDprop()</a></code> </p>
+        </td>
+        <td><p>Propagation of errors for isotope ratios</p></td>
+      </tr>
+    </tbody><tbody>
+      <tr>
+        <th colspan="2">
+          <h2 id="section-diagnostics-of-ion-count-data" class="hasAnchor"><a href="#section-diagnostics-of-ion-count-data" class="anchor"></a>Diagnostics of ion count data</h2>
+          <p class="section-desc"><p>Functions to check for internal consistency of ion count ratio data; enabling detection of isotopic variability in the analyte.</p></p>
+        </th>
+      </tr>
+      
+      
+    </tbody><tbody>
+      
+      
+      <tr>
+        
+        <td>
+          <p><code><a href="diag_R.html">diag_R()</a></code> </p>
+        </td>
+        <td><p>Diagnostics isotope count data</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="Cameca.html">Cameca()</a></code> <code><a href="Cameca.html">CooksD()</a></code> </p>
+        </td>
+        <td><p>Family of diagnostics functions for isotope count ratios</p></td>
+      </tr>
+    </tbody><tbody>
+      <tr>
+        <th colspan="2">
+          <h2 id="section-miscellaneous-tools-to-handle-ion-count-data" class="hasAnchor"><a href="#section-miscellaneous-tools-to-handle-ion-count-data" class="anchor"></a>Miscellaneous tools to handle ion count data</h2>
+          <p class="section-desc"><p>Functions for easy plotting and printing of ion count data.</p></p>
+        </th>
+      </tr>
+      
+      
+    </tbody><tbody>
+      
+      
+      <tr>
+        
+        <td>
+          <p><code><a href="cov_R.html">cov_R()</a></code> </p>
+        </td>
+        <td><p>Function for co-variate conversion of isotope systems</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="ion_labeller.html">ion_labeller()</a></code> <code><a href="ion_labeller.html">R_labeller()</a></code> <code><a href="ion_labeller.html">stat_labeller()</a></code> </p>
+        </td>
+        <td><p>Chemical species names for plots and tables</p></td>
       </tr>
     </tbody>
     </table>
@@ -234,7 +304,7 @@
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>
