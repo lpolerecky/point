@@ -1,6 +1,4 @@
 
-<!--  use the --webtex argument in the YAML to render equations -->
-
 <!-- badges: start -->
 
 [![License: GPL

@@ -14,12 +14,9 @@
 
 R/Longitudinal\.R
 R/standard_error_mlmcoefs\.R
+R/animation\.R
 
 vignettes/workflow\.svg
 vignettes/Rlogo\.svg
 vignettes/EM-channel\.svg
 vignettes/excerpt_stat\.pdf
-vignettes/IC-assumptions\.Rmd
-
-
-^packages\.bib$

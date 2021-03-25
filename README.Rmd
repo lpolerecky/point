@@ -2,10 +2,9 @@
 output: 
   github_document:
     pandoc_args: --webtex=http://chart.apis.google.com/chart?cht=tx&chl=
-bibliography: packages.bib  
+bibliography: vignettes/packages.bib 
 ---
 
-<!--  use the --webtex argument in the YAML to render equations -->
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
@@ -52,13 +51,12 @@ hadley <- bibentry(
   publisher = " O'Reilly Media, Inc.",
   url = "https://r-pkgs.org/"
   )
-knitr::write_bib(pkgs, "packages.bib", prefix = "")
-pkgs <- bibtex::read.bib("packages.bib")
+knitr::write_bib(pkgs, "vignettes/packages.bib", prefix = "")
+pkgs <- bibtex::read.bib("vignettes/packages.bib")
 bibtex::write.bib(
   purrr::reduce(list(rref, hadley, pkgs), append), 
-  file = "packages.bib"
+  file = "vignettes/packages.bib"
   )
-invisible(file.copy("packages.bib", "vignettes/packages.bib", overwrite = TRUE))
 ```
 
 
