@@ -221,8 +221,9 @@ point_example <- function(path = NULL) {
 ICdir_chk <-function(directory, types = c(".is_txt", ".chk_is", ".stat")){
   ls_files <- list.files(directory)
   ls_names <- unique(stringr::str_extract(ls_files, "(.)+(?=\\.)"))
-  purrr::cross(list(ls_names, types)) %>%
-    purrr::map_chr(purrr::lift(paste0)) %in% ls_files %>% all
+  ls_types <- purrr::cross(list(ls_names, types)) %>%
+    purrr::map_chr(purrr::lift(paste0))
+  all(ls_types %in% ls_files)
 }
 
 #' Access and hide IC metadata
