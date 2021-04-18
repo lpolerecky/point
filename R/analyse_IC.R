@@ -62,7 +62,7 @@
 #' stat_R(tb_pr, "13C", "12C", file.nm, .zero = TRUE)
 #'
 #' # Descriptive an predictive statistics for 13C/12C ratios (external)
-#' stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .nest = sample.nm,
+#' stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .nest = file.nm,
 #'        .zero = TRUE)
 stat_X <- function(.IC, ..., .X = Xt.pr, .N = N.pr, .species = species.nm,
                     .t = t.nm, .stat = point::names_stat_X$name, .label = NULL,
@@ -184,7 +184,7 @@ stat_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr, .N = N.pr,
     args[[".X"]] <- quo_updt(args[[".X"]], pre = "M")
     args[[".N"]] <- quo_updt(args[[".N"]], pre = "tot")
     # Updated grouping
-    gr_by <- nest
+    gr_by <- gr_by[!gr_by %in% nest]
 
     # Check whether groups have enough observations
     .IC <- add_count(.IC, !!!  gr_by, !! args[[".species"]])

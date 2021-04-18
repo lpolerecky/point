@@ -111,6 +111,6 @@ stat_X(tb_pr, file.nm)
 stat_R(tb_pr, "13C", "12C", file.nm, .zero = TRUE)
 
 # Descriptive an predictive statistics for 13C/12C ratios (external)
-stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .nest = sample.nm,
+stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .nest = file.nm,
        .zero = TRUE)
 }
