@@ -161,11 +161,19 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr,
     # Prepare output
     IC <- purrr::reduce(IC_mlm, left_join, by = sapply(nest_gr, as_name)) %>%
       output_lm(args, model_args, .meta, .label, .output)
+
+    # Return metadata
+    if (.meta & !is.null(meta)) IC <- fold(IC, type = ".mt",  meta = meta)
+
     return(IC)
   }
   # Prepare output
   IC <- IC_lm %>%
     output_lm(args, model_args, .meta, .label, .output)
+
+  # Return metadata
+  if (.meta & !is.null(meta)) IC <- fold(IC, type = ".mt",  meta = meta)
+
   return(IC)
 }
 

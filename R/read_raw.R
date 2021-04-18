@@ -31,14 +31,14 @@
 read_IC <- function(directory, meta = TRUE, hide = TRUE){
 
 # List files
-  ls_IC <- read_names(directory, "is_txt")
+  ls_IC <- read_validator(directory, ".is_txt")[["ion"]]
   n_max <- Inf
 
 # Collecting metadata (stat file)
   if (meta) {
+    # Check validity of directory for meta data extraction
+    read_validator(directory)
     tb_meta <- read_meta(directory)
-# Check validity of directory
-    ls_IC <- read_validator(directory)[[1]]
     n_max <- group_by(tb_meta, file.nm) %>%
       summarise(n = sum(n.rw)) %>%
       pull(n) + length(unique(tb_meta$species.nm)) + 1
@@ -49,7 +49,7 @@ read_IC <- function(directory, meta = TRUE, hide = TRUE){
     ls_IC,
     n_max,
     ~readr::read_tsv(
-      paste0(directory, "/", .x),
+      file.path(directory, .x),
       col_names = c("t.nm", "N.rw"),
       col_types = "-cc",
       comment = "B",
@@ -66,7 +66,6 @@ read_IC <- function(directory, meta = TRUE, hide = TRUE){
       t.nm = as.numeric(.data$t.nm),
       N.rw = as.numeric(.data$N.rw)
       )
-
 
   if (meta) {
     # vector with species names
@@ -219,11 +218,32 @@ point_example <- function(path = NULL) {
 #' @examples
 #' ICdir_chk(point_example("2018-01-19-GLENDON"))
 ICdir_chk <-function(directory, types = c(".is_txt", ".chk_is", ".stat")){
-  ls_files <- list.files(directory)
-  ls_names <- unique(stringr::str_extract(ls_files, "(.)+(?=\\.)"))
+  # check if type is valid
+  sys_types <- c(ion = ".is_txt", optic = ".chk_is", stat = ".stat")
+  if (any(types %in% sys_types)) {
+    types <- sys_types[sys_types %in% types]
+    } else {
+      stop("Unknown extension", call. = FALSE)
+    }
+  # directory name if also file name
+  dir_nm <- stringr::str_extract(
+    directory,
+    stringr::str_c("(?<=", dirname(directory), "/)(.)+")
+    )
+  ls_files <- list.files(directory) %>%
+    purrr::keep(stringr::str_detect(., stringr::str_c(dir_nm)))
+  ls_names <- unique(stringr::str_extract(ls_files, "(.)+(?=\\.)")) %>%
+    purrr::keep(stringr::str_detect(., "(_[[:digit:]]+_[[:digit:]]+)$"))
   ls_types <- purrr::cross(list(ls_names, types)) %>%
-    purrr::map_chr(purrr::lift(paste0))
-  all(ls_types %in% ls_files)
+    purrr::map_chr(purrr::lift(paste0)) %>%
+    set_names(nm = rep(ls_names, n_distinct(types)))
+
+  if (length(ls_types > 0) & all(ls_types %in% ls_files)) {
+    # makes grouped list
+    split(ls_types, rep(names(types), each = n_distinct(ls_names)))
+    } else {
+      FALSE
+      }
 }
 
 #' Access and hide IC metadata
@@ -286,32 +306,33 @@ read_validator <- function(directory, types = c(".is_txt", ".chk_is", ".stat")){
 # Argument class check
   stopifnot(is.character(directory))
 # Check if directory contains files
-    if (is.null(length(dir(directory)))) {
-      stop("`directory` does not contain any files", call. = FALSE)
+  if (is.null(length(dir(directory)))) {
+    stop("`directory` does not contain any files", call. = FALSE)
     }
 # Check if directory contains specified file types
-    if (!ICdir_chk(directory, types)) {
-      stop("`directory` does not contain required filetypes: .is_txt, .chk_is, and .stat",
-           call. = FALSE)
+  if (isFALSE(ICdir_chk(directory, types))) {
+    stop("`directory` does not contain required filetypes: .is_txt, .chk_is, and .stat",
+         call. = FALSE)
+    } else {
+      ls_files <- ICdir_chk(directory, types)
       }
 
 # Extract txt files with count data blocks of each single point measurement
-  ls_files <- purrr::map(types, ~read_names(directory, .x)) %>%
-    set_names(nm = c("ion", "optic", "stat"))
+  # ls_files <- purrr::map(types, ~read_names(directory, .x)) %>%
+  #   set_names(nm = c("ion", "optic", "stat"))
 
-  if (!(all.equal(names(ls_files[["ion"]]), names(ls_files[["optic"]])) &
-      all.equal(names(ls_files[["ion"]]), names(ls_files[["stat"]])))) {
-    ls_files[["optic"]] <- ls_files[["optic"]][names(ls_files[["optic"]]) %in%
-                                                 names(ls_files[["ion"]])]
-    ls_files[["stat"]] <- ls_files[["stat"]][names(ls_files[["stat"]]) %in%
-                                                 names(ls_files[["ion"]])]
-    warning("Some metadata files have no matching data files and are omitted",
-            call. = FALSE)
-  }
+  # if (!(all.equal(names(ls_files[["ion"]]), names(ls_files[["optic"]])) &
+  #     all.equal(names(ls_files[["ion"]]), names(ls_files[["stat"]])))) {
+  #   ls_files[["optic"]] <- ls_files[["optic"]][names(ls_files[["optic"]]) %in%
+  #                                                names(ls_files[["ion"]])]
+  #   ls_files[["stat"]] <- ls_files[["stat"]][names(ls_files[["stat"]]) %in%
+  #                                                names(ls_files[["ion"]])]
+  #   warning("Some metadata files have no matching data files and are omitted",
+  #           call. = FALSE)
+  # }
 
 # Length check of txt files
   if (any(missing_text(directory, ls_files[["ion"]]) == 0)) {
-
     good <- missing_text(directory, ls_files[["ion"]]) > 0
     ls_files[["ion"]] <- ls_files[["ion"]][good]
     warning("empty txt file removed")
@@ -319,7 +340,6 @@ read_validator <- function(directory, types = c(".is_txt", ".chk_is", ".stat")){
 
 # Column content check of txt files
   if (any(missing_col(directory, ls_files[["ion"]]) == 0)) {
-
     good <- missing_col(directory, ls_files[["ion"]])  > 0
     ls_files[["ion"]] <- ls_files[["ion"]][good]
     warning("txt file contains empty columns")
@@ -328,15 +348,15 @@ read_validator <- function(directory, types = c(".is_txt", ".chk_is", ".stat")){
 }
 
 
-# read file name function
-read_names <- function(directory, ext) {
-
-  list.files(directory, pattern = paste0(ext, "$")) %>%
-# Set names for subsequent storage
-    set_names(nm = sub(pattern = "(.*)\\..*$", replacement = "\\1", .)) %>%
-# Remove transect files
-    purrr::discard(stringr::str_detect(., paste0("transect", ext, "$")))
-}
+# # read file name function
+# read_names <- function(directory, ext) {
+#
+#   list.files(directory, pattern = paste0(ext, "$")) %>%
+# # Set names for subsequent storage
+#     set_names(nm = sub(pattern = "(.*)\\..*$", replacement = "\\1", .)) %>%
+# # Remove transect files
+#     purrr::discard(stringr::str_detect(., paste0("transect", ext, "$")))
+# }
 
 # Function for obtaining xyz coordinates on analytical substrate
 str_loc <- function(loc) {
