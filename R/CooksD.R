@@ -255,7 +255,7 @@ bp_wrap <- function(IC1, IC2, X2, type, hyp, alpha_level){
       }
   }
 
-# breusch pagan test
+# Breusch pagan test
 custom_bp <- function(IC, X2){
   data_env <- env(data = IC)
   res_lm <- lm_form(IC, parse_quo(".std.resid", env = data_env), X2)

@@ -1,7 +1,8 @@
 # Plotting diagnostics
 gg_IC <- function(.IC, .ion1, .ion2, .method, .plot_type, ..., .X = Xt.pr,
                   .N = N.pr, .species = species.nm, .t = t.nm, .flag = flag,
-                  .labels = NULL, .rep = 1, .alpha_level, .plot_iso = FALSE){
+                  .labels = NULL, .rep = 1, .alpha_level, .plot_iso = FALSE,
+                  .plot_outlier_labs){
 
   # Quoting the call (user-supplied expressions)
   # Grouping
@@ -27,7 +28,8 @@ gg_IC <- function(.IC, .ion1, .ion2, .method, .plot_type, ..., .X = Xt.pr,
   plot_args <- list2(.IC = .IC, .x = X2, .y = X1, .flag = flag,
                      .diag_type = .method, .plot_type = .plot_type, !!! gr_by,
                      .labels = .labels, .hat = hat_X1, .sd = hat_S_N1 ,
-                     .alpha_level = .alpha_level)
+                     .alpha_level = .alpha_level,
+                     .plot_outlier_labs = .plot_outlier_labs)
   # environment
   data_env <- env(data = .IC)
   # Residual leverage plot
@@ -64,7 +66,8 @@ gg_IC <- function(.IC, .ion1, .ion2, .method, .plot_type, ..., .X = Xt.pr,
 
 gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
                     .labels = NULL, .geom = "point", .hat = NULL, .sd = NULL,
-                    .se = NULL, .cv = NULL, .alpha_level, .rug = FALSE){
+                    .se = NULL, .cv = NULL, .alpha_level, .rug = FALSE,
+                    .plot_outlier_labs =  c("divergent", "confluent")){
 
   # Grouping
   gr_by <- enquos(...)
@@ -72,7 +75,6 @@ gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
     # Create ion labels from variables
   ion2 <- detect_ion(.x, .diag_type)
   ion1 <- detect_ion(.y)
-
 
   # 2D density
   .IC <- twodens(.IC, !!.x, !!.y, !!! gr_by, .flag = !! .flag)
@@ -95,25 +97,27 @@ gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
   p <- p + facet_wrap(vars(!!! gr_by), scales = "free")
 
   # Geom for "point" data
-  if (.geom == "point") p <- dens_point(p, .flag, .IC, plot_width)
+  if (.geom == "point") p <- dens_point(p, .flag, .IC, plot_width,
+                                        .plot_outlier_labs)
 
   if (.geom == "hex") p <- p + geom_hex()
 
   if (.rug) p <- p + geom_rug(sides = "tr", alpha = 0.01)
 
   if (!is.null(.labels)) {
-    p <- p + geom_text(
-      data = filter(tb_labs, .data$stat %in% .labels),
-      aes(
-        x = -Inf,
-        y = Inf,
-        label = .data$lbs
-        ),
-      vjust = "inward",
-      hjust = "inward",
-      parse = TRUE,
-      inherit.aes = FALSE
-      )
+    p <- p +
+      geom_text(
+        data = filter(tb_labs, .data$stat %in% .labels),
+        aes(
+          x = -Inf,
+          y = Inf,
+          label = .data$lbs
+          ),
+        vjust = "inward",
+        hjust = "inward",
+        parse = TRUE,
+        inherit.aes = FALSE
+        )
   }
 
   # Model
@@ -129,24 +133,25 @@ gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
     # Uncertainty bounds for geom_ribbon
     .IC <- ribbon_stat(.IC, .hat, bounds[!sapply(bounds, is.null)],
                        .alpha_level)
-    p <- p + geom_ribbon(
-      data = .IC,
-      aes(ymin = .data$lower, ymax = .data$upper),
-      color = "black",
-      fill = "transparent",
-      linetype = 3,
-      size = 0.5
-      )
+    p <- p +
+      geom_ribbon(
+        data = .IC,
+        aes(ymin = .data$lower, ymax = .data$upper),
+        color = "black",
+        fill = "transparent",
+        linetype = 3,
+        size = 0.5
+        )
     }
 
   p <- p +
     scale_y_continuous(
-      breaks = scales::extended_breaks(),
-      labels = scales::label_scientific()
+      breaks = scales::pretty_breaks(3),
+      labels = scales::label_scientific(2)
       ) +
     scale_x_continuous(
-      breaks = scales::extended_breaks(),
-      labels = scales::label_scientific()
+      breaks = scales::pretty_breaks(3),
+      labels = scales::label_scientific(2)
       ) +
     labs(
       x = axis_labs(ttl$xaxis, ion2, .plot_type),
@@ -181,11 +186,11 @@ axis_labs <- function(type, ion, plot_type){
   if (plot_type == "static"){
   switch(
     type,
-    ionct = substitute(a~"(ct/sec)", list(a = ion_labeller(ion, "expr"))),
+    ionct = substitute(a~"(count sec"^"-"*")", list(a = ion_labeller(ion, "expr"))),
     studE = expression("studentized residuals (" * italic(e)^"*" * ")"),
     TQ = "Theoretical quantiles",
     SQ = "Sample quantiles",
-    Xct = "X (ct/sec)",
+    Xct = expression(X~"(count sec"^"-"*")"),
     time = "time (sec)",
     hat_Y = substitute("fitted value (" * hat(a) * ")",
                        list(a = ion_labeller(ion, "expr"))),
@@ -255,29 +260,31 @@ ribbon_stat <- function(IC, hat, bound, alpha_level){
   }
 
 
-dens_point <- function (p, flag, IC, width) {
+dens_point <- function (p, flag, IC, width, plot_outlier_labs) {
   # colors
   div_col <- c("#8E063B", "#BB7784", "#D6BCC0", "#E2E2E2", "#BEC1D4", "#7D87B9",
                "#023FA5") # colorspace::diverge_hcl(7, rev = TRUE)
   p <- p + geom_point(aes(color = .data$dens, alpha = .data$alpha_sc))
   if (is_symbol(get_expr(flag))) {
-    p <- p + scale_color_gradientn(
+    p <- p +
+      scale_color_gradientn(
         "",
         breaks = range(IC$dens),
-        labels =  c("divergent", "confluent"),
+        labels =  plot_outlier_labs,
         colors = div_col,
         na.value = "transparent",
         guide = guide_colourbar(ticks = FALSE, barwidth = width)
         )
       } else {
-      p <- p + scale_color_distiller(
-        "",
-        breaks = seq(0, 1, length.out = 100),
-        palette = "YlOrRd",
-        direction = 1,
-        na.value = "transparent",
-        guide = FALSE
-        )
+        p <- p +
+          scale_color_distiller(
+            "",
+            breaks = seq(0, 1, length.out = 100),
+            palette = "YlOrRd",
+            direction = 1,
+            na.value = "transparent",
+            guide = FALSE
+            )
         }
   # alpha
   p <- p + scale_alpha_identity(guide = FALSE, limits = c(1e-5, 1))

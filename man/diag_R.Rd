@@ -20,6 +20,7 @@ diag_R(
   .label = NULL,
   .meta = TRUE,
   .alpha_level = 0.05,
+  .hyp = "none",
   .plot = FALSE,
   .plot_type = "static",
   .plot_stat = NULL,
@@ -59,18 +60,21 @@ variables generated with \code{read_IC()}).}
 \item{.output}{Can be set to \code{"complete"} which returns \code{stat_R()}
 and \code{stat_X()} statistics, diagnostics, and inference test results
 following the selected method (see above argument \code{.method});
-\code{"augmented"} for the augmented IC data after diagnostics, \code{"flag"}
-for only outlier detection results; \code{"diagnostic"} for statistics and
-outlier detection, or \code{"inference"} for only inference test statistics
-results (default = inference).}
+\code{"augmented"} for the augmented IC data after diagnostics;
+\code{"diagnostic"} for statistics and outlier detection, or
+\code{"inference"} for only inference test statistics results
+(default = \code{"inference"}).}
 
-\item{.label}{For printing nice latex labels use \code{"latex"} (defualt is
-\code{NULL}.}
+\item{.label}{For printing nice latex labels use \code{"latex"} (default =
+\code{NULL}).}
 
 \item{.meta}{Logical whether to preserve the metadata as an attribute
 (defaults to TRUE).}
 
 \item{.alpha_level}{Significance level of hypothesis test.}
+
+\item{.hyp}{Hypothesis test appropriate for the selected method
+(default = \code{"none"}).}
 
 \item{.plot}{Logical indicating whether plot is generated.}
 

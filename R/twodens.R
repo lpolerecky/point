@@ -56,7 +56,6 @@ twodens <- function(.IC, .x, .y, ..., .flag){
     tidyr::nest(data = -c(!!! gr_by, !! flag)) %>%
     mutate(dens = purrr::map(.data$data, nest_dens, x, y), .keep ="unused")
 
-
   if (is_symbol(get_expr(flag))) {
     IC_dens <- diff_dens(IC_dens, flag)
     } else {

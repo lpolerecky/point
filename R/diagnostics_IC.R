@@ -16,7 +16,7 @@
 #' argument \code{.output} can be used to toggle between \code{"complete"};
 #' returning \code{stat_R()} and \code{stat_X()} statistics, diagnostics, and
 #' inference test results, \code{"augmented"}; returning the augmented IC after
-#' removing outliers, \code{"flag"}; for only outlier detection results;
+#' removing outliers, \code{"diagnostic"}; for only outlier detection results;
 #' \code{"diagnostic"}; for statistics and outlier detection, or
 #' \code{"inference"}; returns only inference test statistics results
 #' (default = inference).
@@ -42,15 +42,17 @@
 #' @param .output Can be set to \code{"complete"} which returns \code{stat_R()}
 #' and \code{stat_X()} statistics, diagnostics, and inference test results
 #' following the selected method (see above argument \code{.method});
-#' \code{"augmented"} for the augmented IC data after diagnostics, \code{"flag"}
-#' for only outlier detection results; \code{"diagnostic"} for statistics and
-#' outlier detection, or \code{"inference"} for only inference test statistics
-#' results (default = inference).
-#' @param .label For printing nice latex labels use \code{"latex"} (defualt is
-#' \code{NULL}.
+#' \code{"augmented"} for the augmented IC data after diagnostics;
+#' \code{"diagnostic"} for outlier detection, or
+#' \code{"inference"} for only inference test statistics results
+#' (default = \code{"inference"}).
+#' @param .label For printing nice latex labels use \code{"latex"} (default =
+#' \code{NULL}).
 #' @param .meta Logical whether to preserve the metadata as an attribute
 #' (defaults to TRUE).
 #' @param .alpha_level Significance level of hypothesis test.
+#' @param .hyp Hypothesis test appropriate for the selected method
+#' (default = \code{"none"}).
 #' @param .plot Logical indicating whether plot is generated.
 #' @param .plot_type Character string determining whether the returned plot is
 #' \code{"static"} \code{ggplot2::\link[ggplot2:ggplot2]{ggplot2}()}(currently
@@ -76,8 +78,10 @@
 diag_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .method = "CooksD",
                    .reps = 1, .X = Xt.pr, .N = N.pr, .species = species.nm,
                    .t = t.nm, .output = "inference", .label = NULL,
-                   .meta = TRUE, .alpha_level = 0.05, .plot = FALSE,
-                   .plot_type = "static", .plot_stat = NULL, .plot_iso = FALSE){
+                   .meta = TRUE, .alpha_level = 0.05, .hyp = "none",
+                   .plot = FALSE, .plot_type = "static", .plot_stat = NULL,
+                   .plot_iso = FALSE,
+                   .plot_outlier_labs = c("divergent", "confluent")){
 
   # Quoting the call (user-supplied expressions)
   # Grouping
@@ -87,10 +91,11 @@ diag_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .method = "CooksD",
   args <- enquos(.X = .X, .N = .N, .species = .species, .t = .t)
   # diagnostics variables
   diag_args <- list2(.method = .method, .alpha_level = .alpha_level,
-                     .hyp = "none")
+                     .hyp = .hyp)
   # plot variables
   plot_args <- list2(.method = .method, .plot_type = .plot_type,
-                     .labels = .plot_stat, .alpha_level = .alpha_level)
+                     .labels = .plot_stat, .alpha_level = .alpha_level,
+                     .plot_outlier_labs = .plot_outlier_labs)
   # warnings
   if (.plot & .output == "augmented") {
      warning("If `plot` is `TRUE`, `.output` cannot be `augmented`",
@@ -224,7 +229,7 @@ rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .method, .X = Xt.pr,
       )
 
   # Filter all stat variables out, except Poisson prediction for rare isotope
-  if (.output == "flag") {
+  if (.output == "diagnostic") {
     except <- quo_updt(args[[".N"]], pre = "hat_S", post = .ion1) %>% as_name()
     out <- select(out, -any_of(all_args(args, .ion1, .ion2, except)))
     }

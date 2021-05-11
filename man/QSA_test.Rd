@@ -71,5 +71,5 @@ tb_rw <- read_IC(point_example("2018-01-19-GLENDON"))
 tb_pr <- cor_IC(tb_rw)
 
 # QSA test
-tb_QSA <- QSA_test(tb_pr, "13C", "12C", file.nm)
+QSA_test(tb_pr, "13C", "12C", file.nm)
 }

@@ -129,9 +129,9 @@ stat_labeller <- function(var, org, stat, value, label = "latex"){
         # mlm external precision
         if (stringr::str_detect(org, "^M_R$")) {
           stat_chr <- paste0("\\bar{", stat_chr,"}")
-          if (stringr::str_detect(stat, "hat")) {
-            stat <- stringr::str_replace(stat, "hat", "")# remove hat above stat
-          }
+          # if (stringr::str_detect(stat, "hat")) {
+          #   stat <- stringr::str_replace(stat, "hat", "")# remove hat above stat
+          # }
           }
         }
 

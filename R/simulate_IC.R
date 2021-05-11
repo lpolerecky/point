@@ -49,7 +49,7 @@ simu_R <- function(.sys, .type, .ion1, .ion2, .reference, .seed, .n = 3e3,
     t.nm = 1:.n,
     bl.nm = blocks,
     n.rw = .n,
-    M_N.in = M_N * (1 + (.sys / 100) / 2),
+    M_N.in = M_N, #* (1 + (.sys / 100) / 2),
     # Systematic variation (Ionization differences)
     N.in =
       as.integer(
@@ -87,7 +87,7 @@ simu_R <- function(.sys, .type, .ion1, .ion2, .reference, .seed, .n = 3e3,
           list(M_N = .data$N.in, seed = .data$seed), N_gen),
       Xt.sm = .data$N.sm
       ) %>%
-    ungroup()%>%
+    ungroup() %>%
     select(-c(.data$seed, .data$N.in, .data$M_N.in, .data$R.in))
 
 }

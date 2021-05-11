@@ -41,7 +41,7 @@
 #' tb_pr <- cor_IC(tb_rw)
 #'
 #' # QSA test
-#' tb_QSA <- QSA_test(tb_pr, "13C", "12C", file.nm)
+#' QSA_test(tb_pr, "13C", "12C", file.nm)
 QSA_test <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr,
                      .N = N.pr, .species = species.nm, .t = t.nm, .plot = TRUE){
 
@@ -62,9 +62,8 @@ QSA_test <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr,
     cov_R(c(.ion1, .ion2), !!! gr_by, .species = !! args[[".species"]],
           .t = !! args[[".t"]]) %>%
     mutate(!!R_X  := !! X1  / !! X2 )
-  return(IC)
 
-  df_lm <- tidyr::nest(df, data = -c(!!! gr_by)) %>%
+  df_lm <- tidyr::nest(IC, data = -c(!!! gr_by)) %>%
     mutate(
       lm_out =
         purrr::map(

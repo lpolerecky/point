@@ -314,7 +314,8 @@ cstd_var <- function(.IC, gr_by, args){
       !! args[["Xe"]] := .data$E - .data$min_bound + !! args[["hat_X1"]],
       .keep = "unused"
       ) %>%
-    ungroup()
+    ungroup() %>%
+    select(-c(.data$min_bound, .data$sector))
    }
 
 # Conditional coefficient back transformation
