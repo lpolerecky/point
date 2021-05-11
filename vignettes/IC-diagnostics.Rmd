@@ -96,7 +96,8 @@ ion2 <-  c("12C", "40Ca 16O", "40Ca 16O")
 ls_dia <- purrr::map2(
   ion1, 
   ion2, 
-  ~diag_R(tb_pr, .x, .y, file.nm, bl.nm, .method = "Cameca", .reps = 2, .output = "diagnostic") 
+  ~diag_R(tb_pr, .x, .y, file.nm, bl.nm, .method = "Cameca", .reps = 2, 
+          .output = "diagnostic") 
   )       
 ```
 
@@ -114,7 +115,7 @@ Isotopes of the same element should have more-or-less the same ionization effici
 The default method to account for such discrepancies, as incorporated in the Cameca^TM^ software, entails a block-wise (blocks represent sub-units of the complete analysis) check for variability. If values fall outside of a pre-defined range of variance (e.g. two standard deviations, referred to as $\sigma$ in the Cameca^TM^ software), the measurement will be rejected ($N\_rej$ in the excerpt of the Cameca output files; Fig. \@ref(fig:xcpcameca)).  
 
 
-```{r echo=FALSE}                                    
+```{r eval=FALSE}                                    
 # Reproduce Cameca stat file: descriptive and predictive statistics for  
 # ion ratios (block-wise)
 fun_CAMECA <- function(IC){
@@ -164,7 +165,7 @@ knitr::include_graphics("excerpt_stat.png")
 ```
 
 
-```{r echo=FALSE}
+```{r eval=FALSE}
 knitr::kable(
   head(tb_CM),
   format.args = list(digits = 2, format = "G", flag = "0"),
