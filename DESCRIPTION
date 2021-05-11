@@ -29,11 +29,11 @@ Imports:
     mgcv (>= 1.8),
     nlme (>= 3.1),
     broom,
+    polyaAeppli (>= 2.0),
     MASS,
     scales
 Suggests: 
     roxygen2,
-    polyaAeppli (>= 2.0),
     nortest,
     broom.mixed,
     bookdown,
