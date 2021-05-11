@@ -331,7 +331,7 @@ To calculate the external precision for ion ratios with the package `point`, use
 
 ```{r}
 # external precision of the dataset 
-tb_R_ext  <- stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .nest = sample.nm, 
+tb_R_ext  <- stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .nest = file.nm, 
                     .stat =  c("M", "RS", "RSeM", "hat_RS", "hat_RSeM", "chi2"), 
                     .label = "webtex")
 ```
@@ -363,7 +363,7 @@ We can validate this derivation as follows:
 tb_R_int <- stat_R(tb_pr, "13C", "12C", sample.nm,  file.nm, .stat = "hat_RSeM",
                    .zero = TRUE)
 
-tb_R_ext <- stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .nest = sample.nm, 
+tb_R_ext <- stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .nest = file.nm, 
                    .stat = "hat_RS",.zero = TRUE)
 
 # The average of the internal relative predicted standard error of the mean 
