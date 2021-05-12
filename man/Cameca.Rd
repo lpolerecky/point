@@ -14,7 +14,8 @@ Cameca(
   .N = N.pr,
   .t = t.nm,
   .output = "complete",
-  .alpha_level = 0.05
+  .alpha_level = 0.05,
+  .hyp = "none"
 )
 
 CooksD(

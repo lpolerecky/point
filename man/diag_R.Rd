@@ -24,7 +24,8 @@ diag_R(
   .plot = FALSE,
   .plot_type = "static",
   .plot_stat = NULL,
-  .plot_iso = FALSE
+  .plot_iso = FALSE,
+  .plot_outlier_labs = c("divergent", "confluent")
 )
 }
 \arguments{
@@ -61,7 +62,8 @@ variables generated with \code{read_IC()}).}
 and \code{stat_X()} statistics, diagnostics, and inference test results
 following the selected method (see above argument \code{.method});
 \code{"augmented"} for the augmented IC data after diagnostics;
-\code{"diagnostic"} for statistics and outlier detection, or
+\code{"diagnostic"} returns \code{stat_R()} and \code{stat_X()} statistics
+and outlier detection; \code{"outlier"} for outlier detection;
 \code{"inference"} for only inference test statistics results
 (default = \code{"inference"}).}
 
@@ -87,6 +89,9 @@ only supported option).}
 
 \item{.plot_iso}{A character string (e.g. \code{"VPDB"}) for the delta
 conversion of R (see \code{?calib_R()} for options).}
+
+\item{.plot_outlier_labs}{A character vector of length two for the colourbar
+text for outliers (default = c("divergent", "confluent")).}
 }
 \value{
 A \code{ggplot2::\link[ggplot2:ggplot]{ggplot}()} is returned
@@ -113,7 +118,7 @@ are \code{"CooksD"} (default), \code{"Cameca"}, \code{"Rm"}, \code{"norm_E"},
 argument \code{.output} can be used to toggle between \code{"complete"};
 returning \code{stat_R()} and \code{stat_X()} statistics, diagnostics, and
 inference test results, \code{"augmented"}; returning the augmented IC after
-removing outliers, \code{"flag"}; for only outlier detection results;
+removing outliers, \code{"diagnostic"}; for only outlier detection results;
 \code{"diagnostic"}; for statistics and outlier detection, or
 \code{"inference"}; returns only inference test statistics results
 (default = inference).

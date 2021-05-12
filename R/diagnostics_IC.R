@@ -43,7 +43,8 @@
 #' and \code{stat_X()} statistics, diagnostics, and inference test results
 #' following the selected method (see above argument \code{.method});
 #' \code{"augmented"} for the augmented IC data after diagnostics;
-#' \code{"diagnostic"} for outlier detection, or
+#' \code{"diagnostic"} returns \code{stat_R()} and \code{stat_X()} statistics
+#' and outlier detection; \code{"outlier"} for outlier detection;
 #' \code{"inference"} for only inference test statistics results
 #' (default = \code{"inference"}).
 #' @param .label For printing nice latex labels use \code{"latex"} (default =
@@ -61,6 +62,8 @@
 #' \code{point::nm_stat_R} for the full selection of statistics available.
 #' @param .plot_iso A character string (e.g. \code{"VPDB"}) for the delta
 #' conversion of R (see \code{?calib_R()} for options).
+#' @param .plot_outlier_labs A character vector of length two for the colourbar
+#' text for outliers (default = c("divergent", "confluent")).
 #'
 #' @return A \code{ggplot2::\link[ggplot2:ggplot]{ggplot}()} is returned
 #' (if \code{.plot = TRUE}) along with a
@@ -159,7 +162,8 @@ diag_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .method = "CooksD",
 
   # Inferences
   if (.output == "inference" | .output == "complete") {
-    if (.method %in% filter(point::names_diag, .data$inference == "eval_diag")$name) {
+    if (.method %in%
+        filter(point::names_diag, .data$inference == "eval_diag")$name) {
       data_env <- env(data = IC)
       eval_call <- call2("eval_diag", IC, .ion1 = .ion1, .ion2 = .ion2,
                           !!! gr_by, .nest = enquo(.nest), !!! args,
@@ -167,7 +171,8 @@ diag_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .method = "CooksD",
                          .output = .output, .label = .label)
       return(eval(eval_call, data_env))
       }
-    if (.method %in% filter(point::names_diag, .data$inference == "external")$name) {
+    if (.method %in%
+        filter(point::names_diag, .data$inference == "external")$name) {
       distinct(IC, !!!gr_by, .data$hyp)
       }
     } else {
@@ -229,7 +234,7 @@ rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .method, .X = Xt.pr,
       )
 
   # Filter all stat variables out, except Poisson prediction for rare isotope
-  if (.output == "diagnostic") {
+  if (.output == "outlier") {
     except <- quo_updt(args[[".N"]], pre = "hat_S", post = .ion1) %>% as_name()
     out <- select(out, -any_of(all_args(args, .ion1, .ion2, except)))
     }

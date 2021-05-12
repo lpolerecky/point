@@ -48,7 +48,7 @@
 #' # CAMECA style augmentation of ion count data for isotope ratios
 #' Cameca(tb_R, "13C", "12C", file.nm, .output = "flag")
 Cameca <- function(.IC, .ion1, .ion2, ..., .X = Xt.pr, .N = N.pr, .t = t.nm,
-                   .output = "complete", .alpha_level = 0.05){
+                   .output = "complete", .alpha_level = 0.05, .hyp = "none"){
 
   # Grouping
   gr_by <- enquos(...)
