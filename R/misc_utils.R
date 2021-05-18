@@ -87,7 +87,8 @@ R_labeller <- function(ion1, ion2, label = "latex"){
 
   ls_R <- purrr::map(c(ion1, ion2), ion_labeller, label)
   if (label == "latex" | label == "webtex") {
-    lb <- paste(ls_R[[1]], ls_R[[2]], sep = "/")
+    lb <- paste(ls_R[[1]], ls_R[[2]], sep = "") %>%
+      stringr::str_replace("\\$\\$", "/")
     return(lb)
     }
   if (label == "expr") {

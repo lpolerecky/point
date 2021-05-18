@@ -28,10 +28,10 @@ Imports:
     purrr (>= 0.3),
     mgcv (>= 1.8),
     nlme (>= 3.1),
-    broom,
+    broom (>= 0.7.6),
     polyaAeppli (>= 2.0),
-    MASS,
-    scales
+    MASS (>= 7.3.54),
+    scales (>= 1.1.1)
 Suggests: 
     roxygen2,
     nortest,

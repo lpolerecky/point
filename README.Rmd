@@ -137,7 +137,7 @@ To calculate the external reproducibility of isotope ratios one needs to use the
   
 ```{r example2}
 # external precision for 13C/12C ratios
-tb_R <- stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .nest = sample.nm, 
+tb_R <- stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .nest = file.nm, 
                .label = "webtex")
 ```
 
