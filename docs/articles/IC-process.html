@@ -81,7 +81,7 @@
 
       
 
-      </header><script src="IC-process_files/jquery-1.11.3/jquery.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1">
+      </header><script src="IC-process_files/header-attrs-2.8/header-attrs.js"></script><script src="IC-process_files/jquery-1.11.3/jquery.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1">
 <link href="IC-process_files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet">
 <script src="IC-process_files/bootstrap-3.3.5/js/bootstrap.min.js"></script><script src="IC-process_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script><script src="IC-process_files/bootstrap-3.3.5/shim/respond.min.js"></script><style>h1 {font-size: 34px;}
        h1.title {font-size: 38px;}
@@ -92,7 +92,7 @@
        h6 {font-size: 12px;}
        code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
        pre:not([class]) { background-color: white }</style>
-<script src="IC-process_files/navigation-1.1/tabsets.js"></script><script src="IC-process_files/accessible-code-block-0.0.1/empty-anchor.js"></script><div class="row">
+<script src="IC-process_files/navigation-1.1/tabsets.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>IC-process</h1>
@@ -106,11 +106,11 @@
 
     
     
-<div id="accuracy-of-ion-count-data" class="section level1">
+<div id="accuracy-of-ion-count-data" class="section level1" number="1">
 <h1 class="hasAnchor">
 <a href="#accuracy-of-ion-count-data" class="anchor"></a><span class="header-section-number">1</span> Accuracy of Ion Count Data</h1>
 <p>Systematic bias can be introduced by the way secondary ions are generated from primary Cs<sup>+</sup> and O<sup>-</sup> bombardment on the analytical substrate as well as the <em>ion-to-electron conversion efficiency</em> in the detection systems. Commonly used detection system are electron multipliers (EM) for low secondary ion currents and Faraday cups (FC) for high secondary ion currents.</p>
-<div id="nomenclature" class="section level2">
+<div id="nomenclature" class="section level2" number="1.1">
 <h2 class="hasAnchor">
 <a href="#nomenclature" class="anchor"></a><span class="header-section-number">1.1</span> Nomenclature</h2>
 <ul>
@@ -132,10 +132,10 @@
 <span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va">polyaAeppli</span><span class="op">)</span> <span class="co"># Polya-Aeppli distribution</span>
 <span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://tibble.tidyverse.org/">tibble</a></span><span class="op">)</span> <span class="co"># tibble dataframe</span></code></pre></div>
 </div>
-<div id="systematic-bias-by-ion-detection-devices" class="section level2">
+<div id="systematic-bias-by-ion-detection-devices" class="section level2" number="1.2">
 <h2 class="hasAnchor">
 <a href="#systematic-bias-by-ion-detection-devices" class="anchor"></a><span class="header-section-number">1.2</span> Systematic bias by ion detection devices</h2>
-<div id="analytical-bias-introduced-by-electron-multipliers" class="section level3">
+<div id="analytical-bias-introduced-by-electron-multipliers" class="section level3" number="1.2.1">
 <h3 class="hasAnchor">
 <a href="#analytical-bias-introduced-by-electron-multipliers" class="anchor"></a><span class="header-section-number">1.2.1</span> Analytical bias introduced by electron multipliers</h3>
 <p>The EM gain is a measure of the electron output current relative to the ion input and the amplification after ion-to-electron conversion. In this process an incident secondary ion triggers the generation of an electron at the first dynode (conversion dynode) of the EM channel; in turn, the resultant secondary electron strikes a consecutive dynode thereby amplifying the signal, where the latter process of secondary electron amplification is repeated multiple times (for the <em>Cameca NanoSIMS 50L</em> this generally results in a gain of <span class="math inline">\(10^8\)</span> electrons).</p>
@@ -146,7 +146,7 @@ Figure 1.1: Graphic representation of the EM ion detection device
 </p>
 </div>
 <p>After this phase of successive cascading charge amplification, the signal is converted to voltage (the EM high voltage, or EMHV; see Fig. <a href="#fig:EMdevice">1.1</a>), where the voltage is proportional to the EM gain. This last conversion depends on the age of the EM and the EMHV is usually increased with successive age to preserve ion-to-electron efficiency at a suitable sensitivity.</p>
-<div id="electron-multiplier-yield" class="section level4">
+<div id="electron-multiplier-yield" class="section level4" number="1.2.1.1">
 <h4 class="hasAnchor">
 <a href="#electron-multiplier-yield" class="anchor"></a><span class="header-section-number">1.2.1.1</span> Electron Multiplier Yield</h4>
 <p>The amplitude of EM secondary electron output to EMHV conversion follows the so-called Peak Height Distribution (PHD). In tuning the EM detection system, the EM secondary electron output to EMHV conversion is optimized so that the probability of an electron output to have a certain EMHV is higher than a pre-defined threshold. This discriminator threshold is set to filter-out the background noise (typically 5<span class="math inline">\(\,\)</span>ct<span class="math inline">\(\,\)</span>s<sup>-</sup>). However the discriminator threshold will inevitably also cut-off part of the genuine EM secondary electron output <span class="citation">(Slodzian et al. 2001)</span>.</p>
@@ -189,7 +189,7 @@ Figure 1.2: An example of a typical PHD distribution. The effect of the discrimi
 <span class="co">#&gt; [1] 30007.95</span></code></pre></div>
 <p>The shape of the PHD distribution changes with the age of the EM but its deleterious effect on secondary ion-to-electron conversion can be alleviated by changing the EMHV. Tools for the assessment of EM deterioration is dealt with in a subsequent section.</p>
 </div>
-<div id="dead-time" class="section level4">
+<div id="dead-time" class="section level4" number="1.2.1.2">
 <h4 class="hasAnchor">
 <a href="#dead-time" class="anchor"></a><span class="header-section-number">1.2.1.2</span> Dead time</h4>
 <p>Another bias introduced by EM ion detection devices is the time associated for recovery after an ion hits the first dynode. During the intermediate time, a second ion arriving at the same time can then not be recorded because of the electronic paralysis of the EM. Although this dead time (<span class="math inline">\(t_{ns}\)</span>) is small (<span class="math inline">\(44\,\)</span>ns), high count frequencies can cause the cumulate effect of this re-occurring phenomenon to become significant for the final count numbers. The count rates can be corrected by the following equation:</p>
@@ -220,7 +220,7 @@ Figure 1.2: An example of a typical PHD distribution. The effect of the discrimi
 <!-- , where $f$ is 0.5 based on Poisson statistics, BTU has been shown to vary among matrices. At this stage it is hard assess what $K$ could have been. -->
 </div>
 </div>
-<div id="analytical-bias-introduced-by-faraday-cups" class="section level3">
+<div id="analytical-bias-introduced-by-faraday-cups" class="section level3" number="1.2.2">
 <h3 class="hasAnchor">
 <a href="#analytical-bias-introduced-by-faraday-cups" class="anchor"></a><span class="header-section-number">1.2.2</span> Analytical bias introduced by Faraday Cups</h3>
 <p>To be included in the future.</p>
@@ -233,7 +233,7 @@ Figure 1.2: An example of a typical PHD distribution. The effect of the discrimi
 <!-- $$ s_{\delta_{\bar{x}}} = \sqrt{\left( \frac{ s_{\bar{x}_{R}} } { \bar{x}_R } \right)^2 + \left( \frac{ s_{\bar{x}_{R_{std}}}  } { \bar{x}_{R_{std}} } \right)^2 + \left( \frac{ s_{\delta_{std}} } { \delta_{std} +1000 } \right)^2} $$ -->
 </div>
 </div>
-<div id="systematic-bias-by-ionization-yield-fluctuations" class="section level2">
+<div id="systematic-bias-by-ionization-yield-fluctuations" class="section level2" number="1.3">
 <h2 class="hasAnchor">
 <a href="#systematic-bias-by-ionization-yield-fluctuations" class="anchor"></a><span class="header-section-number">1.3</span> Systematic bias by ionization yield fluctuations</h2>
 <p>In contrast to EM yield, ionization yield defines the efficiency whereby secondary ions are generated per incident primary ion. The probability whereby the primary beam produced secondary ions depends strongly on properties of the substrate (matrix effects) and the evolving sputter pit as well as the machine settings, such as the beam type (Cs<sup>+</sup> and O<sup>-</sup>) and sample charging. The latter effect of sample charge build-up combined with the deepening of the sputter pit are connected to large systematic biases seen in the count rates of individual ions (see Fig. <a href="#fig:ionR1">1.3</a>) throughout a single analysis <span class="citation">(Fitzsimons, Harte, and Clark 2000)</span>.</p>
@@ -293,24 +293,24 @@ Figure 1.6: An extraction of the <span class="math inline">\(l0\)</span> and <sp
 <div id="references" class="section level1 unnumbered">
 <h1 class="hasAnchor">
 <a href="#references" class="anchor"></a>References</h1>
-<div id="refs" class="references">
-<div id="ref-Burden2014">
-<p>Burden, Conrad J. 2014. “An R Implementation of the Polya-Aeppli Distribution.” <a href="http://arxiv.org/abs/1406.2780">http://arxiv.org/abs/1406.2780</a>.</p>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Burden2014" class="csl-entry">
+Burden, Conrad J. 2014. <span>“<span class="nocase">An R Implementation of the Polya-Aeppli Distribution</span>.”</span> <a href="http://arxiv.org/abs/1406.2780">http://arxiv.org/abs/1406.2780</a>.
 </div>
-<div id="ref-Dietz1970">
-<p>Dietz, L. A. 1970. “General method for computing the statistics of charge amplification in particle and photon detectors used for pulse counting.” <em>International Journal of Mass Spectrometry and Ion Physics</em> 5 (1-2): 11–19. <a href="https://doi.org/10.1016/0020-7381(70)87002-4">https://doi.org/10.1016/0020-7381(70)87002-4</a>.</p>
+<div id="ref-Dietz1970" class="csl-entry">
+Dietz, L. A. 1970. <span>“<span class="nocase">General method for computing the statistics of charge amplification in particle and photon detectors used for pulse counting</span>.”</span> <em>International Journal of Mass Spectrometry and Ion Physics</em> 5 (1-2): 11–19. <a href="https://doi.org/10.1016/0020-7381(70)87002-4">https://doi.org/10.1016/0020-7381(70)87002-4</a>.
 </div>
-<div id="ref-Dietz1978">
-<p>Dietz, L. A., and L. R. Hanrahan. 1978. “Electron multiplier-scintillator detector for pulse counting positive or negative ions.” <em>Review of Scientific Instruments</em> 49 (9): 1250–6. <a href="https://doi.org/10.1063/1.1135590">https://doi.org/10.1063/1.1135590</a>.</p>
+<div id="ref-Dietz1978" class="csl-entry">
+Dietz, L. A., and L. R. Hanrahan. 1978. <span>“<span class="nocase">Electron multiplier-scintillator detector for pulse counting positive or negative ions</span>.”</span> <em>Review of Scientific Instruments</em> 49 (9): 1250–56. <a href="https://doi.org/10.1063/1.1135590">https://doi.org/10.1063/1.1135590</a>.
 </div>
-<div id="ref-Fitzsimons2000a">
-<p>Fitzsimons, I. C. W., B. Harte, and R. M. Clark. 2000. “SIMS stable isotope measurement: counting statistics and analytical precision.” <em>Mineralogical Magazine</em> 64 (01): 59–83. <a href="https://doi.org/10.1180/002646100549139">https://doi.org/10.1180/002646100549139</a>.</p>
+<div id="ref-Fitzsimons2000a" class="csl-entry">
+Fitzsimons, I. C. W., B. Harte, and R. M. Clark. 2000. <span>“<span class="nocase">SIMS stable isotope measurement: counting statistics and analytical precision</span>.”</span> <em>Mineralogical Magazine</em> 64 (01): 59–83. <a href="https://doi.org/10.1180/002646100549139">https://doi.org/10.1180/002646100549139</a>.
 </div>
-<div id="ref-Ku1966">
-<p>Ku, H. H. 1966. “Notes on the use of propagation of error formulas.” <em>Journal of Research of the National Bureau of Standards, Section C: Engineering and Instrumentation</em> 70C (4): 263. <a href="https://doi.org/10.6028/jres.070c.025">https://doi.org/10.6028/jres.070c.025</a>.</p>
+<div id="ref-Ku1966" class="csl-entry">
+Ku, H. H. 1966. <span>“<span class="nocase">Notes on the use of propagation of error formulas</span>.”</span> <em>Journal of Research of the National Bureau of Standards, Section C: Engineering and Instrumentation</em> 70C (4): 263. <a href="https://doi.org/10.6028/jres.070c.025">https://doi.org/10.6028/jres.070c.025</a>.
 </div>
-<div id="ref-SLodzian2001">
-<p>Slodzian, Georges, M Chaintreau, R Dennebouy, and A Rousse. 2001. “Precise in situ measurements of isotopic abundances with pulse.” <em>The European Physical Journal Applied Physics</em> 14: 199–231. <a href="https://doi.org/10.1051/epjap:2001160">https://doi.org/10.1051/epjap:2001160</a>.</p>
+<div id="ref-SLodzian2001" class="csl-entry">
+Slodzian, Georges, M Chaintreau, R Dennebouy, and A Rousse. 2001. <span>“<span class="nocase">Precise in situ measurements of isotopic abundances with pulse</span>.”</span> <em>The European Physical Journal Applied Physics</em> 14: 199–231. <a href="https://doi.org/10.1051/epjap:2001160">https://doi.org/10.1051/epjap:2001160</a>.
 </div>
 </div>
 </div>

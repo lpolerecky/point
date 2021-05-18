@@ -81,7 +81,7 @@
 
       
 
-      </header><script src="IC-diagnostics_files/jquery-1.11.3/jquery.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1">
+      </header><script src="IC-diagnostics_files/header-attrs-2.8/header-attrs.js"></script><script src="IC-diagnostics_files/jquery-1.11.3/jquery.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1">
 <link href="IC-diagnostics_files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet">
 <script src="IC-diagnostics_files/bootstrap-3.3.5/js/bootstrap.min.js"></script><script src="IC-diagnostics_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script><script src="IC-diagnostics_files/bootstrap-3.3.5/shim/respond.min.js"></script><style>h1 {font-size: 34px;}
        h1.title {font-size: 38px;}
@@ -92,7 +92,7 @@
        h6 {font-size: 12px;}
        code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
        pre:not([class]) { background-color: white }</style>
-<script src="IC-diagnostics_files/navigation-1.1/tabsets.js"></script><script src="IC-diagnostics_files/accessible-code-block-0.0.1/empty-anchor.js"></script><div class="row">
+<script src="IC-diagnostics_files/navigation-1.1/tabsets.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>IC-diagnostics</h1>
@@ -106,7 +106,7 @@
 
     
     
-<div id="diagnostics-for-ion-count-data" class="section level1">
+<div id="diagnostics-for-ion-count-data" class="section level1" number="1">
 <h1 class="hasAnchor">
 <a href="#diagnostics-for-ion-count-data" class="anchor"></a><span class="header-section-number">1</span> Diagnostics for Ion Count Data</h1>
 <p>The random nature of secondary ions emitted from a sample is described by Poisson statistics, and can be used to predict the precision of SIMS measurements under ideal circumstances (e.g., the predicted standard error can be deduced from the total counts of secondary ions). However, besides this fundamental source of imprecision, real SIMS measurements are additionally affected by other factors such as sample heterogeneity, instrument instability, the development and geometry of the sputter pit, and sample charging. Although some of these biases can be avoided by proper instrument tuning and sample documentation (e.g. T/SEM to characterise the textural properties of a rock sample) prior to SIMS measurement, factors such as instrument instability or sample heterogeneity can never be fully eliminated. In this vignette, diagnostic tools are showcased which can help evaluate the potential impact of such factors on the precision of ion count data.</p>
@@ -117,7 +117,7 @@
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="http://purrr.tidyverse.org">purrr</a></span><span class="op">)</span> <span class="co"># functional programming</span>
 <span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org">dplyr</a></span><span class="op">)</span> <span class="co"># manipulating data</span>
 <span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org">ggplot2</a></span><span class="op">)</span> <span class="co"># graphics</span></code></pre></div>
-<div id="nomenclature" class="section level2">
+<div id="nomenclature" class="section level2" number="1.1">
 <h2 class="hasAnchor">
 <a href="#nomenclature" class="anchor"></a><span class="header-section-number">1.1</span> Nomenclature</h2>
 <ul>
@@ -131,7 +131,7 @@
 <li>Study: <span class="math inline">\(m\)</span>-series of analyses <span class="math inline">\(M_{(j)}\)</span>, constituting the different spots on the analytical substrate</li>
 </ul>
 </div>
-<div id="basic-functionality" class="section level2">
+<div id="basic-functionality" class="section level2" number="1.2">
 <h2 class="hasAnchor">
 <a href="#basic-functionality" class="anchor"></a><span class="header-section-number">1.2</span> Basic functionality</h2>
 <p>The function <code><a href="../reference/diag_R.html">diag_R()</a></code> is designed to be a flexible wrapper for isotope count diagnostics. Non-isotope pairs are supported as well but the outcome is not necessarily meaningful due to variation caused by the ionization efficiency differences among elements, check the vignette <a href="IC-process.html">IC-process</a> for solutions. For basic functionality, <code><a href="../reference/diag_R.html">diag_R()</a></code> requires the following arguments: <code>.IC</code>, which should be a <a href="https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html">tibble</a> containing processed ion count data (ideally, following the routine <code>point</code> work-flow), and arguments <code>.ion1</code> and <code>.ion2</code> which link to the rare isotope and common isotope, respectively (as character strings). The dots <code>...</code> should be used to define a grouping variable to e.g. identify individual analysis or sets of analyses. The argument <code>.method</code> enables selection of diagnostic methods, which are outlined in this vignette. A range of other arguments dictate features of the returned statistics and plotting of the outcome (as a <a href="https://ggplot2.tidyverse.org/">ggplot</a>). Check <code>?diag_R()</code> for all options.</p>
@@ -151,11 +151,11 @@
 <p>The output consist of a <code>tibble</code> containing the single ion count statistics for each ion and the isotope ratio statistics. In addition, the specific diagnostics (selected with <code>.method =  "Cameca"</code>) is appended to the tibble. Here the procedure was repeated two times (<code>.reps = 2</code>) and <code>.output</code> set to <code>"diagnostic"</code> to get the augmented summary statistics of <span class="math inline">\(R\)</span> following the Cameca<sup>TM</sup> output.</p>
 </div>
 </div>
-<div id="isotope-ratios-a-special-case" class="section level1">
+<div id="isotope-ratios-a-special-case" class="section level1" number="2">
 <h1 class="hasAnchor">
 <a href="#isotope-ratios-a-special-case" class="anchor"></a><span class="header-section-number">2</span> Isotope ratios: A special case</h1>
 <p>Isotopes of the same element should have more-or-less the same ionization efficiency <span class="citation">(Fitzsimons, Harte, and Clark 2000)</span>. It thus follows, that in an isotopically homogeneous analytical substrate the count rates of two isotope from the same element should be dependent on each. From this it can be deduced that large deviations in count rate ratios of an isotope system between consecutive measurements indicate a potential discrepancy (e.g., sample heterogeneity and instrument instability). This unique property enables the detection of situations in which the analysed substrate contains isotopic heterogeneity at a smaller scale than the beam size, or where machine instability causes a discrepancy in count rates between detectors.</p>
-<div id="count-block-based-diagnostics-camecatm" class="section level2">
+<div id="count-block-based-diagnostics-camecatm" class="section level2" number="2.1">
 <h2 class="hasAnchor">
 <a href="#count-block-based-diagnostics-camecatm" class="anchor"></a><span class="header-section-number">2.1</span> Count block-based diagnostics (Cameca<sup>TM</sup>)</h2>
 <p>The default method to account for such discrepancies, as incorporated in the Cameca<sup>TM</sup> software, entails a block-wise (blocks represent sub-units of the complete analysis) check for variability. If values fall outside of a pre-defined range of variance (e.g. two standard deviations, referred to as <span class="math inline">\(\sigma\)</span> in the Cameca<sup>TM</sup> software), the measurement will be rejected (<span class="math inline">\(N\_rej\)</span> in the excerpt of the Cameca output files; Fig. <a href="#fig:xcpcameca">2.1</a>).</p>
@@ -242,7 +242,7 @@ Figure 2.1: An excerpt of the Cameca stat-file for count block based 2<span clas
 </tbody>
 </table>
 </div>
-<div id="regression-based-diagnostics" class="section level2">
+<div id="regression-based-diagnostics" class="section level2" number="2.2">
 <h2 class="hasAnchor">
 <a href="#regression-based-diagnostics" class="anchor"></a><span class="header-section-number">2.2</span> Regression-based diagnostics</h2>
 <p>The solution provided by the Cameca<sup>TM</sup> software seems straightforward and effective, just compare the <span class="math inline">\(R\)</span> values of the individual measurements of an <span class="math inline">\(n\)</span>-series (<span class="math inline">\(N_{(i)}\)</span>), and check whether there are significant deviations at some points during the analysis. However, the situation is more complex than that, as illustrated with the following examples.</p>
@@ -262,7 +262,7 @@ Figure 2.2: Histograms comparing input and output <span class="math inline">\(R\
 </div>
 <p>From Figure <a href="#fig:simulations">2.2</a> it is evident that the real variation in <span class="math inline">\(R\)</span> (input R; black and red lines) are indistinguishable when viewing the derived distribution of the ion count ratios (output R; histogram). This is an effect related to the relative large <strong>random bias</strong> induced by the ionization of the substrate. So, even for these large variations in isotopic composition, it cannot be confidently said whether the measured <span class="math inline">\(R\)</span> is representative for the analysed site, or if the underlying data structure is skewed with one, or more, isotopically distinguishable components comprising the pooled <span class="math inline">\(R\)</span> value. This effect is, furthermore, hardly observable in the precision of the data, where the <span class="math inline">\(\epsilon_{\bar{R}}\)</span> of the simulation referred to as “asymmetric” is 0.57‰, whereas the “ideal” simulation has only a marginally better precision of 0.46‰.</p>
 <p>From the previous examples, it becomes apparent that heterogeneous substrates cause minimal deviation in the internal precision. Hence, a lot of hidden variation in nominal SIMS isotope analyses can go undetected. So, clearly, a different approach must be adopted to identify these isotopically highly variable substrates.</p>
-<div id="linear-relationship-of-isotope-counts" class="section level3">
+<div id="linear-relationship-of-isotope-counts" class="section level3" number="2.2.1">
 <h3 class="hasAnchor">
 <a href="#linear-relationship-of-isotope-counts" class="anchor"></a><span class="header-section-number">2.2.1</span> Linear relationship of isotope counts</h3>
 <p>In an “ideal” isotopically homogeneous substrate the count rates of two isotope from the same element should be dependent on each other <span class="citation">(Fitzsimons, Harte, and Clark 2000)</span>. Thus, even though the ionization efficiency might vary within a single analysis, the count rate of an isotope species <span class="math inline">\(b\)</span> can be deduced from the count rate of isotope species <span class="math inline">\(a\)</span> through a linear combination with the isotope ratio <span class="math inline">\(R\)</span>:</p>
@@ -274,7 +274,7 @@ Figure 2.2: Histograms comparing input and output <span class="math inline">\(R\
  \hat{e}_i =  X_i^b - \hat{R}X_i^a \text{.} \tag{2.2}
 \end{equation}\]</span></p>
 <p>The component <span class="math inline">\(\hat{e}_i\)</span> gives a measure of the fit of the model (or the performance of this "ideal linear model) to the sampled data. This is known as residual analysis or regression diagnostics; see for example <span class="citation">(Fox and Weisberg 2018)</span>. Residual analysis yield estimates about the data points that could have unduly influenced the coefficient <span class="math inline">\(\hat{R}\)</span> of Equation <a href="#eq:linmodR">(2.1)</a>. Outliers detected in linear regression can therefore be described as an observation with a response variable (isotope species; <span class="math inline">\(X_i^b\)</span>) that is conditionally unusual when regarding the independent variable (isotope species; <span class="math inline">\(X_i^a\)</span>).</p>
-<p>To demonstrate this we can use again <code><a href="../reference/diag_R.html">diag_R()</a></code> and the simulated data according to the previous specifications (“ideal”, “symmetric”, and “asymmetric” isotope variance), and supply the nominal arguments <code>.IC</code>, <code>.ion1</code>, <code>.ion2</code>, <code>...</code> to define again the ion count data, the isotope system to be analysed, as well as a grouping structure defining the individual analyses. We leave the <code>.method</code> as the default method, and plot the outcome with <code>.plot = TRUE</code>. The argument <code>.label</code> produces latex or webtex parsable labels for the data frame containing the statistics results.</p>
+<p>To demonstrate this we can use again <code><a href="../reference/diag_R.html">diag_R()</a></code> and the simulated data according to the previous specifications (“ideal,” “symmetric,” and “asymmetric” isotope variance), and supply the nominal arguments <code>.IC</code>, <code>.ion1</code>, <code>.ion2</code>, <code>...</code> to define again the ion count data, the isotope system to be analysed, as well as a grouping structure defining the individual analyses. We leave the <code>.method</code> as the default method, and plot the outcome with <code>.plot = TRUE</code>. The argument <code>.label</code> produces latex or webtex parsable labels for the data frame containing the statistics results.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">tb_dia</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/diag_R.html">diag_R</a></span><span class="op">(</span><span class="va">simu_IC</span>, <span class="st">"13C"</span>, <span class="st">"12C"</span>, <span class="va">type.nm</span>, <span class="va">spot.nm</span>, .plot <span class="op">=</span> <span class="cn">TRUE</span>, 
                  .label <span class="op">=</span> <span class="st">"webtex"</span><span class="op">)</span></code></pre></div>
@@ -288,7 +288,7 @@ Figure 2.3: Scatter-plot of <sup>13</sup>C and <sup>12</sup>C count rates and th
 <p>For more information and a validation of this method, see the preprint:</p>
 <p><strong>Martin Schobben, Michiel Kienhuis, and Lubos Polerecky. 2021. New methods to detect isotopic heterogeneity with Secondary Ion Mass Spectrometry, preprint on <a href="https://eartharxiv.org/">Eartharxiv</a>.</strong></p>
 </div>
-<div id="outlier-detection-cooks-d" class="section level3">
+<div id="outlier-detection-cooks-d" class="section level3" number="2.2.2">
 <h3 class="hasAnchor">
 <a href="#outlier-detection-cooks-d" class="anchor"></a><span class="header-section-number">2.2.2</span> Outlier detection (Cook’s D)</h3>
 <p>The residuals will first be normalized to over come scale-dependence. This can be done by using the <em>studentized</em> residuals (<span class="math inline">\(\hat{e}_{i}^*\)</span>) <span class="citation">(see for example Fox and Weisberg 2018)</span>. A studentized residual is obtained by dividing the residual by an independent estimate of the standard deviation of the residuals. To ensure independence, the standard deviation of the residuals is calculated by leaving the residual of the <span class="math inline">\(i\)</span>-th observation out:</p>
@@ -306,7 +306,7 @@ Figure 2.3: Scatter-plot of <sup>13</sup>C and <sup>12</sup>C count rates and th
  h_i = \frac{1}{n} + \frac{ \left( X_i^a - \bar{X}_a \right)^2 }{\sum_{j=1}^n \left(X_j^a -  \bar{X}_a \right)^2}
  \tag{2.5}
 \end{equation}\]</span></p>
-<p>The larger the deviation <span class="math inline">\(X_i^a\)</span> from the mean (<span class="math inline">\(\bar{X}_a\)</span>) the more leverage the data-point has on the regression line. Given that the “ideal” simulation satisfies the conditions as initially described for the “ideal” linear model (Eq. <a href="#eq:linmodR">(2.1)</a>), the estimated <span class="math inline">\(\hat{e}\)</span> can be used to assess deviations from this “ideal linear model”, and thereby provide a measure of how representative the <span class="math inline">\(\bar{R}\)</span> is for the sampled spot. The goal of residual analysis would therefore be to identify the influence of the coefficient; in this case the influence on <span class="math inline">\(\bar{R}\)</span>, by determining the leverage and discrepancy (outlyingness) of variable <span class="math inline">\(X^a\)</span>, such that:</p>
+<p>The larger the deviation <span class="math inline">\(X_i^a\)</span> from the mean (<span class="math inline">\(\bar{X}_a\)</span>) the more leverage the data-point has on the regression line. Given that the “ideal” simulation satisfies the conditions as initially described for the “ideal” linear model (Eq. <a href="#eq:linmodR">(2.1)</a>), the estimated <span class="math inline">\(\hat{e}\)</span> can be used to assess deviations from this “ideal linear model,” and thereby provide a measure of how representative the <span class="math inline">\(\bar{R}\)</span> is for the sampled spot. The goal of residual analysis would therefore be to identify the influence of the coefficient; in this case the influence on <span class="math inline">\(\bar{R}\)</span>, by determining the leverage and discrepancy (outlyingness) of variable <span class="math inline">\(X^a\)</span>, such that:</p>
 <p><span class="math display" id="eq:influence">\[\begin{equation}
   \text{Influence} = \text{Leverage} + \text{Discrepancy}
     \tag{2.6}
@@ -323,7 +323,7 @@ Figure 2.3: Scatter-plot of <sup>13</sup>C and <sup>12</sup>C count rates and th
 \end{equation}\]</span></p>
 <p>These calculations are internally performed by a consecutive call to base <code><a href="https://rdrr.io/r/stats/lm.html">lm()</a></code> and <code><a href="https://generics.r-lib.org/reference/augment.html">broom::augment()</a></code> <span class="citation">(Robinson, Hayes, and Couch 2021)</span>.</p>
 </div>
-<div id="detecting-intra-isotope-varaibility-with-significant-outliers" class="section level3">
+<div id="detecting-intra-isotope-varaibility-with-significant-outliers" class="section level3" number="2.2.3">
 <h3 class="hasAnchor">
 <a href="#detecting-intra-isotope-varaibility-with-significant-outliers" class="anchor"></a><span class="header-section-number">2.2.3</span> Detecting intra-isotope varaibility with significant outliers</h3>
 <p>The effectiveness of recognising and differentiating the “ideal” substrate from compromised measurements detected with e.g. Cook’s D (or other outlier detection methods) can now be calculated by assessing the impact on the averaged <span class="math inline">\(R\)</span> value. This can be achieved by applying a joint model coefficient hypothesis test (or Fisher test), where the <code><a href="../reference/diag_R.html">diag_R()</a></code> function is designed to measure this deviation from the ideal “homogeneous” model (Eq. <a href="#eq:linmodR">(2.1)</a> by default.</p>
@@ -429,25 +429,25 @@ F_{(q-p),(n-q)} = \frac{ (RSS_{\theta_{0}}-RSS_{\theta_{1}}) / (q-p) }{RSS_{\the
 <p>Sensitivity runs (outlined in Schobben, Kienhuis and Polerecky, in prep) show that the Cook’s D outlier detection method performs best when compared to other methods. Hence, problematic analyses with possible intra-isotope variability can be detected, even if this is not obvious from the descriptive and predictive statistics alone.</p>
 </div>
 </div>
-<div id="inter-isotope-variability" class="section level2">
+<div id="inter-isotope-variability" class="section level2" number="2.3">
 <h2 class="hasAnchor">
 <a href="#inter-isotope-variability" class="anchor"></a><span class="header-section-number">2.3</span> Inter-isotope variability</h2>
-<p>The <code><a href="../reference/diag_R.html">diag_R()</a></code> is designed in resemblance to the <code><a href="../reference/stat_X.html">stat_R()</a></code> function, and thus also includes an option to check the external structure of the the <span class="math inline">\(m\)</span>-series of analyses usually comprised in a SIMS-based study (i.e. severeal sputter pits). For this purpose, again an <code>.nest</code> argument is included to define the grouping structure of individual analysis. In the simulated example this could refer to the different scenarios of isotopic variations (“ideal”, “symmetric”, and “asymmetric” isotope variance). And, this then provides a test for inter-isotope variability (among the sputter pits), and can be conducted as follows.</p>
+<p>The <code><a href="../reference/diag_R.html">diag_R()</a></code> is designed in resemblance to the <code><a href="../reference/stat_X.html">stat_R()</a></code> function, and thus also includes an option to check the external structure of the the <span class="math inline">\(m\)</span>-series of analyses usually comprised in a SIMS-based study (i.e. severeal sputter pits). For this purpose, again an <code>.nest</code> argument is included to define the grouping structure of individual analysis. In the simulated example this could refer to the different scenarios of isotopic variations (“ideal,” “symmetric,” and “asymmetric” isotope variance). And, this then provides a test for inter-isotope variability (among the sputter pits), and can be conducted as follows.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">tb_ext</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/diag_R.html">diag_R</a></span><span class="op">(</span><span class="va">simu_IC</span>, <span class="st">"13C"</span>, <span class="st">"12C"</span>, <span class="va">type.nm</span>, <span class="va">spot.nm</span>, .nest <span class="op">=</span> <span class="va">type.nm</span>, 
                  .label <span class="op">=</span> <span class="st">"webtex"</span><span class="op">)</span></code></pre></div>
 <table class="table">
 <colgroup>
-<col width="7%">
-<col width="7%">
-<col width="5%">
 <col width="6%">
 <col width="7%">
 <col width="5%">
+<col width="6%">
+<col width="6%">
 <col width="5%">
-<col width="11%">
-<col width="17%">
-<col width="16%">
+<col width="5%">
+<col width="10%">
+<col width="20%">
+<col width="15%">
 <col width="9%">
 </colgroup>
 <thead><tr class="header">
@@ -460,7 +460,7 @@ F_{(q-p),(n-q)} = \frac{ (RSS_{\theta_{0}}-RSS_{\theta_{1}}) / (q-p) }{RSS_{\the
 <th align="right"><span class="math inline">\(p_{R}\)</span></th>
 <th align="right"><span class="math inline">\(\hat{\bar{R}}\)</span></th>
 <th align="right">
-<span class="math inline">\(\epsilon_{\bar{R}}\)</span> (‰)</th>
+<span class="math inline">\(\hat{\epsilon}_{\bar{R}}\)</span> (‰)</th>
 <th align="right"><span class="math inline">\(\Delta AIC_{\bar{R}}\)</span></th>
 <th align="right"><span class="math inline">\(p_{\bar{R}}\)</span></th>
 </tr></thead>
@@ -597,18 +597,18 @@ F_{(q-p),(n-q)} = \frac{ (RSS_{\theta_{0}}-RSS_{\theta_{1}}) / (q-p) }{RSS_{\the
 <div id="references" class="section level1 unnumbered">
 <h1 class="hasAnchor">
 <a href="#references" class="anchor"></a>References</h1>
-<div id="refs" class="references">
-<div id="ref-Fitzsimons2000a">
-<p>Fitzsimons, I. C. W., B. Harte, and R. M. Clark. 2000. “SIMS stable isotope measurement: counting statistics and analytical precision.” <em>Mineralogical Magazine</em> 64 (01): 59–83. <a href="https://doi.org/10.1180/002646100549139">https://doi.org/10.1180/002646100549139</a>.</p>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Fitzsimons2000a" class="csl-entry">
+Fitzsimons, I. C. W., B. Harte, and R. M. Clark. 2000. <span>“<span class="nocase">SIMS stable isotope measurement: counting statistics and analytical precision</span>.”</span> <em>Mineralogical Magazine</em> 64 (01): 59–83. <a href="https://doi.org/10.1180/002646100549139">https://doi.org/10.1180/002646100549139</a>.
 </div>
-<div id="ref-Fox2018">
-<p>Fox, John, and Sanford Weisberg. 2018. <em>An R companion to applied regression</em>. Sage publications.</p>
+<div id="ref-Fox2018" class="csl-entry">
+Fox, John, and Sanford Weisberg. 2018. <em><span class="nocase">An R companion to applied regression</span></em>. Sage publications.
 </div>
-<div id="ref-nlme">
-<p>Pinheiro, José, Douglas Bates, and R-core. 2021. <em>Nlme: Linear and Nonlinear Mixed Effects Models</em>. <a href="https://svn.r-project.org/R-packages/trunk/nlme/">https://svn.r-project.org/R-packages/trunk/nlme/</a>.</p>
+<div id="ref-nlme" class="csl-entry">
+Pinheiro, José, Douglas Bates, and R-core. 2021. <em>Nlme: Linear and Nonlinear Mixed Effects Models</em>. <a href="https://svn.r-project.org/R-packages/trunk/nlme/">https://svn.r-project.org/R-packages/trunk/nlme/</a>.
 </div>
-<div id="ref-broom">
-<p>Robinson, David, Alex Hayes, and Simon Couch. 2021. <em>Broom: Convert Statistical Objects into Tidy Tibbles</em>. <a href="https://CRAN.R-project.org/package=broom">https://CRAN.R-project.org/package=broom</a>.</p>
+<div id="ref-broom" class="csl-entry">
+Robinson, David, Alex Hayes, and Simon Couch. 2021. <em>Broom: Convert Statistical Objects into Tidy Tibbles</em>. <a href="https://CRAN.R-project.org/package=broom">https://CRAN.R-project.org/package=broom</a>.
 </div>
 </div>
 </div>

@@ -158,7 +158,7 @@ stat_labeller <- function(var, org, stat, value, label = "latex"){
     if (stringr::str_detect(stat, "R")) {
       if (label == "webtex") return(paste0("$", stat_chr, "$ (\u2030)"))
       if (label == "latex") {
-        return(paste0("$", stat_chr, "(\\text{\\textperthousand})$"))
+        return(paste0(stat_chr, "(\\text{\\textperthousand})"))
       }
         } else {
           return(paste0("$", stat_chr, "$"))

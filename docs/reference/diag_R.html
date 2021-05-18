@@ -152,10 +152,12 @@
   .label <span class='op'>=</span> <span class='cn'>NULL</span>,
   .meta <span class='op'>=</span> <span class='cn'>TRUE</span>,
   .alpha_level <span class='op'>=</span> <span class='fl'>0.05</span>,
+  .hyp <span class='op'>=</span> <span class='st'>"none"</span>,
   .plot <span class='op'>=</span> <span class='cn'>FALSE</span>,
   .plot_type <span class='op'>=</span> <span class='st'>"static"</span>,
   .plot_stat <span class='op'>=</span> <span class='cn'>NULL</span>,
-  .plot_iso <span class='op'>=</span> <span class='cn'>FALSE</span>
+  .plot_iso <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  .plot_outlier_labs <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"divergent"</span>, <span class='st'>"confluent"</span><span class='op'>)</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -217,15 +219,16 @@ variables generated with <code><a href='read_IC.html'>read_IC()</a></code>).</p>
       <td><p>Can be set to <code>"complete"</code> which returns <code><a href='stat_X.html'>stat_R()</a></code>
 and <code><a href='stat_X.html'>stat_X()</a></code> statistics, diagnostics, and inference test results
 following the selected method (see above argument <code>.method</code>);
-<code>"augmented"</code> for the augmented IC data after diagnostics, <code>"flag"</code>
-for only outlier detection results; <code>"diagnostic"</code> for statistics and
-outlier detection, or <code>"inference"</code> for only inference test statistics
-results (default = inference).</p></td>
+<code>"augmented"</code> for the augmented IC data after diagnostics;
+<code>"diagnostic"</code> returns <code><a href='stat_X.html'>stat_R()</a></code> and <code><a href='stat_X.html'>stat_X()</a></code> statistics
+and outlier detection; <code>"outlier"</code> for outlier detection;
+<code>"inference"</code> for only inference test statistics results
+(default = <code>"inference"</code>).</p></td>
     </tr>
     <tr>
       <th>.label</th>
-      <td><p>For printing nice latex labels use <code>"latex"</code> (defualt is
-<code>NULL</code>.</p></td>
+      <td><p>For printing nice latex labels use <code>"latex"</code> (default =
+<code>NULL</code>).</p></td>
     </tr>
     <tr>
       <th>.meta</th>
@@ -235,6 +238,11 @@ results (default = inference).</p></td>
     <tr>
       <th>.alpha_level</th>
       <td><p>Significance level of hypothesis test.</p></td>
+    </tr>
+    <tr>
+      <th>.hyp</th>
+      <td><p>Hypothesis test appropriate for the selected method
+(default = <code>"none"</code>).</p></td>
     </tr>
     <tr>
       <th>.plot</th>
@@ -255,6 +263,11 @@ only supported option).</p></td>
       <th>.plot_iso</th>
       <td><p>A character string (e.g. <code>"VPDB"</code>) for the delta
 conversion of R (see <code>?calib_R()</code> for options).</p></td>
+    </tr>
+    <tr>
+      <th>.plot_outlier_labs</th>
+      <td><p>A character vector of length two for the colourbar
+text for outliers (default = c("divergent", "confluent")).</p></td>
     </tr>
     </table>
 
@@ -281,7 +294,7 @@ are <code>"CooksD"</code> (default), <code>"Cameca"</code>, <code>"Rm"</code>, <
 argument <code>.output</code> can be used to toggle between <code>"complete"</code>;
 returning <code><a href='stat_X.html'>stat_R()</a></code> and <code><a href='stat_X.html'>stat_X()</a></code> statistics, diagnostics, and
 inference test results, <code>"augmented"</code>; returning the augmented IC after
-removing outliers, <code>"flag"</code>; for only outlier detection results;
+removing outliers, <code>"diagnostic"</code>; for only outlier detection results;
 <code>"diagnostic"</code>; for statistics and outlier detection, or
 <code>"inference"</code>; returns only inference test statistics results
 (default = inference).</p>

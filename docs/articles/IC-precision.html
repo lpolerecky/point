@@ -81,7 +81,7 @@
 
       
 
-      </header><script src="IC-precision_files/jquery-1.11.3/jquery.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1">
+      </header><script src="IC-precision_files/header-attrs-2.8/header-attrs.js"></script><script src="IC-precision_files/jquery-1.11.3/jquery.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1">
 <link href="IC-precision_files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet">
 <script src="IC-precision_files/bootstrap-3.3.5/js/bootstrap.min.js"></script><script src="IC-precision_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script><script src="IC-precision_files/bootstrap-3.3.5/shim/respond.min.js"></script><style>h1 {font-size: 34px;}
        h1.title {font-size: 38px;}
@@ -92,7 +92,7 @@
        h6 {font-size: 12px;}
        code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
        pre:not([class]) { background-color: white }</style>
-<script src="IC-precision_files/navigation-1.1/tabsets.js"></script><script src="IC-precision_files/accessible-code-block-0.0.1/empty-anchor.js"></script><div class="row">
+<script src="IC-precision_files/navigation-1.1/tabsets.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>IC-precision</h1>
@@ -106,7 +106,7 @@
 
     
     
-<div id="precision-of-ion-count-data" class="section level1">
+<div id="precision-of-ion-count-data" class="section level1" number="1">
 <h1 class="hasAnchor">
 <a href="#precision-of-ion-count-data" class="anchor"></a><span class="header-section-number">1</span> Precision of Ion Count Data</h1>
 <p>The random nature of secondary ions emitted from an analytical substrate (e.g. rock sample) during sputtering can be described by Poisson statistics, which can be used to predict the precision of pulsed ion counts (e.g. measurements with a <em>Cameca NanoSIMS 50L</em>) under ideal circumstances. More specifically, the variation can be deduced from the total counts of secondary ions. Usefully, we can compare these predictive values with the descriptive statistics; essentially estimates of the true population location (e.g. mean) and spread (variance). This requires the assumption that the sample is taken from an infinite population. In the package <code>point</code>, tools are provided that perform these statistical tests on raw ion count data with appropriate error propagation in the case of isotope ratios. Working with raw ion count data has certain benefits as it allows subsetting of certain parts of the analysis by checking for anomalous measurements. The latter is more detailed in the vignette <a href="IC-diagnostics.html">IC-diagnostics</a>, which itself heavily relies on the here outlined functions.</p>
@@ -117,7 +117,7 @@
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org">dplyr</a></span><span class="op">)</span> <span class="co"># manipulating data</span>
 <span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="http://purrr.tidyverse.org">purrr</a></span><span class="op">)</span> <span class="co"># functional programming</span>
 <span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="http://stringr.tidyverse.org">stringr</a></span><span class="op">)</span> <span class="co"># manipulating strings</span></code></pre></div>
-<div id="nomenclature" class="section level2">
+<div id="nomenclature" class="section level2" number="1.1">
 <h2 class="hasAnchor">
 <a href="#nomenclature" class="anchor"></a><span class="header-section-number">1.1</span> Nomenclature</h2>
 <ul>
@@ -131,7 +131,7 @@
 <li>Study: <span class="math inline">\(m\)</span>-series of analyses <span class="math inline">\(M_{(j)}\)</span>, constituting the different spots on the analytical substrate</li>
 </ul>
 </div>
-<div id="example-dataset" class="section level2">
+<div id="example-dataset" class="section level2" number="1.2">
 <h2 class="hasAnchor">
 <a href="#example-dataset" class="anchor"></a><span class="header-section-number">1.2</span> Example dataset</h2>
 <p>Example datatsets can be accessed as follows with the function <code>read_IC</code> (more information on reading raw ion count data can be found in the vignette <a href="IC-read.html">IC-read</a>).</p>
@@ -150,7 +150,7 @@
 <span class="va">tb_rw</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map2.html">map2</a></span><span class="op">(</span><span class="va">ion1</span>, <span class="va">ion2</span>, <span class="op">~</span><span class="fu"><a href="../reference/zeroCt.html">zeroCt</a></span><span class="op">(</span><span class="va">tb_rw</span>, <span class="va">.x</span>, <span class="va">.y</span>, <span class="va">file.nm</span>, <span class="va">sample.nm</span>, .N <span class="op">=</span> <span class="va">N.rw</span><span class="op">)</span><span class="op">)</span> 
 <span class="co"># Combine but remove duplicate observations (related isotope pairs)  </span>
 <span class="va">tb_rw</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/reduce.html">reduce</a></span><span class="op">(</span><span class="va">tb_rw</span>, <span class="va">union</span><span class="op">)</span>  </code></pre></div>
-<p>The ion counts obtained from the 2018-01-19-GLENDON dataset includes the species: <span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>, <span class="math inline">\(\phantom{,}^{13}\)</span>C<span class="math inline">\(_{}\)</span>, <span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>–<span class="math inline">\(\phantom{,}^{14}\)</span>N<span class="math inline">\(_{}\)</span>, <span class="math inline">\(\phantom{,}^{40}\)</span>Ca<span class="math inline">\(_{}\)</span>–<span class="math inline">\(\phantom{,}^{16}\)</span>O<span class="math inline">\(_{}\)</span>, of which some are poly-atomic.</p>
+<p>The ion counts obtained from the 2018-01-19-GLENDON dataset includes the species: <span class="math inline">\({}^{12}\mathrm{C}_{}\)</span>, <span class="math inline">\({}^{13}\mathrm{C}_{}\)</span>, <span class="math inline">\({}^{12}\mathrm{C}_{}\)</span><span class="math inline">\({}^{14}\mathrm{N}_{}\)</span>, <span class="math inline">\({}^{40}\mathrm{Ca}_{}\)</span><span class="math inline">\({}^{16}\mathrm{O}_{}\)</span>, of which some are poly-atomic.</p>
 <p>As a first step, the counts of a single count cycle (<span class="math inline">\(N_i\)</span>) are normalised against the time it took to complete the cycle (<span class="math inline">\(0.541\)</span> s) to account for differences in the count times for two different isotopes during stable isotopic SIMS analysis. Hence, for the time period (<span class="math inline">\(t\)</span>) over which an isotope species <span class="math inline">\(a\)</span> during measurement <span class="math inline">\(i\)</span> accumulated, the count rate is given by</p>
 <p><span class="math display" id="eq:Nrate">\[\begin{equation}
   X_i^{a} = N_i^{a} / t_i^{a}
@@ -162,11 +162,11 @@
 <span class="va">tb_pr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cor_IC.html">cor_IC</a></span><span class="op">(</span><span class="va">tb_rw</span><span class="op">)</span></code></pre></div>
 <p>This function can also correct the ion counts for effects associated with the machine setup, such as, artifacts induced by the ion detector type. These settings mostly affect the accuracy of the analysis. For more information on this topic see the vignette <a href="IC-process.html">IC-process</a>.</p>
 </div>
-<div id="internal-precision-of-ion-count-data" class="section level2">
+<div id="internal-precision-of-ion-count-data" class="section level2" number="1.3">
 <h2 class="hasAnchor">
 <a href="#internal-precision-of-ion-count-data" class="anchor"></a><span class="header-section-number">1.3</span> Internal precision of ion count data</h2>
 <p>Internal analytical precision is a consistency check of a series of analytical results. The package <code>point</code> contains several functions needed to obtain the descriptive and predictive statistics (Poisson statistics) to assess the internal precision of count data for single ions as well as isotope ratios. In the here-outlined examples, the internal consistency of ion count data generated with a <em>NanoSIMS Cameca 50L</em> is validated, and the underlying principals of the statistical treatment is explained.</p>
-<div id="descriptive-and-predictive-statistics-for-single-ions" class="section level3">
+<div id="descriptive-and-predictive-statistics-for-single-ions" class="section level3" number="1.3.1">
 <h3 class="hasAnchor">
 <a href="#descriptive-and-predictive-statistics-for-single-ions" class="anchor"></a><span class="header-section-number">1.3.1</span> Descriptive and predictive statistics for single ions</h3>
 <p>The function <code><a href="../reference/stat_X.html">stat_X()</a></code> can be applied to the previously processed dataset and gives descriptive and predictive statistics of all the individual ions. The function requires the following arguments: <code>.IC</code>, which is a <a href="https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html">tibble</a> containing the processed ion counts (<code>N.pr</code> by default), ion count rates (<code>X.pr</code> by default), the ion species name (<code>species.nm</code> by default), and the time increments of the measurement (<code>t.nm</code> by default). The dots <code>...</code> should be used to define a grouping variable for identifying e.g. individual analysis (here defined as the <code>sample.nm</code> and <code>file.nm</code> names of the loaded data). In addition, it is possible to choose whether the variable names can be rendered with <span class="math inline">\(\LaTeX\)</span>; and whether to create a <code>tibble</code> that contains only statistics as a summary table <code>"sum"</code>; a <code>tibble</code> with the same number of observations as the input dataset <code>"stat"</code>; or return a <code>tibble</code> complete with both the statistics and the original dataset <code>"complete"</code>. Lastly one can decide to only produce a subset of statistic transformations with <code>.stat</code>. The overview of avalaible statistical transformations can be found in <code>names_stat_X</code></p>
@@ -180,10 +180,10 @@
 <colgroup>
 <col width="13%">
 <col width="17%">
-<col width="38%">
+<col width="35%">
 <col width="7%">
 <col width="7%">
-<col width="5%">
+<col width="6%">
 <col width="10%">
 </colgroup>
 <thead><tr class="header">
@@ -199,9 +199,7 @@
 <tr class="odd">
 <td align="left">Belemnite, Indium</td>
 <td align="left">2018-01-19-GLENDON_1_1</td>
-<td align="left">
-<span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>
-</td>
+<td align="left"><span class="math inline">\({}^{12}\mathrm{C}_{}\)</span></td>
 <td align="right">41718475</td>
 <td align="right">30651</td>
 <td align="right">2741.2</td>
@@ -211,7 +209,7 @@
 <td align="left">Belemnite, Indium</td>
 <td align="left">2018-01-19-GLENDON_1_1</td>
 <td align="left">
-<span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>–<span class="math inline">\(\phantom{,}^{14}\)</span>N<span class="math inline">\(_{}\)</span>
+<span class="math inline">\({}^{12}\mathrm{C}_{}\)</span><span class="math inline">\({}^{14}\mathrm{N}_{}\)</span>
 </td>
 <td align="right">511093</td>
 <td align="right">375</td>
@@ -221,9 +219,7 @@
 <tr class="odd">
 <td align="left">Belemnite, Indium</td>
 <td align="left">2018-01-19-GLENDON_1_1</td>
-<td align="left">
-<span class="math inline">\(\phantom{,}^{13}\)</span>C<span class="math inline">\(_{}\)</span>
-</td>
+<td align="left"><span class="math inline">\({}^{13}\mathrm{C}_{}\)</span></td>
 <td align="right">458139</td>
 <td align="right">337</td>
 <td align="right">42.5</td>
@@ -233,7 +229,7 @@
 <td align="left">Belemnite, Indium</td>
 <td align="left">2018-01-19-GLENDON_1_1</td>
 <td align="left">
-<span class="math inline">\(\phantom{,}^{40}\)</span>Ca<span class="math inline">\(_{}\)</span>–<span class="math inline">\(\phantom{,}^{16}\)</span>O<span class="math inline">\(_{}\)</span>
+<span class="math inline">\({}^{40}\mathrm{Ca}_{}\)</span><span class="math inline">\({}^{16}\mathrm{O}_{}\)</span>
 </td>
 <td align="right">18082538</td>
 <td align="right">13285</td>
@@ -243,9 +239,7 @@
 <tr class="odd">
 <td align="left">Belemnite, Indium</td>
 <td align="left">2018-01-19-GLENDON_1_2</td>
-<td align="left">
-<span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>
-</td>
+<td align="left"><span class="math inline">\({}^{12}\mathrm{C}_{}\)</span></td>
 <td align="right">72956119</td>
 <td align="right">53601</td>
 <td align="right">4077.5</td>
@@ -255,7 +249,7 @@
 <td align="left">Belemnite, Indium</td>
 <td align="left">2018-01-19-GLENDON_1_2</td>
 <td align="left">
-<span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>–<span class="math inline">\(\phantom{,}^{14}\)</span>N<span class="math inline">\(_{}\)</span>
+<span class="math inline">\({}^{12}\mathrm{C}_{}\)</span><span class="math inline">\({}^{14}\mathrm{N}_{}\)</span>
 </td>
 <td align="right">362709</td>
 <td align="right">266</td>
@@ -265,7 +259,7 @@
 </tbody>
 </table>
 <p>The underlying principals for the statistics calculated with the function <code><a href="../reference/stat_X.html">stat_X()</a></code> are delineated in detail below.</p>
-<div id="arithmetic-mean" class="section level4">
+<div id="arithmetic-mean" class="section level4" number="1.3.1.1">
 <h4 class="hasAnchor">
 <a href="#arithmetic-mean" class="anchor"></a><span class="header-section-number">1.3.1.1</span> Arithmetic mean</h4>
 <p>The sample mean (<span class="math inline">\(\bar{X}^a\)</span>) of chemical species <span class="math inline">\(a\)</span> over a single analysis is given by:</p>
@@ -275,7 +269,7 @@
 \end{equation}\]</span></p>
 <p>To validate the internal consistency of the ion count data, it is necessary to define the internal precision of the analysis. This can be done with the standard deviation (<span class="math inline">\(s_x\)</span>), which gives the spread of the sample, and the standard error of the mean (<span class="math inline">\(s_{\bar{x}}\)</span>), which defines how well this <span class="math inline">\(\bar{X}\)</span> approximates the true population mean (<span class="math inline">\(\mu\)</span>). These statistics rely on the assumption that the underlying probability distribution follows a normal (Gaussian) distribution.</p>
 </div>
-<div id="standard-deviation" class="section level4">
+<div id="standard-deviation" class="section level4" number="1.3.1.2">
 <h4 class="hasAnchor">
 <a href="#standard-deviation" class="anchor"></a><span class="header-section-number">1.3.1.2</span> Standard deviation</h4>
 <p>The standard deviation for a limited sample of the population gives a measure of how individual measurements are spread about the mean in one analysis, and is given by:</p>
@@ -285,7 +279,7 @@
 \end{equation}\]</span></p>
 <p>where <span class="math inline">\(n\)</span> is the number of measurement cycles in the analysis and <span class="math inline">\(X_i\)</span> is the <span class="math inline">\(i\)</span>-th measurement cycle. The number of measurements is subtracted with one (<span class="math inline">\(n - 1\)</span>) to express that only <span class="math inline">\(n - 1\)</span> of the <span class="math inline">\((x_{i}-\bar{x})^2\)</span> are independent. The sample standard deviation can inform about the confidence whether a single measurement falls within a given range of the sample mean value.</p>
 </div>
-<div id="standard-error-of-the-mean" class="section level4">
+<div id="standard-error-of-the-mean" class="section level4" number="1.3.1.3">
 <h4 class="hasAnchor">
 <a href="#standard-error-of-the-mean" class="anchor"></a><span class="header-section-number">1.3.1.3</span> Standard error of the mean</h4>
 <p>The standard error of the mean (<span class="math inline">\(s_{\bar{X}^a}\)</span>) provides a measure of how well the mean of a limited sample (i.e., analysis) approximates the actual population mean. This measure can be used to gauge the precision of the analysis with <span class="math inline">\(n\)</span> measurement cycles. This value is dependent on the number of measurements (<span class="math inline">\(n\)</span>) and thus becomes smaller with increasing measurement numbers (i.e. <span class="math inline">\(\bar{X}\)</span> becomes more precise). The standard error of the mean is given by the following equation.</p>
@@ -294,7 +288,7 @@
   \tag{1.4}
 \end{equation}\]</span></p>
 </div>
-<div id="predicted-standard-deviation" class="section level4">
+<div id="predicted-standard-deviation" class="section level4" number="1.3.1.4">
 <h4 class="hasAnchor">
 <a href="#predicted-standard-deviation" class="anchor"></a><span class="header-section-number">1.3.1.4</span> Predicted standard deviation</h4>
 <p>Ion count measurements have an inherent fundamental imprecision, which is dictated by the random nature of secondary ion production. This restrict the precision of the analysis to a certain analytical threshold. The amplitude of this inherent variation can be gauged with Poisson statistics. The Poisson distribution describes the likelihood of random events occurring over a defined (and fixed) time-period. Further conditions to be satisfied to validate the assumption of a Poisson distribution is the observation that <span class="math inline">\(N\)</span> should be able to occur over a larger number of occasions and that the probability of the event occurring at a particular occasions is limited but constant. In the case of SIMS measurements <span class="math inline">\(N_i\)</span> is the number of secondary ions counted by the detector during a single measurement cycle <span class="citation">(see Fitzsimons, Harte, and Clark 2000)</span>.</p>
@@ -315,7 +309,7 @@
 \end{equation}\]</span></p>
 <p>In this formulation, the hat on <span class="math inline">\(\hat{s}_N\)</span> denotes that the statistics is predictive, instead of <span class="math inline">\(s_X\)</span> which is an observed value. The commonality of the two measures is, however, that they are a estimate of the true population <span class="math inline">\(\sigma\)</span>.</p>
 </div>
-<div id="predicted-standard-error-of-the-mean" class="section level4">
+<div id="predicted-standard-error-of-the-mean" class="section level4" number="1.3.1.5">
 <h4 class="hasAnchor">
 <a href="#predicted-standard-error-of-the-mean" class="anchor"></a><span class="header-section-number">1.3.1.5</span> Predicted standard error of the mean</h4>
 <p>In a similar fashion, the standard error of the mean for Poisson statistics depends on the number of measurements (<span class="math inline">\(n\)</span>), and can be formulated as follows:</p>
@@ -325,7 +319,7 @@
 \end{equation}\]</span></p>
 </div>
 </div>
-<div id="descriptive-and-predictive-statistics-for-isotope-ratios" class="section level3">
+<div id="descriptive-and-predictive-statistics-for-isotope-ratios" class="section level3" number="1.3.2">
 <h3 class="hasAnchor">
 <a href="#descriptive-and-predictive-statistics-for-isotope-ratios" class="anchor"></a><span class="header-section-number">1.3.2</span> Descriptive and predictive statistics for isotope ratios</h3>
 <p>The function <code><a href="../reference/stat_X.html">stat_R()</a></code> can be used on the previously processed dataset and gives descriptive and predictive statistics for a pre-specified isotope ratio (<span class="math inline">\(R\)</span>); e.g. <span class="math inline">\(^{13}\)</span>C/<span class="math inline">\(^{12}\)</span>C. Note that only isotope pairs give sensible statistical results as the ionization potential for two isotope of one element should be relatively similar. The function requires the following arguments; the ion count data (<code>.IC</code>) in a tibble as outlined for <code><a href="../reference/stat_X.html">stat_X()</a></code>, but now also <code>.ion1</code>, a character string representing the rare isotope (e.g. <code>"13C"</code>); and <code>.ion2</code>, the common isotope (e.g. <code>"12C"</code>) are required. The dots <code>...</code> should again be used to define a grouping variable for an analysis (here defined as the sample- and file-names of the loaded data). Again for this function, the arguments <code>.label</code> and <code>.output</code> tailor the generated <code>tibble</code> to the specific needs; and follows the same definitions as outlined for <code><a href="../reference/stat_X.html">stat_X()</a></code> (see above). This function has an additional argument named <code>.zero</code> (default is <code>TRUE</code>), which removes analysis that contain measurements with zero counts, but generates a warning to inform about this operation. Setting <code>.zero</code> to <code>TRUE</code> prevents the generation of <code>NaN</code> in the output statistics be division through zero.</p>
@@ -339,13 +333,13 @@
 <colgroup>
 <col width="8%">
 <col width="10%">
-<col width="23%">
+<col width="20%">
 <col width="4%">
-<col width="8%">
+<col width="9%">
 <col width="11%">
 <col width="11%">
 <col width="14%">
-<col width="6%">
+<col width="7%">
 </colgroup>
 <thead><tr class="header">
 <th align="left">sample.nm</th>
@@ -366,9 +360,7 @@
 <tr class="odd">
 <td align="left">Belemnite, Indium</td>
 <td align="left">2018-01-19-GLENDON_1_1</td>
-<td align="left">
-<span class="math inline">\(\phantom{,}^{13}\)</span>C<span class="math inline">\(_{}\)</span>/<span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>
-</td>
+<td align="left"><span class="math inline">\({}^{13}\mathrm{C}_{}/{}^{12}\mathrm{C}_{}\)</span></td>
 <td align="right">0.011</td>
 <td align="right">93.0</td>
 <td align="right">1.49</td>
@@ -379,9 +371,7 @@
 <tr class="even">
 <td align="left">Belemnite, Indium</td>
 <td align="left">2018-01-19-GLENDON_1_2</td>
-<td align="left">
-<span class="math inline">\(\phantom{,}^{13}\)</span>C<span class="math inline">\(_{}\)</span>/<span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>
-</td>
+<td align="left"><span class="math inline">\({}^{13}\mathrm{C}_{}/{}^{12}\mathrm{C}_{}\)</span></td>
 <td align="right">0.011</td>
 <td align="right">70.8</td>
 <td align="right">1.13</td>
@@ -392,9 +382,7 @@
 <tr class="odd">
 <td align="left">Belemnite, Indium</td>
 <td align="left">2018-01-19-GLENDON_1_3</td>
-<td align="left">
-<span class="math inline">\(\phantom{,}^{13}\)</span>C<span class="math inline">\(_{}\)</span>/<span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>
-</td>
+<td align="left"><span class="math inline">\({}^{13}\mathrm{C}_{}/{}^{12}\mathrm{C}_{}\)</span></td>
 <td align="right">0.011</td>
 <td align="right">66.5</td>
 <td align="right">1.06</td>
@@ -405,7 +393,7 @@
 </tbody>
 </table>
 <p>The underlying principals are again delineated in detail below.</p>
-<div id="descriptive-statistics-with-error-propagation-for-isotope-ratios" class="section level4">
+<div id="descriptive-statistics-with-error-propagation-for-isotope-ratios" class="section level4" number="1.3.2.1">
 <h4 class="hasAnchor">
 <a href="#descriptive-statistics-with-error-propagation-for-isotope-ratios" class="anchor"></a><span class="header-section-number">1.3.2.1</span> Descriptive statistics with error propagation for isotope ratios</h4>
 <p>The mean isotope ratio (<span class="math inline">\(\bar{R}\)</span>) can be calculated from the mean values of the specific ions of the complete analysis.</p>
@@ -431,7 +419,7 @@
 \end{equation}\]</span></p>
 <p>The standard error of the mean isotope value <span class="math inline">\({\bar{R}}\)</span> is obtained through diving <span class="math inline">\(s_{R}\)</span> by <span class="math inline">\(\sqrt(n)\)</span>. In addition, both the standard deviation and standard error of the mean of the isotope value can conveniently be expressed as relative values in ‰ by dividing them with the <span class="math inline">\(\bar{R}\)</span> and multiplying by <span class="math inline">\(1,000\)</span>.</p>
 </div>
-<div id="predictive-statistics-with-error-propagation-for-isotope-ratios" class="section level4">
+<div id="predictive-statistics-with-error-propagation-for-isotope-ratios" class="section level4" number="1.3.2.2">
 <h4 class="hasAnchor">
 <a href="#predictive-statistics-with-error-propagation-for-isotope-ratios" class="anchor"></a><span class="header-section-number">1.3.2.2</span> Predictive statistics with error propagation for isotope ratios</h4>
 <p>For isotope analysis based on pulsed ion count data we need to have at least two different analyses, so that we can get a count ratio, as defined by Eq.<a href="#eq:meanR">(1.9)</a>, and where <span class="math inline">\(X_i\)</span> is a time normalised count, or count rate. Satisfying this assumption provides us with count-rate ratio <span class="math inline">\(R\)</span> for measurement <span class="math inline">\(i\)</span> of the isotopes <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, where we take a mean <span class="math inline">\(\bar{R}\)</span> from the completed analysis as our estimate of the true isotope value <span class="math inline">\(\mu_R\)</span>. As the predicted <span class="math inline">\(\hat{s}_X\)</span> can be calculated for single ions, this should also mean that the uncertainty in the isotope measurement can be predicted (<span class="math inline">\(\hat{s}_R\)</span>). And, again this requires proper error propagation to incorporate the cumulative errors on the counts of both isotopes; <span class="math inline">\(N^{a}\)</span> and <span class="math inline">\(N^{b}\)</span>, over one analysis <span class="citation">(Fitzsimons, Harte, and Clark 2000)</span>. Since the count-rate ratio <span class="math inline">\(R\)</span> is a linear function of the count ratio, it is possible to use the standard deviation of the count ratio <span class="math inline">\(\hat{s}_{N^{b}/N^{a}}\)</span> instead of <span class="math inline">\(\hat{s}_{R}\)</span>, following that:</p>
@@ -481,7 +469,7 @@
 \end{equation}\]</span></p>
 <p>The predicted standard deviation (Eq. <a href="#eq:stdpoisR5">(1.18)</a>) and standard error of the mean (Eq. <a href="#eq:stdpoisR6">(1.19)</a>) can again be expressed as relative uncertainties in ‰, following the same transformation as for the descriptive statistics.</p>
 </div>
-<div id="comparing-predicted-and-descriptive-statistics" class="section level4">
+<div id="comparing-predicted-and-descriptive-statistics" class="section level4" number="1.3.2.3">
 <h4 class="hasAnchor">
 <a href="#comparing-predicted-and-descriptive-statistics" class="anchor"></a><span class="header-section-number">1.3.2.3</span> Comparing predicted and descriptive statistics</h4>
 <p>The reduced <span class="math inline">\(\chi^2\)</span> can be used to assess the machine performance as it cross-validates the observed error estimate with the theoretical Poisson-based precision. For example, the reduced <span class="math inline">\(\chi^2\)</span> of an isotope ratio equates to:</p>
@@ -493,7 +481,7 @@
 </div>
 </div>
 </div>
-<div id="external-precision-of-ion-count-data" class="section level2">
+<div id="external-precision-of-ion-count-data" class="section level2" number="1.4">
 <h2 class="hasAnchor">
 <a href="#external-precision-of-ion-count-data" class="anchor"></a><span class="header-section-number">1.4</span> External precision of ion count data</h2>
 <p>A series of several ion count analyses is usually performed in a study. The consistency of such <span class="math inline">\(m\)</span>-series of analyses is usually gauged with a homogeneous reference material; the so-called external precision, repeatability or reproducibility of the study <span class="citation">(Fitzsimons, Harte, and Clark 2000)</span>. This value is usually reported as the standard deviation of the <span class="math inline">\(m\)</span>-series of analyses on the reference material. In calculating this statistic the <span class="math inline">\(n\)</span> in Eq. <a href="#eq:std">(1.3)</a> is replaced by <span class="math inline">\(m\)</span>. The standard deviation is reported as we are interested in how a single analysis relates to the variability of the study, where variability is the sum of the random nature of counting statistics, machine performance and homogeneity of the analytical substrate. Conversely, we are not interested in how precisely we can approach the mean of an <span class="math inline">\(m\)</span>-series of analysis (i.e. the mean of the study).</p>
@@ -501,17 +489,17 @@
 <p>To calculate the external precision for ion ratios with the package <code>point</code>, use the <code>.nest</code> argument of <code><a href="../reference/stat_X.html">stat_R()</a></code> to define groupings of analyses (e.g. a raw ion count dataset containing replicate measurements on a reference material).</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># external precision of the dataset </span>
-<span class="va">tb_R_ext</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stat_X.html">stat_R</a></span><span class="op">(</span><span class="va">tb_pr</span>, <span class="st">"13C"</span>, <span class="st">"12C"</span>, <span class="va">sample.nm</span>, <span class="va">file.nm</span>, .nest <span class="op">=</span> <span class="va">sample.nm</span>, 
+<span class="va">tb_R_ext</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stat_X.html">stat_R</a></span><span class="op">(</span><span class="va">tb_pr</span>, <span class="st">"13C"</span>, <span class="st">"12C"</span>, <span class="va">sample.nm</span>, <span class="va">file.nm</span>, .nest <span class="op">=</span> <span class="va">file.nm</span>, 
                     .stat <span class="op">=</span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"M"</span>, <span class="st">"RS"</span>, <span class="st">"RSeM"</span>, <span class="st">"hat_RS"</span>, <span class="st">"hat_RSeM"</span>, <span class="st">"chi2"</span><span class="op">)</span>, 
                     .label <span class="op">=</span> <span class="st">"webtex"</span><span class="op">)</span></code></pre></div>
 <table class="table">
 <caption>
 <span id="tab:unnamed-chunk-9">Table 1.3: </span>Summary statistics for external precision of isotope ratios.</caption>
 <colgroup>
+<col width="8%">
+<col width="19%">
 <col width="7%">
-<col width="21%">
-<col width="6%">
-<col width="10%">
+<col width="11%">
 <col width="13%">
 <col width="13%">
 <col width="16%">
@@ -533,9 +521,7 @@
 </tr></thead>
 <tbody><tr class="odd">
 <td align="left">Belemnite, Indium</td>
-<td align="left">
-<span class="math inline">\(\phantom{,}^{13}\)</span>C<span class="math inline">\(_{}\)</span>/<span class="math inline">\(\phantom{,}^{12}\)</span>C<span class="math inline">\(_{}\)</span>
-</td>
+<td align="left"><span class="math inline">\({}^{13}\mathrm{C}_{}/{}^{12}\mathrm{C}_{}\)</span></td>
 <td align="right">0.011</td>
 <td align="right">1.85</td>
 <td align="right">1.07</td>
@@ -556,7 +542,7 @@
 <span class="va">tb_R_int</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stat_X.html">stat_R</a></span><span class="op">(</span><span class="va">tb_pr</span>, <span class="st">"13C"</span>, <span class="st">"12C"</span>, <span class="va">sample.nm</span>,  <span class="va">file.nm</span>, .stat <span class="op">=</span> <span class="st">"hat_RSeM"</span>,
                    .zero <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
 
-<span class="va">tb_R_ext</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stat_X.html">stat_R</a></span><span class="op">(</span><span class="va">tb_pr</span>, <span class="st">"13C"</span>, <span class="st">"12C"</span>, <span class="va">sample.nm</span>, <span class="va">file.nm</span>, .nest <span class="op">=</span> <span class="va">sample.nm</span>, 
+<span class="va">tb_R_ext</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stat_X.html">stat_R</a></span><span class="op">(</span><span class="va">tb_pr</span>, <span class="st">"13C"</span>, <span class="st">"12C"</span>, <span class="va">sample.nm</span>, <span class="va">file.nm</span>, .nest <span class="op">=</span> <span class="va">file.nm</span>, 
                    .stat <span class="op">=</span> <span class="st">"hat_RS"</span>,.zero <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
 
 <span class="co"># The average of the internal relative predicted standard error of the mean </span>
@@ -576,15 +562,15 @@
 <div id="references" class="section level1 unnumbered">
 <h1 class="hasAnchor">
 <a href="#references" class="anchor"></a>References</h1>
-<div id="refs" class="references">
-<div id="ref-Fitzsimons2000a">
-<p>Fitzsimons, I. C. W., B. Harte, and R. M. Clark. 2000. “SIMS stable isotope measurement: counting statistics and analytical precision.” <em>Mineralogical Magazine</em> 64 (01): 59–83. <a href="https://doi.org/10.1180/002646100549139">https://doi.org/10.1180/002646100549139</a>.</p>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Fitzsimons2000a" class="csl-entry">
+Fitzsimons, I. C. W., B. Harte, and R. M. Clark. 2000. <span>“<span class="nocase">SIMS stable isotope measurement: counting statistics and analytical precision</span>.”</span> <em>Mineralogical Magazine</em> 64 (01): 59–83. <a href="https://doi.org/10.1180/002646100549139">https://doi.org/10.1180/002646100549139</a>.
 </div>
-<div id="ref-Kilburn2015">
-<p>Kilburn, Matt R., and David Wacey. 2015. “Nanoscale secondary ion mass spectrometry (NanoSIMS) as an analytical tool in the geosciences.” <em>RSC Detection Science</em> 2015-Janua (4): 1–34. <a href="https://doi.org/10.1039/9781782625025-00001">https://doi.org/10.1039/9781782625025-00001</a>.</p>
+<div id="ref-Kilburn2015" class="csl-entry">
+Kilburn, Matt R., and David Wacey. 2015. <span>“<span class="nocase">Nanoscale secondary ion mass spectrometry (NanoSIMS) as an analytical tool in the geosciences</span>.”</span> <em>RSC Detection Science</em> 2015-Janua (4): 1–34. <a href="https://doi.org/10.1039/9781782625025-00001">https://doi.org/10.1039/9781782625025-00001</a>.
 </div>
-<div id="ref-Ku1966">
-<p>Ku, H. H. 1966. “Notes on the use of propagation of error formulas.” <em>Journal of Research of the National Bureau of Standards, Section C: Engineering and Instrumentation</em> 70C (4): 263. <a href="https://doi.org/10.6028/jres.070c.025">https://doi.org/10.6028/jres.070c.025</a>.</p>
+<div id="ref-Ku1966" class="csl-entry">
+Ku, H. H. 1966. <span>“<span class="nocase">Notes on the use of propagation of error formulas</span>.”</span> <em>Journal of Research of the National Bureau of Standards, Section C: Engineering and Instrumentation</em> 70C (4): 263. <a href="https://doi.org/10.6028/jres.070c.025">https://doi.org/10.6028/jres.070c.025</a>.
 </div>
 </div>
 </div>

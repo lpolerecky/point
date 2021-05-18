@@ -30,7 +30,7 @@ Imports:
     nlme (>= 3.1),
     broom (>= 0.7.6),
     polyaAeppli (>= 2.0),
-    MASS (>= 7.3.54),
+    MASS,
     scales (>= 1.1.1)
 Suggests: 
     roxygen2,

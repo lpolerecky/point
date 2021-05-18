@@ -93,7 +93,7 @@
 <div id="credits" class="section level2">
 <h2 class="hasAnchor">
 <a href="#credits" class="anchor"></a>Credits</h2>
-<p>The construction of the R (R Core Team 2021) package <em>point</em> and associated documentation was aided by the packages; <em>devtools</em> (Wickham, Hester, and Chang 2020), <em>roxygen2</em> (Wickham, Danenberg, et al. 2020), <em>testthat</em> (Wickham 2021a), <em>knitr</em> (Xie 2014 , 2015), <em>rmarkdown</em> (Xie, Allaire, and Grolemund 2018; Xie, Dervieux, and Riederer 2020), <em>bookdown</em> (Xie 2016) and the superb guidance in the book: <em>R packages: organize, test, document, and share your code</em>, by Wickham (2015). In addition, this package relies on a set of external packages from the tidyverse universe, including: <em>dplyr</em> (Wickham, François, et al. 2021), <em>tidyr</em> (Wickham 2021b), <em>tibble</em> (Müller and Wickham 2021), <em>stringr</em> (Wickham 2019), <em>readr</em> (Wickham and Hester 2020), <em>magrittr</em> (Bache and Wickham 2020), <em>rlang</em> (Henry and Wickham 2020b), and <em>purrr</em> (Henry and Wickham 2020a) for internal functioning as well as specialised statistics; <em>polyaAeppli</em> (Burden 2014), <em>broom</em> (Robinson, Hayes, and Couch 2021), <em>broom.mixed</em> (Bolker and Robinson 2020), <em>nlme</em> (Pinheiro, Bates, and R-core 2021), and <em>mgcv</em> (Wood 2021). Plots are made with <em>ggplot2</em> (Wickham 2016)</p>
+<p>The construction of the R (R Core Team 2021) package <em>point</em> and associated documentation was aided by the packages; <em>devtools</em> (Wickham, Hester, and Chang 2021), <em>roxygen2</em> (Wickham et al. 2020), <em>testthat</em> (Wickham 2021a), <em>knitr</em> (Xie 2014, 2015), <em>rmarkdown</em> (Xie, Allaire, and Grolemund 2018; Xie, Dervieux, and Riederer 2020), <em>bookdown</em> (Xie 2016) and the superb guidance in the book: <em>R packages: organize, test, document, and share your code</em>, by Wickham (2015). In addition, this package relies on a set of external packages from the tidyverse universe, including: <em>dplyr</em> (Wickham et al. 2021), <em>tidyr</em> (Wickham 2021b), <em>tibble</em> (Müller and Wickham 2021), <em>stringr</em> (Wickham 2019), <em>readr</em> (Wickham and Hester 2020), <em>magrittr</em> (Bache and Wickham 2020), <em>rlang</em> (Henry and Wickham 2021), and <em>purrr</em> (Henry and Wickham 2020) for internal functioning as well as specialised statistics; <em>polyaAeppli</em> (Burden 2014), <em>broom</em> (Robinson, Hayes, and Couch 2021), <em>broom.mixed</em> (Bolker and Robinson 2020), <em>nlme</em> (Pinheiro, Bates, and R-core 2021), and <em>mgcv</em> (Wood 2021). Plots are made with <em>ggplot2</em> (Wickham 2016)</p>
 </div>
 <div id="installation" class="section level2">
 <h2 class="hasAnchor">
@@ -133,7 +133,7 @@
 <div id="example-1-internal-precision-of-isotope-ratios" class="section level2">
 <h2 class="hasAnchor">
 <a href="#example-1-internal-precision-of-isotope-ratios" class="anchor"></a>Example 1: internal precision of isotope ratios</h2>
-<p>This is an example of how <em>Cameca NanoSIMS50L</em> raw data files can be extracted, processed and analysed for the <sup>13</sup>C/<sup>12</sup>C isotope ratio (<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=R%20%22R%22" alt="R">). This produces a <a href="https://tibble.tidyverse.org/">tibble</a> with descriptive and predictive (Poisson) statistics (demarcated with an ^) of the ion count data. This can be done for single analysis in order to obtain internal precision.</p>
+<p>This is an example of how <em>Cameca NanoSIMS50L</em> raw data files can be extracted, processed and analysed for the <sup>13</sup>C/<sup>12</sup>C isotope ratio (<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=R" title="R" alt="R">). This produces a <a href="https://tibble.tidyverse.org/">tibble</a> with descriptive and predictive (Poisson) statistics (demarcated with an ^) of the ion count data. This can be done for single analysis in order to obtain internal precision.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># Use point_example() to access the examples bundled with this package in the</span>
 <span class="co"># inst/extdata directory.</span>
@@ -150,18 +150,18 @@
 <colgroup>
 <col width="1%">
 <col width="1%">
-<col width="23%">
-<col width="3%">
-<col width="5%">
+<col width="15%">
 <col width="4%">
-<col width="6%">
-<col width="6%">
-<col width="8%">
-<col width="6%">
+<col width="5%">
+<col width="5%">
+<col width="7%">
+<col width="7%">
 <col width="8%">
 <col width="7%">
-<col width="9%">
-<col width="6%">
+<col width="8%">
+<col width="8%">
+<col width="10%">
+<col width="7%">
 </colgroup>
 <thead><tr class="header">
 <th align="left">sample.nm</th>
@@ -187,9 +187,7 @@
 <tr class="odd">
 <td align="left">Belemnite, Indium</td>
 <td align="left">2018-01-19-GLENDON_1_1</td>
-<td align="left">
-<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cphantom%7B%2C%7D%5E%7B13%7D" title="\phantom{,}^{13}" alt="\phantom{,}^{13}">C<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=_%7B%7D" title="_{}" alt="_{}">/<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cphantom%7B%2C%7D%5E%7B12%7D" title="\phantom{,}^{12}" alt="\phantom{,}^{12}">C<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=_%7B%7D" title="_{}" alt="_{}">
-</td>
+<td align="left"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%7B%7D%5E%7B13%7D%5Cmathrm%7BC%7D_%7B%7D%2F%7B%7D%5E%7B12%7D%5Cmathrm%7BC%7D_%7B%7D" title="{}^{13}\mathrm{C}_{}/{}^{12}\mathrm{C}_{}" alt="{}^{13}\mathrm{C}_{}/{}^{12}\mathrm{C}_{}"></td>
 <td align="right">3900</td>
 <td align="right">0.011</td>
 <td align="right">0.001021</td>
@@ -205,9 +203,7 @@
 <tr class="even">
 <td align="left">Belemnite, Indium</td>
 <td align="left">2018-01-19-GLENDON_1_2</td>
-<td align="left">
-<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cphantom%7B%2C%7D%5E%7B13%7D" title="\phantom{,}^{13}" alt="\phantom{,}^{13}">C<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=_%7B%7D" title="_{}" alt="_{}">/<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cphantom%7B%2C%7D%5E%7B12%7D" title="\phantom{,}^{12}" alt="\phantom{,}^{12}">C<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=_%7B%7D" title="_{}" alt="_{}">
-</td>
+<td align="left"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%7B%7D%5E%7B13%7D%5Cmathrm%7BC%7D_%7B%7D%2F%7B%7D%5E%7B12%7D%5Cmathrm%7BC%7D_%7B%7D" title="{}^{13}\mathrm{C}_{}/{}^{12}\mathrm{C}_{}" alt="{}^{13}\mathrm{C}_{}/{}^{12}\mathrm{C}_{}"></td>
 <td align="right">3900</td>
 <td align="right">0.011</td>
 <td align="right">0.000779</td>
@@ -223,9 +219,7 @@
 <tr class="odd">
 <td align="left">Belemnite, Indium</td>
 <td align="left">2018-01-19-GLENDON_1_3</td>
-<td align="left">
-<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cphantom%7B%2C%7D%5E%7B13%7D" title="\phantom{,}^{13}" alt="\phantom{,}^{13}">C<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=_%7B%7D" title="_{}" alt="_{}">/<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cphantom%7B%2C%7D%5E%7B12%7D" title="\phantom{,}^{12}" alt="\phantom{,}^{12}">C<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=_%7B%7D" title="_{}" alt="_{}">
-</td>
+<td align="left"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%7B%7D%5E%7B13%7D%5Cmathrm%7BC%7D_%7B%7D%2F%7B%7D%5E%7B12%7D%5Cmathrm%7BC%7D_%7B%7D" title="{}^{13}\mathrm{C}_{}/{}^{12}\mathrm{C}_{}" alt="{}^{13}\mathrm{C}_{}/{}^{12}\mathrm{C}_{}"></td>
 <td align="right">3900</td>
 <td align="right">0.011</td>
 <td align="right">0.000733</td>
@@ -247,22 +241,22 @@
 <p>To calculate the external reproducibility of isotope ratios one needs to use the <code>.nest</code> argument to define sets of analyses.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># external precision for 13C/12C ratios</span>
-<span class="va">tb_R</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/stat_X.html">stat_R</a></span><span class="op">(</span><span class="va">tb_pr</span>, <span class="st">"13C"</span>, <span class="st">"12C"</span>, <span class="va">sample.nm</span>, <span class="va">file.nm</span>, .nest <span class="op">=</span> <span class="va">sample.nm</span>, 
+<span class="va">tb_R</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/stat_X.html">stat_R</a></span><span class="op">(</span><span class="va">tb_pr</span>, <span class="st">"13C"</span>, <span class="st">"12C"</span>, <span class="va">sample.nm</span>, <span class="va">file.nm</span>, .nest <span class="op">=</span> <span class="va">file.nm</span>, 
                .label <span class="op">=</span> <span class="st">"webtex"</span><span class="op">)</span></code></pre></div>
 <table class="table">
 <colgroup>
-<col width="0%">
-<col width="20%">
+<col width="1%">
+<col width="13%">
 <col width="3%">
 <col width="6%">
-<col width="5%">
+<col width="6%">
 <col width="7%">
-<col width="6%">
-<col width="8%">
-<col width="6%">
-<col width="8%">
-<col width="8%">
+<col width="7%">
 <col width="9%">
+<col width="7%">
+<col width="9%">
+<col width="9%">
+<col width="10%">
 <col width="7%">
 </colgroup>
 <thead><tr class="header">
@@ -286,9 +280,7 @@
 </tr></thead>
 <tbody><tr class="odd">
 <td align="left">Belemnite, Indium</td>
-<td align="left">
-<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cphantom%7B%2C%7D%5E%7B13%7D" title="\phantom{,}^{13}" alt="\phantom{,}^{13}">C<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=_%7B%7D" title="_{}" alt="_{}">/<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cphantom%7B%2C%7D%5E%7B12%7D" title="\phantom{,}^{12}" alt="\phantom{,}^{12}">C<img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=_%7B%7D" title="_{}" alt="_{}">
-</td>
+<td align="left"><img src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%7B%7D%5E%7B13%7D%5Cmathrm%7BC%7D_%7B%7D%2F%7B%7D%5E%7B12%7D%5Cmathrm%7BC%7D_%7B%7D" title="{}^{13}\mathrm{C}_{}/{}^{12}\mathrm{C}_{}" alt="{}^{13}\mathrm{C}_{}/{}^{12}\mathrm{C}_{}"></td>
 <td align="right">3</td>
 <td align="right">0.011</td>
 <td align="right">2.03e-05</td>
@@ -309,82 +301,82 @@
 <div id="references" class="section level1">
 <h1 class="hasAnchor">
 <a href="#references" class="anchor"></a>References</h1>
-<div id="refs" class="references">
-<div id="ref-magrittr">
-<p>Bache, Stefan Milton, and Hadley Wickham. 2020. <em>Magrittr: A Forward-Pipe Operator for R</em>. <a href="https://CRAN.R-project.org/package=magrittr" class="uri">https://CRAN.R-project.org/package=magrittr</a>.</p>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-magrittr" class="csl-entry">
+Bache, Stefan Milton, and Hadley Wickham. 2020. <em>Magrittr: A Forward-Pipe Operator for r</em>. <a href="https://CRAN.R-project.org/package=magrittr" class="uri">https://CRAN.R-project.org/package=magrittr</a>.
 </div>
-<div id="ref-broom-mixed">
-<p>Bolker, Ben, and David Robinson. 2020. <em>Broom.mixed: Tidying Methods for Mixed Models</em>. <a href="http://github.com/bbolker/broom.mixed" class="uri">http://github.com/bbolker/broom.mixed</a>.</p>
+<div id="ref-broom-mixed" class="csl-entry">
+Bolker, Ben, and David Robinson. 2020. <em>Broom.mixed: Tidying Methods for Mixed Models</em>. <a href="http://github.com/bbolker/broom.mixed" class="uri">http://github.com/bbolker/broom.mixed</a>.
 </div>
-<div id="ref-polyaAeppli">
-<p>Burden, Conrad. 2014. <em>PolyaAeppli: Implementation of the Polya-Aeppli Distribution</em>. <a href="https://CRAN.R-project.org/package=polyaAeppli" class="uri">https://CRAN.R-project.org/package=polyaAeppli</a>.</p>
+<div id="ref-polyaAeppli" class="csl-entry">
+Burden, Conrad. 2014. <em>polyaAeppli: Implementation of the Polya-Aeppli Distribution</em>. <a href="https://CRAN.R-project.org/package=polyaAeppli" class="uri">https://CRAN.R-project.org/package=polyaAeppli</a>.
 </div>
-<div id="ref-purrr">
-<p>Henry, Lionel, and Hadley Wickham. 2020a. <em>Purrr: Functional Programming Tools</em>. <a href="https://CRAN.R-project.org/package=purrr" class="uri">https://CRAN.R-project.org/package=purrr</a>.</p>
+<div id="ref-purrr" class="csl-entry">
+Henry, Lionel, and Hadley Wickham. 2020. <em>Purrr: Functional Programming Tools</em>. <a href="https://CRAN.R-project.org/package=purrr" class="uri">https://CRAN.R-project.org/package=purrr</a>.
 </div>
-<div id="ref-rlang">
-<p>———. 2020b. <em>Rlang: Functions for Base Types and Core R and Tidyverse Features</em>. <a href="https://CRAN.R-project.org/package=rlang" class="uri">https://CRAN.R-project.org/package=rlang</a>.</p>
+<div id="ref-rlang" class="csl-entry">
+———. 2021. <em>Rlang: Functions for Base Types and Core r and Tidyverse Features</em>. <a href="https://CRAN.R-project.org/package=rlang" class="uri">https://CRAN.R-project.org/package=rlang</a>.
 </div>
-<div id="ref-tibble">
-<p>Müller, Kirill, and Hadley Wickham. 2021. <em>Tibble: Simple Data Frames</em>. <a href="https://CRAN.R-project.org/package=tibble" class="uri">https://CRAN.R-project.org/package=tibble</a>.</p>
+<div id="ref-tibble" class="csl-entry">
+Müller, Kirill, and Hadley Wickham. 2021. <em>Tibble: Simple Data Frames</em>. <a href="https://CRAN.R-project.org/package=tibble" class="uri">https://CRAN.R-project.org/package=tibble</a>.
 </div>
-<div id="ref-nlme">
-<p>Pinheiro, José, Douglas Bates, and R-core. 2021. <em>Nlme: Linear and Nonlinear Mixed Effects Models</em>. <a href="https://svn.r-project.org/R-packages/trunk/nlme/" class="uri">https://svn.r-project.org/R-packages/trunk/nlme/</a>.</p>
+<div id="ref-nlme" class="csl-entry">
+Pinheiro, José, Douglas Bates, and R-core. 2021. <em>Nlme: Linear and Nonlinear Mixed Effects Models</em>. <a href="https://svn.r-project.org/R-packages/trunk/nlme/" class="uri">https://svn.r-project.org/R-packages/trunk/nlme/</a>.
 </div>
-<div id="ref-rversion">
-<p>R Core Team. 2021. <em>R: A Language and Environment for Statistical Computing</em>. Vienna, Austria: R Foundation for Statistical Computing. <a href="https://www.R-project.org/" class="uri">https://www.R-project.org/</a>.</p>
+<div id="ref-rversion" class="csl-entry">
+R Core Team. 2021. <em>R: A Language and Environment for Statistical Computing</em>. Vienna, Austria: R Foundation for Statistical Computing. <a href="https://www.R-project.org/" class="uri">https://www.R-project.org/</a>.
 </div>
-<div id="ref-broom">
-<p>Robinson, David, Alex Hayes, and Simon Couch. 2021. <em>Broom: Convert Statistical Objects into Tidy Tibbles</em>. <a href="https://CRAN.R-project.org/package=broom" class="uri">https://CRAN.R-project.org/package=broom</a>.</p>
+<div id="ref-broom" class="csl-entry">
+Robinson, David, Alex Hayes, and Simon Couch. 2021. <em>Broom: Convert Statistical Objects into Tidy Tibbles</em>. <a href="https://CRAN.R-project.org/package=broom" class="uri">https://CRAN.R-project.org/package=broom</a>.
 </div>
-<div id="ref-Wickham2015">
-<p>Wickham, Hadley. 2015. <em>R Packages: Organize, Test, Document, and Share Your Code</em>. O’Reilly Media, Inc. <a href="https://r-pkgs.org/" class="uri">https://r-pkgs.org/</a>.</p>
+<div id="ref-Wickham2015" class="csl-entry">
+Wickham, Hadley. 2015. <em>R Packages: Organize, Test, Document, and Share Your Code</em>. O’Reilly Media, Inc. <a href="https://r-pkgs.org/" class="uri">https://r-pkgs.org/</a>.
 </div>
-<div id="ref-ggplot22016">
-<p>———. 2016. <em>Ggplot2: Elegant Graphics for Data Analysis</em>. Springer-Verlag New York. <a href="https://ggplot2.tidyverse.org" class="uri">https://ggplot2.tidyverse.org</a>.</p>
+<div id="ref-ggplot22016" class="csl-entry">
+———. 2016. <em>Ggplot2: Elegant Graphics for Data Analysis</em>. Springer-Verlag New York. <a href="https://ggplot2.tidyverse.org" class="uri">https://ggplot2.tidyverse.org</a>.
 </div>
-<div id="ref-stringr">
-<p>———. 2019. <em>Stringr: Simple, Consistent Wrappers for Common String Operations</em>. <a href="https://CRAN.R-project.org/package=stringr" class="uri">https://CRAN.R-project.org/package=stringr</a>.</p>
+<div id="ref-stringr" class="csl-entry">
+———. 2019. <em>Stringr: Simple, Consistent Wrappers for Common String Operations</em>. <a href="https://CRAN.R-project.org/package=stringr" class="uri">https://CRAN.R-project.org/package=stringr</a>.
 </div>
-<div id="ref-testthat">
-<p>———. 2021a. <em>Testthat: Unit Testing for R</em>. <a href="https://CRAN.R-project.org/package=testthat" class="uri">https://CRAN.R-project.org/package=testthat</a>.</p>
+<div id="ref-testthat" class="csl-entry">
+———. 2021a. <em>Testthat: Unit Testing for r</em>. <a href="https://CRAN.R-project.org/package=testthat" class="uri">https://CRAN.R-project.org/package=testthat</a>.
 </div>
-<div id="ref-tidyr">
-<p>———. 2021b. <em>Tidyr: Tidy Messy Data</em>. <a href="https://CRAN.R-project.org/package=tidyr" class="uri">https://CRAN.R-project.org/package=tidyr</a>.</p>
+<div id="ref-tidyr" class="csl-entry">
+———. 2021b. <em>Tidyr: Tidy Messy Data</em>. <a href="https://CRAN.R-project.org/package=tidyr" class="uri">https://CRAN.R-project.org/package=tidyr</a>.
 </div>
-<div id="ref-roxygen2">
-<p>Wickham, Hadley, Peter Danenberg, Gábor Csárdi, and Manuel Eugster.</p>
+<div id="ref-roxygen2" class="csl-entry">
+Wickham, Hadley, Peter Danenberg, Gábor Csárdi, and Manuel Eugster.
 <ol>
 <li>
-<em>Roxygen2: In-Line Documentation for R</em>. <a href="https://CRAN.R-project.org/package=roxygen2" class="uri">https://CRAN.R-project.org/package=roxygen2</a>.</li>
+<em>Roxygen2: In-Line Documentation for r</em>. <a href="https://CRAN.R-project.org/package=roxygen2" class="uri">https://CRAN.R-project.org/package=roxygen2</a>.</li>
 </ol>
 </div>
-<div id="ref-dplyr">
-<p>Wickham, Hadley, Romain François, Lionel Henry, and Kirill Müller. 2021. <em>Dplyr: A Grammar of Data Manipulation</em>. <a href="https://CRAN.R-project.org/package=dplyr" class="uri">https://CRAN.R-project.org/package=dplyr</a>.</p>
+<div id="ref-dplyr" class="csl-entry">
+Wickham, Hadley, Romain François, Lionel Henry, and Kirill Müller. 2021. <em>Dplyr: A Grammar of Data Manipulation</em>. <a href="https://CRAN.R-project.org/package=dplyr" class="uri">https://CRAN.R-project.org/package=dplyr</a>.
 </div>
-<div id="ref-readr">
-<p>Wickham, Hadley, and Jim Hester. 2020. <em>Readr: Read Rectangular Text Data</em>. <a href="https://CRAN.R-project.org/package=readr" class="uri">https://CRAN.R-project.org/package=readr</a>.</p>
+<div id="ref-readr" class="csl-entry">
+Wickham, Hadley, and Jim Hester. 2020. <em>Readr: Read Rectangular Text Data</em>. <a href="https://CRAN.R-project.org/package=readr" class="uri">https://CRAN.R-project.org/package=readr</a>.
 </div>
-<div id="ref-devtools">
-<p>Wickham, Hadley, Jim Hester, and Winston Chang. 2020. <em>Devtools: Tools to Make Developing R Packages Easier</em>. <a href="https://CRAN.R-project.org/package=devtools" class="uri">https://CRAN.R-project.org/package=devtools</a>.</p>
+<div id="ref-devtools" class="csl-entry">
+Wickham, Hadley, Jim Hester, and Winston Chang. 2021. <em>Devtools: Tools to Make Developing r Packages Easier</em>. <a href="https://CRAN.R-project.org/package=devtools" class="uri">https://CRAN.R-project.org/package=devtools</a>.
 </div>
-<div id="ref-mgcv">
-<p>Wood, Simon. 2021. <em>Mgcv: Mixed Gam Computation Vehicle with Automatic Smoothness Estimation</em>. <a href="https://CRAN.R-project.org/package=mgcv" class="uri">https://CRAN.R-project.org/package=mgcv</a>.</p>
+<div id="ref-mgcv" class="csl-entry">
+Wood, Simon. 2021. <em>Mgcv: Mixed GAM Computation Vehicle with Automatic Smoothness Estimation</em>. <a href="https://CRAN.R-project.org/package=mgcv" class="uri">https://CRAN.R-project.org/package=mgcv</a>.
 </div>
-<div id="ref-knitr2014">
-<p>Xie, Yihui. 2014. “Knitr: A Comprehensive Tool for Reproducible Research in R.” In <em>Implementing Reproducible Computational Research</em>, edited by Victoria Stodden, Friedrich Leisch, and Roger D. Peng. Chapman; Hall/CRC. <a href="http://www.crcpress.com/product/isbn/9781466561595" class="uri">http://www.crcpress.com/product/isbn/9781466561595</a>.</p>
+<div id="ref-knitr2014" class="csl-entry">
+Xie, Yihui. 2014. “Knitr: A Comprehensive Tool for Reproducible Research in R.” In <em>Implementing Reproducible Computational Research</em>, edited by Victoria Stodden, Friedrich Leisch, and Roger D. Peng. Chapman; Hall/CRC. <a href="http://www.crcpress.com/product/isbn/9781466561595" class="uri">http://www.crcpress.com/product/isbn/9781466561595</a>.
 </div>
-<div id="ref-knitr2015">
-<p>———. 2015. <em>Dynamic Documents with R and Knitr</em>. 2nd ed. Boca Raton, Florida: Chapman; Hall/CRC. <a href="https://yihui.org/knitr/" class="uri">https://yihui.org/knitr/</a>.</p>
+<div id="ref-knitr2015" class="csl-entry">
+———. 2015. <em>Dynamic Documents with R and Knitr</em>. 2nd ed. Boca Raton, Florida: Chapman; Hall/CRC. <a href="https://yihui.org/knitr/" class="uri">https://yihui.org/knitr/</a>.
 </div>
-<div id="ref-bookdown2016">
-<p>———. 2016. <em>Bookdown: Authoring Books and Technical Documents with R Markdown</em>. Boca Raton, Florida: Chapman; Hall/CRC. <a href="https://github.com/rstudio/bookdown" class="uri">https://github.com/rstudio/bookdown</a>.</p>
+<div id="ref-bookdown2016" class="csl-entry">
+———. 2016. <em>Bookdown: Authoring Books and Technical Documents with R Markdown</em>. Boca Raton, Florida: Chapman; Hall/CRC. <a href="https://bookdown.org/yihui/bookdown" class="uri">https://bookdown.org/yihui/bookdown</a>.
 </div>
-<div id="ref-rmarkdown2018">
-<p>Xie, Yihui, J. J. Allaire, and Garrett Grolemund. 2018. <em>R Markdown: The Definitive Guide</em>. Boca Raton, Florida: Chapman; Hall/CRC. <a href="https://bookdown.org/yihui/rmarkdown" class="uri">https://bookdown.org/yihui/rmarkdown</a>.</p>
+<div id="ref-rmarkdown2018" class="csl-entry">
+Xie, Yihui, J. J. Allaire, and Garrett Grolemund. 2018. <em>R Markdown: The Definitive Guide</em>. Boca Raton, Florida: Chapman; Hall/CRC. <a href="https://bookdown.org/yihui/rmarkdown" class="uri">https://bookdown.org/yihui/rmarkdown</a>.
 </div>
-<div id="ref-rmarkdown2020">
-<p>Xie, Yihui, Christophe Dervieux, and Emily Riederer. 2020. <em>R Markdown Cookbook</em>. Boca Raton, Florida: Chapman; Hall/CRC. <a href="https://bookdown.org/yihui/rmarkdown-cookbook" class="uri">https://bookdown.org/yihui/rmarkdown-cookbook</a>.</p>
+<div id="ref-rmarkdown2020" class="csl-entry">
+Xie, Yihui, Christophe Dervieux, and Emily Riederer. 2020. <em>R Markdown Cookbook</em>. Boca Raton, Florida: Chapman; Hall/CRC. <a href="https://bookdown.org/yihui/rmarkdown-cookbook" class="uri">https://bookdown.org/yihui/rmarkdown-cookbook</a>.
 </div>
 </div>
 </div>
