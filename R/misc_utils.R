@@ -58,8 +58,7 @@ ion_labeller <- function(ion, label = "latex") {
       if (length(ls[["c"]]) != 0) {
         if (!stringr::str_detect(ls[["c"]], "[[:digit:]]")) ls[["c"]] <- NULL
         }
-      paste0("$\\phantom{,}^{", ls[["a"]], "}$", ls[["b"]],"$_{", ls[["c"]],
-             "}$")
+      paste0("${}^{", ls[["a"]], "}\\mathrm{", ls[["b"]],"}_{", ls[["c"]], "}$")
     }
 
     ls_ion <- purrr::map(
@@ -67,7 +66,7 @@ ion_labeller <- function(ion, label = "latex") {
       paste_ion
       )
 
-    lb <- purrr::reduce(ls_ion, paste, sep = "--")
+    lb <- purrr::reduce(ls_ion, paste0)
     return(lb)
   }
   if (label == "expr") {
@@ -76,7 +75,7 @@ ion_labeller <- function(ion, label = "latex") {
 
     lb <- purrr::reduce(
       ls_ion,
-      function(x, y) substitute(a *"-"* b, env = lst(a = x, b = y))
+      function(x, y) substitute(a * b, env = lst(a = x, b = y))
       )
     return(lb)
     }
