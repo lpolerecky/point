@@ -1,19 +1,28 @@
 ## Names for the data and machine parameter settings
 names_cameca <- tibble::tibble(
   cameca = c(
-    "N.rw",
-    "n.rw",
-    "N.pr",
-    "Xt.pr",
-    "species.nm",
-    "t.nm",
-    "bl.nm",
-    "file.nm",
-    "sample.nm",
-    "date.mt",
-    "x.mt",
-    "y.mt",
-    "z.mt",
+    "Y",
+    "",
+    "",
+    "",
+    "Species",
+    "X",
+    "",
+    "",
+    "",
+    "",
+    "Mass#",
+    "Max(mV)",
+    "SD",
+    "EMHV(V)",
+    "Mass",
+    "Det.",
+    "Tc(s)",
+    "BField",
+    "Radius",
+    "x",
+    "y",
+    "z",
     "Raw data file",
     "Block number",
     "Meas. per block",
@@ -38,7 +47,8 @@ names_cameca <- tibble::tibble(
     "Primary Current before acq",
     "after acq",
     "FC Background before acq",
-    "FC Background after acq"
+    "FC Background after acq",
+    ""
      ),
 # New names for internal processing
   point = c(
@@ -52,6 +62,15 @@ names_cameca <- tibble::tibble(
     "file.nm",
     "sample.nm",
     "date.mt",
+    "num.mt",
+    "mean_PHD.mt",
+    "SD_PHD.mt",
+    "EMHV.mt",
+    "mass.mt",
+    "det.mt",
+    "tc.mt",
+    "bfield.mt",
+    "rad.mt",
     "x.mt",
     "y.mt",
     "z.mt",
@@ -79,8 +98,26 @@ names_cameca <- tibble::tibble(
     "prim_cur_start.mt",
     "prim_cur_after.mt",
     "FC_start.mt",
-    "FC_after.mt"
+    "FC_after.mt",
+    "det_type.mt"
      ),
+  argument = c(
+    ".N",
+    "",
+    ".N",
+    ".X",
+    ".species",
+    ".t",
+    rep("", 5),
+    ".M_PHD",
+    ".SD_PHD",
+    "",
+    "",
+    "",
+    ".bl_t",
+    rep("", 30),
+    ".det"
+    ),
   definition = c(
   "Raw ion count",
   "Number of observations",
@@ -92,6 +129,15 @@ names_cameca <- tibble::tibble(
   "File name",
   "Sample name",
   "Date and time",
+  "Detector trolley/position number",
+  "Mean PHD",
+  "Standard deviation of PHD",
+  "Mean High Voltage",
+  "Species mass",
+  "Detector trolley/position type",
+  "Blanking time",
+  "Magenetic Field ()",
+  "Radius",
   "x coordinate",
   "y coordinate",
   "z coordinate",
@@ -119,9 +165,10 @@ names_cameca <- tibble::tibble(
   "Primary Current before acq",
   "after acq",
   "FC Background before acq",
-  "FC Background after acq"
+  "FC Background after acq",
+  "Detector type (Faraday cup or electron multiplier)"
   ),
-  use = c(rep("data", 4), rep("group", 5), rep("meta", 29))
+  use = c(rep("raw", 2), rep("processed", 2), rep("group", 5), rep("meta", 39))
   )
 
 usethis::use_data(names_cameca, overwrite = TRUE)

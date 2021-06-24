@@ -1,17 +1,19 @@
 # Plotting diagnostics
-gg_IC <- function(.IC, .ion1, .ion2, .method, .plot_type, ..., .X = Xt.pr,
-                  .N = N.pr, .species = species.nm, .t = t.nm, .flag = flag,
-                  .labels = NULL, .rep = 1, .alpha_level, .plot_iso = FALSE,
-                  .plot_outlier_labs){
+gg_IC <- function(.IC, .ion1, .ion2, ..., .X = NULL, .N = NULL, .flag = NULL,
+                  .rep = 1, .plot_args, .return_call = FALSE) {
 
   # Quoting the call (user-supplied expressions)
   # Grouping
   gr_by <- enquos(...)
 
   # stat_R variables
-  args <- enquos(.X = .X, .N = .N, .species = .species, .t = .t)
+  args <- inject_args(
+    .IC,
+    enquos(.X = .X, .N = .N, .flag = .flag),
+    type = c("processed", "group", "diagnostics"),
+    check = FALSE
+  )
 
-  flag <-  enquo(.flag)
   # Common isotope
   N1 <- quo_updt(args[[".X"]], post = .ion1)
   X1 <- quo_updt(args[[".X"]], post = .ion1)
@@ -22,68 +24,75 @@ gg_IC <- function(.IC, .ion1, .ion2, .method, .plot_type, ..., .X = Xt.pr,
   hat_S_N1 <- quo_updt(args[[".N"]], pre = "hat_S", post = .ion1)
 
   # Filter execution
-  if (.plot_type == "static") .IC <- filter(.IC, .data$execution == .rep)
+  if (.plot_args[[".plot_type"]] == "static") {
+    .IC <- filter(.IC, .data$execution == .rep)
+  }
 
   # Plotting arguments
-  plot_args <- list2(.IC = .IC, .x = X2, .y = X1, .flag = flag,
-                     .diag_type = .method, .plot_type = .plot_type, !!! gr_by,
-                     .labels = .labels, .hat = hat_X1, .sd = hat_S_N1 ,
-                     .alpha_level = .alpha_level,
-                     .plot_outlier_labs = .plot_outlier_labs)
-  # environment
-  data_env <- env(data = .IC)
+  plot_args <- list2(
+    .IC = .IC,
+    .x = X2,
+    .y = X1,
+    .flag = args[[".flag"]],
+    !!! gr_by,
+    .hat = hat_X1,
+    .sd = hat_S_N1,
+    !!! .plot_args
+  )
+
   # Residual leverage plot
-  if(.method == "norm_E") {
-      plot_args[[".y"]] <- parse_quo("studE", env = data_env)
-      plot_args[[".x"]] <- parse_quo("hat_Xi", env = data_env)
+  if(plot_args[[".method"]] == "norm_E") {
+      plot_args[[".y"]] <- parse_quo("studE", env = caller_env())
+      plot_args[[".x"]] <- parse_quo("hat_Xi", env = caller_env())
       plot_args[[".hat"]] <- NULL
       plot_args[[".sd"]] <- NULL
     }
 
   # Normal QQ plot
-  if (.method == "QQ"){
-      plot_args[[".y"]] <- parse_quo("RQ", env = data_env)
-      plot_args[[".x"]] <- parse_quo("TQ", env = data_env)
+  if (plot_args[[".method"]] == "QQ"){
+      plot_args[[".y"]] <- parse_quo("RQ", env = caller_env())
+      plot_args[[".x"]] <- parse_quo("TQ", env = caller_env())
       plot_args[[".hat"]] <- quo_updt(plot_args[[".y"]], pre = "hat")
       plot_args[[".sd"]] <- NULL
       plot_args[[".se"]] <- quo_updt(plot_args[[".y"]], pre = "hat_e")
     }
 
   # Scale location plot
-  if (.method  == "CV"){
-      plot_args[[".y"]] <- parse_quo("studE", env = data_env)
+  if (plot_args[[".method"]] == "CV"){
+      plot_args[[".y"]] <- parse_quo("studE", env = caller_env())
       plot_args[[".x"]] <- hat_X1
       plot_args[[".hat"]] <- 0
       plot_args[[".sd"]] <- NULL
       plot_args[[".cv"]] <- 3.5
   }
-
+  # call
+  p_call <- call2(gg_base, !!! plot_args)
   # Execute
-  p <- eval(expr(gg_base(!!!plot_args)), data_env)
-  if (.plot_type == "static") return(p)
+  if (isTRUE(.return_call)) p_call else  eval(p_call)
   }
 
 
-gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
-                    .labels = NULL, .geom = "point", .hat = NULL, .sd = NULL,
-                    .se = NULL, .cv = NULL, .alpha_level, .rug = FALSE,
+gg_base <- function(.IC, .x, .y, .flag, .method, .plot_type, ...,
+                    .plot_stat = NULL, .geom = "point", .hat = NULL,
+                    .sd = NULL, .se = NULL, .cv = NULL, .alpha_level,
+                    .rug = FALSE,
                     .plot_outlier_labs =  c("divergent", "confluent")){
 
   # Grouping
   gr_by <- enquos(...)
 
-    # Create ion labels from variables
-  ion2 <- detect_ion(.x, .diag_type)
+  # Create ion labels from variables
+  ion2 <- detect_ion(.x, .method)
   ion1 <- detect_ion(.y)
 
   # 2D density
-  .IC <- twodens(.IC, !!.x, !!.y, !!! gr_by, .flag = !! .flag)
+  .IC <- twodens(.IC, !! .x, !! .y, !!! gr_by, .flag = !! .flag)
 
   # Filter correct titles
-  ttl <- filter(point::names_diag, .data$name == .diag_type)
+  ttl <- filter(point::names_plot, .data$name == .method)
 
   # R statistics labels for geom_text
-  if (!is.null(.labels)) tb_labs <- stat_labs(.IC, gr_by)
+  if (!is.null(.plot_stat)) tb_labs <- stat_labs(.IC, gr_by)
 
   # Base plot
   if (.plot_type == "static") p <- ggplot(data = .IC, aes(x = !! .x, y = !! .y))
@@ -97,29 +106,26 @@ gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
   p <- p + facet_wrap(vars(!!! gr_by), scales = "free")
 
   # Geom for "point" data
-  if (.geom == "point") p <- dens_point(p, .flag, .IC, plot_width,
-                                        .plot_outlier_labs)
-
+  if (.geom == "point") {
+    p <- dens_point(p, .flag, .IC, plot_width, .plot_outlier_labs)
+  }
   if (.geom == "hex") p <- p + geom_hex()
-
   if (.rug) p <- p + geom_rug(sides = "tr", alpha = 0.01)
-
-  if (!is.null(.labels)) {
+  if (!is.null(.plot_stat)) {
     p <- p +
       geom_text(
-        data = filter(tb_labs, .data$stat %in% .labels),
+        data = filter(tb_labs, .data$stat %in% .plot_stat),
         aes(
           x = -Inf,
           y = Inf,
           label = .data$lbs
-          ),
+        ),
         vjust = "inward",
         hjust = "inward",
         parse = TRUE,
         inherit.aes = FALSE
-        )
+      )
   }
-
   # Model
   if (!is.null(.hat)) {
     p <- p + geom_line(aes(y = !!.hat), color = "black", linetype = 2,
@@ -160,13 +166,11 @@ gg_base <- function(.IC, .x, .y, .flag, .diag_type, .plot_type, ...,
       ) +
     theme_classic()+
     theme(legend.position = "top")
-
   }
 
-
-gg_IR <- function(.df, .lag, .acf, .flag, ..., .sd = NULL){
-
-  ggplot(.df, mapping = aes(x = {{.lag}}, y = {{.acf}}, color = {{.flag}})) +
+# Autocorrelation plot
+gg_IR <- function(.IC, .lag, .acf, .flag, ..., .sd = NULL){
+  ggplot(.IC, mapping = aes(x = {{.lag}}, y = {{.acf}}, color = {{.flag}})) +
     geom_hline(aes(yintercept = 0)) +
     geom_segment(mapping = aes(xend = {{.lag}}, yend = 0)) +
     geom_hline(aes(yintercept = -{{.sd}}), color = "darkblue") +
@@ -177,52 +181,48 @@ gg_IR <- function(.df, .lag, .acf, .flag, ..., .sd = NULL){
     theme(legend.position = "none")
 }
 
-
-
+# axis labels
 axis_labs <- function(type, ion, plot_type){
-
   if (!(type == "ionct" | type ==  "hat_Y")) ion <- NULL
-
-  if (plot_type == "static"){
-  switch(
-    type,
-    ionct = substitute(a~"(count sec"^"-"*")", list(a = ion_labeller(ion, "expr"))),
-    studE = expression("studentized residuals (" * italic(e)^"*" * ")"),
-    TQ = "Theoretical quantiles",
-    SQ = "Sample quantiles",
-    Xct = expression(X~"(count sec"^"-"*")"),
-    time = "time (sec)",
-    hat_Y = substitute("fitted value (" * hat(a) * ")",
-                       list(a = ion_labeller(ion, "expr"))),
-    hat_Xi = expression("hat-values" (italic(h))),
-    R = "R"
+  if (plot_type == "static") {
+    switch(
+      type,
+      ionct = substitute(a ~ "(count sec" ^ "-" * ")", list(a = ion_labeller(ion, "expr"))),
+      studE = expression("studentized residuals (" * italic(e) ^ "*" * ")"),
+      TQ = "Theoretical quantiles",
+      SQ = "Sample quantiles",
+      Xct = expression(X ~ "(count sec" ^ "-" * ")"),
+      time = "time (sec)",
+      hat_Y = substitute("fitted value (" * hat(a) * ")",
+                         list(a = ion_labeller(ion, "expr"))),
+      hat_Xi = expression("hat-values" (italic(h))),
+      R = "R"
     )
-      } else {
-        switch(
-          type,
-          ionct = stringr::str_replace("ion (ct/sec)", "ion", ion),
-          studE = "studentized residuals",
-          TQ = "Theoretical quantiles",
-          SQ = "Sample quantiles",
-          hat_Y = "fitted value ",
-          hat_Xi = "hat-values"
-          )
-      }
+  } else {
+    switch(
+      type,
+      ionct = stringr::str_replace("ion (ct/sec)", "ion", ion),
+      studE = "studentized residuals",
+      TQ = "Theoretical quantiles",
+      SQ = "Sample quantiles",
+      hat_Y = "fitted value ",
+      hat_Xi = "hat-values"
+    )
+  }
 }
 
-
-# creat ion labels from variables
+# Create ion labels from variables
 detect_ion <- function(var, diag_type = ""){
-
-  if (stringr::str_detect(as_name(var), "[[:digit:]]") | diag_type == "CV") {
+  if (stringr::str_detect(as_name(var), "[[:digit:]]") |
+      diag_type == "CV") {
     stringr::str_split(as_name(var), "[[:punct:]]")[[1]] %>% tail(1)
-    } else {
-      NULL
-      }
+  } else {
+    NULL
+  }
 }
 
+# calculate statistics for plotting on plot
 stat_labs <- function(.IC, gr_by){
-
   tb_labs <- distinct(.IC, !!! gr_by, .keep_all = TRUE) %>%
     select(!!! gr_by, starts_with(paste0(point::names_stat_R$name, "_R"))) %>%
     tidyr::pivot_longer(
@@ -239,27 +239,25 @@ stat_labs <- function(.IC, gr_by){
   tibble::add_column(tb_labs, lbs = lbs)
 }
 
-# stat for uncertainty intervals
-ribbon_stat <- function(IC, hat, bound, alpha_level){
-
-    fct_switch <- function(alpha_level, bound){
-      switch(
-        bound,
-        sd = qnorm((1 - alpha_level / 2)),
-        se = qt((1 - alpha_level / 2), n() - 1),
-        cv = 1
-        )
-    }
-    mutate(
-      IC,
-      fct = fct_switch(alpha_level, names(bound)),
-      lower = !! hat - .data$fct * !!bound[[1]],
-      upper = !! hat + .data$fct * !!bound[[1]]
+# Statistics for uncertainty intervals
+ribbon_stat <- function(IC, hat, bound, alpha_level) {
+  fct_switch <- function(alpha_level, bound) {
+    switch(
+      bound,
+      sd = qnorm((1 - alpha_level / 2)),
+      se = qt((1 - alpha_level / 2), n() - 1),
+      cv = 1
       )
-
   }
+  mutate(
+    IC,
+    fct = fct_switch(alpha_level, names(bound)),
+    lower = !!hat - .data$fct * !!bound[[1]],
+    upper = !!hat + .data$fct * !!bound[[1]]
+  )
+}
 
-
+# calculate 2D density
 dens_point <- function (p, flag, IC, width, plot_outlier_labs) {
   # colors
   div_col <- c("#8E063B", "#BB7784", "#D6BCC0", "#E2E2E2", "#BEC1D4", "#7D87B9",
@@ -274,19 +272,18 @@ dens_point <- function (p, flag, IC, width, plot_outlier_labs) {
         colors = div_col,
         na.value = "transparent",
         guide = guide_colourbar(ticks = FALSE, barwidth = width)
-        )
-      } else {
-        p <- p +
-          scale_color_distiller(
-            "",
-            breaks = seq(0, 1, length.out = 100),
-            palette = "YlOrRd",
-            direction = 1,
-            na.value = "transparent",
-            guide = FALSE
-            )
-        }
+      )
+  } else {
+    p <- p +
+      scale_color_distiller(
+        "",
+        breaks = seq(0, 1, length.out = 100),
+        palette = "YlOrRd",
+        direction = 1,
+        na.value = "transparent",
+        guide = FALSE
+      )
+  }
   # alpha
-  p <- p + scale_alpha_identity(guide = FALSE, limits = c(1e-5, 1))
-  return(p)
+  p + scale_alpha_identity(guide = FALSE, limits = c(1e-5, 1))
 }

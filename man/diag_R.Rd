@@ -12,10 +12,10 @@ diag_R(
   .nest = NULL,
   .method = "CooksD",
   .reps = 1,
-  .X = Xt.pr,
-  .N = N.pr,
-  .species = species.nm,
-  .t = t.nm,
+  .X = NULL,
+  .N = NULL,
+  .species = NULL,
+  .t = NULL,
   .output = "inference",
   .label = NULL,
   .meta = TRUE,
@@ -114,7 +114,7 @@ how to use the function, and possible methods for outlier detection. Options
 are \code{"CooksD"} (default), \code{"Cameca"}, \code{"Rm"}, \code{"norm_E"},
 \code{"CV"}, \code{"IR"}, and \code{"QQ"}, see the
 \code{vignette("IC-diagnostics", package = "point")} for examples and
-\code{point::\link[point:names_diag]{names_diag}}. The
+\code{point::\link[point:names_plot]{names_plot}}. The
 argument \code{.output} can be used to toggle between \code{"complete"};
 returning \code{stat_R()} and \code{stat_X()} statistics, diagnostics, and
 inference test results, \code{"augmented"}; returning the augmented IC after

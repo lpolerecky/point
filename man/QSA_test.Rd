@@ -10,10 +10,10 @@ QSA_test(
   .ion2,
   ...,
   .nest = NULL,
-  .X = Xt.pr,
-  .N = N.pr,
-  .species = species.nm,
-  .t = t.nm,
+  .X = NULL,
+  .N = NULL,
+  .species = NULL,
+  .t = NULL,
   .plot = TRUE
 )
 }

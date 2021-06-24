@@ -81,8 +81,8 @@ tb_rw <- read_IC(point_example("2018-01-19-GLENDON"))
 tb_pr <- cor_IC(tb_rw)
 
 # CAMECA style diagnostics
-tb_dia <- diag_R(tb_pr, "13C", "12C", file.nm, bl.nm, .method = "Cameca", .reps = 2, 
-                 .output = "diagnostic") 
+tb_dia <- diag_R(tb_pr, "13C", "12C", file.nm, bl.nm, .method = "Cameca", 
+                 .reps = 2,  .output = "diagnostic") 
 ```
 
 
@@ -190,7 +190,7 @@ In the two simulations with a heterogeneous isotope composition the total span o
 ```{r simulations, echo=FALSE, fig.width=12, fig.height=4, fig.cap="Histograms comparing input and output $R$ values for simulations of an ideal isotopically homogenous material, a gradual gradient in $R$ (symmetric gradient), and a sudden shift in $R$ (asymmetric gradient)."}
 # Compare input value of R with output (load dataset simu_IC)
 tb_R <- stat_R(simu_IC, "13C", "12C", type.nm, trend.nm, base.nm, 
-               force.nm, .output = "complete") 
+               force.nm, spot.nm, .output = "complete") 
 
 # Re-calculate R from delta value with calib_R()
 tb_R <- mutate(

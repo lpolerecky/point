@@ -8,10 +8,11 @@ predict_ionize(
   .IC,
   ...,
   .nest = NULL,
-  .X = Xt.pr,
-  .N = N.pr,
-  .species = species.nm,
-  .t = t.nm,
+  .X = NULL,
+  .N = NULL,
+  .species = NULL,
+  .t = NULL,
+  .bl_t = NULL,
   .plot = TRUE,
   .method = "median",
   .hide = TRUE
@@ -32,6 +33,8 @@ whether a nested mixed GAM model is applied.}
 \item{.species}{A variable constituting the species analysed.}
 
 \item{.t}{A variable constituting the time increments.}
+
+\item{.bl_t}{A variable constituting the blanking time.}
 
 \item{.plot}{Logical indicating whether to plot ion trends}
 

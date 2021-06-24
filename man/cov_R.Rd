@@ -4,7 +4,7 @@
 \alias{cov_R}
 \title{Function for co-variate conversion of isotope systems}
 \usage{
-cov_R(.IC, .ion, ..., .species = species.nm, .t = t.nm, .preserve = FALSE)
+cov_R(.IC, .ion, ..., .species = NULL, .t = NULL, .preserve = FALSE)
 }
 \arguments{
 \item{.IC}{A tibble containing processed ion count data.}

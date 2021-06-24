@@ -42,11 +42,15 @@
 #'
 #' # QSA test
 #' QSA_test(tb_pr, "13C", "12C", file.nm)
-QSA_test <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr,
-                     .N = N.pr, .species = species.nm, .t = t.nm, .plot = TRUE){
+QSA_test <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL, .N = NULL,
+                     .species = NULL, .t = NULL, .plot = TRUE){
 
   # Quoting the call (user-supplied expressions)
-  args <- enquos(.X = .X, .N = .N, .species = .species, .t = .t, .nest  = .nest)
+  args <- inject_args(
+    .IC,
+    enquos(.X = .X, .N = .N, .species = .species, .t = .t),
+    type = c("processed", "group")
+  )
 
   # Grouping
   gr_by <- enquos(...)
@@ -61,7 +65,7 @@ QSA_test <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr,
                .species = !! args[[".species"]]) %>%
     cov_R(c(.ion1, .ion2), !!! gr_by, .species = !! args[[".species"]],
           .t = !! args[[".t"]]) %>%
-    mutate(!!R_X  := !! X1  / !! X2 )
+    mutate(!! R_X  := !! X1  / !! X2 )
 
   df_lm <- tidyr::nest(IC, data = -c(!!! gr_by)) %>%
     mutate(
@@ -76,9 +80,9 @@ QSA_test <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr,
     tidyr::unnest_wider(.data$lm_out) %>%
     tidyr::unnest(cols = .data$data)
 
-  if (is_symbol(get_expr(args[[".nest"]]))) {
+  if (is_symbol(get_expr(nest))) {
     # Groups for nested data
-    nest_gr <- gr_by[!sapply(gr_by, as_name) %in% as_name(args[[".nest"]])]
+    nest_gr <- gr_by[!sapply(gr_by, as_name) %in% as_name(nest)]
 
     df_mlm <- tidyr::nest(IC, data = -c(!!! nest_gr)) %>%
       mutate(
@@ -96,10 +100,9 @@ QSA_test <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr,
 
     ls_mlm <- lst(df_lm, df_mlm)
     # Prepare output
-    df <- purrr::reduce(ls_mlm, left_join, by = sapply(nest_gr, as_name))
-    return(df)
+    purrr::reduce(ls_mlm, left_join, by = sapply(nest_gr, as_name))
     }
-  return(df_lm)
+  df_lm
 }
 
 

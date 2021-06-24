@@ -16,6 +16,8 @@
 #' variables generated with \code{read_IC()})
 #' @param .N A variable constituting the ion counts (defaults to variables
 #' generated with \code{read_IC()}.).
+#' @param .species A variable constituting the species analysed (defaults to
+#' variables generated with \code{read_IC()}.).
 #' @param .t A variable constituting the time of the analyses (defaults to
 #' variables generated with \code{read_IC()}.).
 #' @param .output Character string determining whether the returned values in a
@@ -47,14 +49,20 @@
 #'
 #' # CAMECA style augmentation of ion count data for isotope ratios
 #' Cameca(tb_R, "13C", "12C", file.nm, .output = "flag")
-Cameca <- function(.IC, .ion1, .ion2, ..., .X = Xt.pr, .N = N.pr, .t = t.nm,
-                   .output = "complete", .alpha_level = 0.05, .hyp = "none"){
+Cameca <- function(.IC, .ion1, .ion2, ..., .X = NULL, .N = NULL, .species = NULL,
+                   .t = NULL, .output = "complete", .alpha_level = 0.05,
+                   .hyp = "none"){
 
   # Grouping
   gr_by <- enquos(...)
 
   # Quoting the call (user-supplied expressions)
-  args <- enquos(.X = .X, .N = .N, .t = .t)
+  args <- inject_args(
+    .IC,
+    enquos(.X = .X, .N = .N, .species = .species, .t = .t),
+    type = c("processed", "group"),
+    check = FALSE
+    )
 
   # R quosures
   args <- list2(

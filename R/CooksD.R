@@ -1,9 +1,9 @@
 #' @rdname Cameca
 #'
 #' @export
-CooksD <- CV <- Rm <- norm_E <- QQ <- IR <- function(.IC, .ion1, .ion2, ...,
-  .X = Xt.pr, .t = t.nm, .output = "complete", .hyp = "none",
-  .alpha_level = 0.05){
+CooksD <- function(.IC, .ion1, .ion2, ..., .X = NULL, .N = NULL, .species = NULL,
+                   .t = NULL, .output = "complete", .hyp = "none",
+                   .alpha_level = 0.05){
 
   # Grouping
   gr_by <- enquos(...)
@@ -27,17 +27,21 @@ CooksD <- CV <- Rm <- norm_E <- QQ <- IR <- function(.IC, .ion1, .ion2, ...,
     }
 
   # Quoting the call (user-supplied expressions)
-  X <- enquo(.X)
-  t <- enquo(.t)
+  args <- inject_args(
+    .IC,
+    enquos(.X = .X, .N = .N, .species = .species, .t = .t),
+    type = c("processed", "group"),
+    check = FALSE
+    )
 
   # Rare isotope
-  X1 <- quo_updt(X, post = .ion1) # count rate
+  X1 <- quo_updt(args[[".X"]], post = .ion1) # count rate
   # Common isotope
-  X2 <- quo_updt(X, post = .ion2) # count rate
+  X2 <- quo_updt(args[[".X"]], post = .ion2) # count rate
 
   # Execute
-  IC_nest <- nest_R_lm(.IC, gr_by, X1, X2, t, method = fun_nm, hyp = .hyp,
-                       alpha_level = .alpha_level)
+  IC_nest <- nest_R_lm(.IC, gr_by, X1, X2, args[[".t"]], method = fun_nm,
+                       hyp = .hyp, alpha_level = .alpha_level)
 
   # Output
   if (fun_nm == "IR") {
@@ -268,3 +272,29 @@ custom_bp <- function(IC, X2){
 hat_QR_se <- function(RQ, TQ, pb, n){
   (sd(RQ) / dnorm(TQ)) * sqrt((pb * (1 - pb))/ unique(n))
 }
+
+#' @rdname Cameca
+#'
+#' @export
+CV <- CooksD
+
+#' @rdname Cameca
+#'
+#' @export
+Rm <- CooksD
+
+#' @rdname Cameca
+#'
+#' @export
+norm_E <- CooksD
+
+#' @rdname Cameca
+#'
+#' @export
+QQ <- CooksD
+
+#' @rdname Cameca
+#'
+#' @export
+IR <- CooksD
+

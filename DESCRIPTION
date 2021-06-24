@@ -31,7 +31,8 @@ Imports:
     broom (>= 0.7.6),
     polyaAeppli (>= 2.0),
     MASS,
-    scales (>= 1.1.1)
+    scales (>= 1.1.1),
+    vdiffr
 Suggests: 
     roxygen2,
     nortest,
@@ -42,3 +43,4 @@ Suggests:
     testthat
 RoxygenNote: 7.1.1
 VignetteBuilder: knitr
+Config/testthat/edition: 3

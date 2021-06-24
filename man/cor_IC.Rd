@@ -7,14 +7,14 @@
 cor_IC(
   .IC,
   ...,
-  .N = N.rw,
-  .t = t.nm,
-  .bl_t = tc.mt,
-  .det = det_type.mt,
+  .N = NULL,
+  .t = NULL,
+  .bl_t = NULL,
+  .det = NULL,
   .deadtime = NULL,
   .thr_PHD = NULL,
-  .mean_PHD = mean_PHD.mt,
-  .SD_PHD = SD_PHD.mt,
+  .mean_PHD = NULL,
+  .SD_PHD = NULL,
   .hide = TRUE
 )
 }
@@ -27,20 +27,21 @@ cor_IC(
 
 \item{.t}{A variable constituting the time increments.}
 
-\item{.bl_t}{A variable or numeric value for the blanking time}
+\item{.bl_t}{A variable or numeric value for the blanking time.}
 
 \item{.det}{Variable or character string or variable for the detection
 system ("EM" or "FC").}
 
-\item{.deadtime}{A numeric value for the deadtime of the EM system.}
+\item{.deadtime}{A numeric value for the deadtime of the EM system with
+units nanoseconds.}
 
 \item{.thr_PHD}{A numeric value for the discriminator threshold of the EM.
-system}
+system.}
 
-\item{.mean_PHD}{A value or numeric valie of the mean PHD value}
+\item{.mean_PHD}{A variable or numeric value of the mean PHD value.}
 
-\item{.SD_PHD}{A value or numeric valie of standard deviation of the PHD
-value}
+\item{.SD_PHD}{A variable or numeric value of standard deviation of
+the PHD value.}
 
 \item{.hide}{A logical indicating whether only processed data should be
 returned. If \code{TRUE} The raw data is contained as an attribute named

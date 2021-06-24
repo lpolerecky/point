@@ -45,18 +45,23 @@
 #' # Evaluate significance and effect of outliers based on Cook's D
 #' eval_diag(tb_dia, "13C", "12C", type.nm, spot.nm, .nest = type.nm)
 #'
-eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr,
-                      .N = N.pr, .species = species.nm, .t = t.nm, .flag = flag,
-                      .execution = execution, .output = "inference",
+eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
+                      .N = NULL, .species = NULL, .t = NULL, .flag = NULL,
+                      .execution = NULL, .output = "inference",
                       .tf = "ppt", .label = NULL, .meta = TRUE){
 
   # Quoting the call (user-supplied expressions)
-  # Grouping
+  # Grouping and nesting
   gr_by <- enquos(..., .execution)
-
+  nest <- enquo(.nest)
   # Additional arguments
-  args <- enquos(.X = .X, .N = .N, .species = .species, .t = .t, .flag = .flag,
-                 .nest = .nest, .execution = .execution)
+  args <- inject_args(
+    .IC,
+    enquos(.X = .X, .N = .N, .species = .species, .t = .t,
+           .execution = .execution, .flag = .flag),
+    type = c("processed", "group", "diagnostics"),
+    check = FALSE
+    )
 
   # Metadata
   if(.meta) meta <- unfold(.IC, merge = FALSE)

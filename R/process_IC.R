@@ -17,15 +17,16 @@
 #' @param ... Currently not supported.
 #' @param .N A variable constituting the ion counts.
 #' @param .t A variable constituting the time increments.
-#' @param .bl_t A variable or numeric value for the blanking time
+#' @param .bl_t A variable or numeric value for the blanking time.
 #' @param .det Variable or character string or variable for the detection
 #' system ("EM" or "FC").
-#' @param .deadtime A numeric value for the deadtime of the EM system.
+#' @param .deadtime A numeric value for the deadtime of the EM system with
+#' units nanoseconds.
 #' @param .thr_PHD A numeric value for the discriminator threshold of the EM.
-#' system
-#' @param .mean_PHD A value or numeric valie of the mean PHD value
-#' @param .SD_PHD A value or numeric valie of standard deviation of the PHD
-#' value
+#' system.
+#' @param .mean_PHD A variable or numeric value of the mean PHD value.
+#' @param .SD_PHD A variable or numeric value of standard deviation of
+#' the PHD value.
 #' @param .hide A logical indicating whether only processed data should be
 #' returned. If \code{TRUE} The raw data is contained as an attribute named
 #' \code{"rawdata"}.
@@ -44,63 +45,48 @@
 #'
 #' # Processing raw ion count data
 #' cor_IC(tb_rw)
-cor_IC <-function(.IC, ..., .N = N.rw, .t = t.nm, .bl_t = tc.mt,
-                  .det = det_type.mt, .deadtime = NULL, .thr_PHD = NULL,
-                  .mean_PHD = mean_PHD.mt, .SD_PHD = SD_PHD.mt,
+cor_IC <-function(.IC, ..., .N = NULL, .t = NULL, .bl_t = NULL,
+                  .det = NULL, .deadtime = NULL, .thr_PHD = NULL,
+                  .mean_PHD = NULL, .SD_PHD =  NULL,
                   .hide = TRUE){
 
-  stopifnot(tibble::is_tibble(.IC))
+  # Checks
+  stat_validator(.IC)
 
-# Quoting the call (user-supplied expressions)
-  args <- enquos(N = .N, t = .t, bl_t = .bl_t, det = .det, M_PHD = .mean_PHD,
-                 SD_PHD = .SD_PHD)
+  # Unfold metadata
+  if (ncol(select(.IC, ends_with(".mt"))) == 0) .IC <- unfold(.IC)
 
-# New quosure
-  N.pr <- quo_updt(args[["N"]], post = "pr", update_post = TRUE)
-
-# Unfold metadata
-  if (ncol(select(.IC, ends_with(".mt"))) == 0) IC <- unfold(.IC) else IC <- .IC
-
-# Manual setting of blank time
-  if (is.numeric(get_expr(args[["bl_t"]]))) {
-    IC <- mutate(IC, tc.mt = !! args[["bl_t"]])
-    args[["bl_t"]] <- quo(tc.mt)
-  }
-# Manual setting of detector type
-  if (is_character(get_expr(det))) {
-    IC <- mutate(IC, det_type.mt = !! det)
-    det <- quo(det_type.mt)
-  }
-
-# Time increments and count rate (time between measurements minus blanking time)
-  IC <- mutate(
-    IC,
-    dt.rw = min(!! args[["t"]]) - !! args[["bl_t"]],
-    Xt.pr = !! args[["N"]] / .data$dt.rw,
-    !! N.pr := !! args[["N"]]
+  # Quoting the call (user-supplied expressions)
+  args <- inject_args(
+    .IC,
+    enquos(.N = .N, .t = .t, .bl_t = .bl_t, .det = .det, .M_PHD = .mean_PHD,
+           .SD_PHD = .SD_PHD),
+    type = c("raw", "group", "meta")
     )
 
-# PHD correction (Yield) on counts and count rates
+  # New quosure
+  N.pr <- quo_updt(args[[".N"]], post = "pr", update_post = TRUE)
+
+  # Time increments (time between measurements minus blanking time)
+  .IC <- mutate(
+    .IC,
+    dt.rw = min(!! args[[".t"]]) - !! args[[".bl_t"]],
+    Xt.pr = !! args[[".N"]] / .data$dt.rw,
+    !! N.pr := !! args[[".N"]]
+    )
+
+  # PHD correction (Yield) on counts and count rates
   if (!is.null(.thr_PHD)) {
 
-# Manual setting of PHD params (mean and sd)
-    if (is.numeric(get_expr(args[["M_PHD"]])) &
-        is.numeric(get_expr(args[["SD_PHD"]]))) {
-      IC <- mutate(
-        IC,
-        mean_PHD.mt = !! args[["M_PHD"]],
-        SD_PHD.mt = !! args[["SD_PHD"]]
-        )
-      M_PHD <- quo(mean_PHD.mt)
-      SD_PHD <- quo(SD_PHD.mt)
-      }
-
-    IC <- tidyr::nest(IC, data = -c(!! args[["M_PHD"]], !! args[["SD_PHD"]])) %>%
+    .IC <- tidyr::nest(
+      .IC,
+      data = -c(!! args[[".M_PHD"]], !! args[[".SD_PHD"]])
+      ) %>%
       mutate(
         Y.mt =
           purrr::map2_dbl(
-            !! args[["M_PHD"]],
-            !! args[["SD_PHD"]],
+            !! args[[".M_PHD"]],
+            !! args[[".SD_PHD"]],
             purrr::possibly(cor_yield, NA_real_),
             x = NULL,
             thr_PHD = .thr_PHD,
@@ -114,31 +100,30 @@ cor_IC <-function(.IC, ..., .N = N.rw, .t = t.nm, .bl_t = tc.mt,
         )
     }
 
-# Deadtime correction on counts and count rates
+  # Deadtime correction on counts and count rates
   if (!is.null(.deadtime)) {
-    IC  <- mutate(
-      IC,
+    .IC  <- mutate(
+      .IC,
       Xt.pr =
         if_else(
-          !! args[["det"]] == "EM",
+          !! args[[".det"]] == "EM",
           cor_DT(.data$Xt.pr, .deadtime),
           .data$Xt.pr
           ),
       !! N.pr :=
         if_else(
-          !! args[["det"]] == "EM",
+          !! args[[".det"]] == "EM",
           .data$Xt.pr * .data$dt.rw,
           !! N.pr
           )
       )
   }
 
-# Output
+  # Output
   if (.hide) {
-    IC <- fold(IC, type = c(".mt", ".rw"))
-    return(IC)
+    return(fold(.IC, type = c(".mt", ".rw")))
     }
-  return(IC)
+  .IC
   }
 
 #' Correct ion detection bias
@@ -163,7 +148,8 @@ cor_IC <-function(.IC, ..., .N = N.rw, .t = t.nm, .bl_t = tc.mt,
 #' PHD.
 #' @param thr_PHD A numeric value for the disrcriminator threshold of the EM
 #' system.
-#' @param deadtime A numeric value for the deadtime of the EM system.
+#' @param deadtime A numeric value for the deadtime of the EM system
+#' with units nanoseconds.
 #' @param output Character string indicating whether to return corrected count
 #' rates (\code{"ct"}) or yield value (\code{"Y"}).
 #'

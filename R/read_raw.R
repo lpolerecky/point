@@ -39,8 +39,8 @@ read_IC <- function(directory, meta = TRUE, hide = TRUE){
     # Check validity of directory for meta data extraction
     read_validator(directory)
     tb_meta <- read_meta(directory)
-    n_max <- group_by(tb_meta, file.nm) %>%
-      summarise(n = sum(n.rw)) %>%
+    n_max <- group_by(tb_meta, .data$file.nm) %>%
+      summarise(n = sum(.data$n.rw)) %>%
       pull(n) + length(unique(tb_meta$species.nm)) + 1
     }
 
@@ -89,18 +89,10 @@ read_IC <- function(directory, meta = TRUE, hide = TRUE){
 
 
     if (hide) tb_rw <- fold(tb_rw, type = ".mt")
-
-    # # Compare length consistency to gauge failures in measurement # reconsider this
-    # if (length(compare_length(tb_rw)) > 0) {
-    #   warning("Inconsistency in the length of one ore more analyses.
-    #           Use the function `compare_length()` to compare IC and meta data.")
-    # }
-
-    return(tb_rw)
+    tb_rw
   }
-  return(tb_rw)
+  tb_rw
 }
-
 #' @rdname read_IC
 #'
 #' @export
@@ -163,7 +155,7 @@ read_meta <- function(directory){
    vc_params <- set_names(point::names_cameca$cameca, point::names_cameca$point)
 
 # Select variables
-   tb_meas <- select(tb_meas , any_of(vc_params)) %>%
+   tb_meas <- select(tb_meas , any_of(c("file.nm", "sample.nm", vc_params))) %>%
      mutate(
       across(contains(".mt"), readr::parse_guess),
 # Add measurement number
@@ -231,9 +223,9 @@ ICdir_chk <-function(directory, types = c(".is_txt", ".chk_is", ".stat")){
     stringr::str_c("(?<=", dirname(directory), "/)(.)+")
     )
   ls_files <- list.files(directory) %>%
-    purrr::keep(stringr::str_detect(., stringr::str_c(dir_nm)))
+    purrr::keep(function(x) stringr::str_detect(x, dir_nm))
   ls_names <- unique(stringr::str_extract(ls_files, "(.)+(?=\\.)")) %>%
-    purrr::keep(stringr::str_detect(., "(_[[:digit:]]+_[[:digit:]]+)$"))
+    purrr::keep(function(x) stringr::str_detect(x, "(_[[:digit:]]+_[[:digit:]]+)$"))
   ls_types <- purrr::cross(list(ls_names, types)) %>%
     purrr::map_chr(purrr::lift(paste0)) %>%
     set_names(nm = rep(ls_names, n_distinct(types)))
@@ -498,15 +490,9 @@ missing_col <- function(directory, files){
 }
 
 
-# # Check analyses length consistency (IC data vs metadata)
-# compare_length <- function(df) {
-#   df_old <- mutate(df, n.rw = as.integer(n.rw))
-#   df_new <- add_count(df, file.nm, species.nm, name = "n.rw")
-#   waldo::compare(df_old, df_new)
-# }
 
 
 write_attr <- function(df1, df2, nm) {
   attr(df1, nm) <- df2
-  return(df1)
+  df1
 }

@@ -13,7 +13,6 @@ names_stat_X <- tibble(
     "hat_SeM",
     "chi2"
     ),
-  # origin = c("t", "N", rep("X", 4), rep("N", 4)),
   derived = c("t", "N", rep("X", 4), rep("N", 4)),
   label = c(
     "observations",

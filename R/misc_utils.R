@@ -236,33 +236,39 @@ stat_labeller <- function(var, org, stat, value, label = "latex"){
 #' # wide format
 #' cov_R(tb_pr, c("13C", "12C"), file.nm)
 #'
-cov_R <- function(.IC, .ion, ..., .species = species.nm, .t = t.nm,
+cov_R <- function(.IC, .ion, ..., .species = NULL, .t = NULL,
                   .preserve = FALSE){
 
-  t <- enquo(.t)
-  species <- enquo(.species)
+  # Quoting the call (user-supplied expressions)
+  args <- inject_args(
+    .IC,
+    enquos(.t = .t, .species = .species),
+    type = c("processed", "group")
+  )
+
   gr_by <- enquos(...)
 
-  # observation per group
-  obs_gr <- group_size(group_by(.IC, !!!gr_by, !! species))
-  # distinct observation for time increments
-  obs_t <- n_distinct(pull(.IC, !!t))
-  # check if t steps is consistent with grouping otherwise create new ID
-  if (any(obs_gr  / obs_t > 1)) {
-    .IC <- mutate(group_by(.IC, !!!gr_by, !! species), !!t := row_number()) %>%
+  # Observation per group
+  obs_gr <- group_size(group_by(.IC, !!! gr_by, !! args[[".species"]]))
+  # Distinct observation for time increments
+  obs_t <- n_distinct(pull(.IC, !! args[[".t"]]))
+
+  # Check if t steps is consistent with grouping otherwise create new ID
+  if (any(obs_gr %% obs_t != 0)) {
+    .IC <- group_by(.IC, !!! gr_by, !! args[[".species"]]) %>%
+      mutate(!! args[[".t"]] := row_number()) %>%
       ungroup()
     }
-
   # Remove white space in ion names and add underscore for polyatomic species
-  IC <- mutate(.IC, !! species := ion_trim(!! species)) %>%
-    filter(!! species %in% sapply(.ion, ion_trim))
+  IC <- mutate(.IC, !! args[[".species"]] := ion_trim(!! args[[".species"]])) %>%
+    filter(!! args[[".species"]] %in% sapply(.ion, ion_trim))
 
   # Wide format
   tidyr::pivot_wider(
     IC,
-    c(!!!gr_by, !!t, !!species),
-    names_from = !! species,
-    values_from = -c(!!!gr_by, !!t, !!species),
+    c(!!!gr_by, !! args[[".t"]], !! args[[".species"]]),
+    names_from = !! args[[".species"]],
+    values_from = -c(!!! gr_by, !! args[[".t"]], !! args[[".species"]]),
     names_sep = "."
     )
 }
@@ -298,53 +304,43 @@ cov_R <- function(.IC, .ion, ..., .species = species.nm, .t = t.nm,
 #'
 #' # Remove analyses with zero counts
 #' tb_pr <- zeroCt(tb_pr, "13C", "12C", file.nm)
-zeroCt <- function(.IC, .ion1, .ion2, ..., .N = N.pr, .species = species.nm,
+zeroCt <- function(.IC, .ion1, .ion2, ..., .N = NULL, .species = NULL,
                    .warn = TRUE){
 
-  N <- enquo(.N)
-  species <- enquo(.species)
+  # Quoting the call (user-supplied expressions)
+  args <- inject_args(
+    .IC,
+    enquos(.N = .N, .species = .species),
+    type = c("processed", "group")
+  )
   gr_by <- enquos(...)
 
   # Remove white space in ion names and add underscore for polyatomic species
   .ion1 <- ion_trim(.ion1)
   .ion2 <- ion_trim(.ion2)
-  IC <- mutate(.IC, !! species := ion_trim(!! species)) %>%
-    filter(!!species == .ion1 | !!species == .ion2)
+  IC <- mutate(.IC, !! args[[".species"]] := ion_trim(!! args[[".species"]])) %>%
+    filter(!! args[[".species"]] == .ion1 | !! args[[".species"]] == .ion2)
 
   if (isTRUE(.warn)) {
-    if (any(pull(IC, !! N) == 0)) {
+    if (any(pull(IC, !! args[[".N"]]) == 0)) {
       warning("Zero counts present and removed", call. = FALSE)
-            }
-      }
+    }
+  }
 
-  ls_0 <- filter(IC, !! N == 0) %>%
+  ls_0 <- filter(IC, !! args[[".N"]] == 0) %>%
     select(!!! gr_by)
   IC <- anti_join(IC, ls_0, by = sapply(gr_by, as_name))
-  if(nrow(IC) == 0) warning("No more data left after removing zero count analysis.", call. = FALSE)
-  return(IC)
+  if(nrow(IC) == 0) {
+    warning("No more data left after removing zero count analysis.",
+            call. = FALSE)
+  }
+  IC
 }
 
 #-------------------------------------------------------------------------------
 # Not exportet
 #-------------------------------------------------------------------------------
 
-
-# Function for building IDs
-ID_builder <- function(.df, ..., .t = t.nm, .species = species.nm){
-
-  time <- enquo(.t)
-  species <- enquo(.species)
-  gr_by <- enquos(...)
-
-  tidyr::unite(
-    .df,
-    col = "ID",
-    c(!!! gr_by, !! species, !! time),
-    sep = "/",
-    remove = FALSE
-    )
-
-  }
 
 ion_trim <-function(ion) {
   stringr::str_replace_all(stringr::str_trim(ion), "\\s", "_")

@@ -23,7 +23,8 @@ system.}
 \item{output}{Character string indicating whether to return corrected count
 rates (\code{"ct"}) or yield value (\code{"Y"}).}
 
-\item{deadtime}{A numeric value for the deadtime of the EM system.}
+\item{deadtime}{A numeric value for the deadtime of the EM system
+with units nanoseconds.}
 }
 \value{
 A numeric vector with the corrected count rates.

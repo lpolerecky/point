@@ -4,7 +4,7 @@
 \alias{zeroCt}
 \title{Remove analytical runs with zero counts}
 \usage{
-zeroCt(.IC, .ion1, .ion2, ..., .N = N.pr, .species = species.nm, .warn = TRUE)
+zeroCt(.IC, .ion1, .ion2, ..., .N = NULL, .species = NULL, .warn = TRUE)
 }
 \arguments{
 \item{.IC}{A tibble containing processed ion count data.}

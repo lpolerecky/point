@@ -76,7 +76,7 @@ simu_R <- function(.sys, .type, .ion1, .ion2, .reference, .seed, .n = 3e3,
     mutate(
       seed = .seed + .reps + row_number(),
       N.in = if_else(
-        species.nm == .ion2, R_conv(.data$N.in, .data$R.in), .data$N.in
+        .data$species.nm == .ion2, R_conv(.data$N.in, .data$R.in), .data$N.in
         )
         ) %>%
     # Random variation (Number generation)

@@ -64,17 +64,19 @@
 #' # Descriptive an predictive statistics for 13C/12C ratios (external)
 #' stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .nest = file.nm,
 #'        .zero = TRUE)
-stat_X <- function(.IC, ..., .X = Xt.pr, .N = N.pr, .species = species.nm,
-                    .t = t.nm, .stat = point::names_stat_X$name, .label = NULL,
-                    .output = "sum"){
+stat_X <- function(.IC, ..., .X = NULL, .N =  NULL, .species = NULL,
+                   .t =  NULL, .stat = point::names_stat_X$name, .label = NULL,
+                   .output = "sum") {
 
-  stopifnot(tibble::is_tibble(.IC))
-  if (.output != "sum"  & !is.null(.label)) {
-    stop("Latex labels is not supported for complete datasets.")
-  }
+  # Checks
+  stat_validator(.IC, .stat, point::names_stat_X$name, .output, .label)
 
-  # Quoting the call (user-supplied expressions)
-  args <- enquos(.X = .X, .N = .N, .species = .species, .t = .t)
+  # Quoting the call (user-supplied expressions) and complete if NULL
+  args <- inject_args(
+    .IC,
+    enquos(.X = .X, .N = .N, .species = .species, .t = .t),
+    type = c("processed", "group")
+    )
 
   # Grouping
   gr_by <- enquos(...)
@@ -114,23 +116,21 @@ stat_X <- function(.IC, ..., .X = Xt.pr, .N = N.pr, .species = species.nm,
   calcs <- set_names(calcs, nm = ls_nm)
 
   # Stat selection
-  str_stat <- stringr::str_c(paste0("^", .stat), collapse = "|")
-  pos_vars <- purrr::keep(ls_nm, ~stringr::str_detect(., str_stat))
-  neg_vars <- purrr::discard(ls_nm, ~stringr::str_detect(., str_stat))
+  vars <- stat_selector(.stat, ls_nm)
 
   # Render latex variable names
   if (!is.null(.label)) {
     ls_latex <- set_names(
-      pos_vars,
+      vars$pos,
       tex_labeller(point::names_stat_X, .stat, .label)
       )
     }
 
   # Evaluate expressions
   IC <- group_by(.IC, !!! gr_by, !! args[[".species"]]) %>%
-    eval_tidy(expr = mod_cal(.output, calcs = calcs)) %>%
+    eval_tidy(expr = call2(mod_call[[.output]], expr(.), !!! calcs)) %>%
     ungroup() %>%
-    select(-any_of(neg_vars))
+    select(-any_of(vars$neg))
 
   # Output
   if (!is.null(.label)) {
@@ -143,30 +143,32 @@ stat_X <- function(.IC, ..., .X = Xt.pr, .N = N.pr, .species = species.nm,
             ion_labeller,
             label = .label
             )
-        ) %>%
+          ) %>%
         select(!!! gr_by, !! args[[".species"]], !!! ls_latex)
-    return(IC)
+      return(IC)
     }
     }
-  return(IC)
+    IC
   }
 
 #' @rdname stat_X
 #'
 #' @export
-stat_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr, .N = N.pr,
-                   .species = species.nm, .t = t.nm,
+stat_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL, .N = NULL,
+                   .species = NULL, .t = NULL,
                    .stat = point::names_stat_R$name, .label = NULL,
                    .output = "sum", .zero = FALSE){
 
-  stopifnot(tibble::is_tibble(.IC))
-
-  if (.output != "sum"  & !is.null(.label)) {
-    stop("Latex labels is not supported for complete datasets.")
-  }
+  # Checks
+  stat_validator(.IC, .stat, point::names_stat_R$name, .output, .label)
 
   # Quoting the call (user-supplied expressions)
-  args <- enquos(.X = .X, .N = .N, .species = .species, .t = .t)
+  args <- inject_args(
+    .IC,
+    enquos(.X = .X, .N = .N, .species = .species, .t = .t),
+    type = c("processed", "group")
+    )
+
   # Grouping
   gr_by <- enquos(...)
   # Nesting
@@ -176,9 +178,8 @@ stat_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr, .N = N.pr,
   if (!any(sapply(nest, function(x) is.null(get_expr(x))))) {
 
     # Calculate single ion stat to obtain mean and total ion counts
-    data_env <- env(data = .IC)
     .IC <- call2("stat_X", .IC, !!! gr_by, !!! args, .ns = "point") %>%
-      eval(envir = data_env)
+      eval()
 
     # Updated quotes
     args[[".X"]] <- quo_updt(args[[".X"]], pre = "M")
@@ -194,14 +195,14 @@ stat_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr, .N = N.pr,
       .IC <- filter(.IC, n > 1)
       }
     nest <- TRUE
-  }
+    }
 
   # If t column is empty create a manual time increment
   if (!(as_name(args[[".t"]]) %in% colnames(.IC))) {
     .IC <- group_by(.IC, !!!gr_by, !! args[[".species"]]) %>%
       mutate(!! args[[".t"]] := row_number()) %>%
       ungroup()
-  }
+    }
 
   # Remove white space in ion names and add underscore for polyatomic species
   .ion1 <- ion_trim(.ion1)
@@ -258,12 +259,10 @@ stat_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr, .N = N.pr,
   if (.output != "sum") {
     R <- paste("R", as_name(args[[".X"]]), sep = "_")
     calcs[[R]] <- quo(!! args[["X1"]] / !! args[["X2"]])
-  }
+    }
 
   # Stat selection
-  str_stat <- stringr::str_c(paste0("^", paste0(.stat, "_R")), collapse = "|")
-  pos_vars <- purrr::keep(ls_nm, ~stringr::str_detect(., str_stat))
-  neg_vars <- purrr::discard(ls_nm, ~stringr::str_detect(.,  str_stat))
+  vars <- stat_selector(.stat, ls_nm)
 
   # Render latex variable names
   if (!is.null(.label)) {
@@ -273,25 +272,23 @@ stat_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = Xt.pr, .N = N.pr,
         tb_tex,
         origin = case_when(origin == "X" ~ "M", origin == "N" ~ "Ntot")
         )
-
-    }
+      }
     ls_latex <- set_names(
-      pos_vars,
+      vars$pos,
       tex_labeller(tb_tex, .stat, .label)
-    )
+      )
     }
 
   # Evaluate expressions and calls
-  data_env <- env(data = .IC)
-  IC <- eval(zeroCt_cal(.zero, .IC, .ion1, .ion2, gr_by, args), data_env) %>%
+  IC <- eval(zeroCt_call(.zero, .IC, .ion1, .ion2, gr_by, args)) %>%
     cov_R(c(.ion1, .ion2), !!! gr_by, .species = !! args[[".species"]],
           .t = !! args[[".t"]]) %>%
     group_by(!!! gr_by) %>%
-    eval_tidy(expr = mod_cal(.output, calcs = calcs)) %>%
+    eval_tidy(expr = call2(mod_call[[.output]], expr(.), !!! calcs)) %>%
     ungroup() %>%
-    select(-any_of(neg_vars))
+    select(-any_of(vars$neg))
 
-# Output
+  # Output
   if (!is.null(.label)) {
     if (.label == "latex" | .label == "webtex") {
       IC <- mutate(IC, ratio.nm = R_labeller(.ion1, .ion2, label = .label)) %>%
@@ -381,17 +378,10 @@ stat_SDprop <- function(ion1, ion2, type = "sd", predicted = FALSE){
 #-------------------------------------------------------------------------------
 
 # Switch output complete dataset, stats or summary stats
-mod_cal <- function(type, calcs) {
-  switch(
-    type,
-    complete = call2( "mutate", expr(.), !!! calcs),
-    stat = call2( "transmute", expr(.), !!! calcs),
-    sum = call2("summarize", expr(.), !!! calcs),
-  )
-}
+mod_call <-  c(complete = "mutate", stat = "transmute", sum = "summarize")
 
 # Call specific to removal of zero count measurements with ZeroCt
-zeroCt_cal <- function(zero, IC, .ion1, .ion2, gr_by, args) {
+zeroCt_call <- function(zero, IC, .ion1, .ion2, gr_by, args) {
   if (isTRUE(zero)) {
     call2("zeroCt", IC, .ion1 = .ion1, .ion2 = .ion2,
           !!! gr_by, .N = args[[".N"]], .species = args[[".species"]],
@@ -406,9 +396,12 @@ arg_builder <- function(args, stat, ion = NULL, append = NULL){
 
   if (stat == "X") arg_names <- point::names_stat_X
   if (stat == "R") arg_names <- point::names_stat_R
-  if (stat == "model") arg_names <- point::names_model
-
-  if (stat == "model") pre <-  NULL else pre  <- "."
+  if (stat == "model") {
+    arg_names <- point::names_model
+    pre <-  NULL
+    } else {
+      pre  <- "."
+    }
 
   # no origin of variable names
   if (!"origin" %in% colnames(arg_names)) arg_names$origin <- NA_character_
@@ -465,3 +458,65 @@ tex_labeller <- function(vars, stat, label){
     label = label
     )
 }
+
+# if variables are not supplied, default to standard variables
+inject_args <- function(IC, args, type, check = TRUE) {
+  vars <- bind_rows(point::names_diag, point::names_cameca)
+  extract_defaults <- function(x, y) {
+    if (is.null(quo_get_expr(x))) {
+      filter(vars, .data$argument == y & .data$use %in% type) %>%
+        pull(.data$point) %>%
+        # caller environment would be similar to enquo()
+        parse_quo(env = caller_env())
+    } else {
+      x
+    }
+  }
+  args <- purrr::map2(args, names(args), extract_defaults)
+
+  # Do variables exist in data?
+  if (isTRUE(check)) {
+    if (!all(purrr::map2_lgl(args, names(args), arg_check, IC))) {
+      stop("Try explicitly supplying the variables.", call. = FALSE)
+    } else {
+      return(args)
+    }
+  }
+  args
+}
+
+# function to check if supplied variables are valid
+arg_check <- function(arg, arg_name, IC) {
+
+  if (is_symbol(quo_get_expr(arg))) {
+    (as_name(arg) %in% colnames(IC))
+    } else if (arg_name %in% c(".M_PHD", ".SD_PHD", ".bl_t")) {
+    is.numeric(quo_get_expr(arg))
+    } else if (arg_name == ".det") {
+    is.character(quo_get_expr(arg))
+    }
+}
+
+# consistency checks
+stat_validator <- function(IC, stat_in = NULL, stat_def = NULL, output = "sum", label = NULL) {
+  if (!tibble::is_tibble(IC)) {
+    stop("Ion count dataset should be a tibble object.", call. = FALSE)
+  }
+  if (!all(stat_in %in% stat_def)) {
+    stop("Unkown statistic.", call. = FALSE)
+  }
+  if (output != "sum"  & !is.null(label)) {
+    stop("Latex labels is not supported for complete datasets.", call. = FALSE)
+  }
+}
+
+# Stat selection function
+stat_selector <- function(stat, vars) {
+  str_stat <- stringr::str_c("^", stat, collapse = "|")
+  ls_vars <- list()
+  ls_vars$pos <- purrr::keep(vars, function(x) stringr::str_detect(x, str_stat))
+  ls_vars$neg <- purrr::discard(vars, function(x) stringr::str_detect(x, str_stat))
+  ls_vars
+}
+
+

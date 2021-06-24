@@ -3,6 +3,11 @@
 \name{Cameca}
 \alias{Cameca}
 \alias{CooksD}
+\alias{CV}
+\alias{Rm}
+\alias{norm_E}
+\alias{QQ}
+\alias{IR}
 \title{Family of diagnostics functions for isotope count ratios}
 \usage{
 Cameca(
@@ -10,9 +15,10 @@ Cameca(
   .ion1,
   .ion2,
   ...,
-  .X = Xt.pr,
-  .N = N.pr,
-  .t = t.nm,
+  .X = NULL,
+  .N = NULL,
+  .species = NULL,
+  .t = NULL,
   .output = "complete",
   .alpha_level = 0.05,
   .hyp = "none"
@@ -23,8 +29,80 @@ CooksD(
   .ion1,
   .ion2,
   ...,
-  .X = Xt.pr,
-  .t = t.nm,
+  .X = NULL,
+  .N = NULL,
+  .species = NULL,
+  .t = NULL,
+  .output = "complete",
+  .hyp = "none",
+  .alpha_level = 0.05
+)
+
+CV(
+  .IC,
+  .ion1,
+  .ion2,
+  ...,
+  .X = NULL,
+  .N = NULL,
+  .species = NULL,
+  .t = NULL,
+  .output = "complete",
+  .hyp = "none",
+  .alpha_level = 0.05
+)
+
+Rm(
+  .IC,
+  .ion1,
+  .ion2,
+  ...,
+  .X = NULL,
+  .N = NULL,
+  .species = NULL,
+  .t = NULL,
+  .output = "complete",
+  .hyp = "none",
+  .alpha_level = 0.05
+)
+
+norm_E(
+  .IC,
+  .ion1,
+  .ion2,
+  ...,
+  .X = NULL,
+  .N = NULL,
+  .species = NULL,
+  .t = NULL,
+  .output = "complete",
+  .hyp = "none",
+  .alpha_level = 0.05
+)
+
+QQ(
+  .IC,
+  .ion1,
+  .ion2,
+  ...,
+  .X = NULL,
+  .N = NULL,
+  .species = NULL,
+  .t = NULL,
+  .output = "complete",
+  .hyp = "none",
+  .alpha_level = 0.05
+)
+
+IR(
+  .IC,
+  .ion1,
+  .ion2,
+  ...,
+  .X = NULL,
+  .N = NULL,
+  .species = NULL,
+  .t = NULL,
   .output = "complete",
   .hyp = "none",
   .alpha_level = 0.05
@@ -44,6 +122,9 @@ variables generated with \code{read_IC()})}
 
 \item{.N}{A variable constituting the ion counts (defaults to variables
 generated with \code{read_IC()}.).}
+
+\item{.species}{A variable constituting the species analysed (defaults to
+variables generated with \code{read_IC()}.).}
 
 \item{.t}{A variable constituting the time of the analyses (defaults to
 variables generated with \code{read_IC()}.).}
