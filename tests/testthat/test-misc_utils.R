@@ -11,3 +11,15 @@ test_that("consistency of the zeroCt and cov_R", {
   expect_snapshot(zeroCt(tb_pr, "13C", "12C", file.nm))
   expect_snapshot(cov_R(tb_pr, c("13C", "12C"), file.nm))
 })
+
+
+test_that("complex elemental configruations", {
+  expect_equal(
+    ion_labeller("12C2-40Ca","webtex"),
+    "${}^{12}\\mathrm{C}_{2}$${}^{40}\\mathrm{Ca}_{}$"
+    )
+  expect_equal(
+    ion_labeller("12C2", "expr"),
+    substitute("" ^ a * b[c] , env = lst(a = "12", b = "C", c = "2"))
+    )
+})

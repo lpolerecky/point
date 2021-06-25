@@ -31,9 +31,9 @@
 #' # plot some ion count data
 #' library(ggplot2)
 #' ggplot() +
-#'    geom_blank() +
-#'    ylab(ion_labeller("12C2-40Ca", "expr")) +
-#'    xlab(R_labeller("12C2-40Ca", "13C2-40Ca", "expr"))
+#'  geom_blank() +
+#'  ylab(ion_labeller("12C2-40Ca", "expr")) +
+#'  xlab(R_labeller("12C2-40Ca", "13C2-40Ca", "expr"))
 #'
 ion_labeller <- function(ion, label = "latex") {
 
@@ -54,48 +54,30 @@ ion_labeller <- function(ion, label = "latex") {
   )
 
   if (label == "latex" | label == "webtex") {
-    paste_ion <- function(ls){
+    paste_ion <- function(ls) {
       if (length(ls[["c"]]) != 0) {
         if (!stringr::str_detect(ls[["c"]], "[[:digit:]]")) ls[["c"]] <- NULL
-        }
-      paste0("${}^{", ls[["a"]], "}\\mathrm{", ls[["b"]],"}_{", ls[["c"]], "}$")
+      }
+      paste0("${}^{", ls[["a"]], "}\\mathrm{", ls[["b"]], "}_{", ls[["c"]], "}$")
     }
-
-    ls_ion <- purrr::map(
-      ls_chr,
-      paste_ion
-      )
-
-    lb <- purrr::reduce(ls_ion, paste0)
-    return(lb)
+    ls_ion <- purrr::map(ls_chr, paste_ion)
+    purrr::reduce(ls_ion, paste0)
+    } else if (label == "expr") {
+    ls_ion <- purrr::map(ls_chr, ~ substitute("" ^ a * b[c] , env = .x))
+    purrr::reduce(ls_ion, ~substitute(a * b, env = lst(a = .x, b = .y)))
   }
-  if (label == "expr") {
-
-    ls_ion <- purrr::map(ls_chr, ~substitute(""^a*b[c] , env = .x))
-
-    lb <- purrr::reduce(
-      ls_ion,
-      function(x, y) substitute(a * b, env = lst(a = x, b = y))
-      )
-    return(lb)
-    }
 }
 #' @rdname ion_labeller
 #'
 #' @export
-R_labeller <- function(ion1, ion2, label = "latex"){
-
+R_labeller <- function(ion1, ion2, label = "latex") {
   ls_R <- purrr::map(c(ion1, ion2), ion_labeller, label)
   if (label == "latex" | label == "webtex") {
-    lb <- paste(ls_R[[1]], ls_R[[2]], sep = "") %>%
+    paste(ls_R[[1]], ls_R[[2]], sep = "") %>%
       stringr::str_replace("\\$\\$", "/")
-    return(lb)
+    } else if (label == "expr") {
+    substitute(a *"/ "* b, env = lst(a = ls_R[[1]], b = ls_R[[2]]))
     }
-  if (label == "expr") {
-    lb <- substitute(a *"/ "* b, env = lst(a = ls_R[[1]], b = ls_R[[2]]))
-    return(lb)
-    }
-
 }
 #' @rdname ion_labeller
 #'
@@ -272,7 +254,6 @@ cov_R <- function(.IC, .ion, ..., .species = NULL, .t = NULL,
     names_sep = "."
     )
 }
-
 #' Remove analytical runs with zero counts
 #'
 #' \code{zeroCt} removes analytical runs for isotope ratios that contain zero
@@ -340,8 +321,7 @@ zeroCt <- function(.IC, .ion1, .ion2, ..., .N = NULL, .species = NULL,
 #-------------------------------------------------------------------------------
 # Not exportet
 #-------------------------------------------------------------------------------
-
-
+# trim white space from ion character strings
 ion_trim <-function(ion) {
   stringr::str_replace_all(stringr::str_trim(ion), "\\s", "_")
 }

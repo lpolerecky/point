@@ -30,11 +30,11 @@
 #' read_IC(point_example("2018-01-19-GLENDON"))
 read_IC <- function(directory, meta = TRUE, hide = TRUE){
 
-# List files
+  # List files
   ls_IC <- read_validator(directory, ".is_txt")[["ion"]]
   n_max <- Inf
 
-# Collecting metadata (stat file)
+  # Collecting metadata (stat file)
   if (meta) {
     # Check validity of directory for meta data extraction
     read_validator(directory)
@@ -44,7 +44,7 @@ read_IC <- function(directory, meta = TRUE, hide = TRUE){
       pull(n) + length(unique(tb_meta$species.nm)) + 1
     }
 
-# Collecting measurement data
+  # Collecting measurement data
   tb_rw <- purrr::map2_dfr(
     ls_IC,
     n_max,
@@ -54,14 +54,14 @@ read_IC <- function(directory, meta = TRUE, hide = TRUE){
       col_types = "-cc",
       comment = "B",
       skip = 1,
-# n-max is n times number of species
+      # n-max is n times number of species
       n_max = .y
        ),
     .id = "file.nm"
     ) %>%
-# Remove old column headers
+    # Remove old column headers
     filter(.data$t.nm != "X", .data$N.rw  != "Y") %>%
-# Coercion to numeric values
+    # Coercion to numeric values
     mutate(
       t.nm = as.numeric(.data$t.nm),
       N.rw = as.numeric(.data$N.rw)
@@ -98,19 +98,19 @@ read_IC <- function(directory, meta = TRUE, hide = TRUE){
 #' @export
 read_meta <- function(directory){
 
-# Check validity of directory
+  # Check validity of directory
   ls_files <- read_validator(directory)
 
 #-------------------------------------------------------------------------------
 # PHD
 #-------------------------------------------------------------------------------
-# Number of PHD measurements
+  # Number of PHD measurements
   PHD_n <- row_scanner(directory, ls_files[["optic"]], "PHDc(?=\\(Mass)")
 
-# List of function arguments for PHD
+  # List of function arguments for PHD
   ls_PHD <- lst(a = ls_files[["optic"]], b = PHD_n, c = lapply(.data$b, length))
 
-# Apply PHD reading function to list of arguments
+  # Apply PHD reading function to list of arguments
   tb_PHD <- purrr::pmap_dfr(
     ls_PHD,
     PHD_fun,
@@ -121,18 +121,18 @@ read_meta <- function(directory){
 #-------------------------------------------------------------------------------
 # Ions and MS setup metadata
 #-------------------------------------------------------------------------------
-# Minimum of metadata rows
+  # Minimum of metadata rows
   min_n <- row_scanner(directory, ls_files[["stat"]], "#") %>%
     purrr::map_dbl(1)
 
-# Maximum of metadata rows
+  # Maximum of metadata rows
   max_n <- row_scanner(directory, ls_files[["stat"]], "--") %>%
     purrr::map_dbl(1)
 
-# List of function arguments for meta-data function
+  # List of function arguments for meta-data function
   ls_ion <- lst(a = ls_files[["stat"]], b =  min_n, c = (max_n - 3) - .data$b)
 
-# Apply PHD reading function to list of arguments
+  # Apply PHD reading function to list of arguments
   tb_ion <- purrr::pmap_dfr(
     ls_ion,
     ion_fun,
@@ -151,27 +151,26 @@ read_meta <- function(directory){
     .id = "file.nm"
     )
 
-# Cameca parameters
+  # Cameca parameters
    vc_params <- set_names(point::names_cameca$cameca, point::names_cameca$point)
 
-# Select variables
+  # Select variables
    tb_meas <- select(tb_meas , any_of(c("file.nm", "sample.nm", vc_params))) %>%
      mutate(
       across(contains(".mt"), readr::parse_guess),
-# Add measurement number
+  # Add measurement number
       n.rw = .data$`bl_num.mt` * .data$`meas_bl.mt`,
-# Add electron detector type (EM or FC)
+  # Add electron detector type (EM or FC)
       det_type.mt = if_else("FC_start.mt" %in% colnames(.), "FC", "EM")
       )
 
-# Combine PHD, MS and beam metadata (make list columns of metadata)
+  # Combine PHD, MS and beam metadata (make list columns of metadata)
   purrr::reduce2(
       lst(tb_ion, tb_meas, tb_PHD),
       lst(by = c("file.nm"), by = c("file.nm", "num.mt")),
       left_join
       )
   }
-
 
 #' Get path to point example
 #'
@@ -194,7 +193,6 @@ point_example <- function(path = NULL) {
   }
 }
 
-
 #' Check if directory is suitable for point
 #'
 #' This function checks whether the necessary files for the `point` read
@@ -214,9 +212,9 @@ ICdir_chk <-function(directory, types = c(".is_txt", ".chk_is", ".stat")){
   sys_types <- c(ion = ".is_txt", optic = ".chk_is", stat = ".stat")
   if (any(types %in% sys_types)) {
     types <- sys_types[sys_types %in% types]
-    } else {
-      stop("Unknown extension", call. = FALSE)
-    }
+  } else {
+    stop("Unknown extension", call. = FALSE)
+  }
   # directory name if also file name
   dir_nm <- stringr::str_extract(
     directory,
@@ -230,12 +228,13 @@ ICdir_chk <-function(directory, types = c(".is_txt", ".chk_is", ".stat")){
     purrr::map_chr(purrr::lift(paste0)) %>%
     set_names(nm = rep(ls_names, n_distinct(types)))
 
-  if (length(ls_types > 0) & all(ls_types %in% ls_files)) {
+  if (length(ls_types > 0) &
+      all(ls_types %in% ls_files)) {
     # makes grouped list
     split(ls_types, rep(names(types), each = n_distinct(ls_names)))
-    } else {
-      FALSE
-      }
+  } else {
+    FALSE
+  }
 }
 
 #' Access and hide IC metadata
@@ -263,7 +262,10 @@ ICdir_chk <-function(directory, types = c(".is_txt", ".chk_is", ".stat")){
 #' unfold(tb_rw, merge = FALSE)
 unfold <- function(df, type = "metadata", merge = TRUE) {
   # no attribute of name type return unchanged data
-  if (is.null(attr(df, type))) return(df)
+  if (is.null(attr(df, type))) {
+    warning("Attribute unavailable.", call. = FALSE)
+    return(df)
+  }
   meta <- attr(df, type)
   vars <- select(meta, ends_with(".nm")) %>%
     colnames()
@@ -285,7 +287,6 @@ fold <- function(df, type, meta = NULL) {
   } else {
     ls_tb <- list2(metadata = meta, df)
   }
-
   purrr::reduce2(rev(ls_tb), rev(names(vc_type)), write_attr)
 }
 
@@ -295,60 +296,35 @@ fold <- function(df, type, meta = NULL) {
 # Validation function to check for empty files or files with empty columns
 read_validator <- function(directory, types = c(".is_txt", ".chk_is", ".stat")){
 
-# Argument class check
+  # Argument class check
   stopifnot(is.character(directory))
-# Check if directory contains files
+
+  # Check if directory contains files
   if (is.null(length(dir(directory)))) {
     stop("`directory` does not contain any files", call. = FALSE)
     }
-# Check if directory contains specified file types
+  # Check if directory contains specified file types
   if (isFALSE(ICdir_chk(directory, types))) {
     stop("`directory` does not contain required filetypes: .is_txt, .chk_is, and .stat",
          call. = FALSE)
-    } else {
-      ls_files <- ICdir_chk(directory, types)
-      }
+  } else {
+    ls_files <- ICdir_chk(directory, types)
+  }
 
-# Extract txt files with count data blocks of each single point measurement
-  # ls_files <- purrr::map(types, ~read_names(directory, .x)) %>%
-  #   set_names(nm = c("ion", "optic", "stat"))
-
-  # if (!(all.equal(names(ls_files[["ion"]]), names(ls_files[["optic"]])) &
-  #     all.equal(names(ls_files[["ion"]]), names(ls_files[["stat"]])))) {
-  #   ls_files[["optic"]] <- ls_files[["optic"]][names(ls_files[["optic"]]) %in%
-  #                                                names(ls_files[["ion"]])]
-  #   ls_files[["stat"]] <- ls_files[["stat"]][names(ls_files[["stat"]]) %in%
-  #                                                names(ls_files[["ion"]])]
-  #   warning("Some metadata files have no matching data files and are omitted",
-  #           call. = FALSE)
-  # }
-
-# Length check of txt files
+  # Length check of txt files
   if (any(missing_text(directory, ls_files[["ion"]]) == 0)) {
     good <- missing_text(directory, ls_files[["ion"]]) > 0
     ls_files[["ion"]] <- ls_files[["ion"]][good]
     warning("empty txt file removed")
   }
-
-# Column content check of txt files
+  # Column content check of txt files
   if (any(missing_col(directory, ls_files[["ion"]]) == 0)) {
     good <- missing_col(directory, ls_files[["ion"]])  > 0
     ls_files[["ion"]] <- ls_files[["ion"]][good]
     warning("txt file contains empty columns")
   }
-  return(ls_files)
+  ls_files
 }
-
-
-# # read file name function
-# read_names <- function(directory, ext) {
-#
-#   list.files(directory, pattern = paste0(ext, "$")) %>%
-# # Set names for subsequent storage
-#     set_names(nm = sub(pattern = "(.*)\\..*$", replacement = "\\1", .)) %>%
-# # Remove transect files
-#     purrr::discard(stringr::str_detect(., paste0("transect", ext, "$")))
-# }
 
 # Function for obtaining xyz coordinates on analytical substrate
 str_loc <- function(loc) {
@@ -379,7 +355,6 @@ PHD_fun <- function(directory, a, b, c) {
     mutate(num.mt = readr::parse_number(.data$num.mt))
 }
 
-
 # Function for mass spec data reading
 ion_fun <- function(directory, a, b, c) {
   readr::read_table(
@@ -391,7 +366,6 @@ ion_fun <- function(directory, a, b, c) {
     col_types = "icdcddd---"
     )
 }
-
 
 # Function for optics reading
 meas_fun <- function(directory, a , b) {
@@ -426,9 +400,9 @@ meas_fun <- function(directory, a , b) {
     mutate(across(everything(), stringr::str_trim)) %>%
     distinct(.data$var, .keep_all = TRUE) %>%
     mutate(
-# Find missing meta
+    # Find missing meta
       value = recode(.data$value, !!! NA_aliases),
- # Remove units behind numeric
+      # Remove units behind numeric
       value = stringr::str_replace(
         .data$value,
         "(?<=[:digit:]|[:blank:])(pA|um|%)|Det1=",
@@ -448,7 +422,6 @@ meas_fun <- function(directory, a , b) {
     mutate(across(everything(), stringr::str_trim))
 }
 
-
 # Row scanner determine number of rows
 row_scanner <- function(directory, ls, str){
   lapply(
@@ -459,7 +432,6 @@ row_scanner <- function(directory, ls, str){
     stringr::str_which,
   str
   )
-
 }
 
 # File validator. Empty text files
@@ -469,7 +441,6 @@ missing_text <- function(directory, files){
     ~{length(readr::read_lines(paste0(directory, "/", .), n_max = 2))}
     )
 }
-
 
 # File validator. Empty columns
 missing_col <- function(directory, files){
@@ -488,9 +459,6 @@ missing_col <- function(directory, files){
       }
     )
 }
-
-
-
 
 write_attr <- function(df1, df2, nm) {
   attr(df1, nm) <- df2
