@@ -81,7 +81,7 @@
 diag_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .method = "CooksD",
                    .reps = 1, .X = NULL, .N = NULL, .species = NULL,
                    .t = NULL, .output = "inference", .label = NULL,
-                   .meta = TRUE, .alpha_level = 0.05, .hyp = "none",
+                   .meta = FALSE, .alpha_level = 0.05, .hyp = "none",
                    .plot = FALSE, .plot_type = "static", .plot_stat = NULL,
                    .plot_iso = FALSE,
                    .plot_outlier_labs = c("divergent", "confluent")){
@@ -165,7 +165,7 @@ diag_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .method = "CooksD",
   if (.method != "IR") IC <- reduce_diag(IC, .output)
 
   # Return metadata
-  if (.meta & !is.null(meta)) IC <- fold(IC, type = ".mt",  meta = meta)
+  if (.meta) IC <- fold(IC, type = ".mt",  meta = meta)
 
   # Plot data
   if (.plot) {

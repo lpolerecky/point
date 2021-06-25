@@ -48,12 +48,9 @@
 eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
                       .N = NULL, .species = NULL, .t = NULL, .flag = NULL,
                       .execution = NULL, .output = "inference",
-                      .tf = "ppt", .label = NULL, .meta = TRUE){
+                      .tf = "ppt", .label = NULL, .meta = FALSE){
 
   # Quoting the call (user-supplied expressions)
-  # Grouping and nesting
-  gr_by <- enquos(..., .execution)
-  nest <- enquo(.nest)
   # Additional arguments
   args <- inject_args(
     .IC,
@@ -62,6 +59,9 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
     type = c("processed", "group", "diagnostics"),
     check = FALSE
     )
+  # Grouping and nesting
+  gr_by <- enquos(...) %>% append(args[[".execution"]])
+  nest <- enquo(.nest)
 
   # Metadata
   if(.meta) meta <- unfold(.IC, merge = FALSE)
@@ -87,7 +87,6 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
     # Re-centred X
     Xe = quo_updt(args[[".X"]], post = "e", update_post = TRUE)
     )
-
 
   # Predicted rare isotope count rate
   if (!(as_name(args[["hat_X1"]]) %in% colnames(.IC))) {
@@ -129,23 +128,20 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
       ) %>%
     tidyr::unnest_wider(.data$lm_out)
 
+  #
   if (.output == "inference") {
-    IC_lm <- tidyr::unnest(
-      IC_lm,
-      cols = c(!! args[["ratio"]], !! args[["M_R"]])
-      )
-      } else {
-        IC_lm <- select(IC_lm, - c(!! args[["ratio"]] , !! args[["M_R"]]))
-        }
+    IC_lm <- tidyr::unnest(IC_lm, cols = c(!! args[["ratio"]], !! args[["M_R"]]))
+  } else {
+    IC_lm <- select(IC_lm, -c(!! args[["ratio"]] ,!! args[["M_R"]]))
+  }
 
-  if (is_symbol(get_expr(args[[".nest"]]))) {
+  if (is_symbol(get_expr(nest))) {
     # Groups for nested data
-    nest_args <- c(as_name(args[[".nest"]]), as_name(args[[".execution"]]))
+    nest_args <- c(as_name(nest), as_name(args[[".execution"]]))
     nest_gr <- gr_by[!sapply(gr_by, as_name) %in% nest_args]
 
-    IC_mlm <- IC %>%
     # Nest over nest groups
-      tidyr::nest(data = -c(!!! nest_gr)) %>%
+    IC_mlm <- tidyr::nest(IC, data = -c(!!! nest_gr)) %>%
       mutate(
         gls_out =
           purrr::map(.data$data, purrr::possibly(gls_fun, NA), args, .tf = .tf),
@@ -155,31 +151,26 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
             .data$gls_out,
             purrr::possibly(mlm_fun, NA),
             args,
+            nest,
             .tf = .tf
-            )
-        ) %>%
+          )
+      ) %>%
       select(-c(.data$gls_out, .data$data)) %>%
       tidyr::unnest_wider(.data$inter_out)
 
+    # Collect
     IC_mlm <- list(IC_lm, IC_mlm)
 
     # Prepare output
     IC <- purrr::reduce(IC_mlm, left_join, by = sapply(nest_gr, as_name)) %>%
       output_lm(args, model_args, .meta, .label, .output)
-
     # Return metadata
-    if (.meta & !is.null(meta)) IC <- fold(IC, type = ".mt",  meta = meta)
-
-    return(IC)
+    if (.meta) return(fold(IC, type = ".mt",  meta = meta)) else return(IC)
   }
   # Prepare output
-  IC <- IC_lm %>%
-    output_lm(args, model_args, .meta, .label, .output)
-
+  IC <- output_lm(IC_lm, args, model_args, .meta, .label, .output)
   # Return metadata
-  if (.meta & !is.null(meta)) IC <- fold(IC, type = ".mt",  meta = meta)
-
-  return(IC)
+  if (.meta) fold(IC, type = ".mt",  meta = meta) else IC
 }
 
 #-------------------------------------------------------------------------------
@@ -226,7 +217,7 @@ gls_fun <- function(.IC, args, .tf) {
 # mlm model inter R variability
 #-------------------------------------------------------------------------------
 
-mlm_fun <- function(.IC, .gls, args, .tf) {
+mlm_fun <- function(.IC, .gls, args, nest, .tf) {
 
   # zero model
   gls_0 <- purrr::pluck(.gls, "gls_0")
@@ -237,7 +228,7 @@ mlm_fun <- function(.IC, .gls, args, .tf) {
     args[["X2"]],
     trans = .tf,
     vorce = "inter",
-    nest =  args[[".nest"]],
+    nest =  nest,
     type = "LME"
     )
   # log likelihood test
@@ -265,13 +256,11 @@ output_lm <- function(IC, args, model_args, meta = NULL, label = NULL, output) {
   trans_out <- function(IC, output) {
     switch(
       output,
-      inference = call2( "select", IC, expr(-.data$data)),
+      inference = call2( "select", IC, expr(-.data$data), .ns = "dplyr"),
       complete = call2("unnest", IC, cols = expr(.data$data), .ns = "tidyr")
       )
   }
-
-  data_env <- env(data = IC)
-  IC <- eval(trans_out(IC, output), data_env)
+  IC <- eval(trans_out(IC, output))
 
   #Latex labels
   if (! is.null(label)) {
