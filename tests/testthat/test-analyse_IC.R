@@ -43,3 +43,42 @@ test_that("global environment object with similar name and misc. errors", {
                "Latex labels is not supported for complete datasets.")
   })
 
+#-------------------------------------------------------------------------------
+# Compare to Cameca output
+#-------------------------------------------------------------------------------
+
+# single ion precision
+test_that("consistency of single ion precision estimates compared to Cameca output", {
+  # raw data containing 13C and 12C counts on carbonate
+  tb_rw <- read_IC(point_example("2018-01-19-GLENDON"))
+  # Processing raw ion count data
+  tb_pr <- cor_IC(tb_rw)
+  # stat X
+  tb_X <- stat_X(tb_pr, file.nm, .stat = "tot", .meta = TRUE)
+  tb_meta <- unfold(tb_X, merge = FALSE) %>%
+    distinct(species.nm, det.mt) %>%
+    mutate(det.mt = readr::parse_number(det.mt))
+  tb_X <- left_join(tb_X, tb_meta, by = "species.nm") %>% arrange(file.nm, det.mt)
+  # Cameca reference
+  ref_X <- filter(cameca_stat_X, `correction block` == 1)$`Cumulated count`
+  # tolerance lowered as cameca stat file only contains six signficant digits
+  expect_equal(tb_X$tot_N.pr, ref_X, tolerance = 10)
+})
+
+# R precision
+test_that("consistency of isotope ratio precision estimates compared to Cameca output", {
+  # raw data containing 13C and 12C counts on carbonate
+  tb_rw <- read_IC(point_example("2018-01-19-GLENDON"))
+  # Processing raw ion count data
+  tb_pr <- cor_IC(tb_rw)
+  # stat X
+  tb_R <- stat_R(tb_pr, "13C", "12C", file.nm,
+                 .stat = c("M", "RSeM", "hat_RSeM"), .zero = TRUE)
+  # Cameca reference
+  ref_R <- filter(cameca_stat_R, `correction block` == 1, `Ratio#` == "2/1")
+  # tolerance lowered as Cameca stat file only contains six, three and three
+  # significant digits
+  expect_equal(tb_R$M_R_Xt.pr, ref_R$Ratios, tolerance = 1e-5)
+  expect_equal(tb_R$RSeM_R_Xt.pr, ref_R$`Err_mean(%)` * 10, tolerance = 1e-2)
+  expect_equal(tb_R$hat_RSeM_R_N.pr, ref_R$`Err_Poisson(%)` * 10, tolerance = 1e-2)
+})

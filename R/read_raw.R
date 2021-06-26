@@ -31,7 +31,7 @@
 read_IC <- function(directory, meta = TRUE, hide = TRUE){
 
   # List files
-  ls_IC <- read_validator(directory, ".is_txt")[["ion"]]
+  ls_IC <- read_validator(directory, "is_txt")[["ion"]]
   n_max <- Inf
 
   # Collecting metadata (stat file)
@@ -207,7 +207,8 @@ point_example <- function(path = NULL) {
 #' @export
 #' @examples
 #' ICdir_chk(point_example("2018-01-19-GLENDON"))
-ICdir_chk <-function(directory, types = c(".is_txt", ".chk_is", ".stat")){
+ICdir_chk <-function(directory, types = c("is_txt", "chk_is", "stat")){
+  types <- paste0(".", types)
   # check if type is valid
   sys_types <- c(ion = ".is_txt", optic = ".chk_is", stat = ".stat")
   if (any(types %in% sys_types)) {
@@ -294,7 +295,7 @@ fold <- function(df, type, meta = NULL) {
 # Function for testing and validation (NOT EXPORTET)
 #-------------------------------------------------------------------------------
 # Validation function to check for empty files or files with empty columns
-read_validator <- function(directory, types = c(".is_txt", ".chk_is", ".stat")){
+read_validator <- function(directory, types = c("is_txt", "chk_is", "stat")){
 
   # Argument class check
   stopifnot(is.character(directory))
@@ -423,15 +424,17 @@ meas_fun <- function(directory, a , b) {
 }
 
 # Row scanner determine number of rows
-row_scanner <- function(directory, ls, str){
-  lapply(
-    purrr::map(
-      ls,
-      ~readr::read_lines(paste0(directory, "/", .), n_max = Inf)
-      ),
-    stringr::str_which,
-  str
-  )
+row_scanner <- function(directory, ls, reg_expr, return_line = FALSE) {
+  lines <- purrr::map(ls, ~readr::read_lines(fs::path(directory, .)))
+  pos_line <- purrr::map(lines, stringr::str_which, reg_expr)
+  ext_line <- purrr::map2(lines, pos_line, ~.x[.y]) %>% purrr::flatten_chr()
+  # Are these lines identical ?
+  if (isTRUE(return_line)) {
+    if (length(unique(ext_line)) > 1) warning("Column names are not equal.", call. = FALSE)
+    list(pos_line, unique(ext_line))
+  } else {
+    pos_line
+  }
 }
 
 # File validator. Empty text files

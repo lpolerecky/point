@@ -34,6 +34,8 @@
 #' @param .label A character string indicating whether variable names are latex
 #' (\code{"latex"}) or webtex (\code{"webtex"}) compatible. Will be extended in
 #' the future \code{default = NULL}.
+#' @param .meta Logical whether to preserve the metadata as an attribute
+#' (defaults to TRUE).
 #' @param .output A character string for output as summary statistics ("sum");
 #' statistics only ("stat"); and statistics with the original data ("complete")
 #' \code{default = "sum"}.
@@ -65,11 +67,14 @@
 #' stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .nest = file.nm,
 #'        .zero = TRUE)
 stat_X <- function(.IC, ..., .X = NULL, .N =  NULL, .species = NULL,
-                   .t =  NULL, .stat = point::names_stat_X$name, .label = NULL,
-                   .output = "sum") {
+                   .t =  NULL, .stat = point::names_stat_X$name,
+                   .label = NULL, .meta = FALSE, .output = "sum") {
 
   # Checks
   stat_validator(.IC, .stat, point::names_stat_X$name, .output, .label)
+
+  # Metadata
+  if(.meta) meta <- unfold(.IC, merge = FALSE)
 
   # Quoting the call (user-supplied expressions) and complete if NULL
   args <- inject_args(
@@ -131,6 +136,9 @@ stat_X <- function(.IC, ..., .X = NULL, .N =  NULL, .species = NULL,
     eval_tidy(expr = call2(mod_call[[.output]], expr(.), !!! calcs)) %>%
     ungroup() %>%
     select(-any_of(vars$neg))
+
+  # Return metadata
+  if (.meta) IC <- fold(IC, type = ".mt",  meta = meta)
 
   # Output
   if (!is.null(.label)) {
