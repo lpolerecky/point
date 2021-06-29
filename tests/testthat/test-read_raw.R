@@ -28,15 +28,42 @@ test_that("directory check", {
 })
 
 #-------------------------------------------------------------------------------
-# benchmark
+# benchmark deprecated
 #-------------------------------------------------------------------------------
-# filter list notations
+
+directory <- point_example("2018-01-19-GLENDON")
+read_IC_deprecated <- function(directory, hide = TRUE){
+
+  # List files
+  ls_IC <- read_validator(directory, "is_txt")[["ion"]]
+  n_max <- Inf
+
+  # Collecting measurement data
+  purrr::map2_dfr(
+    ls_IC,
+    n_max,
+    ~readr::read_tsv(
+      .x,
+      col_names = c("t.nm", "N.rw"),
+      col_types = "-cc",
+      comment = "B",
+      skip = 1,
+      # n-max is n times number of species
+      n_max = .y
+    ),
+    .id = "file.nm"
+  ) %>%
+    # Remove old column headers
+    filter(.data$t.nm != "X", .data$N.rw  != "Y") %>%
+    # Coercion to numeric values
+    mutate(
+      t.nm = as.numeric(.data$t.nm),
+      N.rw = as.numeric(.data$N.rw)
+    )
+}
+
 microbenchmark::microbenchmark(
-  a = vroom::vroom_lines(ls_files[["ion"]]) %>%
-    purrr::keep(stringr::str_detect, pattern = "B"),
-  b = vroom::vroom_lines(ls_files[["ion"]]) %>%
-    purrr::keep(stringr::str_detect(., pattern = "B")),
-  c = vroom::vroom_lines(ls_files[["ion"]]) %>%
-    purrr::keep(function(x) stringr::str_detect(x, pattern = "B")),
+  point::read_IC(point_example("2018-01-19-GLENDON"), meta = FALSE),
+  read_IC_deprecated(point_example("2018-01-19-GLENDON")),
   times = 20
 )

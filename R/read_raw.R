@@ -46,32 +46,33 @@ read_IC <- function(directory, meta = TRUE, hide = TRUE){
     .name_repair = "minimal"
     ) %>%
     tidyr::drop_na() %>%
-    group_by(file.nm) %>%
-    mutate(
-      # simplify file name
-      file.nm = recode(file.nm, !!! set_names(names(ls_IC), ls_IC)),
-      # detector number based on position in file
-      num.mt = ntile(n = n() / n_distinct(t.nm))
-      ) %>%
-    ungroup()
+    mutate(file.nm = recode(file.nm, !!! set_names(names(ls_IC), ls_IC)))
 
+  # meta data names according to Cameca
   point_nms <- filter(point::names_cameca, extension == ".is_txt", use == "meta")
   tb_meta <- point_lines(ls_IC, pattern = "B", sep = "\\=") %>%
     # meta data names
     rename(set_names(point_nms$cameca, nm = point_nms$point)) %>%
-    # detector numbering
-    group_by(file.nm) %>%
-    mutate(
-      num.mt = row_number(),
-      # species names
-      species.nm = stringr::str_extract(mass.mt, "(?<=\\().+?(?=\\))")
-      ) %>%
-    ungroup()
+    mutate(species.nm = stringr::str_extract(mass.mt, "(?<=\\().+?(?=\\))"))
 
-  tb_rw <- left_join(tb_IC, tb_meta, by = c("file.nm", "num.mt"))
+  # vector of detector numbering
+  vc_num <- rep(
+    # number of detectors
+    1:max(tb_meta$num.mt),
+    # number of measurements per detector per analysis
+    each = nrow(tb_IC) / length(ls_IC) / max(tb_meta$num.mt),
+    # total number of measurements
+    length.out = nrow(tb_IC)
+    )
+
+  tb_rw <- left_join(
+    tibble::add_column(tb_IC, num.mt = vc_num),
+    tb_meta,
+    by = c("file.nm", "num.mt")
+    )
   # hide meta data
   if (hide) tb_rw <- fold(tb_rw, type = ".mt")
-  tb_rw
+  tb_IC
   }
 
 h <- function(x){
@@ -456,7 +457,7 @@ write_attr <- function(df1, df2, nm) {
   df1
 }
 
-point_lines <- function(files, pattern = NULL, position = NULL, sep = NULL, delim = ":") {
+point_lines <- function(files, pattern = NULL, position = NULL, sep = NULL, delim = ":", id = num.mt) {
   # names files
   file_nms <- names(files)
   # load all lines
@@ -468,6 +469,9 @@ point_lines <- function(files, pattern = NULL, position = NULL, sep = NULL, deli
   } else if (!is.null(pattern)) {
     files <- stringr::str_subset(files, pattern = stringr::str_c("\\Q", pattern, "\\E", collapse = "|"))
   }
+
+  # line numbers
+  file_num <- rep(1: (length(files) / length(file_nms)),  length(file_nms))
 
   # update names if multiple rows are extracted per file
   if (length(files) > length(file_nms)) file_nms <- rep(file_nms, each = length(files) %/% length(file_nms))
@@ -485,6 +489,6 @@ point_lines <- function(files, pattern = NULL, position = NULL, sep = NULL, deli
   separators <- rep(c(rep(delim, length(pattern) - 1), "\n"), length(files) / length(pattern))
   vals <- stringr::str_c(vals, separators, collapse = "")
   vroom::vroom(I(vals), delim = delim, col_names = col_nms, show_col_types = FALSE) %>%
-    tibble::add_column(file.nm = file_nms, .before = col_nms[1])
+    tibble::add_column(file.nm = file_nms, {{id}} := file_num, .before = col_nms[1])
   }
 
