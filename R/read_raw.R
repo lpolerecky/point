@@ -32,40 +32,55 @@ read_IC <- function(directory, meta = TRUE, hide = TRUE){
 
   # List files
   ls_IC <- read_validator(directory, "is_txt")[["ion"]]
-  n_max <- Inf
 
+  # Collecting measurement data
+  tb_IC <- vroom::vroom(
+    ls_IC,
+    comment = "B",
+    delim = "\t",
+    skip = 1,
+    col_types = "-dd",
+    col_select = c(file.nm, t.nm = X, N.rw = Y),
+    na = c("X", "Y"),
+    id = "file.nm",
+    .name_repair = "minimal"
+    ) %>%
+    tidyr::drop_na() %>%
+    group_by(file.nm) %>%
+    mutate(
+      # simplify file name
+      file.nm = recode(file.nm, !!! set_names(names(ls_IC), ls_IC)),
+      # detector number based on position in file
+      num.mt = ntile(n = n() / n_distinct(t.nm))
+      ) %>%
+    ungroup()
+
+  point_nms <- filter(point::names_cameca, extension == ".is_txt", use == "meta")
+  tb_meta <- point_lines(ls_IC, pattern = "B", sep = "\\=") %>%
+    # meta data names
+    rename(set_names(point_nms$cameca, nm = point_nms$point)) %>%
+    # detector numbering
+    group_by(file.nm) %>%
+    mutate(
+      num.mt = row_number(),
+      # species names
+      species.nm = stringr::str_extract(mass.mt, "(?<=\\().+?(?=\\))")
+      ) %>%
+    ungroup()
+
+  tb_rw <- left_join(tb_IC, tb_meta, by = c("file.nm", "num.mt"))
+  # hide meta data
+  if (hide) tb_rw <- fold(tb_rw, type = ".mt")
+  tb_rw
+  }
+
+h <- function(x){
   # Collecting metadata (stat file)
   if (meta) {
     # Check validity of directory for meta data extraction
     read_validator(directory)
     tb_meta <- read_meta(directory)
-    n_max <- group_by(tb_meta, .data$file.nm) %>%
-      summarise(n = sum(.data$n.rw)) %>%
-      pull(n) + length(unique(tb_meta$species.nm)) + 1
-    }
-
-  # Collecting measurement data
-  tb_rw <- purrr::map2_dfr(
-    ls_IC,
-    n_max,
-    ~readr::read_tsv(
-      file.path(directory, .x),
-      col_names = c("t.nm", "N.rw"),
-      col_types = "-cc",
-      comment = "B",
-      skip = 1,
-      # n-max is n times number of species
-      n_max = .y
-       ),
-    .id = "file.nm"
-    ) %>%
-    # Remove old column headers
-    filter(.data$t.nm != "X", .data$N.rw  != "Y") %>%
-    # Coercion to numeric values
-    mutate(
-      t.nm = as.numeric(.data$t.nm),
-      N.rw = as.numeric(.data$N.rw)
-      )
+  }
 
   if (meta) {
     # vector with species names
@@ -208,29 +223,28 @@ point_example <- function(path = NULL) {
 #' @examples
 #' ICdir_chk(point_example("2018-01-19-GLENDON"))
 ICdir_chk <-function(directory, types = c("is_txt", "chk_is", "stat")){
-  types <- paste0(".", types)
+  # types <- paste0(".", types)
   # check if type is valid
-  sys_types <- c(ion = ".is_txt", optic = ".chk_is", stat = ".stat")
+  sys_types <- c(ion = "is_txt", optic = "chk_is", stat = "stat")
   if (any(types %in% sys_types)) {
     types <- sys_types[sys_types %in% types]
   } else {
-    stop("Unknown extension", call. = FALSE)
+    stop("Unknown extension.", call. = FALSE)
   }
   # directory name if also file name
   dir_nm <- stringr::str_extract(
     directory,
     stringr::str_c("(?<=", dirname(directory), "/)(.)+")
     )
-  ls_files <- list.files(directory) %>%
-    purrr::keep(function(x) stringr::str_detect(x, dir_nm))
-  ls_names <- unique(stringr::str_extract(ls_files, "(.)+(?=\\.)")) %>%
-    purrr::keep(function(x) stringr::str_detect(x, "(_[[:digit:]]+_[[:digit:]]+)$"))
-  ls_types <- purrr::cross(list(ls_names, types)) %>%
-    purrr::map_chr(purrr::lift(paste0)) %>%
+  ls_files <- fs::dir_ls(directory)%>%
+    purrr::keep(stringr::str_detect(., pattern = dir_nm))
+  ls_names <- unique(fs::path_ext_remove(fs::path_file(ls_files))) %>%
+    purrr::keep(stringr::str_detect(., pattern = "(_[[:digit:]]+_[[:digit:]]+)$"))
+  ls_types <- purrr::cross(list(directory, ls_names, ext = types)) %>%
+    purrr::map_chr(purrr::lift(fs::path)) %>%
     set_names(nm = rep(ls_names, n_distinct(types)))
 
-  if (length(ls_types > 0) &
-      all(ls_types %in% ls_files)) {
+  if (length(ls_types > 0) & all(ls_types %in% ls_files)) {
     # makes grouped list
     split(ls_types, rep(names(types), each = n_distinct(ls_names)))
   } else {
@@ -298,33 +312,28 @@ fold <- function(df, type, meta = NULL) {
 read_validator <- function(directory, types = c("is_txt", "chk_is", "stat")){
 
   # Argument class check
-  stopifnot(is.character(directory))
+  stopifnot(fs::is_dir(directory))
 
   # Check if directory contains files
   if (is.null(length(dir(directory)))) {
-    stop("`directory` does not contain any files", call. = FALSE)
-    }
+    stop("`directory` does not contain any files.", call. = FALSE)
+  }
   # Check if directory contains specified file types
   if (isFALSE(ICdir_chk(directory, types))) {
-    stop("`directory` does not contain required filetypes: .is_txt, .chk_is, and .stat",
+    stop("`directory` does not contain required filetypes: .is_txt, .chk_is, and .stat.",
          call. = FALSE)
   } else {
     ls_files <- ICdir_chk(directory, types)
   }
 
   # Length check of txt files
-  if (any(missing_text(directory, ls_files[["ion"]]) == 0)) {
-    good <- missing_text(directory, ls_files[["ion"]]) > 0
-    ls_files[["ion"]] <- ls_files[["ion"]][good]
-    warning("empty txt file removed")
+  if ("is_txt" %in% types & any(missing_text(ls_files[["ion"]]) == 0)) {
+   good <- missing_text(directory, ls_files[["ion"]]) > 0
+   ls_files[["ion"]] <- ls_files[["ion"]][good]
+   warning("Empty txt file removed.")
+  } else {
+  return(ls_files)
   }
-  # Column content check of txt files
-  if (any(missing_col(directory, ls_files[["ion"]]) == 0)) {
-    good <- missing_col(directory, ls_files[["ion"]])  > 0
-    ls_files[["ion"]] <- ls_files[["ion"]][good]
-    warning("txt file contains empty columns")
-  }
-  ls_files
 }
 
 # Function for obtaining xyz coordinates on analytical substrate
@@ -424,10 +433,10 @@ meas_fun <- function(directory, a , b) {
 }
 
 # Row scanner determine number of rows
-row_scanner <- function(directory, ls, reg_expr, return_line = FALSE) {
-  lines <- purrr::map(ls, ~readr::read_lines(fs::path(directory, .)))
-  pos_line <- purrr::map(lines, stringr::str_which, reg_expr)
-  ext_line <- purrr::map2(lines, pos_line, ~.x[.y]) %>% purrr::flatten_chr()
+row_scanner <- function(ls, reg_expr, return_line = FALSE) {
+  lines <- vroom::vroom_lines(ls)
+  pos_line <- stringr::str_which(lines, reg_expr)
+  ext_line <- lines[pos_line]
   # Are these lines identical ?
   if (isTRUE(return_line)) {
     if (length(unique(ext_line)) > 1) warning("Column names are not equal.", call. = FALSE)
@@ -438,32 +447,44 @@ row_scanner <- function(directory, ls, reg_expr, return_line = FALSE) {
 }
 
 # File validator. Empty text files
-missing_text <- function(directory, files){
-  purrr::map_dbl(
-    files,
-    ~{length(readr::read_lines(paste0(directory, "/", .), n_max = 2))}
-    )
-}
-
-# File validator. Empty columns
-missing_col <- function(directory, files){
-  purrr::map_dbl(
-    files,
-    ~{nrow(
-      readr::read_tsv(
-        paste0(directory, "/", .),
-        comment = "B",
-        skip = 1,
-        col_names = c("t", "N"),
-        col_types = "-cc",
-        n_max = 2
-        ) %>%
-        filter(t != "X", N  != "Y"))
-      }
-    )
+missing_text <- function(files) {
+  purrr::map_dbl(files, ~length(vroom::vroom_lines(.x, n_max = 2)))
 }
 
 write_attr <- function(df1, df2, nm) {
   attr(df1, nm) <- df2
   df1
 }
+
+point_lines <- function(files, pattern = NULL, position = NULL, sep = NULL, delim = ":") {
+  # names files
+  file_nms <- names(files)
+  # load all lines
+  files <- vroom::vroom_lines(files)
+
+  # filter lines
+  if (!is.null(position)) {
+    files <- files[position]
+  } else if (!is.null(pattern)) {
+    files <- stringr::str_subset(files, pattern = stringr::str_c("\\Q", pattern, "\\E", collapse = "|"))
+  }
+
+  # update names if multiple rows are extracted per file
+  if (length(files) > length(file_nms)) file_nms <- rep(file_nms, each = length(files) %/% length(file_nms))
+
+  # extract column names with regex
+  col_nms <- stringr::str_extract_all(files, paste0("(?<=(^|\\", delim, "))(.)+?(?=", sep ,")")) %>%
+    purrr::flatten_chr() %>%
+    stringr::str_trim() %>%
+    unique()
+  # regex column names
+  remove_reg <- stringr::str_c("(\\Q", col_nms, "\\E\\s*", sep, ")", collapse = "|")
+  # extract column names regex from outpur to obtain values
+  vals <- stringr::str_remove_all(files, paste0(remove_reg, "|\\s"))
+  # create appropriate value separators
+  separators <- rep(c(rep(delim, length(pattern) - 1), "\n"), length(files) / length(pattern))
+  vals <- stringr::str_c(vals, separators, collapse = "")
+  vroom::vroom(I(vals), delim = delim, col_names = col_nms, show_col_types = FALSE) %>%
+    tibble::add_column(file.nm = file_nms, .before = col_nms[1])
+  }
+

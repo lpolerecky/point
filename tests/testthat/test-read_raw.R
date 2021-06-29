@@ -26,3 +26,17 @@ test_that("read_IC creates a tibble", {
 test_that("directory check", {
   expect_snapshot(ICdir_chk(point_example("2018-01-19-GLENDON")))
 })
+
+#-------------------------------------------------------------------------------
+# benchmark
+#-------------------------------------------------------------------------------
+# filter list notations
+microbenchmark::microbenchmark(
+  a = vroom::vroom_lines(ls_files[["ion"]]) %>%
+    purrr::keep(stringr::str_detect, pattern = "B"),
+  b = vroom::vroom_lines(ls_files[["ion"]]) %>%
+    purrr::keep(stringr::str_detect(., pattern = "B")),
+  c = vroom::vroom_lines(ls_files[["ion"]]) %>%
+    purrr::keep(function(x) stringr::str_detect(x, pattern = "B")),
+  times = 20
+)
