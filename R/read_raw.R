@@ -121,16 +121,16 @@ read_meta <- function(directory){
   # Check validity of directory
   ls_files <- read_validator(directory)
 
-  vc_optic <- filter(names_cameca, extension == ".chk_is",  format == "line")
+  vc_optic <- filter(point::names_cameca, extension == ".chk_is",  format == "line")
 
+  suppressMessages(
   purrr::map(
     vc_optic$cameca,
     ~point_lines(ls_files[["optic"]], pattern = .x, sep = "\\:", delim = "/")
     ) %>%
     purrr::compact() %>%
-    purrr::reduce(left_join)
-  # %>%
-  #   rename(!!! set_names(vc_optic$cameca, nm = vc_optic$point))
+    purrr::reduce(left_join)) #%>%
+    # rename(!!! set_names(vc_optic$cameca[-1], nm = vc_optic$point[-1]))
 #-------------------------------------------------------------------------------
 # PHD
 #-------------------------------------------------------------------------------
@@ -489,20 +489,29 @@ point_lines <- function(files, pattern = NULL, position = NULL, sep = NULL, deli
         stringr::str_c("\\Q", pattern, "\\E", "\\s*", sep, collapse = "|"))
   }
 
-  # skip if pattern does not exist
+  # short cut if pattern does not exist
   if (length(files) == 0) return(NULL)
 
   # line numbers
   file_num <- rep(1: (length(files) / length(file_nms)),  length(file_nms))
 
   # update names if multiple rows are extracted per file
-  if (length(files) > length(file_nms)) file_nms <- rep(file_nms, each = length(files) %/% length(file_nms))
+  if (length(files) > length(file_nms)) {
+    file_nms <- rep(file_nms, each = length(files) %/% length(file_nms))
+  }
+
+    # replace NAs
+  files <- stringr::str_replace_all(files, pattern = "N\\/A", replacement = "NA")
 
   # extract column names with regex
-  col_nms <- stringr::str_extract_all(files, paste0("(?<=(^|\\", delim, "))(.)+(?=", sep ,")")) %>%
+  col_nms <- stringr::str_extract_all(
+    files,
+    paste0("(?<=(\\", delim, "|^))(.)+?(?=(", sep ,"|$))")
+    ) %>%
     purrr::flatten_chr() %>%
     stringr::str_trim() %>%
     unique()
+
   # regex column names
   remove_reg <- stringr::str_c("(\\Q", col_nms, "\\E\\s*", sep, ")", collapse = "|")
   # extract column names regex from outpur to obtain values
@@ -510,9 +519,8 @@ point_lines <- function(files, pattern = NULL, position = NULL, sep = NULL, deli
   # create appropriate value separators
   separators <- rep(c(rep(delim, length(pattern) - 1), "\n"), length(files) / length(pattern))
   vals <- stringr::str_c(vals, separators, collapse = "")
-  # vroom::vroom(I(vals), delim = delim, col_names = col_nms, show_col_types = FALSE) %>%
-  #   tibble::add_column(file.nm = file_nms, {{id}} := file_num, .before = col_nms[1])
-  col_nms
+  vroom::vroom(I(vals), delim = delim, col_names = col_nms, show_col_types = FALSE) %>%
+    tibble::add_column(file.nm = file_nms, {{id}} := file_num, .before = col_nms[1])
 
   }
 
