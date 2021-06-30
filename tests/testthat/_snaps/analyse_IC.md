@@ -87,3 +87,14 @@
       #   hat_RS_R_tot_N.pr <dbl>, hat_SeM_R_tot_N.pr <dbl>,
       #   hat_RSeM_R_tot_N.pr <dbl>, chi2_R_tot_N.pr <dbl>, ratio.nm <chr>
 
+---
+
+    Code
+      stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .nest = file.nm, .zero = TRUE,
+        .label = "latex", .stat = c("M", "RS"))
+    Output
+      # A tibble: 1 x 4
+        sample.nm    ratio.nm             `$\\bar{\\bar{R}~ `$\\epsilon_{\\bar{R}}$ (~
+        <chr>        <chr>                            <dbl>                      <dbl>
+      1 Belemnite, ~ "${}^{13}\\mathrm{C~            0.0110                       1.85
+

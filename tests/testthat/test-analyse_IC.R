@@ -17,6 +17,10 @@ test_that("consistency of precision estimates on internal dataset", {
   # Isotope ratio external precision
   expect_snapshot(stat_R(tb_pr, "13C", "12C", sample.nm, file.nm,
                          .nest = file.nm, .zero = TRUE))
+  # Isotope ratio external precision and statistic selection
+  expect_snapshot(stat_R(tb_pr, "13C", "12C", sample.nm, file.nm,
+                         .nest = file.nm, .zero = TRUE, .label = "latex",
+                         .stat = c("M", "RS")))
 })
 
 #-------------------------------------------------------------------------------
@@ -82,3 +86,38 @@ test_that("consistency of isotope ratio precision estimates compared to Cameca o
   expect_equal(tb_R$RSeM_R_Xt.pr, ref_R$`Err_mean(%)` * 10, tolerance = 1e-2)
   expect_equal(tb_R$hat_RSeM_R_N.pr, ref_R$`Err_Poisson(%)` * 10, tolerance = 1e-2)
 })
+
+#-------------------------------------------------------------------------------
+# helpers
+#-------------------------------------------------------------------------------
+tb_tex <- mutate(
+  point::names_stat_R,
+  origin = case_when(origin == "X" ~ "M", origin == "N" ~ "Ntot")
+  )
+
+
+
+test_that("Latex printing of variables for tables", {
+  # Latex printing of variables
+  # single stat selection (internal precision)
+  expect_equal(tex_labeller(point::names_stat_R, "M", "latex"), "$\\bar{R}$")
+  # single stat selection (external precision)
+  expect_equal(tex_labeller(tb_tex , "M", "latex"), "$\\bar{\\bar{R}}$")
+  # multiple  stat selection (external precision)
+  expect_equal(
+    tex_labeller(tb_tex , c("M", "RS"), "latex"),
+    c("$\\bar{\\bar{R}}$", "$\\epsilon_{\\bar{R}}$ (\\text{\\textperthousand})")
+    )
+})
+
+
+
+
+test_that("Argument selector based on stat selection", {
+  ls_nm <- c(n_R  = "n_R_t.nm", M_R = "M_R_Xt.pr",  RS_R = "RS_R_Xt.pr", RSeM_R ="RSeM_R_Xt.pr")
+  stat <- "RS"
+  # argument selector based on stat selection
+  expect_equal(stat_selector(stat, ls_nm)$pos, c(RS_R = "RS_R_Xt.pr"))
+  expect_equal(stat_selector(stat, ls_nm)$neg, c(n_R  = "n_R_t.nm", M_R = "M_R_Xt.pr", RSeM_R ="RSeM_R_Xt.pr"))
+  })
+

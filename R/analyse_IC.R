@@ -280,7 +280,7 @@ stat_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL, .N = NULL,
         tb_tex,
         origin = case_when(origin == "X" ~ "M", origin == "N" ~ "Ntot")
         )
-      }
+    }
     ls_latex <- set_names(
       vars$pos,
       tex_labeller(tb_tex, .stat, .label)
@@ -520,10 +520,10 @@ stat_validator <- function(IC, stat_in = NULL, stat_def = NULL, output = "sum", 
 
 # Stat selection function
 stat_selector <- function(stat, vars) {
-  str_stat <- stringr::str_c("^", stat, collapse = "|")
+  str_stat <- stringr::str_c("^", stat, "_",  collapse = "|")
   ls_vars <- list()
-  ls_vars$pos <- purrr::keep(vars, function(x) stringr::str_detect(x, str_stat))
-  ls_vars$neg <- purrr::discard(vars, function(x) stringr::str_detect(x, str_stat))
+  ls_vars$pos <- purrr::keep(vars, ~stringr::str_detect(., str_stat))
+  ls_vars$neg <- purrr::discard(vars, ~stringr::str_detect(., str_stat))
   ls_vars
 }
 
