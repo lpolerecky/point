@@ -13,9 +13,7 @@ mass.mt,,meta,M,.is_txt,table,Species mass
 tc.mt,.bl_t,meta,Tc ,.is_txt,table,Blanking time
 sample.nm,,group,Sample,.chk_is,line,Sample name
 date.mt,,meta,,.chk_is,line,Date and time
-x.mt,,meta,x,.chk_is,line,x coordinate
-y.mt,,meta,y,.chk_is,line,y coordinate
-z.mt,,meta,z,.chk_is,line,z coordinate
+coord.mt,,meta,Stage Position,.chk_is,line,coordinates
 file_raw.mt,,meta,Raw data file,.chk_is,line,Raw data file
 bl_num.mt,,meta,Block number,.chk_is,line,Block number
 meas_bl.mt,,meta,Meas. per block,.chk_is,line,Meas. per block

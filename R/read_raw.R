@@ -49,7 +49,11 @@ read_IC <- function(directory, meta = TRUE, hide = TRUE){
     mutate(file.nm = recode(file.nm, !!! set_names(names(ls_IC), ls_IC)))
 
   # meta data names according to Cameca
-  point_nms <- filter(point::names_cameca, extension == ".is_txt", use == "meta")
+  point_nms <- filter(
+    point::names_cameca,
+    extension == ".is_txt",
+    use == "meta"
+    )
   tb_meta <- point_lines(ls_IC, pattern = "B", sep = "\\=") %>%
     # meta data names
     rename(set_names(point_nms$cameca, nm = point_nms$point)) %>%
@@ -117,9 +121,21 @@ read_meta <- function(directory){
   # Check validity of directory
   ls_files <- read_validator(directory)
 
+  vc_optic <- filter(names_cameca, extension == ".chk_is",  format == "line")
+
+  purrr::map(
+    vc_optic$cameca,
+    ~point_lines(ls_files[["optic"]], pattern = .x, sep = "\\:", delim = "/")
+    ) %>%
+    purrr::compact() %>%
+    purrr::reduce(left_join)
+  # %>%
+  #   rename(!!! set_names(vc_optic$cameca, nm = vc_optic$point))
 #-------------------------------------------------------------------------------
 # PHD
 #-------------------------------------------------------------------------------
+
+
   # Number of PHD measurements
   PHD_n <- row_scanner(directory, ls_files[["optic"]], "PHDc(?=\\(Mass)")
 
@@ -467,8 +483,14 @@ point_lines <- function(files, pattern = NULL, position = NULL, sep = NULL, deli
   if (!is.null(position)) {
     files <- files[position]
   } else if (!is.null(pattern)) {
-    files <- stringr::str_subset(files, pattern = stringr::str_c("\\Q", pattern, "\\E", collapse = "|"))
+    files <- stringr::str_subset(
+      files,
+      pattern =
+        stringr::str_c("\\Q", pattern, "\\E", "\\s*", sep, collapse = "|"))
   }
+
+  # skip if pattern does not exist
+  if (length(files) == 0) return(NULL)
 
   # line numbers
   file_num <- rep(1: (length(files) / length(file_nms)),  length(file_nms))
@@ -477,7 +499,7 @@ point_lines <- function(files, pattern = NULL, position = NULL, sep = NULL, deli
   if (length(files) > length(file_nms)) file_nms <- rep(file_nms, each = length(files) %/% length(file_nms))
 
   # extract column names with regex
-  col_nms <- stringr::str_extract_all(files, paste0("(?<=(^|\\", delim, "))(.)+?(?=", sep ,")")) %>%
+  col_nms <- stringr::str_extract_all(files, paste0("(?<=(^|\\", delim, "))(.)+(?=", sep ,")")) %>%
     purrr::flatten_chr() %>%
     stringr::str_trim() %>%
     unique()
@@ -488,7 +510,9 @@ point_lines <- function(files, pattern = NULL, position = NULL, sep = NULL, deli
   # create appropriate value separators
   separators <- rep(c(rep(delim, length(pattern) - 1), "\n"), length(files) / length(pattern))
   vals <- stringr::str_c(vals, separators, collapse = "")
-  vroom::vroom(I(vals), delim = delim, col_names = col_nms, show_col_types = FALSE) %>%
-    tibble::add_column(file.nm = file_nms, {{id}} := file_num, .before = col_nms[1])
+  # vroom::vroom(I(vals), delim = delim, col_names = col_nms, show_col_types = FALSE) %>%
+  #   tibble::add_column(file.nm = file_nms, {{id}} := file_num, .before = col_nms[1])
+  col_nms
+
   }
 
