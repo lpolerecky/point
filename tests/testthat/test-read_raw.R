@@ -5,6 +5,7 @@
 path_point <- point_example("2018-01-19-GLENDON")
 test_that("Check change over time in read_IC", {
   expect_snapshot(read_IC(path_point))
+  read_meta(point_example("2018-01-19-GLENDON"))
 })
 
 #-------------------------------------------------------------------------------

@@ -11,8 +11,7 @@ bfield.mt,,meta,B,.is_txt,table,Magenetic Field ()
 rad.mt,,meta,R,.is_txt,table,Radius
 mass.mt,,meta,M,.is_txt,table,Species mass
 tc.mt,.bl_t,meta,Tc ,.is_txt,table,Blanking time
-sample.nm,,group,Sample,.chk_is,line,Sample name
-date.mt,,meta,,.chk_is,line,Date and time
+sample.nm,,group,CAMECA \\ ISOTOPES \\ Sample,.chk_is,line,Sample name
 coord.mt,,meta,Stage Position,.chk_is,line,coordinates
 file_raw.mt,,meta,Raw data file,.chk_is,line,Raw data file
 bl_num.mt,,meta,Block number,.chk_is,line,Block number
@@ -22,13 +21,14 @@ slit.mt,,meta,Slit Preset,.chk_is,line,Slit Preset
 lens.mt,,meta,Lens Preset,.chk_is,line,Lens Preset
 presput.mt,,meta,Pre Sputtering Time (s),.chk_is,line,Pre Sputtering Time (s)
 rast_com.mt,,meta,Raster (um),.chk_is,line,Raster (um)
-frame.mt,,meta,Frame,.chk_is,line,Frame
+frame.mt,,meta,Scanning On,.chk_is,line,Frame
 blank_rast.mt,,meta,Blanking,.chk_is,line,Blanking
 raster.mt,,meta,Raster,.chk_is,line,Raster
 tune.mt,,meta,Tuning Mode,.chk_is,line,Tuning Mode
 reg_mode.mt,,meta,Regulation Mode,.chk_is,line,Regulation Mode
 chk_frm.mt,,meta,Check every (fr.),.chk_is,line,Check every (fr.)
 sec_ion_cent.mt,,meta,Secondary Ion Beam Centering,.chk_is,line,Secondary Ion Beam Centering
+frame_sec_ion_cent.mt,,meta,during Acq,.chk_is,line,Centering on the n-th frame
 width_hor.mt,,meta,Width Horizontal(V),.chk_is,line,Width Horizontal(V)
 width_ver.mt,,meta,Vertical(V),.chk_is,line,Vertical(V)
 E0S_cent.mt,,meta,E0S Centering,.chk_is,line,E0S Centering
