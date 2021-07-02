@@ -1,8 +1,8 @@
 #' Read raw ion count data
 #'
 #' \code{read_IC()} is designed to obtain the numerical data associated with ion
-#' counts.
-#' \code{read_meta()} can be used to specifically retrieve the metadate
+#' counts and minimal set meta-data.
+#' \code{read_meta()} can be used to specifically retrieve the meta date
 #' associated with ion count data analysis, thereby loading specifications
 #' related to the optics, the primary and secondary ion beams, and the mass
 #' spectrometer.
@@ -16,7 +16,7 @@
 #'
 #' @param directory A path or connection to a directory containing raw ion count
 #' data txt  files.
-#' @param meta Logical indicating whether to include metadata.
+#' @param meta Logical indicating whether to include full meta-data.
 #' @param hide Logical indicating whether metadata is included as columns
 #'  \code{FALSE} or as an attribute of the tibble \code{TRUE}.
 #'
@@ -31,7 +31,7 @@
 read_IC <- function(directory, meta = TRUE, hide = TRUE){
 
   # List files
-  ls_IC <- read_validator(directory, "is_txt")[["ion"]]
+  ls_IC <- read_validator(directory, "is_txt")[["is_txt"]]
 
   # Collecting measurement data
   tb_IC <- vroom::vroom(
@@ -54,10 +54,12 @@ read_IC <- function(directory, meta = TRUE, hide = TRUE){
     extension == ".is_txt",
     use == "meta"
     )
-  tb_meta <- point_lines(ls_IC, pattern = "B", sep = "\\=") %>%
+  tb_meta <- point_lines(ls_IC, pattern = "B", sep = "\\=", id = "num.mt") %>%
     # meta data names
     rename(set_names(point_nms$cameca, nm = point_nms$point)) %>%
-    mutate(species.nm = stringr::str_extract(mass.mt, "(?<=\\().+?(?=\\))"))
+    mutate(
+      species.nm = stringr::str_extract(mass.mt, "(?<=\\().+?(?=\\))")
+      )
 
   # vector of detector numbering
   vc_num <- rep(
@@ -74,9 +76,11 @@ read_IC <- function(directory, meta = TRUE, hide = TRUE){
     tb_meta,
     by = c("file.nm", "num.mt")
     )
+  # extende metadat
+  if (meta) tb_rw <- left_join(tb_rw, read_meta(directory), by = c("file.nm", "num.mt"))
   # hide meta data
   if (hide) tb_rw <- fold(tb_rw, type = ".mt")
-  tb_IC
+  tb_rw
   }
 #' @rdname read_IC
 #'
@@ -85,17 +89,23 @@ read_meta <- function(directory) {
 
   # Check validity of directory
   ls_files <- read_validator(directory)
-
+  # vector of cameca variable names
   vc_meta <- filter(point::names_cameca, extension == ".chk_is",  format == "line")
 
   # optics set-up
   suppressMessages(
     tb_ll <- purrr::map(
       vc_meta$cameca,
-      ~point_lines(ls_files[["chk_is"]], pattern = .x, sep = "\\:", delim = "/")
+      ~point_lines(
+        ls_files[["chk_is"]],
+        pattern = .x,
+        sep = "\\:",
+        delim = "/"
+        )
       ) %>%
       purrr::compact() %>%
-      purrr::reduce(left_join)
+      purrr::reduce(left_join) %>%
+      select(-id)
   )
 
   # PHD
@@ -111,13 +121,14 @@ read_meta <- function(directory) {
     ) %>%
     mutate(num.mt = readr::parse_number(num.mt))
 
-  tb_ll
-
-  #rename(any_of(set_names(vc_meta$cameca, nm = vc_meta$point)))
-  # # Add measurement number
-  # n.rw = .data$`bl_num.mt` * .data$`meas_bl.mt`,
-  # # Add electron detector type (EM or FC)
-  # det_type.mt = if_else("FC_start.mt" %in% colnames(.), "FC", "EM")
+  left_join(tb_phd, tb_ll, by = "file.nm") %>%
+    rename(any_of(set_names(vc_meta$cameca, nm = vc_meta$point))) %>%
+    # Add measurement number
+    mutate(
+      n.rw = .data$`bl_num.mt` * .data$`meas_bl.mt`,
+    # Add electron detector type (EM or FC)
+      det_type.mt = if_else("FC_start.mt" %in% colnames(.), "FC", "EM")
+    )
   }
 
 #' Get path to point example
@@ -298,7 +309,9 @@ write_attr <- function(df1, df2, nm) {
   df1
 }
 
-point_lines <- function(files, pattern = NULL, position = NULL, sep = NULL, delim = ":", id = num.mt) {
+# extracting single lines from cameca
+point_lines <- function(files, pattern = NULL, position = NULL, sep = NULL,
+                        delim = ":", id = "id") {
   # names files
   file_nms <- names(files)
   # load all lines
@@ -339,13 +352,22 @@ point_lines <- function(files, pattern = NULL, position = NULL, sep = NULL, deli
 
   # regex column names
   remove_reg <- stringr::str_c("(\\Q", col_nms, "\\E\\s*", sep, ")", collapse = "|")
-  # extract column names regex from outpur to obtain values
+  # extract column names regex from output to obtain values
   vals <- stringr::str_remove_all(files, paste0(remove_reg, "|\\s"))
   # create appropriate value separators
   separators <- rep(c(rep(delim, length(pattern) - 1), "\n"), length(files) / length(pattern))
   vals <- stringr::str_c(vals, separators, collapse = "")
-  vroom::vroom(I(vals), delim = delim, col_names = col_nms, show_col_types = FALSE) %>%
-    tibble::add_column(file.nm = file_nms, {{id}} := file_num, .before = col_nms[1])
+  vroom::vroom(
+    I(vals),
+    delim = delim,
+    col_names = col_nms,
+    show_col_types = FALSE
+    ) %>%
+    tibble::add_column(
+      file.nm = file_nms,
+      {{id}} := file_num,
+      .before = col_nms[1]
+      )
 
   }
 
