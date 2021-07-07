@@ -28,7 +28,7 @@
 #' # Use point_example() to access the examples bundled with this package
 #'
 #' read_IC(point_example("2018-01-19-GLENDON"))
-read_IC <- function(directory, meta = TRUE, hide = TRUE){
+read_IC <- function(directory, meta = FALSE, hide = TRUE){
 
   # List files
   ls_IC <- read_validator(directory, "is_txt")[["is_txt"]]
@@ -58,7 +58,8 @@ read_IC <- function(directory, meta = TRUE, hide = TRUE){
     # meta data names
     rename(set_names(point_nms$cameca, nm = point_nms$point)) %>%
     mutate(
-      species.nm = stringr::str_extract(mass.mt, "(?<=\\().+?(?=\\))")
+      species.nm = stringr::str_extract(mass.mt, "(?<=\\().+?(?=\\))"),
+      tc.mt = readr::parse_number(tc.mt)
       )
 
   # vector of detector numbering
@@ -76,10 +77,20 @@ read_IC <- function(directory, meta = TRUE, hide = TRUE){
     tb_meta,
     by = c("file.nm", "num.mt")
     )
-  # extende metadat
-  if (meta) tb_rw <- left_join(tb_rw, read_meta(directory), by = c("file.nm", "num.mt"))
-  # hide meta data
-  if (hide) tb_rw <- fold(tb_rw, type = ".mt")
+
+  # extended meta-data
+  if (isTRUE(meta)) {
+    suppressMessages(
+    tb_rw <- list2(tb_rw, !!! read_meta(directory)) %>%
+      purrr::reduce(left_join)
+    )
+    # Add block number
+    tb_rw <- group_by(tb_rw, .data$file.nm, .data$species.nm)%>%
+      mutate(bl.nm = ntile(n = .data$bl_num.mt)) %>%
+      ungroup()
+  }
+  # hide meta-data
+  if (isTRUE(hide)) tb_rw <- fold(tb_rw, type = ".mt")
   tb_rw
   }
 #' @rdname read_IC
@@ -90,7 +101,11 @@ read_meta <- function(directory) {
   # Check validity of directory
   ls_files <- read_validator(directory)
   # vector of cameca variable names
-  vc_meta <- filter(point::names_cameca, extension == ".chk_is",  format == "line")
+  vc_meta <- filter(
+    point::names_cameca,
+    extension == ".chk_is",
+    format == "line"
+    )
 
   # optics set-up
   suppressMessages(
@@ -114,27 +129,27 @@ read_meta <- function(directory) {
     pattern_begin = "Phd Centering Results",
     pattern_end = "E0S Centering Results",
     file_type = "chk_is",
-    col_names = c("", "num.mt", "mean_PHD.mt", "SD_PHD.mt", "EMHV.mt"),
+    col_names = c("", "num.mt", "M_PHD.mt", "SD_PHD.mt", "EMHV.mt"),
     col_types = "-cddd",
     nudge_top = 1,
     nudge_tail = -3
     ) %>%
     mutate(num.mt = readr::parse_number(num.mt))
 
-  left_join(tb_phd, tb_ll, by = "file.nm") %>%
-    rename(any_of(set_names(vc_meta$cameca, nm = vc_meta$point))) %>%
-    # Add measurement number
+  rename(tb_ll , any_of(set_names(vc_meta$cameca, nm = vc_meta$point))) %>%
     mutate(
+    # Add measurement number
       n.rw = .data$`bl_num.mt` * .data$`meas_bl.mt`,
     # Add electron detector type (EM or FC)
       det_type.mt = if_else("FC_start.mt" %in% colnames(.), "FC", "EM")
-    )
+      ) %>%
+    list(tb_phd)
   }
 
 #' Get path to point example
 #'
 #' This function comes from the package `readr`, and has been modified to access
-#' the bundled datatsets in directory `inst/extdata` of `point`. This
+#' the bundled datasets in directory `inst/extdata` of `point`. This
 #' function make them easy to access. This function is modified from
 #' \code{\link[readr:readr_example]{readr_example}} of the package
 #' \code{\link[readr]{readr}}.
@@ -183,7 +198,7 @@ ICdir_chk <-function(directory, types = c("is_txt", "chk_is", "stat")){
   ls_files <- fs::dir_ls(directory)%>%
     purrr::keep(stringr::str_detect(., pattern = dir_nm))
   ls_names <- unique(fs::path_ext_remove(fs::path_file(ls_files))) %>%
-    purrr::keep(stringr::str_detect(., pattern = "(_[[:digit:]]+_[[:digit:]]+)$"))
+    purrr::keep(stringr::str_detect(., pattern = "(_[:digit:]+_[:digit:]+)$"))
   ls_types <- purrr::cross(list(directory, ls_names, ext = types)) %>%
     purrr::map_chr(purrr::lift(fs::path)) %>%
     set_names(nm = rep(ls_names, n_distinct(types)))
@@ -259,22 +274,23 @@ read_validator <- function(directory, types = c("is_txt", "chk_is", "stat")){
   stopifnot(fs::is_dir(directory))
 
   # Check if directory contains files
-  if (is.null(length(dir(directory)))) {
+  if (length(dir(directory)) == 0) {
     stop("`directory` does not contain any files.", call. = FALSE)
   }
   # Check if directory contains specified file types
   if (isFALSE(ICdir_chk(directory, types))) {
-    stop("`directory` does not contain required filetypes: .is_txt, .chk_is, and .stat.",
-         call. = FALSE)
+    stop(
+      "`directory` does not contain required filetypes: .is_txt, .chk_is, and .stat.",
+      call. = FALSE
+      )
   } else {
     ls_files <- ICdir_chk(directory, types)
   }
-
   # Length check of txt files
-  if ("is_txt" %in% types & any(missing_text(ls_files[["ion"]]) == 0)) {
-   good <- missing_text(directory, ls_files[["ion"]]) > 0
-   ls_files[["ion"]] <- ls_files[["ion"]][good]
-   warning("Empty txt file removed.")
+  if ("is_txt" %in% types & any(missing_text(ls_files[["is_txt"]]) == 0)) {
+   good <- missing_text(ls_files[["is_txt"]]) > 0
+   ls_files[["is_txt"]] <- ls_files[["is_txt"]][good]
+   warning("Empty txt file removed.", call. = FALSE)
   } else {
   return(ls_files)
   }

@@ -11,7 +11,7 @@ bfield.mt,,meta,B,.is_txt,table,Magenetic Field ()
 rad.mt,,meta,R,.is_txt,table,Radius
 mass.mt,,meta,M,.is_txt,table,Species mass
 tc.mt,.bl_t,meta,Tc ,.is_txt,table,Blanking time
-sample.nm,,group,CAMECA \\ ISOTOPES \\ Sample,.chk_is,line,Sample name
+sample.nm,,group,CAMECA \ ISOTOPES \ Sample,.chk_is,line,Sample name
 coord.mt,,meta,Stage Position,.chk_is,line,coordinates
 file_raw.mt,,meta,Raw data file,.chk_is,line,Raw data file
 bl_num.mt,,meta,Block number,.chk_is,line,Block number
@@ -39,12 +39,7 @@ prim_cur_after.mt,,meta,after acq,.chk_is,line,after acq
 FC_start.mt,,meta,FC Background before acq,.chk_is,line,FC Background before acq
 FC_after.mt,,meta,FC Background after acq,.chk_is,line,FC Background after acq
 det_type.mt,.det,meta,,,,Detector type (Faraday cup or electron multiplier)
-num.mt,,meta,Mass#,.chk_is,table,Detector trolley/position number
-mean_PHD.mt,.M_PHD,meta,Max(mV),.chk_is,table,Mean PHD
+num.mt,,meta,Mass#,,table,Detector trolley/position number
+M_PHD.mt,.M_PHD,meta,Max(mV),.chk_is,table,Mean PHD
 SD_PHD.mt,.SD_PHD,meta,SD,.chk_is,table,Standard deviation of PHD
 EMHV.mt,,meta,EMHV(V),.chk_is,table,Mean High Voltage
-mass.mt,,meta,Mass,.chk_is,table,Species mass
-det.mt,,meta,Det.,.chk_is,table,Detector trolley/position type
-tc.mt,.bl_t,meta,Tc(s),.chk_is,table,Blanking time
-bfield.mt,,meta,BField,.chk_is,table,Magenetic Field ()
-rad.mt,,meta,Radius,.chk_is,table,Radius

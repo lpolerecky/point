@@ -135,7 +135,7 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
     IC_lm <- select(IC_lm, -c(!! args[["ratio"]] ,!! args[["M_R"]]))
   }
 
-  if (is_symbol(get_expr(nest))) {
+  if (is_symbol(quo_get_expr(nest))) {
     # Groups for nested data
     nest_args <- c(as_name(nest), as_name(args[[".execution"]]))
     nest_gr <- gr_by[!sapply(gr_by, as_name) %in% nest_args]

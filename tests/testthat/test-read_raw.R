@@ -26,5 +26,29 @@ test_that("read_IC creates a tibble", {
 # Directory check
 test_that("directory check", {
   expect_snapshot(ICdir_chk(point_example("2018-01-19-GLENDON")))
+  expect_error(
+    ICdir_chk(point_example("2018-01-19-GLENDON"), "file"),
+    "Unknown extension."
+    )
+  # create dummy directory
+  fs::dir_create(fs::path_package("point", "extdata"), "2018-01-21-GLENDON")
+  expect_error(
+    read_validator(point_example("2018-01-21-GLENDON")),
+    "`directory` does not contain any files."
+    )
+  fs::dir_delete(fs::path_package("point", "extdata", "2018-01-21-GLENDON"))
+  # delete dummy directory
+  expect_error(
+    read_validator(fs::path_package("point", "R")),
+    "`directory` does not contain required filetypes: .is_txt, .chk_is, and .stat."
+    )
+  # create dummy file
+  fs::file_create(fs::path_package("point", "extdata", "2018-01-19-GLENDON"), "file_1_1", ext = "is_txt")
+  expect_warning(
+    read_validator(point_example("2018-01-19-GLENDON"), "is_txt"),
+    "Empty txt file removed."
+    )
+  # remove dummy file
+  fs::file_delete(fs::path_package("point", "extdata", "2018-01-19-GLENDON", "file_1_1", ext = "is_txt"))
 })
 
