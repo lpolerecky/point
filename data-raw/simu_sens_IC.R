@@ -1,4 +1,4 @@
-## code to prepare `simulated_IC` dataset
+## code to prepare `sim_IC` dataset
 
 #-------------------------------------------------------------------------------
 # Sensitivity of intra variability test

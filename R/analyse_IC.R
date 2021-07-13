@@ -52,7 +52,7 @@
 #' # Use point_example() to access the examples bundled with this package
 #'
 #' # raw data containing 13C and 12C counts on carbonate
-#' tb_rw <- read_IC(point_example("2018-01-19-GLENDON"))
+#' tb_rw <- read_IC(point_example("2018-01-19-GLENDON"), meta = TRUE)
 #'
 #' # Processing raw ion count data
 #' tb_pr <- cor_IC(tb_rw)
@@ -82,6 +82,9 @@ stat_X <- function(.IC, ..., .X = NULL, .N =  NULL, .species = NULL,
     enquos(.X = .X, .N = .N, .species = .species, .t = .t),
     type = c("processed", "group")
     )
+
+  # Argument check
+  argument_check(.IC, args, "processed")
 
   # Grouping
   gr_by <- enquos(...)
@@ -170,6 +173,9 @@ stat_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL, .N = NULL,
     type = c("processed", "group")
     )
 
+  # Argument check
+  argument_check(.IC, args, "processed")
+
   # Grouping
   gr_by <- enquos(...)
   # Nesting
@@ -200,7 +206,8 @@ stat_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL, .N = NULL,
     nest <- TRUE
     }
 
-  # If t column is empty create a manual time increment
+  # If t column is empty create a manual time increment (important for external
+  # precision)
   if (!(as_name(args[[".t"]]) %in% colnames(.IC))) {
     .IC <- group_by(.IC, !!! gr_by, !! args[[".species"]]) %>%
       mutate(!! args[[".t"]] := row_number()) %>%
@@ -275,7 +282,7 @@ stat_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL, .N = NULL,
         tb_tex,
         origin = case_when(origin == "X" ~ "M", origin == "N" ~ "Ntot")
         )
-      }
+    }
     ls_latex <- set_names(
       vars$pos,
       tex_labeller(tb_tex, .stat, .label)
@@ -461,22 +468,23 @@ tex_labeller <- function(vars, stat, label) {
 }
 
 # consistency checks
-stat_validator <- function(IC, stat_in = NULL, stat_def = NULL, output = "sum",
-                           label = NULL) {
+stat_validator <- function(IC, stat_in = NULL, stat_def = NULL,
+                           output = "sum", label = "none") {
+
   if (!tibble::is_tibble(IC)) {
     stop("Ion count dataset should be a tibble object.", call. = FALSE)
   }
   if (!all(stat_in %in% stat_def)) {
     stop("Unkown statistic.", call. = FALSE)
   }
-  if (output != "sum"  & !is.null(label)) {
+  if (output != "sum"  & label != "none") {
     stop("Latex labels is not supported for complete datasets.", call. = FALSE)
   }
 }
 
 # Stat selection function
 stat_selector <- function(stat, vars) {
-  str_stat <- stringr::str_c("^", stat, collapse = "|")
+  str_stat <- stringr::str_c("^", stat, "_", collapse = "|")
   ls_vars <- list()
   ls_vars$pos <- purrr::keep(vars, ~stringr::str_detect(., str_stat))
   ls_vars$neg <- purrr::discard(vars, ~stringr::str_detect(., str_stat))

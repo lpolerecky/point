@@ -23,14 +23,9 @@
 #' named \code{"modeldata"}.
 #' @export
 #' @examples
-#' # raw ion counts on carbonate
-#' tb_rw <- read_IC(point_example("2018-01-19-GLENDON"))
-#'
-#' # Processing raw ion count data
-#' tb_pr <- cor_IC(tb_rw)
 #'
 #' # remove zero count analysis
-#' tb_0 <- zeroCt(tb_pr, "12C", "40Ca 16O", sample.nm, file.nm, .warn = FALSE)
+#' tb_0 <- zeroCt(real_IC, "12C", "40Ca 16O", sample.nm, file.nm, .warn = FALSE)
 #'
 #' # predict ionization trends
 #' predict_ionize(tb_0, file.nm)
@@ -79,7 +74,7 @@ predict_ionize <- function(.IC, ..., .nest = NULL, .X = NULL, .N = NULL,
         !! M_X.l0 := mth_switch(.method,!! X.mdl),
         # mean plus random intercept correction
         !! X.l0 := !! M_X.l0 + (!! args[[".X"]] - !! X.mdl) + .data$ran_in.ml,
-        !! N.l0 := !! X.l0 * (min(!! args[[".t"]]) - !! args[[".bl_t"]])
+        !! N.l0 := !! X.l0 * (min(!! args[[".t"]]) - (!! args[[".bl_t"]] / 1e3))
         )
     # Single analysis
   } else {
@@ -93,7 +88,7 @@ predict_ionize <- function(.IC, ..., .nest = NULL, .X = NULL, .N = NULL,
         !! M_X.l0 := mth_switch(.method, !! X.mdl),
         # mean correction
         !! X.l0 := !! M_X.l0 + (!! args[[".X"]]- !! X.mdl),
-        !! N.l0 := !! X.l0 * (min(!! args[[".t"]]) - !! args[[".bl_t"]])
+        !! N.l0 := !! X.l0 * (min(!! args[[".t"]]) - (!! args[[".bl_t"]] / 1e3))
         )
     }
 

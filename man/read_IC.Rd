@@ -5,7 +5,7 @@
 \alias{read_meta}
 \title{Read raw ion count data}
 \usage{
-read_IC(directory, meta = TRUE, hide = TRUE)
+read_IC(directory, meta = FALSE, hide = TRUE)
 
 read_meta(directory)
 }
@@ -13,7 +13,7 @@ read_meta(directory)
 \item{directory}{A path or connection to a directory containing raw ion count
 data txt  files.}
 
-\item{meta}{Logical indicating whether to include metadata.}
+\item{meta}{Logical indicating whether to include full meta-data.}
 
 \item{hide}{Logical indicating whether metadata is included as columns
 \code{FALSE} or as an attribute of the tibble \code{TRUE}.}
@@ -24,8 +24,8 @@ count data and metadata.
 }
 \description{
 \code{read_IC()} is designed to obtain the numerical data associated with ion
-counts.
-\code{read_meta()} can be used to specifically retrieve the metadate
+counts and minimal set meta-data.
+\code{read_meta()} can be used to specifically retrieve the meta date
 associated with ion count data analysis, thereby loading specifications
 related to the optics, the primary and secondary ion beams, and the mass
 spectrometer.

@@ -12,9 +12,9 @@ cor_DT(x, deadtime)
 \arguments{
 \item{x}{A numeric vector containing raw ion count data.}
 
-\item{mean_PHD}{A numeric vector coontaining the mean PHD value.}
+\item{mean_PHD}{A numeric vector containing the mean PHD value.}
 
-\item{SD_PHD}{A numeric vector coontaining the standard deviation of the
+\item{SD_PHD}{A numeric vector containing the standard deviation of the
 PHD.}
 
 \item{thr_PHD}{A numeric value for the disrcriminator threshold of the EM
@@ -23,7 +23,7 @@ system.}
 \item{output}{Character string indicating whether to return corrected count
 rates (\code{"ct"}) or yield value (\code{"Y"}).}
 
-\item{deadtime}{A numeric value for the deadtime of the EM system
+\item{deadtime}{A numeric value for the dead-time of the EM system
 with units nanoseconds.}
 }
 \value{

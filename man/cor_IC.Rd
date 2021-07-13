@@ -13,7 +13,7 @@ cor_IC(
   .det = NULL,
   .deadtime = NULL,
   .thr_PHD = NULL,
-  .mean_PHD = NULL,
+  .M_PHD = NULL,
   .SD_PHD = NULL,
   .hide = TRUE
 )
@@ -27,7 +27,8 @@ cor_IC(
 
 \item{.t}{A variable constituting the time increments.}
 
-\item{.bl_t}{A variable or numeric value for the blanking time.}
+\item{.bl_t}{A variable or numeric value for the blanking time
+(in milliseconds).}
 
 \item{.det}{Variable or character string or variable for the detection
 system ("EM" or "FC").}
@@ -38,7 +39,7 @@ units nanoseconds.}
 \item{.thr_PHD}{A numeric value for the discriminator threshold of the EM.
 system.}
 
-\item{.mean_PHD}{A variable or numeric value of the mean PHD value.}
+\item{.M_PHD}{A variable or numeric value of the mean PHD value.}
 
 \item{.SD_PHD}{A variable or numeric value of standard deviation of
 the PHD value.}

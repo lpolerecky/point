@@ -71,11 +71,11 @@ The function `diag_R()` is designed to be a flexible wrapper for isotope count d
 In the following example the grouping structure of the data frame is defined as the file-names and block numbers, which recreates the default Cameca^TM^ software diagnostics. 
 
 
-```{r warning=FALSE}
+```{r eval=FALSE}
 # Use point_example() to access the examples bundled with this package 
 # Carry-out the routine point work-flow
 # Raw data containing 13C and 12C counts on carbonate
-tb_rw <- read_IC(point_example("2018-01-19-GLENDON"))
+tb_rw <- read_IC(point_example("2018-01-19-GLENDON"), meta = TRUE)
 
 # Processing raw ion count data
 tb_pr <- cor_IC(tb_rw)
@@ -83,6 +83,11 @@ tb_pr <- cor_IC(tb_rw)
 # CAMECA style diagnostics
 tb_dia <- diag_R(tb_pr, "13C", "12C", file.nm, bl.nm, .method = "Cameca", 
                  .reps = 2,  .output = "diagnostic") 
+```
+
+
+```{r data, echo=FALSE}
+tb_pr <- point::real_IC
 ```
 
 
@@ -97,7 +102,7 @@ ls_dia <- purrr::map2(
   ion1, 
   ion2, 
   ~diag_R(tb_pr, .x, .y, file.nm, bl.nm, .method = "Cameca", .reps = 2, 
-          .output = "diagnostic") 
+          .output = "diagnostic", .meta = TRUE) 
   )       
 ```
 
@@ -121,12 +126,11 @@ The default method to account for such discrepancies, as incorporated in the Cam
 fun_CAMECA <- function(IC){
   # get metadata for detector numbers
   meta <- unfold(IC, merge = FALSE) %>% 
-    distinct(species.nm, det.mt) %>% 
+    distinct(species.nm, num.mt) %>% 
     mutate(
       species.nm = map_chr(
         species.nm,
-        ~stringr::str_replace_all(stringr::str_trim(.x), "\\s", "_")),
-      det.mt = readr::parse_number(det.mt)
+        ~stringr::str_remove_all(stringr::str_trim(.x), "\\s"))
       )
     
   filter(IC, file.nm  == "2018-01-19-GLENDON_1_1", execution == "2") %>%
@@ -142,14 +146,15 @@ fun_CAMECA <- function(IC){
       `Poisson (%)` = hat_RSeM_R_N.pr / 10,
       "Khi2" = chi2_R_N.pr
       )
+
 }
 
 det_fun <- function(R, meta) {
   ls_R <-stringr::str_split(R, "/") 
   paste0(
-    pull(filter(meta, species.nm == ls_R[[1]][1]), det.mt), 
+    pull(filter(meta, species.nm == ls_R[[1]][1]), num.mt), 
     "/", 
-    pull(filter(meta, species.nm == ls_R[[1]][2]), det.mt)
+    pull(filter(meta, species.nm == ls_R[[1]][2]), num.mt)
     )
   }
 
@@ -299,7 +304,7 @@ Here, the $k$ stands for the number of coefficients in the regression model. To 
 These calculations are internally performed by a consecutive call to base `lm()` and `broom::augment()` [@broom].
 
 
-### Detecting intra-isotope varaibility with significant outliers
+### Detecting intra-analysis isotope varaibility with significant outliers
 
 The effectiveness of recognising and differentiating the "ideal" substrate from compromised measurements detected with e.g. Cook's D (or other outlier detection methods) can now be calculated by assessing the impact on the averaged $R$ value. This can be achieved by applying a joint model coefficient hypothesis test (or Fisher test), where the `diag_R()` function is designed to measure this deviation from the ideal "homogeneous" model (Eq. \@ref(eq:linmodR) by default.
 
@@ -314,19 +319,19 @@ knitr::kable(
   tb_dia,
   escape = FALSE,
   digits = c(0, NA, 1, NA, 4, 0, 2),
-  fig.cap = " Summary of intra-isotope variability test."
+  fig.cap = " Summary of intra-analysis isotope variability test."
 )
 ```
 
 
 Here, the $F_{R}$ refers to the Fisher test statistic and the associated significance value as $p_{R}$. 
 
-Sensitivity runs (outlined in Schobben, Kienhuis and Polerecky, in prep) show that the Cook's D outlier detection method performs best when compared to other methods. Hence, problematic analyses with possible intra-isotope variability can be detected, even if this is not obvious from the descriptive and predictive statistics alone.
+Sensitivity runs (outlined in Schobben, Kienhuis and Polerecky, in prep) show that the Cook's D outlier detection method performs best when compared to other methods. Hence, problematic analyses with possible intra-analysis isotope variability can be detected, even if this is not obvious from the descriptive and predictive statistics alone.
 
 
-## Inter-isotope variability
+## Inter-analysis isotope variability
 
-The `diag_R()` is designed in resemblance to the `stat_R()` function, and thus also includes an option to check the external structure of the the $m$-series of analyses usually comprised in a SIMS-based study (i.e. severeal sputter pits). For this purpose, again an `.nest` argument is included to define the grouping structure of individual analysis. In the simulated example this could refer to the different scenarios of isotopic variations ("ideal", "symmetric", and "asymmetric" isotope variance). And, this then provides a test for inter-isotope variability (among the sputter pits), and can be conducted as follows.
+The `diag_R()` is designed in resemblance to the `stat_R()` function, and thus also includes an option to check the external structure of the the $m$-series of analyses usually comprised in a SIMS-based study (i.e. severeal sputter pits). For this purpose, again an `.nest` argument is included to define the grouping structure of individual analysis. In the simulated example this could refer to the different scenarios of isotopic variations ("ideal", "symmetric", and "asymmetric" isotope variance). And, this then provides a test for inter-analysis isotope variability (among the sputter pits), and can be conducted as follows.
 
 ```{r mlm}
 tb_ext <- diag_R(simu_IC, "13C", "12C", type.nm, spot.nm, .nest = type.nm, 
@@ -339,11 +344,11 @@ knitr::kable(
   tb_ext,
   escape = FALSE,
   digits = c(0, NA, 1, NA, 4, 0, 2, 4, 1, 0, 2),
-  fig.cap = " Summary of intra and inter-isotope variability tests."
+  fig.cap = " Summary of intra and inter-analysis isotope variability tests."
 )
 ```
 
-This test provides and approximation of the "grand mean" ($\bar{\bar{R}} = \frac{1}{m}\sum_{j =1}^{m}\bar{R}_j$) of the study $\hat{\bar{R}}$. If the substrate would be isotopically homogeneous across its surface, then each analysis would approach $\bar{\bar{R}}$. This can again be described by the ideal "homogeneous" model of Equation \@ref(eq:linmodR), where the $m$-series is viewed as one long analysis of $n$-measurements ($m\sum_{i=1}^{n}X_{i}^{a \mid b}$). Introduction of a nominal factorial that interacts with $\hat{R}$ can therefore again be used, but now to account for inter-isotope variability. The major difference of this approach is that in this case the levels are encoded to represent the $j$-th analysis of the $m$-series of analyses. Encoding of this nominal variable can in theory constitute as many analyses as needed, potentially creating excessive parameters when considered as a fix component. This grouping structure, that is of no particular interest, is therefore instead represented as a random effect. This introduces a second level in Equation \@ref(eq:linmodR), where each group ($j$-th analysis) can assume a different $\hat{R}$, that is, different $\bar{R}$ may exist among the various analysis.
+This test provides and approximation of the "grand mean" ($\bar{\bar{R}} = \frac{1}{m}\sum_{j =1}^{m}\bar{R}_j$) of the study $\hat{\bar{R}}$. If the substrate would be isotopically homogeneous across its surface, then each analysis would approach $\bar{\bar{R}}$. This can again be described by the ideal "homogeneous" model of Equation \@ref(eq:linmodR), where the $m$-series is viewed as one long analysis of $n$-measurements ($m\sum_{i=1}^{n}X_{i}^{a \mid b}$). Introduction of a nominal factorial that interacts with $\hat{R}$ can therefore again be used, but now to account for inter-analysis isotope variability. The major difference of this approach is that in this case the levels are encoded to represent the $j$-th analysis of the $m$-series of analyses. Encoding of this nominal variable can in theory constitute as many analyses as needed, potentially creating excessive parameters when considered as a fix component. This grouping structure, that is of no particular interest, is therefore instead represented as a random effect. This introduces a second level in Equation \@ref(eq:linmodR), where each group ($j$-th analysis) can assume a different $\hat{R}$, that is, different $\bar{R}$ may exist among the various analysis.
 
 \begin{equation}
  \text{level 1:} \quad \hat{X}_{ij}^b = \hat{R}_{j}X_{ij}^a +  e_{ij} \qquad \text{where} \quad  e_{ij} \sim N(0,\sigma^2)   
@@ -353,7 +358,7 @@ This test provides and approximation of the "grand mean" ($\bar{\bar{R}} = \frac
 \text{level 2:} \quad \hat{R}_{j} = \hat{\bar{R}} + u_{j} \qquad \text{where} \quad u_{j} \sim N(0, t^2) (\#eq:mlm)
 \end{equation}
 
-Coefficients for this mixed linear model are obtained by Restricted Maximum Likelihood (REML) optimization using the `lme()` function of the `nlme` package [@nlme]. The ratio of the obtained log-likelihood (i.e., maximized likelihood functions) for the restricted model and the unrestricted model, or likelihood-ratio test (LR), can the be applied to deduce the significance of including a random component in Equation \@ref(eq:linmodR). Here, a larger difference in the AIC ($\Delta AIC_{\bar{R}}$) and thus lower $p_{\bar{R}}$ indicates that the null model of no inter-isotope variability becomes less appropriate.
+Coefficients for this mixed linear model are obtained by Restricted Maximum Likelihood (REML) optimization using the `lme()` function of the `nlme` package [@nlme]. The ratio of the obtained log-likelihood (i.e., maximized likelihood functions) for the restricted model and the unrestricted model, or likelihood-ratio test (LR), can the be applied to deduce the significance of including a random component in Equation \@ref(eq:linmodR). Here, a larger difference in the AIC ($\Delta AIC_{\bar{R}}$) and thus lower $p_{\bar{R}}$ indicates that the null model of no inter-analysis isotope variability becomes less appropriate.
 
 
 # References

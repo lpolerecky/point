@@ -281,9 +281,9 @@ dens_point <- function (p, flag, IC, width, plot_outlier_labs) {
         palette = "YlOrRd",
         direction = 1,
         na.value = "transparent",
-        guide = FALSE
+        guide = "none"
       )
   }
   # alpha
-  p + scale_alpha_identity(guide = FALSE, limits = c(1e-5, 1))
+  p + scale_alpha_identity(guide = "none", limits = c(1e-5, 1))
 }

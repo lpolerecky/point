@@ -64,7 +64,7 @@ Example datatsets can be accessed as follows with the function `read_IC` (more i
 
 # Carry-out the routine point work-flow
 # Raw data containing 13C and 12C counts on carbonate
-tb_rw <- read_IC(point_example("2018-01-19-GLENDON"), hide = FALSE)
+tb_rw <- read_IC(point_example("2018-01-19-GLENDON"), meta = TRUE, hide = FALSE)
 
 # Vectors of isotope ratios 
 ion1 <-  c("13C", "12C 13C", "13C 14N", "12C 14N", "12C")

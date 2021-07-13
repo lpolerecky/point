@@ -43,3 +43,5 @@ num.mt,,meta,Mass#,,table,Detector trolley/position number
 M_PHD.mt,.M_PHD,meta,Max(mV),.chk_is,table,Mean PHD
 SD_PHD.mt,.SD_PHD,meta,SD,.chk_is,table,Standard deviation of PHD
 EMHV.mt,,meta,EMHV(V),.chk_is,table,Mean High Voltage
+execution,.execution,diagnostics,,,,
+flag,.flag,diagnostics,,,,

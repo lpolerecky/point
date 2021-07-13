@@ -4,7 +4,7 @@
 \alias{ICdir_chk}
 \title{Check if directory is suitable for point}
 \usage{
-ICdir_chk(directory, types = c(".is_txt", ".chk_is", ".stat"))
+ICdir_chk(directory, types = c("is_txt", "chk_is", "stat"))
 }
 \arguments{
 \item{directory}{A path or connection to a directory containing raw ion count

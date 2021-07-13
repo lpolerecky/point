@@ -40,26 +40,26 @@ read_IC <- function(directory, meta = FALSE, hide = TRUE){
     delim = "\t",
     skip = 1,
     col_types = "-dd",
-    col_select = c(file.nm, t.nm = X, N.rw = Y),
+    col_select = c("file.nm", t.nm = .data$X, N.rw = .data$Y),
     na = c("X", "Y"),
     id = "file.nm",
     .name_repair = "minimal"
     ) %>%
     tidyr::drop_na() %>%
-    mutate(file.nm = recode(file.nm, !!! set_names(names(ls_IC), ls_IC)))
+    mutate(file.nm = recode(.data$file.nm, !!! set_names(names(ls_IC), ls_IC)))
 
   # meta data names according to Cameca
   point_nms <- filter(
     point::names_cameca,
-    extension == ".is_txt",
-    use == "meta"
+    .data$extension == ".is_txt",
+    .data$use == "meta"
     )
   tb_meta <- point_lines(ls_IC, pattern = "B", sep = "\\=", id = "num.mt") %>%
     # meta data names
     rename(set_names(point_nms$cameca, nm = point_nms$point)) %>%
     mutate(
-      species.nm = stringr::str_extract(mass.mt, "(?<=\\().+?(?=\\))"),
-      tc.mt = readr::parse_number(tc.mt)
+      species.nm = stringr::str_extract(.data$mass.mt, "(?<=\\().+?(?=\\))"),
+      tc.mt = readr::parse_number(.data$tc.mt)
       )
 
   # vector of detector numbering
@@ -103,8 +103,8 @@ read_meta <- function(directory) {
   # vector of cameca variable names
   vc_meta <- filter(
     point::names_cameca,
-    extension == ".chk_is",
-    format == "line"
+    .data$extension == ".chk_is",
+    .data$format == "line"
     )
 
   # optics set-up
@@ -134,7 +134,7 @@ read_meta <- function(directory) {
     nudge_top = 1,
     nudge_tail = -3
     ) %>%
-    mutate(num.mt = readr::parse_number(num.mt))
+    mutate(num.mt = readr::parse_number(.data$num.mt))
 
   rename(tb_ll , any_of(set_names(vc_meta$cameca, nm = vc_meta$point))) %>%
     mutate(

@@ -80,7 +80,7 @@
 #'
 diag_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .method = "CooksD",
                    .reps = 1, .X = NULL, .N = NULL, .species = NULL,
-                   .t = NULL, .output = "inference", .label = NULL,
+                   .t = NULL, .output = "inference", .label = "none",
                    .meta = FALSE, .alpha_level = 0.05, .hyp = "none",
                    .plot = FALSE, .plot_type = "static", .plot_stat = NULL,
                    .plot_iso = FALSE,
@@ -96,6 +96,9 @@ diag_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .method = "CooksD",
     enquos(.X = .X, .N = .N, .species = .species, .t = .t),
     type = c("processed", "group")
     )
+
+  # Argument check
+  argument_check(.IC, args, "processed")
 
   # diagnostics variables
   diag_args <- list2(
@@ -164,9 +167,6 @@ diag_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .method = "CooksD",
   # Collapse repeated analysis
   if (.method != "IR") IC <- reduce_diag(IC, .output)
 
-  # Return metadata
-  if (.meta) IC <- fold(IC, type = ".mt",  meta = meta)
-
   # Plot data
   if (.plot) {
     if (.method != "IR") {
@@ -201,22 +201,24 @@ diag_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .method = "CooksD",
         "eval_diag",
         IC,
         .ion1 = .ion1,
-        .ion2 = .ion2,!!!gr_by,
+        .ion2 = .ion2,
+        !!! gr_by,
         .nest = enquo(.nest),
-        !!!args,
+        !!! args,
         .flag = parse_expr("flag"),
         .output = .output,
         .label = .label
       )
-      return(eval(eval_call))
+      IC <- eval(eval_call)
     }
     if (.method %in%
-        filter(point::names_diag, .data$inference == "external")$name) {
-      distinct(IC,!!!gr_by, .data$hyp)
+        filter(point::names_plot, .data$inference == "external")$name) {
+      IC <- distinct(IC, !!! gr_by, .data$hyp)
     }
-  } else {
-    return(IC)
   }
+  # Return metadata
+  if (.meta) IC <- fold(IC, type = ".mt",  meta = meta)
+  IC
 }
 
 # rerunning the diagnostics for several iterations
@@ -268,6 +270,7 @@ rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .args, .diag_args,
   list2(IC = aug, results = out)
 }
 
+# execute
 diag_R_exec <- function(.IC, .ion1, .ion2, ..., .args, .diag_args){
 
   # Grouping
@@ -342,8 +345,8 @@ all_args <- function(args, ion1, ion2, except = NULL, chr = TRUE) {
   args <- append(args_Xt, args_R)
   if (isTRUE(chr)) {
     vc_args <- sapply(args, as_name)
-    return(vc_args[!vc_args %in% except])
+    vc_args[!vc_args %in% except]
   } else {
-    return(args)
+    args
   }
 }

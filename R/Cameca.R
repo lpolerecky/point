@@ -34,21 +34,14 @@
 #' tibble for an augmentation of the original dataset.
 #' @export
 #' @examples
-#' # Use point_example() to access the examples bundled with this package
-#'
-#' # raw data containing 13C and 12C counts on carbonate
-#' tb_rw <- read_IC(point_example("2018-01-19-GLENDON"))
-#'
-#' # Processing raw ion count data
-#' tb_pr <- cor_IC(tb_rw)
-#'
 #' # Descriptive an predictive statistics for 13C/12C ratios (note .output
 #' # argument and remove zero count analysis)
-#' tb_R <- stat_R(tb_pr, "13C", "12C", file.nm, sample.nm, .output = "complete",
-#'                .zero = TRUE)
+#' tb_R <- stat_R(real_IC, "13C", "12C", file.nm, sample.nm,
+#'                .output = "complete", .zero = TRUE)
 #'
 #' # CAMECA style augmentation of ion count data for isotope ratios
-#' Cameca(tb_R, "13C", "12C", file.nm, .output = "flag")
+#' Cameca(tb_R, "13C", "12C", file.nm, .X = Xt.pr, .N = N.pr,
+#'        .species = species.nm, .t = t.nm, .output = "flag")
 Cameca <- function(.IC, .ion1, .ion2, ..., .X = NULL, .N = NULL, .species = NULL,
                    .t = NULL, .output = "complete", .alpha_level = 0.05,
                    .hyp = "none"){
@@ -57,12 +50,7 @@ Cameca <- function(.IC, .ion1, .ion2, ..., .X = NULL, .N = NULL, .species = NULL
   gr_by <- enquos(...)
 
   # Quoting the call (user-supplied expressions)
-  args <- inject_args(
-    .IC,
-    enquos(.X = .X, .N = .N, .species = .species, .t = .t),
-    type = c("processed", "group"),
-    check = FALSE
-    )
+  args <- enquos(.X = .X, .N = .N, .species = .species, .t = .t)
 
   # R quosures
   args <- list2(

@@ -58,7 +58,7 @@ library(tidyr) # tidyr data
 
 One example dataset is bundled with this package: *2018-01-19-GLENDON*.
 
-The dataset is generated with the *Cameca NanoSIMS 50L* at the Department of Earth Sciences at Utrecht University. The suffix *GLENDON* stands for glendonite an authigenic calcium carbonate seafloor precipitate. The analysed glendonite is of Jurassic and Cretaceous age strata in Spitsbergen and Siberia. An in-house reference (a belemnite rostra) is used to check repeatability/external reproducibility. Ion detection for 7 individual species was performed solely with electron multipliers (EM) with the main purpose of producing stable carbon isotope ratios (^13^C/^12^C). 
+The dataset is generated with the *Cameca NanoSIMS 50L* at the Department of Earth Sciences at Utrecht University. The suffix *GLENDON* stands for glendonite an authigenic calcium carbonate seafloor precipitate. The excerpt included here contains an in-house reference (a belemnite rostra) which was used to check repeatability/external reproducibility. Ion detection for 7 individual species was performed solely with electron multipliers (EM) with the main purpose of producing stable carbon isotope ratios (^13^C/^12^C). 
 
 The example directories can be accessed with the function `point_example()`.
 
@@ -77,8 +77,7 @@ point_example("2018-01-19-GLENDON")
 The function `read_IC()` takes a character string indicating the directory file name. It further enables selecting the extraction of associated metadata by setting the argument `meta = TRUE` (default), and this metadata can be include as an attribute with argument `hide = TRUE` (default) or as additional columns `hide = FALSE`. This has the added bonus that it provides consistency checks between metadata that generate easily interpretable warnings. 
 
 ```{r}
-tb_rw <- read_IC(point_example("2018-01-19-GLENDON"))
-tb_rw
+(tb_rw <- read_IC(point_example("2018-01-19-GLENDON"), meta = TRUE))
 ```
 
 This generates a tibble which includes;
@@ -135,20 +134,20 @@ In the case of FC usage for ion counting the metadate is complemented with;
 Alternatively, one can also only extract the metadata of an analysis to, e.g., assess machine performance over a sequence of analyses. For example, one can assess the Peak Height Distribution (PHD) over a series of analyses.  
 
 
-```{r PHDexample, fig.width=6, fig.height=6, fig.cap="The PHD with normalised units on the Y-axis approximated with the Polya-Aeppli density probability function with parameter $\\lambda$ and $p$ for the location and shape of the curve. These parameters can be calculated using the metadata variables mean_PHD (mean) and SD_PHD (variance), which are compiled by the read_meta function.", echo=FALSE}
+```{r PHDexample, fig.width=6, fig.height=3, fig.cap="The PHD with normalised units on the Y-axis approximated with the Polya-Aeppli density probability function with parameter $\\lambda$ and $p$ for the location and shape of the curve. These parameters can be calculated using the metadata variables mean_PHD (mean) and SD_PHD (variance), which are compiled by the read_meta function.", echo=FALSE}
 
 tb_mt <- read_meta(point_example("2018-01-19-GLENDON"))
 
 # The polya density distribution model to approximate PHD distributions
 # install.packages("polyaAeppli")
-tb_mt <- drop_na(tb_mt, mean_PHD.mt, SD_PHD.mt) %>% 
+tb_mt <- drop_na(tb_mt[[2]], M_PHD.mt, SD_PHD.mt) %>% 
   distinct(file.nm, .keep_all = TRUE) %>% 
-  filter(species.nm == "12C") %>%  # most high intensity counts
-  mutate(PHD = map(mean_PHD.mt,  ~as.integer(seq(0, 700, length = 100)))) %>%
+  filter(num.mt == 1) %>%  # most high intensity counts
+  mutate(PHD = map(M_PHD.mt,  ~as.integer(seq(0, 700, length = 100)))) %>%
   unnest(cols = c(PHD)) %>% 
   mutate(
-    lambda = (2 * mean_PHD.mt^2) / (SD_PHD.mt^2 + mean_PHD.mt),
-    prob = (SD_PHD.mt^2 - mean_PHD.mt) / (SD_PHD.mt^2 + mean_PHD.mt),
+    lambda = (2 * M_PHD.mt^2) / (SD_PHD.mt^2 + M_PHD.mt),
+    prob = (SD_PHD.mt^2 - M_PHD.mt) / (SD_PHD.mt^2 + M_PHD.mt),
     prob = if_else(prob < 0 | prob >= 1 , NA_real_, prob),
     ) %>% 
   drop_na(lambda, prob) %>% 

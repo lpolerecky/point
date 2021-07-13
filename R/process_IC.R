@@ -67,6 +67,9 @@ cor_IC <-function(.IC, ..., .N = NULL, .t = NULL, .bl_t = NULL,
   # Inject missing args
   args <- inject_args(.IC, args, type = c("raw", "group", "meta"))
 
+  # Argument check
+  argument_check(.IC, args, "raw")
+
   # New quosure
   N.pr <- quo_updt(args[[".N"]], post = "pr", update_post = TRUE)
 
@@ -235,9 +238,8 @@ quo_updt <- function(my_q, pre = NULL, post = NULL, update_post = FALSE){
 
 # if variables are not supplied, default to standard variables
 inject_args <- function(IC, args, type, check = TRUE) {
-  vars <- bind_rows(point::names_diag, point::names_cameca)
   # execute extraction procedure
-  purrr::imap(args, ~extract_defaults(.x, .y, vars, type, IC))
+  purrr::imap(args, ~extract_defaults(.x, .y, point::names_cameca, type, IC))
 }
 
 # supply custom variables
@@ -266,7 +268,7 @@ extract_defaults <- function(x, y, vars, type, IC) {
       .data$argument == y,
       .data$use %in% type,
       .data$point %in% colnames(IC)
-    )
+      )
     if (nrow(vars) != 0) {
       pull(vars, .data$point) %>%
         # caller environment would be similar to enquo()
@@ -313,4 +315,24 @@ cor_check <- function(parm, args, type) {
     } else {
       FALSE
     }
+}
+
+# check if arguments exist in data frame
+argument_check <- function(IC, args, type) {
+  # not NULL
+  arg_lgl <- purrr::map_lgl(args, ~{is.null(quo_get_expr(.x))})
+  pos_args <- args[!arg_lgl]
+  if (any(!sapply(pos_args, as_name) %in% colnames(IC))) {
+    stop("Tibble does not contain the supplied variables!", call. = FALSE)
+  }
+  neg_args <- args[arg_lgl]
+  # default names for missing argument (but not meta data)
+  vars <- filter(
+    point::names_cameca, .data$use %in% type,
+    .data$argument %in% names(neg_args)
+    ) %>%
+    pull(.data$point)
+  if (any(!vars %in% colnames(IC))) {
+    stop("Tibble does not contain the default variables!", call. = FALSE)
+  }
 }
