@@ -46,6 +46,9 @@ test_that("global environment object with similar name and misc. errors", {
   expect_equal(cor_IC(tb_rw, .N = N.rw), cor_IC(tb_rw))
   # Not a tibble
   expect_error(cor_IC(data.frame(x = 1:10)), "Ion count dataset should be a tibble object.")
+  # Missing variables
+  expect_error(cor_IC(select(tb_rw, - N.rw)), "Tibble does not contain the default variables!")
+  expect_error(cor_IC(tb_rw, .N = Xt), "Tibble does not contain the supplied variables!")
   # supply detector type
   expect_error(cor_IC(tb_rw, .bl_t = 200, .deadtime = 44), "Supply a variable or character string for the detector type to `.det`")
   # supply all variables for correction

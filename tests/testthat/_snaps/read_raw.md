@@ -1,7 +1,7 @@
 # Check change over time in read_IC
 
     Code
-      read_IC(path_point)
+      read_IC(point_example("2018-01-19-GLENDON"))
     Output
       # A tibble: 81,900 x 4
          file.nm                 t.nm  N.rw species.nm
@@ -21,7 +21,7 @@
 ---
 
     Code
-      read_meta(path_point)
+      read_meta(point_example("2018-01-19-GLENDON"))
     Output
       [[1]]
       # A tibble: 3 x 28
@@ -48,35 +48,5 @@
       4 2018-01-19-GLENDON_1_2      7     211.     42.8       0 
       5 2018-01-19-GLENDON_1_3      1     233.     38.8    2036.
       6 2018-01-19-GLENDON_1_3      7     218.      8.83      0 
-      
-
-# directory check
-
-    Code
-      ICdir_chk(point_example("2018-01-19-GLENDON"))
-    Output
-      $chk_is
-                                                                                                2018-01-19-GLENDON_1_1 
-      "/home/amandus/Documents/work/projects/code/point/inst/extdata/2018-01-19-GLENDON/2018-01-19-GLENDON_1_1.chk_is" 
-                                                                                                2018-01-19-GLENDON_1_2 
-      "/home/amandus/Documents/work/projects/code/point/inst/extdata/2018-01-19-GLENDON/2018-01-19-GLENDON_1_2.chk_is" 
-                                                                                                2018-01-19-GLENDON_1_3 
-      "/home/amandus/Documents/work/projects/code/point/inst/extdata/2018-01-19-GLENDON/2018-01-19-GLENDON_1_3.chk_is" 
-      
-      $is_txt
-                                                                                                2018-01-19-GLENDON_1_1 
-      "/home/amandus/Documents/work/projects/code/point/inst/extdata/2018-01-19-GLENDON/2018-01-19-GLENDON_1_1.is_txt" 
-                                                                                                2018-01-19-GLENDON_1_2 
-      "/home/amandus/Documents/work/projects/code/point/inst/extdata/2018-01-19-GLENDON/2018-01-19-GLENDON_1_2.is_txt" 
-                                                                                                2018-01-19-GLENDON_1_3 
-      "/home/amandus/Documents/work/projects/code/point/inst/extdata/2018-01-19-GLENDON/2018-01-19-GLENDON_1_3.is_txt" 
-      
-      $stat
-                                                                                              2018-01-19-GLENDON_1_1 
-      "/home/amandus/Documents/work/projects/code/point/inst/extdata/2018-01-19-GLENDON/2018-01-19-GLENDON_1_1.stat" 
-                                                                                              2018-01-19-GLENDON_1_2 
-      "/home/amandus/Documents/work/projects/code/point/inst/extdata/2018-01-19-GLENDON/2018-01-19-GLENDON_1_2.stat" 
-                                                                                              2018-01-19-GLENDON_1_3 
-      "/home/amandus/Documents/work/projects/code/point/inst/extdata/2018-01-19-GLENDON/2018-01-19-GLENDON_1_3.stat" 
       
 

@@ -1,7 +1,7 @@
 # consistency of precision estimates on internal dataset
 
     Code
-      stat_X(tb_pr, file.nm)
+      stat_X(real_IC, file.nm)
     Output
       # A tibble: 21 x 12
          file.nm         species.nm n_t.nm tot_N.pr M_Xt.pr S_Xt.pr RS_Xt.pr SeM_Xt.pr
@@ -22,7 +22,7 @@
 ---
 
     Code
-      stat_X(tb_pr, file.nm, .label = "latex")
+      stat_X(real_IC, file.nm, .label = "latex")
     Output
       # A tibble: 21 x 12
          file.nm  species.nm `$n$` `$N_{tot}$` `$\\bar{X}$` `$s_{X}$` `$\\epsilon_{X}~
@@ -44,7 +44,7 @@
 ---
 
     Code
-      stat_R(tb_pr, "13C", "12C", file.nm, .zero = TRUE)
+      stat_R(real_IC, "13C", "12C", file.nm, .zero = TRUE)
     Output
       # A tibble: 3 x 13
         file.nm       n_R_t.nm M_R_Xt.pr S_R_Xt.pr RS_R_Xt.pr SeM_R_Xt.pr RSeM_R_Xt.pr
@@ -59,7 +59,7 @@
 ---
 
     Code
-      stat_R(tb_pr, "13C", "12C", file.nm, .zero = TRUE, .label = "latex")
+      stat_R(real_IC, "13C", "12C", file.nm, .zero = TRUE, .label = "latex")
     Output
       # A tibble: 3 x 13
         file.nm       ratio.nm `$n$` `$\\bar{R}$` `$s_{R}$` `$\\epsilon_{R}$ (\\text{~
@@ -77,7 +77,18 @@
 ---
 
     Code
-      stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .nest = file.nm, .zero = TRUE)
+      stat_R(real_IC, "13C", "12C", sample.nm, file.nm, .nest = file.nm, .zero = TRUE,
+        .label = "latex", .stat = c("M", "RS"))
+    Output
+      # A tibble: 1 x 4
+        sample.nm     ratio.nm `$\\bar{\\bar{R}}~ `$\\epsilon_{\\bar{R}}$ (\\text{\\t~
+        <chr>         <chr>                 <dbl>                                <dbl>
+      1 Belemnite,In~ 13C/12C              0.0110                                 1.85
+
+---
+
+    Code
+      stat_R(real_IC, "13C", "12C", sample.nm, file.nm, .nest = file.nm, .zero = TRUE)
     Output
       # A tibble: 1 x 13
         sample.nm        n_R_t.nm M_R_M_Xt.pr S_R_M_Xt.pr RS_R_M_Xt.pr SeM_R_M_Xt.pr

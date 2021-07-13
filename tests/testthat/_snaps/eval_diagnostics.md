@@ -1,7 +1,8 @@
 # consistency of the evaluation of diagnostics on synthetic data
 
     Code
-      eval_diag(tb_dia, "13C", "12C", type.nm, spot.nm, .nest = type.nm)
+      eval_diag(tb_dia, "13C", "12C", type.nm, spot.nm, .nest = type.nm, .X = Xt.pr,
+        .N = N.pr, .species = species.nm, .t = t.nm)
     Output
       # A tibble: 9 x 11
         execution type.nm    spot.nm ratio.nm M_R_Xt.pr F_R_Xt.pr p_R_Xt.pr
