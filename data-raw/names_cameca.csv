@@ -1,0 +1,47 @@
+point,argument,use,cameca,extension,format,definition
+N.rw,.N,raw,Y,.is_txt,table,Raw ion count
+n.rw,,raw,,,,Number of observations
+N.pr,.N,processed,,,,Proccesed ion count
+Xt.pr,.X,processed,,,,Ion count rate
+species.nm,.species,group,Species,,,Ion species
+t.nm,.t,group,X,.is_txt,table,Time increment
+bl.nm,,group,,,,Block
+file.nm,,group,,,,File name
+bfield.mt,,meta,B,.is_txt,table,Magenetic Field ()
+rad.mt,,meta,R,.is_txt,table,Radius
+mass.mt,,meta,M,.is_txt,table,Species mass
+tc.mt,.bl_t,meta,Tc ,.is_txt,table,Blanking time
+sample.nm,,group,CAMECA \ ISOTOPES \ Sample,.chk_is,line,Sample name
+coord.mt,,meta,Stage Position,.chk_is,line,coordinates
+file_raw.mt,,meta,Raw data file,.chk_is,line,Raw data file
+bl_num.mt,,meta,Block number,.chk_is,line,Block number
+meas_bl.mt,,meta,Meas. per block,.chk_is,line,Meas. per block
+rejection.mt,,meta,Rejection(sigma),.chk_is,line,Rejection(sigma)
+slit.mt,,meta,Slit Preset,.chk_is,line,Slit Preset
+lens.mt,,meta,Lens Preset,.chk_is,line,Lens Preset
+presput.mt,,meta,Pre Sputtering Time (s),.chk_is,line,Pre Sputtering Time (s)
+rast_com.mt,,meta,Raster (um),.chk_is,line,Raster (um)
+frame.mt,,meta,Scanning On,.chk_is,line,Frame
+blank_rast.mt,,meta,Blanking,.chk_is,line,Blanking
+raster.mt,,meta,Raster,.chk_is,line,Raster
+tune.mt,,meta,Tuning Mode,.chk_is,line,Tuning Mode
+reg_mode.mt,,meta,Regulation Mode,.chk_is,line,Regulation Mode
+chk_frm.mt,,meta,Check every (fr.),.chk_is,line,Check every (fr.)
+sec_ion_cent.mt,,meta,Secondary Ion Beam Centering,.chk_is,line,Secondary Ion Beam Centering
+frame_sec_ion_cent.mt,,meta,during Acq,.chk_is,line,Centering on the n-th frame
+width_hor.mt,,meta,Width Horizontal(V),.chk_is,line,Width Horizontal(V)
+width_ver.mt,,meta,Vertical(V),.chk_is,line,Vertical(V)
+E0S_cent.mt,,meta,E0S Centering,.chk_is,line,E0S Centering
+width_V.mt,,meta,Width(V),.chk_is,line,Width(V)
+E0P_off.mt,,meta,E0P Offset (V),.chk_is,line,E0P Offset (V)
+prim_cur_start.mt,,meta,Primary Current before acq,.chk_is,line,Primary Current before acq
+prim_cur_after.mt,,meta,after acq,.chk_is,line,after acq
+FC_start.mt,,meta,FC Background before acq,.chk_is,line,FC Background before acq
+FC_after.mt,,meta,FC Background after acq,.chk_is,line,FC Background after acq
+det_type.mt,.det,meta,,,,Detector type (Faraday cup or electron multiplier)
+num.mt,,meta,Mass#,,table,Detector trolley/position number
+M_PHD.mt,.M_PHD,meta,Max(mV),.chk_is,table,Mean PHD
+SD_PHD.mt,.SD_PHD,meta,SD,.chk_is,table,Standard deviation of PHD
+EMHV.mt,,meta,EMHV(V),.chk_is,table,Mean High Voltage
+execution,.execution,diagnostics,,,,
+flag,.flag,diagnostics,,,,

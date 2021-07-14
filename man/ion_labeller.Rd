@@ -54,8 +54,8 @@ mass and subscripts for the index on the right.
 # plot some ion count data
 library(ggplot2)
 ggplot() +
-   geom_blank() +
-   ylab(ion_labeller("12C2-40Ca", "expr")) +
-   xlab(R_labeller("12C2-40Ca", "13C2-40Ca", "expr"))
+ geom_blank() +
+ ylab(ion_labeller("12C2-40Ca", "expr")) +
+ xlab(R_labeller("12C2-40Ca", "13C2-40Ca", "expr"))
 
 }

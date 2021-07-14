@@ -32,7 +32,9 @@ Imports:
     polyaAeppli (>= 2.0),
     MASS,
     scales (>= 1.1.1),
-    vdiffr
+    fs (>= 1.5.0),
+    vroom (>= 1.5.1),
+    stringi (>= 1.6.2)
 Suggests: 
     roxygen2,
     nortest,
@@ -40,6 +42,7 @@ Suggests:
     bookdown,
     rmarkdown,
     knitr,
+    vdiffr,
     testthat
 RoxygenNote: 7.1.1
 VignetteBuilder: knitr

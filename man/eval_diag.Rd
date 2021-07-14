@@ -18,8 +18,8 @@ eval_diag(
   .execution = NULL,
   .output = "inference",
   .tf = "ppt",
-  .label = NULL,
-  .meta = TRUE
+  .label = "none",
+  .meta = FALSE
 )
 }
 \arguments{
@@ -81,6 +81,7 @@ tb_dia <- diag_R(simu_IC, "13C", "12C", type.nm, spot.nm,
                  .output = "diagnostic")
 
 # Evaluate significance and effect of outliers based on Cook's D
-eval_diag(tb_dia, "13C", "12C", type.nm, spot.nm, .nest = type.nm)
+eval_diag(tb_dia, "13C", "12C", type.nm, spot.nm, .nest = type.nm,
+          .X = Xt.pr, .N = N.pr, .species = species.nm, .t = t.nm)
 
 }

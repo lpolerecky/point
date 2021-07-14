@@ -177,17 +177,22 @@ cor_DT(x, 44)
 For a convenient workflow the functions that correct for EM count biases are wrapped in the function `cor_IC()`. This function takes the [tibble](https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html) as loaded with the function `read_IC()` (see vignette [IC-read](IC-read.html)) and requires setting the following arguments: `N`, a variable for the raw ion count;`t`, a variable for the time increments; `Det` a character string or variable identifying the ion detection system: EM (`"EM"`) or FC (`"FC"`); `deadtime`, a numeric value for the deadtime in nanoseconds; and `thr_PHD`, a numeric value for the discriminator threshold.
 
 
-```{r}
+```{r, eval=FALSE}
 # Use point_example() to access the examples bundled with this package 
 
 # Carry-out the routine point workflow 
 
 # Carry-out the routine point workflow
 # Raw data containing 13C and 12C counts on carbonate
-tb_rw <- read_IC(point_example("2018-01-19-GLENDON"))
+tb_rw <- read_IC(point_example("2018-01-19-GLENDON"), meta = TRUE)
 
 # processing raw ion count data
 tb_pr <- cor_IC(tb_rw) 
+```
+
+
+```{r data, echo=FALSE}
+tb_pr <- point::real_IC
 ```
 
 
@@ -308,7 +313,7 @@ tb_dt <- predict_ionize(tb_pr, file.nm)
 ```{r ionR4, echo=FALSE, fig.width=4, fig.height=4, fig.cap="An extraction of the $l0$ and $\\epsilon_t$ components, by appliciation of Eq. \\@ref(eq:detr), and thereby yielding corrected none-isotope ion count ratios."}
 tb_cov <- cov_R(tb_dt, c("12C", "40Ca 16O"), file.nm, sample.nm)
 
-ggplot(tb_cov, aes(x = t.nm, y = Xt.l0.12C / Xt.l0.40Ca_16O)) +
+ggplot(tb_cov, aes(x = t.nm, y = Xt.l0.12C / Xt.l0.40Ca16O)) +
   geom_point(alpha = 0.1) +
   labs(y = R_labeller("12C", "40Ca 16O", "expr"), x = "t")
 ```

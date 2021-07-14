@@ -43,22 +43,24 @@
 #'                  .output = "diagnostic")
 #'
 #' # Evaluate significance and effect of outliers based on Cook's D
-#' eval_diag(tb_dia, "13C", "12C", type.nm, spot.nm, .nest = type.nm)
+#' eval_diag(tb_dia, "13C", "12C", type.nm, spot.nm, .nest = type.nm,
+#'           .X = Xt.pr, .N = N.pr, .species = species.nm, .t = t.nm)
 #'
 eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
                       .N = NULL, .species = NULL, .t = NULL, .flag = NULL,
                       .execution = NULL, .output = "inference",
-                      .tf = "ppt", .label = NULL, .meta = FALSE){
+                      .tf = "ppt", .label = "none", .meta = FALSE){
 
   # Quoting the call (user-supplied expressions)
   # Additional arguments
+  args <- enquos(.X = .X, .N = .N, .species = .species, .t = .t)
   args <- inject_args(
     .IC,
-    enquos(.X = .X, .N = .N, .species = .species, .t = .t,
-           .execution = .execution, .flag = .flag),
-    type = c("processed", "group", "diagnostics"),
+    enquos(.execution = .execution, .flag = .flag),
+    type = c("diagnostics"),
     check = FALSE
-    )
+    ) %>% append(args)
+
   # Grouping and nesting
   gr_by <- enquos(...) %>% append(args[[".execution"]])
   nest <- enquo(.nest)
@@ -96,14 +98,18 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
   IC_n <-  count(.IC, !! args[[".execution"]], !!! gr_by, !! args[[".flag"]])
 
   if (nrow(filter(IC_n , !! args[[".flag"]] == "divergent" & n >= 10)) == 0) {
-    stop("Number of flagged outliers in all samples is too small for a reliable diagnostic. Execution has stopped.",
-         call. = FALSE)
+    stop(
+      "Number of flagged outliers in all samples is too small for a reliable diagnostic. Execution has stopped.",
+       call. = FALSE
+      )
     }
 
   if (nrow(filter(IC_n, !! args[[".flag"]] == "divergent" & n >= 10)) <
       nrow(filter(IC_n, !! args[[".flag"]] == "divergent"))) {
-    warning("Number of flagged outliers in some samples is too small for a reliable diagnostic. Execution proceeded with remaining samples.",
-            call. = FALSE)
+    warning(
+      "Number of flagged outliers in some samples is too small for a reliable diagnostic. Execution proceeded with remaining samples.",
+      call. = FALSE
+      )
     # Otherwise filter data-set
     .IC <- filter(IC_n, !! args[[".flag"]] == "divergent" & n < 10)  %>%
       select(!!!gr_by) %>%
@@ -112,8 +118,10 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
 
   # Check for ionization efficiency trend
   if (any(between(pull(.IC , !! args[["chi2_N2"]]) , 0.9, 1.1))) {
-    warning("Linear ionization trend absent in some or all analyses; F statistic might be unreliable.",
-            call. = FALSE)
+    warning(
+      "Linear ionization trend absent in some or all analyses; F statistic might be unreliable.",
+      call. = FALSE
+      )
     }
 
   # Re-centre residuals along flag variable
@@ -135,7 +143,7 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
     IC_lm <- select(IC_lm, -c(!! args[["ratio"]] ,!! args[["M_R"]]))
   }
 
-  if (is_symbol(get_expr(nest))) {
+  if (is_symbol(quo_get_expr(nest))) {
     # Groups for nested data
     nest_args <- c(as_name(nest), as_name(args[[".execution"]]))
     nest_gr <- gr_by[!sapply(gr_by, as_name) %in% nest_args]
@@ -163,12 +171,12 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
 
     # Prepare output
     IC <- purrr::reduce(IC_mlm, left_join, by = sapply(nest_gr, as_name)) %>%
-      output_lm(args, model_args, .meta, .label, .output)
+      output_lm(args, model_args, nest, .meta, .label, .output)
     # Return metadata
     if (.meta) return(fold(IC, type = ".mt",  meta = meta)) else return(IC)
   }
   # Prepare output
-  IC <- output_lm(IC_lm, args, model_args, .meta, .label, .output)
+  IC <- output_lm(IC_lm, args, model_args, nest, .meta, .label, .output)
   # Return metadata
   if (.meta) fold(IC, type = ".mt",  meta = meta) else IC
 }
@@ -250,7 +258,7 @@ mlm_fun <- function(.IC, .gls, args, nest, .tf) {
 # output function
 #-------------------------------------------------------------------------------
 
-output_lm <- function(IC, args, model_args, meta = NULL, label = NULL, output) {
+output_lm <- function(IC, args, model_args, nest, meta = NULL, label = "none", output) {
 
   # Output transform
   trans_out <- function(IC, output) {
@@ -263,9 +271,9 @@ output_lm <- function(IC, args, model_args, meta = NULL, label = NULL, output) {
   IC <- eval(trans_out(IC, output))
 
   #Latex labels
-  if (! is.null(label)) {
+  if (label == "latex" | label == "webtex") {
     tb_model <- point::names_model
-    if (!is_symbol(get_expr(args[[".nest"]]))) {
+    if (is.null(quo_get_expr(nest))) {
       tb_model <- filter(point::names_model, .data$type == "Ratio method")
       # Model args augment
       model_args <- model_args[paste(tb_model$name, tb_model$derived, sep = "_")]
@@ -279,8 +287,7 @@ output_lm <- function(IC, args, model_args, meta = NULL, label = NULL, output) {
 
   # Return metadata
   if (!is.null(meta)) IC <- fold(IC, type = ".mt", meta = meta)
-
-  return(IC)
+  IC
   }
 
 # get coeffecients from mlm model

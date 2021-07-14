@@ -80,7 +80,7 @@ QSA_test <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL, .N = NULL,
     tidyr::unnest_wider(.data$lm_out) %>%
     tidyr::unnest(cols = .data$data)
 
-  if (is_symbol(get_expr(nest))) {
+  if (is_symbol(quo_get_expr(nest))) {
     # Groups for nested data
     nest_gr <- gr_by[!sapply(gr_by, as_name) %in% as_name(nest)]
 
@@ -101,8 +101,9 @@ QSA_test <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL, .N = NULL,
     ls_mlm <- lst(df_lm, df_mlm)
     # Prepare output
     purrr::reduce(ls_mlm, left_join, by = sapply(nest_gr, as_name))
-    }
-  df_lm
+  } else {
+    df_lm
+  }
 }
 
 
@@ -129,7 +130,7 @@ mlm_QSA <- function(.IC, .X1, .X2, .group = NULL) {
     label <- .group
   }
 
-  ls_QSA <- lst(
+  lst(
     # model params
     "alpha_{{label}}" :=
       pull(
@@ -154,7 +155,7 @@ mlm_QSA <- function(.IC, .X1, .X2, .group = NULL) {
     # modelled delta value
     "delta_{{label}}" := (min / max - 1) * 1e3
   )
-  return(ls_QSA)
+
 }
 
 

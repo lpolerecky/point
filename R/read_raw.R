@@ -1,8 +1,8 @@
 #' Read raw ion count data
 #'
 #' \code{read_IC()} is designed to obtain the numerical data associated with ion
-#' counts.
-#' \code{read_meta()} can be used to specifically retrieve the metadate
+#' counts and minimal set meta-data.
+#' \code{read_meta()} can be used to specifically retrieve the meta date
 #' associated with ion count data analysis, thereby loading specifications
 #' related to the optics, the primary and secondary ion beams, and the mass
 #' spectrometer.
@@ -16,7 +16,7 @@
 #'
 #' @param directory A path or connection to a directory containing raw ion count
 #' data txt  files.
-#' @param meta Logical indicating whether to include metadata.
+#' @param meta Logical indicating whether to include full meta-data.
 #' @param hide Logical indicating whether metadata is included as columns
 #'  \code{FALSE} or as an attribute of the tibble \code{TRUE}.
 #'
@@ -28,154 +28,128 @@
 #' # Use point_example() to access the examples bundled with this package
 #'
 #' read_IC(point_example("2018-01-19-GLENDON"))
-read_IC <- function(directory, meta = TRUE, hide = TRUE){
+read_IC <- function(directory, meta = FALSE, hide = TRUE){
 
   # List files
-  ls_IC <- read_validator(directory, "is_txt")[["ion"]]
-  n_max <- Inf
-
-  # Collecting metadata (stat file)
-  if (meta) {
-    # Check validity of directory for meta data extraction
-    read_validator(directory)
-    tb_meta <- read_meta(directory)
-    n_max <- group_by(tb_meta, .data$file.nm) %>%
-      summarise(n = sum(.data$n.rw)) %>%
-      pull(n) + length(unique(tb_meta$species.nm)) + 1
-    }
+  ls_IC <- read_validator(directory, "is_txt")[["is_txt"]]
 
   # Collecting measurement data
-  tb_rw <- purrr::map2_dfr(
+  tb_IC <- vroom::vroom(
     ls_IC,
-    n_max,
-    ~readr::read_tsv(
-      file.path(directory, .x),
-      col_names = c("t.nm", "N.rw"),
-      col_types = "-cc",
-      comment = "B",
-      skip = 1,
-      # n-max is n times number of species
-      n_max = .y
-       ),
-    .id = "file.nm"
+    comment = "B",
+    delim = "\t",
+    skip = 1,
+    col_types = "-dd",
+    col_select = c("file.nm", t.nm = .data$X, N.rw = .data$Y),
+    na = c("X", "Y"),
+    id = "file.nm",
+    .name_repair = "minimal"
     ) %>%
-    # Remove old column headers
-    filter(.data$t.nm != "X", .data$N.rw  != "Y") %>%
-    # Coercion to numeric values
+    tidyr::drop_na() %>%
+    mutate(file.nm = recode(.data$file.nm, !!! set_names(names(ls_IC), ls_IC)))
+
+  # meta data names according to Cameca
+  point_nms <- filter(
+    point::names_cameca,
+    .data$extension == ".is_txt",
+    .data$use == "meta"
+    )
+  tb_meta <- point_lines(ls_IC, pattern = "B", sep = "\\=", id = "num.mt") %>%
+    # meta data names
+    rename(set_names(point_nms$cameca, nm = point_nms$point)) %>%
     mutate(
-      t.nm = as.numeric(.data$t.nm),
-      N.rw = as.numeric(.data$N.rw)
+      species.nm = stringr::str_extract(.data$mass.mt, "(?<=\\().+?(?=\\))"),
+      tc.mt = readr::parse_number(.data$tc.mt)
       )
 
-  if (meta) {
-    # vector with species names
-    vc_species <- set_names(
-      unique(tb_meta$species.nm),
-      nm = 1:length(unique(tb_meta$species.nm))
-      )
+  # vector of detector numbering
+  vc_num <- rep(
+    # number of detectors
+    1:max(tb_meta$num.mt),
+    # number of measurements per detector per analysis
+    each = nrow(tb_IC) / length(ls_IC) / max(tb_meta$num.mt),
+    # total number of measurements
+    length.out = nrow(tb_IC)
+    )
 
-    # combine meta and ion count data
-    tb_rw <- group_by(tb_rw, .data$file.nm) %>%
-      mutate(
-        species.nm = ntile(n = length(unique(tb_meta$species.nm))),
-        species.nm = recode(.data$species.nm, !!! vc_species)
-        ) %>%
-      ungroup() %>%
-      left_join(tb_meta, by = c("file.nm", "species.nm")) %>%
-      # add block numbers
-      group_by(.data$file.nm, .data$species.nm) %>%
+  tb_rw <- left_join(
+    tibble::add_column(tb_IC, num.mt = vc_num),
+    tb_meta,
+    by = c("file.nm", "num.mt")
+    )
+
+  # extended meta-data
+  if (isTRUE(meta)) {
+    suppressMessages(
+    tb_rw <- list2(tb_rw, !!! read_meta(directory)) %>%
+      purrr::reduce(left_join)
+    )
+    # Add block number
+    tb_rw <- group_by(tb_rw, .data$file.nm, .data$species.nm)%>%
       mutate(bl.nm = ntile(n = .data$bl_num.mt)) %>%
       ungroup()
-
-
-    if (hide) tb_rw <- fold(tb_rw, type = ".mt")
-    tb_rw
   }
+  # hide meta-data
+  if (isTRUE(hide)) tb_rw <- fold(tb_rw, type = ".mt")
   tb_rw
-}
+  }
 #' @rdname read_IC
 #'
 #' @export
-read_meta <- function(directory){
+read_meta <- function(directory) {
 
   # Check validity of directory
   ls_files <- read_validator(directory)
-
-#-------------------------------------------------------------------------------
-# PHD
-#-------------------------------------------------------------------------------
-  # Number of PHD measurements
-  PHD_n <- row_scanner(directory, ls_files[["optic"]], "PHDc(?=\\(Mass)")
-
-  # List of function arguments for PHD
-  ls_PHD <- lst(a = ls_files[["optic"]], b = PHD_n, c = lapply(.data$b, length))
-
-  # Apply PHD reading function to list of arguments
-  tb_PHD <- purrr::pmap_dfr(
-    ls_PHD,
-    PHD_fun,
-    directory = directory,
-    .id = "file.nm"
+  # vector of cameca variable names
+  vc_meta <- filter(
+    point::names_cameca,
+    .data$extension == ".chk_is",
+    .data$format == "line"
     )
 
-#-------------------------------------------------------------------------------
-# Ions and MS setup metadata
-#-------------------------------------------------------------------------------
-  # Minimum of metadata rows
-  min_n <- row_scanner(directory, ls_files[["stat"]], "#") %>%
-    purrr::map_dbl(1)
+  # optics set-up
+  suppressMessages(
+    tb_ll <- purrr::map(
+      vc_meta$cameca,
+      ~point_lines(
+        ls_files[["chk_is"]],
+        pattern = .x,
+        sep = "\\:",
+        delim = "/"
+        )
+      ) %>%
+      purrr::compact() %>%
+      purrr::reduce(left_join) %>%
+      select(-id)
+  )
 
-  # Maximum of metadata rows
-  max_n <- row_scanner(directory, ls_files[["stat"]], "--") %>%
-    purrr::map_dbl(1)
+  # PHD
+  tb_phd <- point_table(
+    directory,
+    pattern_begin = "Phd Centering Results",
+    pattern_end = "E0S Centering Results",
+    file_type = "chk_is",
+    col_names = c("", "num.mt", "M_PHD.mt", "SD_PHD.mt", "EMHV.mt"),
+    col_types = "-cddd",
+    nudge_top = 1,
+    nudge_tail = -3
+    ) %>%
+    mutate(num.mt = readr::parse_number(.data$num.mt))
 
-  # List of function arguments for meta-data function
-  ls_ion <- lst(a = ls_files[["stat"]], b =  min_n, c = (max_n - 3) - .data$b)
-
-  # Apply PHD reading function to list of arguments
-  tb_ion <- purrr::pmap_dfr(
-    ls_ion,
-    ion_fun,
-    directory = directory,
-    .id = "file.nm"
-    )
-
-#-------------------------------------------------------------------------------
-# Primary and secondary ion beam metadata
-#-------------------------------------------------------------------------------
-  tb_meas <- purrr::map2_dfr(
-    ls_files[["optic"]],
-    min_n - 2,
-    meas_fun,
-    directory = directory,
-    .id = "file.nm"
-    )
-
-  # Cameca parameters
-   vc_params <- set_names(point::names_cameca$cameca, point::names_cameca$point)
-
-  # Select variables
-   tb_meas <- select(tb_meas , any_of(c("file.nm", "sample.nm", vc_params))) %>%
-     mutate(
-      across(contains(".mt"), readr::parse_guess),
-  # Add measurement number
+  rename(tb_ll , any_of(set_names(vc_meta$cameca, nm = vc_meta$point))) %>%
+    mutate(
+    # Add measurement number
       n.rw = .data$`bl_num.mt` * .data$`meas_bl.mt`,
-  # Add electron detector type (EM or FC)
+    # Add electron detector type (EM or FC)
       det_type.mt = if_else("FC_start.mt" %in% colnames(.), "FC", "EM")
-      )
-
-  # Combine PHD, MS and beam metadata (make list columns of metadata)
-  purrr::reduce2(
-      lst(tb_ion, tb_meas, tb_PHD),
-      lst(by = c("file.nm"), by = c("file.nm", "num.mt")),
-      left_join
-      )
+      ) %>%
+    list(tb_phd)
   }
 
 #' Get path to point example
 #'
 #' This function comes from the package `readr`, and has been modified to access
-#' the bundled datatsets in directory `inst/extdata` of `point`. This
+#' the bundled datasets in directory `inst/extdata` of `point`. This
 #' function make them easy to access. This function is modified from
 #' \code{\link[readr:readr_example]{readr_example}} of the package
 #' \code{\link[readr]{readr}}.
@@ -208,29 +182,28 @@ point_example <- function(path = NULL) {
 #' @examples
 #' ICdir_chk(point_example("2018-01-19-GLENDON"))
 ICdir_chk <-function(directory, types = c("is_txt", "chk_is", "stat")){
-  types <- paste0(".", types)
+  # types <- paste0(".", types)
   # check if type is valid
-  sys_types <- c(ion = ".is_txt", optic = ".chk_is", stat = ".stat")
+  sys_types <- c("is_txt", "chk_is", "stat") %>% set_names()
   if (any(types %in% sys_types)) {
     types <- sys_types[sys_types %in% types]
   } else {
-    stop("Unknown extension", call. = FALSE)
+    stop("Unknown extension.", call. = FALSE)
   }
   # directory name if also file name
   dir_nm <- stringr::str_extract(
     directory,
     stringr::str_c("(?<=", dirname(directory), "/)(.)+")
     )
-  ls_files <- list.files(directory) %>%
-    purrr::keep(function(x) stringr::str_detect(x, dir_nm))
-  ls_names <- unique(stringr::str_extract(ls_files, "(.)+(?=\\.)")) %>%
-    purrr::keep(function(x) stringr::str_detect(x, "(_[[:digit:]]+_[[:digit:]]+)$"))
-  ls_types <- purrr::cross(list(ls_names, types)) %>%
-    purrr::map_chr(purrr::lift(paste0)) %>%
+  ls_files <- fs::dir_ls(directory)%>%
+    purrr::keep(stringr::str_detect(., pattern = dir_nm))
+  ls_names <- unique(fs::path_ext_remove(fs::path_file(ls_files))) %>%
+    purrr::keep(stringr::str_detect(., pattern = "(_[:digit:]+_[:digit:]+)$"))
+  ls_types <- purrr::cross(list(directory, ls_names, ext = types)) %>%
+    purrr::map_chr(purrr::lift(fs::path)) %>%
     set_names(nm = rep(ls_names, n_distinct(types)))
 
-  if (length(ls_types > 0) &
-      all(ls_types %in% ls_files)) {
+  if (length(ls_types > 0) & all(ls_types %in% ls_files)) {
     # makes grouped list
     split(ls_types, rep(names(types), each = n_distinct(ls_names)))
   } else {
@@ -298,172 +271,196 @@ fold <- function(df, type, meta = NULL) {
 read_validator <- function(directory, types = c("is_txt", "chk_is", "stat")){
 
   # Argument class check
-  stopifnot(is.character(directory))
+  stopifnot(fs::is_dir(directory))
 
   # Check if directory contains files
-  if (is.null(length(dir(directory)))) {
-    stop("`directory` does not contain any files", call. = FALSE)
-    }
+  if (length(dir(directory)) == 0) {
+    stop("`directory` does not contain any files.", call. = FALSE)
+  }
   # Check if directory contains specified file types
   if (isFALSE(ICdir_chk(directory, types))) {
-    stop("`directory` does not contain required filetypes: .is_txt, .chk_is, and .stat",
-         call. = FALSE)
+    stop(
+      "`directory` does not contain required filetypes: .is_txt, .chk_is, and .stat.",
+      call. = FALSE
+      )
   } else {
     ls_files <- ICdir_chk(directory, types)
   }
-
   # Length check of txt files
-  if (any(missing_text(directory, ls_files[["ion"]]) == 0)) {
-    good <- missing_text(directory, ls_files[["ion"]]) > 0
-    ls_files[["ion"]] <- ls_files[["ion"]][good]
-    warning("empty txt file removed")
+  if ("is_txt" %in% types & any(missing_text(ls_files[["is_txt"]]) == 0)) {
+   good <- missing_text(ls_files[["is_txt"]]) > 0
+   ls_files[["is_txt"]] <- ls_files[["is_txt"]][good]
+   warning("Empty txt file removed.", call. = FALSE)
+  } else {
+  return(ls_files)
   }
-  # Column content check of txt files
-  if (any(missing_col(directory, ls_files[["ion"]]) == 0)) {
-    good <- missing_col(directory, ls_files[["ion"]])  > 0
-    ls_files[["ion"]] <- ls_files[["ion"]][good]
-    warning("txt file contains empty columns")
-  }
-  ls_files
-}
-
-# Function for obtaining xyz coordinates on analytical substrate
-str_loc <- function(loc) {
-  loc %>%
-    stringr::str_split("=+", simplify = TRUE) %>%
-    stringr::str_subset("[:digit:]") %>%
-    sapply(readr::parse_number) %>%
-    set_names(nm = c("x.mt", "y.mt", "z.mt"))
-}
-
-# Function to recreate count blocks
-fun_bl<- function(x, y) {
-  seq <- rep(1: unique(x), each = unique(y))
-  n <- row_number()
-  seq[n]
-}
-
-# Function for PHD data reading
-PHD_fun <- function(directory, a, b, c) {
-  readr::read_table2(
-    paste0(directory, "/", a),
-    col_names = c("num.mt", "mean_PHD.mt", "SD_PHD.mt", "EMHV.mt"),
-    col_types = "-cddd",
-    na = c(mapply(strrep,"X", 1:10, USE.NAMES = FALSE), "1.#R"),
-    skip = b[1] - 1,
-    n_max = c
-    ) %>%
-    mutate(num.mt = readr::parse_number(.data$num.mt))
-}
-
-# Function for mass spec data reading
-ion_fun <- function(directory, a, b, c) {
-  readr::read_table(
-    paste0(directory, "/", a),
-    skip = b,
-    n_max = c,
-    col_names = c("num.mt", "species.nm", "mass.mt", "det.mt", "tc.mt",
-                  "bfield.mt", "rad.mt"),
-    col_types = "icdcddd---"
-    )
-}
-
-# Function for optics reading
-meas_fun <- function(directory, a , b) {
-
-  NA_aliases <- c("N/A", "none", "None") %>%
-    set_names(rep(NA_character_, length(.)), nm = .)
-
-  tb_meas <- readr::read_table(
-    paste0(directory, "/", a),
-    col_names = "var",
-    col_types = "c",
-    n_max = b,
-    skip_empty_rows = FALSE
-    ) %>%
-    tidyr::drop_na()
-
-  name <- stringr::str_trim(stringr::str_split(pull(tb_meas, "var")[1],"\\:")[[1]][2])
-  date <- pull(tb_meas, "var")[2] %>% stringr::str_trim()
-  loc <- pull(tb_meas, "var")[3]  %>% stringr::str_trim()
-
-  tb_meas <- tidyr::separate_rows(
-    slice(tb_meas, 4:nrow(tb_meas)),
-    .data$var,
-    sep = "(/(?=[[:blank:]])) | ="
-    ) %>%
-    tidyr::separate(
-      .data$var,
-      into = c("var", "value"),
-      sep =":(?!\\\\)",
-      extra = "merge"
-    ) %>%
-    mutate(across(everything(), stringr::str_trim)) %>%
-    distinct(.data$var, .keep_all = TRUE) %>%
-    mutate(
-    # Find missing meta
-      value = recode(.data$value, !!! NA_aliases),
-      # Remove units behind numeric
-      value = stringr::str_replace(
-        .data$value,
-        "(?<=[:digit:]|[:blank:])(pA|um|%)|Det1=",
-        ""
-        )
-      ) %>%
-    tidyr::pivot_wider(
-      names_from = .data$var,
-      values_from = .data$value
-      ) %>%
-    # Separate extraction of date, location and name
-    mutate(
-      sample.nm = name,
-      date.mt = as.POSIXct(date, format = c("%d.%m.%y  %H:%M")),
-      !!!str_loc(loc)
-      ) %>%
-    mutate(across(everything(), stringr::str_trim))
 }
 
 # Row scanner determine number of rows
-row_scanner <- function(directory, ls, reg_expr, return_line = FALSE) {
-  lines <- purrr::map(ls, ~readr::read_lines(fs::path(directory, .)))
-  pos_line <- purrr::map(lines, stringr::str_which, reg_expr)
-  ext_line <- purrr::map2(lines, pos_line, ~.x[.y]) %>% purrr::flatten_chr()
+row_scanner <- function(ls, reg_expr, return_line = FALSE, nudge = 0) {
+  lines <- vroom::vroom_lines(ls)
+  pos_line <- stringr::str_which(lines, reg_expr)
+  ext_line <- lines[pos_line + nudge]
   # Are these lines identical ?
   if (isTRUE(return_line)) {
     if (length(unique(ext_line)) > 1) warning("Column names are not equal.", call. = FALSE)
-    list(pos_line, unique(ext_line))
+    col_nms <- stringr::str_split(unique(ext_line), "\\s(?=[[:upper:]])")[[1]] %>%
+      stringr::str_trim()
+    # empty strings
+    nm_empty <- stringi::stri_isempty(col_nms)
+    col_nms[nm_empty] <- paste0("X", seq_along(nm_empty))[nm_empty]
+    list(pos_line, col_nms)
   } else {
     pos_line
   }
 }
 
 # File validator. Empty text files
-missing_text <- function(directory, files){
-  purrr::map_dbl(
-    files,
-    ~{length(readr::read_lines(paste0(directory, "/", .), n_max = 2))}
-    )
-}
-
-# File validator. Empty columns
-missing_col <- function(directory, files){
-  purrr::map_dbl(
-    files,
-    ~{nrow(
-      readr::read_tsv(
-        paste0(directory, "/", .),
-        comment = "B",
-        skip = 1,
-        col_names = c("t", "N"),
-        col_types = "-cc",
-        n_max = 2
-        ) %>%
-        filter(t != "X", N  != "Y"))
-      }
-    )
+missing_text <- function(files) {
+  purrr::map_dbl(files, ~length(vroom::vroom_lines(.x, n_max = 2)))
 }
 
 write_attr <- function(df1, df2, nm) {
   attr(df1, nm) <- df2
   df1
+}
+
+# extracting single lines from cameca
+point_lines <- function(files, pattern = NULL, position = NULL, sep = NULL,
+                        delim = ":", id = "id") {
+  # names files
+  file_nms <- names(files)
+  # load all lines
+  files <- vroom::vroom_lines(files)
+
+  # filter lines
+  if (!is.null(position)) {
+    files <- files[position]
+  } else if (!is.null(pattern)) {
+    files <- stringr::str_subset(
+      files,
+      pattern =
+        stringr::str_c("\\Q", pattern, "\\E", "\\s*", sep, collapse = "|"))
+  }
+
+  # short cut if pattern does not exist
+  if (length(files) == 0) return(NULL)
+
+  # line numbers
+  file_num <- rep(1: (length(files) / length(file_nms)),  length(file_nms))
+
+  # update names if multiple rows are extracted per file
+  if (length(files) > length(file_nms)) {
+    file_nms <- rep(file_nms, each = length(files) %/% length(file_nms))
+  }
+
+    # replace NAs
+  files <- stringr::str_replace_all(files, pattern = "N\\/A", replacement = "NA")
+
+  # extract column names with regex
+  col_nms <- stringr::str_extract_all(
+    files,
+    paste0("(?<=(\\", delim, "|^))(.)+?(?=(", sep ,"|$))")
+    ) %>%
+    purrr::flatten_chr() %>%
+    stringr::str_trim() %>%
+    unique()
+
+  # regex column names
+  remove_reg <- stringr::str_c("(\\Q", col_nms, "\\E\\s*", sep, ")", collapse = "|")
+  # extract column names regex from output to obtain values
+  vals <- stringr::str_remove_all(files, paste0(remove_reg, "|\\s"))
+  # create appropriate value separators
+  separators <- rep(c(rep(delim, length(pattern) - 1), "\n"), length(files) / length(pattern))
+  vals <- stringr::str_c(vals, separators, collapse = "")
+  vroom::vroom(
+    I(vals),
+    delim = delim,
+    col_names = col_nms,
+    show_col_types = FALSE
+    ) %>%
+    tibble::add_column(
+      file.nm = file_nms,
+      {{id}} := file_num,
+      .before = col_nms[1]
+      )
+
+  }
+
+# function to read CAMECA output to validate point output
+point_table <- function(directory, pattern_begin, table_depth,
+                        pattern_end = NULL, file_type, col_types = NULL,
+                        col_names = NULL, nudge_top = 0, nudge_tail = 0,
+                        table_dups = NULL) {
+
+  ls_files <- ICdir_chk(directory,  file_type)
+  # top position table
+  min_row <- purrr::map(
+    ls_files[[file_type]],
+    ~row_scanner(
+      .x,
+      pattern_begin,
+      return_line = TRUE,
+      nudge = nudge_top
+      )
+    ) %>%
+    purrr::transpose()
+
+
+  # max depth of table
+  if (!is.null(pattern_end)) {
+    max_row <- purrr::map(
+      ls_files[[file_type]],
+      ~row_scanner(
+        .x,
+        pattern_end,
+        nudge = nudge_tail
+        )
+      )
+    table_row <- purrr::map2(max_row, min_row[[1]], ~ .x - .y + nudge_tail)
+  } else if (!is.null(table_depth)) {
+    table_row <- purrr::map(min_row[[1]], ~rep(table_depth, length(.x)))
+  }
+
+
+  # execute reading functions
+  purrr::imap_dfr(
+    ls_files[[file_type]],
+    ~read_point_table(
+      .x,
+      min_row[[1]][.y],
+      table_row[.y],
+      if (is.null(col_names)) min_row[[2]][[.y]] else col_names,
+      col_types,
+      table_dups
+      ),
+    .id = "file.nm"
+  )
+}
+
+# reading tables in Cameca meta data
+read_point_table <- function(files, skip_rows, table_rows, var_names,
+                              col_types, table_dups = NULL) {
+  # Na aliases
+  NA_aliases <- c(mapply(strrep,"X", 1:10, USE.NAMES = FALSE), "1.#R")
+  # execute read function
+  purrr::map2_dfr(
+    skip_rows,
+    table_rows,
+    ~vroom::vroom_fwf(
+      files,
+      vroom::fwf_empty(
+        files,
+        skip = .x + 1,
+        n = .y,
+        col_names = var_names
+      ),
+      skip = .x + 1,
+      n_max = .y,
+      col_types = col_types,
+      na = NA_aliases,
+      .name_repair = "minimal"
+    ),
+    .id = table_dups
+  )
 }

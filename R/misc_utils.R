@@ -38,11 +38,19 @@
 ion_labeller <- function(ion, label = "latex") {
 
   # Regex for element names
-  el_reg <- "((?<=[[:digit:]])[[:upper:]]{1})(?<=[[:upper:]])[[:lower:]]{1}|(?<=[[:digit:]])[[:upper:]]{1}"
+  el_reg <- stringr::regex("
+    ((?<=[:digit:])[:upper:]{1}?)(?<=[:upper:])[:lower:]{1}? # 2 letter element
+    |(?<=[:digit:])[:upper:]{1}? # 1 letter element
+    ", comments = TRUE)
   # Regex mass number
-  ms_reg <- "[[:digit:]]{1,2}(?=[[:upper:]])"
+  ms_reg <- stringr::regex("
+    [:digit:]{1,3}?(?=[:upper:]) # mass number in front of element
+    ", comments = TRUE)
   # Regex element index
-  st_reg <- "[[:digit:]]{1,2}(?=[[:punct:]])|[[:digit:]]{1,2}(?![[:graph:]])"
+  st_reg <- stringr::regex("
+    [:digit:]*?(?=[:punct:]) # index followed by punctuation
+    |[:digit:]*?(?![:graph:]) # index followed by anything but graphics
+    ", comments = TRUE)
 
   suppressWarnings(
   ls_chr <- purrr::map(
@@ -234,7 +242,6 @@ cov_R <- function(.IC, .ion, ..., .species = NULL, .t = NULL,
   obs_gr <- group_size(group_by(.IC, !!! gr_by, !! args[[".species"]]))
   # Distinct observation for time increments
   obs_t <- n_distinct(pull(.IC, !! args[[".t"]]))
-
   # Check if t steps is consistent with grouping otherwise create new ID
   if (any(obs_gr %% obs_t != 0)) {
     .IC <- group_by(.IC, !!! gr_by, !! args[[".species"]]) %>%
@@ -242,13 +249,16 @@ cov_R <- function(.IC, .ion, ..., .species = NULL, .t = NULL,
       ungroup()
     }
   # Remove white space in ion names and add underscore for polyatomic species
-  IC <- mutate(.IC, !! args[[".species"]] := ion_trim(!! args[[".species"]])) %>%
+  IC <- mutate(
+    .IC,
+    !! args[[".species"]] := ion_trim(!! args[[".species"]])
+    ) %>%
     filter(!! args[[".species"]] %in% sapply(.ion, ion_trim))
 
   # Wide format
   tidyr::pivot_wider(
     IC,
-    c(!!!gr_by, !! args[[".t"]], !! args[[".species"]]),
+    c(!!! gr_by, !! args[[".t"]], !! args[[".species"]]),
     names_from = !! args[[".species"]],
     values_from = -c(!!! gr_by, !! args[[".t"]], !! args[[".species"]]),
     names_sep = "."
@@ -299,12 +309,15 @@ zeroCt <- function(.IC, .ion1, .ion2, ..., .N = NULL, .species = NULL,
   # Remove white space in ion names and add underscore for polyatomic species
   .ion1 <- ion_trim(.ion1)
   .ion2 <- ion_trim(.ion2)
-  IC <- mutate(.IC, !! args[[".species"]] := ion_trim(!! args[[".species"]])) %>%
+  IC <- mutate(
+    .IC,
+    !! args[[".species"]] := ion_trim(!! args[[".species"]])
+    ) %>%
     filter(!! args[[".species"]] == .ion1 | !! args[[".species"]] == .ion2)
 
   if (isTRUE(.warn)) {
     if (any(pull(IC, !! args[[".N"]]) == 0)) {
-      warning("Zero counts present and removed", call. = FALSE)
+      warning("Zero counts present and removed.", call. = FALSE)
     }
   }
 
@@ -312,8 +325,10 @@ zeroCt <- function(.IC, .ion1, .ion2, ..., .N = NULL, .species = NULL,
     select(!!! gr_by)
   IC <- anti_join(IC, ls_0, by = sapply(gr_by, as_name))
   if(nrow(IC) == 0) {
-    warning("No more data left after removing zero count analysis.",
-            call. = FALSE)
+    warning(
+      "No more data left after removing zero count analysis.",
+      call. = FALSE
+      )
   }
   IC
 }
@@ -323,5 +338,5 @@ zeroCt <- function(.IC, .ion1, .ion2, ..., .N = NULL, .species = NULL,
 #-------------------------------------------------------------------------------
 # trim white space from ion character strings
 ion_trim <-function(ion) {
-  stringr::str_replace_all(stringr::str_trim(ion), "\\s", "_")
+  stringr::str_remove_all(stringr::str_trim(ion), "\\s")
 }

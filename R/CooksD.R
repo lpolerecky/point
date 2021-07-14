@@ -27,12 +27,7 @@ CooksD <- function(.IC, .ion1, .ion2, ..., .X = NULL, .N = NULL, .species = NULL
     }
 
   # Quoting the call (user-supplied expressions)
-  args <- inject_args(
-    .IC,
-    enquos(.X = .X, .N = .N, .species = .species, .t = .t),
-    type = c("processed", "group"),
-    check = FALSE
-    )
+  args <- enquos(.X = .X, .N = .N, .species = .species, .t = .t)
 
   # Rare isotope
   X1 <- quo_updt(args[[".X"]], post = .ion1) # count rate

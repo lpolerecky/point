@@ -13,7 +13,8 @@ stat_X(
   .species = NULL,
   .t = NULL,
   .stat = point::names_stat_X$name,
-  .label = NULL,
+  .label = "none",
+  .meta = FALSE,
   .output = "sum"
 )
 
@@ -28,7 +29,7 @@ stat_R(
   .species = NULL,
   .t = NULL,
   .stat = point::names_stat_R$name,
-  .label = NULL,
+  .label = "none",
   .output = "sum",
   .zero = FALSE
 )
@@ -58,6 +59,9 @@ transformations).}
 \item{.label}{A character string indicating whether variable names are latex
 (\code{"latex"}) or webtex (\code{"webtex"}) compatible. Will be extended in
 the future \code{default = NULL}.}
+
+\item{.meta}{Logical whether to preserve the metadata as an attribute
+(defaults to TRUE).}
 
 \item{.output}{A character string for output as summary statistics ("sum");
 statistics only ("stat"); and statistics with the original data ("complete")
@@ -99,7 +103,7 @@ functions see \code{vignette("IC-precision", package = "point")}.
 # Use point_example() to access the examples bundled with this package
 
 # raw data containing 13C and 12C counts on carbonate
-tb_rw <- read_IC(point_example("2018-01-19-GLENDON"))
+tb_rw <- read_IC(point_example("2018-01-19-GLENDON"), meta = TRUE)
 
 # Processing raw ion count data
 tb_pr <- cor_IC(tb_rw)

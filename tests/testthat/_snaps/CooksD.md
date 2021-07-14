@@ -1,15 +1,16 @@
 # consistency of residual diagnostics on internal dataset
 
     Code
-      CooksD(tb_R, "13C", "12C", file.nm, .output = "flag")
+      CooksD(tb_R, "13C", "12C", file.nm, .X = Xt.pr, .N = N.pr, .species = species.nm,
+        .t = t.nm, .output = "flag")
     Output
       # A tibble: 11,700 x 5
          file.nm                 t.nm hat_Xt.pr.13C     CooksD flag     
          <chr>                  <dbl>         <dbl>      <dbl> <fct>    
-       1 2018-01-19-GLENDON_1_1  0.54          379. 0.000112   confluent
+       1 2018-01-19-GLENDON_1_1  0.54          378. 0.000112   confluent
        2 2018-01-19-GLENDON_1_1  1.08          376. 0.000322   confluent
-       3 2018-01-19-GLENDON_1_1  1.62          381. 0.0000564  confluent
-       4 2018-01-19-GLENDON_1_1  2.16          376. 0.0000218  confluent
+       3 2018-01-19-GLENDON_1_1  1.62          380. 0.0000564  confluent
+       4 2018-01-19-GLENDON_1_1  2.16          375. 0.0000218  confluent
        5 2018-01-19-GLENDON_1_1  2.7           383. 0.00000647 confluent
        6 2018-01-19-GLENDON_1_1  3.24          381. 0.0000349  confluent
        7 2018-01-19-GLENDON_1_1  3.78          382. 0.0000415  confluent
@@ -21,15 +22,16 @@
 ---
 
     Code
-      Rm(tb_R, "13C", "12C", file.nm, .output = "flag")
+      Rm(tb_R, "13C", "12C", file.nm, .X = Xt.pr, .N = N.pr, .species = species.nm,
+        .t = t.nm, .output = "flag")
     Output
       # A tibble: 11,700 x 5
          file.nm                 t.nm hat_Xt.pr.13C  studE flag     
          <chr>                  <dbl>         <dbl>  <dbl> <fct>    
-       1 2018-01-19-GLENDON_1_1  0.54          379. -0.623 confluent
+       1 2018-01-19-GLENDON_1_1  0.54          378. -0.623 confluent
        2 2018-01-19-GLENDON_1_1  1.08          376. -1.06  confluent
-       3 2018-01-19-GLENDON_1_1  1.62          381.  0.441 confluent
-       4 2018-01-19-GLENDON_1_1  2.16          376. -0.276 confluent
+       3 2018-01-19-GLENDON_1_1  1.62          380.  0.441 confluent
+       4 2018-01-19-GLENDON_1_1  2.16          375. -0.276 confluent
        5 2018-01-19-GLENDON_1_1  2.7           383. -0.149 confluent
        6 2018-01-19-GLENDON_1_1  3.24          381. -0.347 confluent
        7 2018-01-19-GLENDON_1_1  3.78          382. -0.378 confluent
@@ -41,15 +43,16 @@
 ---
 
     Code
-      CV(tb_R, "13C", "12C", file.nm, .output = "flag")
+      CV(tb_R, "13C", "12C", file.nm, .X = Xt.pr, .N = N.pr, .species = species.nm,
+        .t = t.nm, .output = "flag")
     Output
       # A tibble: 11,700 x 5
          file.nm                 t.nm hat_Xt.pr.13C  studE flag     
          <chr>                  <dbl>         <dbl>  <dbl> <fct>    
-       1 2018-01-19-GLENDON_1_1  0.54          379. -0.623 confluent
+       1 2018-01-19-GLENDON_1_1  0.54          378. -0.623 confluent
        2 2018-01-19-GLENDON_1_1  1.08          376. -1.06  confluent
-       3 2018-01-19-GLENDON_1_1  1.62          381.  0.441 confluent
-       4 2018-01-19-GLENDON_1_1  2.16          376. -0.276 confluent
+       3 2018-01-19-GLENDON_1_1  1.62          380.  0.441 confluent
+       4 2018-01-19-GLENDON_1_1  2.16          375. -0.276 confluent
        5 2018-01-19-GLENDON_1_1  2.7           383. -0.149 confluent
        6 2018-01-19-GLENDON_1_1  3.24          381. -0.347 confluent
        7 2018-01-19-GLENDON_1_1  3.78          382. -0.378 confluent
@@ -61,7 +64,8 @@
 ---
 
     Code
-      QQ(tb_R, "13C", "12C", file.nm, .output = "flag")
+      QQ(tb_R, "13C", "12C", file.nm, .X = Xt.pr, .N = N.pr, .species = species.nm,
+        .t = t.nm, .output = "flag")
     Output
       # A tibble: 11,700 x 8
          file.nm                 t.nm    RQ    TQ    QE hat_RQ hat_e_RQ flag     
@@ -81,7 +85,8 @@
 ---
 
     Code
-      norm_E(tb_R, "13C", "12C", file.nm, .output = "flag")
+      norm_E(tb_R, "13C", "12C", file.nm, .X = Xt.pr, .N = N.pr, .species = species.nm,
+        .t = t.nm, .output = "flag")
     Output
       # A tibble: 11,700 x 6
          file.nm                 t.nm  studE   hat_Xi     CooksD flag     
@@ -101,7 +106,8 @@
 ---
 
     Code
-      IR(tb_R, "13C", "12C", file.nm, .output = "flag")
+      IR(tb_R, "13C", "12C", file.nm, .X = Xt.pr, .N = N.pr, .species = species.nm,
+        .t = t.nm, .output = "flag")
     Output
       # A tibble: 105 x 5
          file.nm                  lag       acf  e_acf flag     
