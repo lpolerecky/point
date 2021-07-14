@@ -17,7 +17,7 @@ test_that("consistency of precision estimates on internal dataset", {
   expect_snapshot(stat_R(real_IC, "13C", "12C", sample.nm, file.nm,
                          .nest = file.nm, .zero = TRUE))
   # Isotope ratio external precision and statistic selection
-  expect_snapshot(stat_R(tb_pr, "13C", "12C", sample.nm, file.nm,
+  expect_snapshot(stat_R(real_IC, "13C", "12C", sample.nm, file.nm,
                          .nest = file.nm, .zero = TRUE, .label = "latex",
                          .stat = c("M", "RS")))
 })
