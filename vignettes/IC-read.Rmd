@@ -5,6 +5,8 @@ output:
   bookdown::html_document2:
     toc: true
 bibliography: SIMS.bib
+pkgdown:
+  as_is: true
 vignette: >
   %\VignetteIndexEntry{IC-read}
   %\VignetteEngine{knitr::rmarkdown}
