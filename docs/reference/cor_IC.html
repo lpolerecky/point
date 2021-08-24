@@ -139,14 +139,14 @@
     <pre class="usage"><span class='fu'>cor_IC</span><span class='op'>(</span>
   <span class='va'>.IC</span>,
   <span class='va'>...</span>,
-  .N <span class='op'>=</span> <span class='va'>N.rw</span>,
-  .t <span class='op'>=</span> <span class='va'>t.nm</span>,
-  .bl_t <span class='op'>=</span> <span class='va'>tc.mt</span>,
-  .det <span class='op'>=</span> <span class='va'>det_type.mt</span>,
+  .N <span class='op'>=</span> <span class='cn'>NULL</span>,
+  .t <span class='op'>=</span> <span class='cn'>NULL</span>,
+  .bl_t <span class='op'>=</span> <span class='cn'>NULL</span>,
+  .det <span class='op'>=</span> <span class='cn'>NULL</span>,
   .deadtime <span class='op'>=</span> <span class='cn'>NULL</span>,
   .thr_PHD <span class='op'>=</span> <span class='cn'>NULL</span>,
-  .mean_PHD <span class='op'>=</span> <span class='va'>mean_PHD.mt</span>,
-  .SD_PHD <span class='op'>=</span> <span class='va'>SD_PHD.mt</span>,
+  .M_PHD <span class='op'>=</span> <span class='cn'>NULL</span>,
+  .SD_PHD <span class='op'>=</span> <span class='cn'>NULL</span>,
   .hide <span class='op'>=</span> <span class='cn'>TRUE</span>
 <span class='op'>)</span></pre>
 
@@ -171,7 +171,8 @@
     </tr>
     <tr>
       <th>.bl_t</th>
-      <td><p>A variable or numeric value for the blanking time</p></td>
+      <td><p>A variable or numeric value for the blanking time
+(in milliseconds).</p></td>
     </tr>
     <tr>
       <th>.det</th>
@@ -180,21 +181,22 @@ system ("EM" or "FC").</p></td>
     </tr>
     <tr>
       <th>.deadtime</th>
-      <td><p>A numeric value for the deadtime of the EM system.</p></td>
+      <td><p>A numeric value for the deadtime of the EM system with
+units nanoseconds.</p></td>
     </tr>
     <tr>
       <th>.thr_PHD</th>
       <td><p>A numeric value for the discriminator threshold of the EM.
-system</p></td>
+system.</p></td>
     </tr>
     <tr>
-      <th>.mean_PHD</th>
-      <td><p>A value or numeric valie of the mean PHD value</p></td>
+      <th>.M_PHD</th>
+      <td><p>A variable or numeric value of the mean PHD value.</p></td>
     </tr>
     <tr>
       <th>.SD_PHD</th>
-      <td><p>A value or numeric valie of standard deviation of the PHD
-value</p></td>
+      <td><p>A variable or numeric value of standard deviation of
+the PHD value.</p></td>
     </tr>
     <tr>
       <th>.hide</th>
@@ -232,20 +234,20 @@ certain voltage amplitude.</p>
 
 <span class='co'># Processing raw ion count data</span>
 <span class='fu'>cor_IC</span><span class='op'>(</span><span class='va'>tb_rw</span><span class='op'>)</span>
-</div><div class='output co'>#&gt; <span style='color: #949494;'># A tibble: 81,900 x 7</span><span>
-#&gt;    file.nm                 t.nm species.nm sample.nm         bl.nm  Xt.pr  N.pr
-#&gt;    </span><span style='color: #949494;font-style: italic;'>&lt;chr&gt;</span><span>                  </span><span style='color: #949494;font-style: italic;'>&lt;dbl&gt;</span><span> </span><span style='color: #949494;font-style: italic;'>&lt;chr&gt;</span><span>      </span><span style='color: #949494;font-style: italic;'>&lt;chr&gt;</span><span>             </span><span style='color: #949494;font-style: italic;'>&lt;int&gt;</span><span>  </span><span style='color: #949494;font-style: italic;'>&lt;dbl&gt;</span><span> </span><span style='color: #949494;font-style: italic;'>&lt;dbl&gt;</span><span>
-#&gt; </span><span style='color: #BCBCBC;'> 1</span><span> 2018-01-19-GLENDON_1_1  0.54 12C        Belemnite, Indium     1 </span><span style='text-decoration: underline;'>34</span><span>499. </span><span style='text-decoration: underline;'>12</span><span>040
-#&gt; </span><span style='color: #BCBCBC;'> 2</span><span> 2018-01-19-GLENDON_1_1  1.08 12C        Belemnite, Indium     1 </span><span style='text-decoration: underline;'>34</span><span>241. </span><span style='text-decoration: underline;'>11</span><span>950
-#&gt; </span><span style='color: #BCBCBC;'> 3</span><span> 2018-01-19-GLENDON_1_1  1.62 12C        Belemnite, Indium     1 </span><span style='text-decoration: underline;'>34</span><span>670. </span><span style='text-decoration: underline;'>12</span><span>100
-#&gt; </span><span style='color: #BCBCBC;'> 4</span><span> 2018-01-19-GLENDON_1_1  2.16 12C        Belemnite, Indium     1 </span><span style='text-decoration: underline;'>34</span><span>229. </span><span style='text-decoration: underline;'>11</span><span>946
-#&gt; </span><span style='color: #BCBCBC;'> 5</span><span> 2018-01-19-GLENDON_1_1  2.7  12C        Belemnite, Indium     1 </span><span style='text-decoration: underline;'>34</span><span>894. </span><span style='text-decoration: underline;'>12</span><span>178
-#&gt; </span><span style='color: #BCBCBC;'> 6</span><span> 2018-01-19-GLENDON_1_1  3.24 12C        Belemnite, Indium     1 </span><span style='text-decoration: underline;'>34</span><span>711. </span><span style='text-decoration: underline;'>12</span><span>114
-#&gt; </span><span style='color: #BCBCBC;'> 7</span><span> 2018-01-19-GLENDON_1_1  3.78 12C        Belemnite, Indium     1 </span><span style='text-decoration: underline;'>34</span><span>805. </span><span style='text-decoration: underline;'>12</span><span>147
-#&gt; </span><span style='color: #BCBCBC;'> 8</span><span> 2018-01-19-GLENDON_1_1  4.32 12C        Belemnite, Indium     1 </span><span style='text-decoration: underline;'>34</span><span>648. </span><span style='text-decoration: underline;'>12</span><span>092
-#&gt; </span><span style='color: #BCBCBC;'> 9</span><span> 2018-01-19-GLENDON_1_1  4.86 12C        Belemnite, Indium     1 </span><span style='text-decoration: underline;'>34</span><span>453. </span><span style='text-decoration: underline;'>12</span><span>024
-#&gt; </span><span style='color: #BCBCBC;'>10</span><span> 2018-01-19-GLENDON_1_1  5.4  12C        Belemnite, Indium     1 </span><span style='text-decoration: underline;'>34</span><span>513. </span><span style='text-decoration: underline;'>12</span><span>045
-#&gt; </span><span style='color: #949494;'># … with 81,890 more rows</span><span></div></span></pre>
+</div><div class='output co'>#&gt; <span style='color: #949494;'># A tibble: 81,900 × 5</span>
+#&gt;    file.nm                 t.nm species.nm  Xt.pr  N.pr
+#&gt;    <span style='color: #949494; font-style: italic;'>&lt;chr&gt;</span>                  <span style='color: #949494; font-style: italic;'>&lt;dbl&gt;</span> <span style='color: #949494; font-style: italic;'>&lt;chr&gt;</span>       <span style='color: #949494; font-style: italic;'>&lt;dbl&gt;</span> <span style='color: #949494; font-style: italic;'>&lt;dbl&gt;</span>
+#&gt; <span style='color: #BCBCBC;'> 1</span> 2018-01-19-GLENDON_1_1  0.54 12C        <span style='text-decoration: underline;'>34</span>460. <span style='text-decoration: underline;'>12</span>040
+#&gt; <span style='color: #BCBCBC;'> 2</span> 2018-01-19-GLENDON_1_1  1.08 12C        <span style='text-decoration: underline;'>34</span>202. <span style='text-decoration: underline;'>11</span>950
+#&gt; <span style='color: #BCBCBC;'> 3</span> 2018-01-19-GLENDON_1_1  1.62 12C        <span style='text-decoration: underline;'>34</span>632. <span style='text-decoration: underline;'>12</span>100
+#&gt; <span style='color: #BCBCBC;'> 4</span> 2018-01-19-GLENDON_1_1  2.16 12C        <span style='text-decoration: underline;'>34</span>191. <span style='text-decoration: underline;'>11</span>946
+#&gt; <span style='color: #BCBCBC;'> 5</span> 2018-01-19-GLENDON_1_1  2.7  12C        <span style='text-decoration: underline;'>34</span>855. <span style='text-decoration: underline;'>12</span>178
+#&gt; <span style='color: #BCBCBC;'> 6</span> 2018-01-19-GLENDON_1_1  3.24 12C        <span style='text-decoration: underline;'>34</span>672. <span style='text-decoration: underline;'>12</span>114
+#&gt; <span style='color: #BCBCBC;'> 7</span> 2018-01-19-GLENDON_1_1  3.78 12C        <span style='text-decoration: underline;'>34</span>766. <span style='text-decoration: underline;'>12</span>147
+#&gt; <span style='color: #BCBCBC;'> 8</span> 2018-01-19-GLENDON_1_1  4.32 12C        <span style='text-decoration: underline;'>34</span>609. <span style='text-decoration: underline;'>12</span>092
+#&gt; <span style='color: #BCBCBC;'> 9</span> 2018-01-19-GLENDON_1_1  4.86 12C        <span style='text-decoration: underline;'>34</span>414. <span style='text-decoration: underline;'>12</span>024
+#&gt; <span style='color: #BCBCBC;'>10</span> 2018-01-19-GLENDON_1_1  5.4  12C        <span style='text-decoration: underline;'>34</span>474. <span style='text-decoration: underline;'>12</span>045
+#&gt; <span style='color: #949494;'># … with 81,890 more rows</span></div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

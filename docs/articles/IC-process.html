@@ -81,18 +81,7 @@
 
       
 
-      </header><script src="IC-process_files/header-attrs-2.8/header-attrs.js"></script><script src="IC-process_files/jquery-1.11.3/jquery.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1">
-<link href="IC-process_files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet">
-<script src="IC-process_files/bootstrap-3.3.5/js/bootstrap.min.js"></script><script src="IC-process_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script><script src="IC-process_files/bootstrap-3.3.5/shim/respond.min.js"></script><style>h1 {font-size: 34px;}
-       h1.title {font-size: 38px;}
-       h2 {font-size: 30px;}
-       h3 {font-size: 24px;}
-       h4 {font-size: 18px;}
-       h5 {font-size: 16px;}
-       h6 {font-size: 12px;}
-       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
-       pre:not([class]) { background-color: white }</style>
-<script src="IC-process_files/navigation-1.1/tabsets.js"></script><div class="row">
+      </header><script src="IC-process_files/header-attrs-2.9/header-attrs.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>IC-process</h1>
@@ -106,13 +95,13 @@
 
     
     
-<div id="accuracy-of-ion-count-data" class="section level1" number="1">
+<div id="accuracy-of-ion-count-data" class="section level1">
 <h1 class="hasAnchor">
-<a href="#accuracy-of-ion-count-data" class="anchor"></a><span class="header-section-number">1</span> Accuracy of Ion Count Data</h1>
+<a href="#accuracy-of-ion-count-data" class="anchor"></a>Accuracy of Ion Count Data</h1>
 <p>Systematic bias can be introduced by the way secondary ions are generated from primary Cs<sup>+</sup> and O<sup>-</sup> bombardment on the analytical substrate as well as the <em>ion-to-electron conversion efficiency</em> in the detection systems. Commonly used detection system are electron multipliers (EM) for low secondary ion currents and Faraday cups (FC) for high secondary ion currents.</p>
-<div id="nomenclature" class="section level2" number="1.1">
+<div id="nomenclature" class="section level2">
 <h2 class="hasAnchor">
-<a href="#nomenclature" class="anchor"></a><span class="header-section-number">1.1</span> Nomenclature</h2>
+<a href="#nomenclature" class="anchor"></a>Nomenclature</h2>
 <ul>
 <li>Sample: sample of the true population</li>
 <li>Analytical substrate: physical sample measured during SIMS analysis</li>
@@ -132,54 +121,52 @@
 <span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va">polyaAeppli</span><span class="op">)</span> <span class="co"># Polya-Aeppli distribution</span>
 <span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://tibble.tidyverse.org/">tibble</a></span><span class="op">)</span> <span class="co"># tibble dataframe</span></code></pre></div>
 </div>
-<div id="systematic-bias-by-ion-detection-devices" class="section level2" number="1.2">
+<div id="systematic-bias-by-ion-detection-devices" class="section level2">
 <h2 class="hasAnchor">
-<a href="#systematic-bias-by-ion-detection-devices" class="anchor"></a><span class="header-section-number">1.2</span> Systematic bias by ion detection devices</h2>
-<div id="analytical-bias-introduced-by-electron-multipliers" class="section level3" number="1.2.1">
+<a href="#systematic-bias-by-ion-detection-devices" class="anchor"></a>Systematic bias by ion detection devices</h2>
+<div id="analytical-bias-introduced-by-electron-multipliers" class="section level3">
 <h3 class="hasAnchor">
-<a href="#analytical-bias-introduced-by-electron-multipliers" class="anchor"></a><span class="header-section-number">1.2.1</span> Analytical bias introduced by electron multipliers</h3>
+<a href="#analytical-bias-introduced-by-electron-multipliers" class="anchor"></a>Analytical bias introduced by electron multipliers</h3>
 <p>The EM gain is a measure of the electron output current relative to the ion input and the amplification after ion-to-electron conversion. In this process an incident secondary ion triggers the generation of an electron at the first dynode (conversion dynode) of the EM channel; in turn, the resultant secondary electron strikes a consecutive dynode thereby amplifying the signal, where the latter process of secondary electron amplification is repeated multiple times (for the <em>Cameca NanoSIMS 50L</em> this generally results in a gain of <span class="math inline">\(10^8\)</span> electrons).</p>
 <div class="figure">
-<span id="fig:EMdevice"></span>
 <img src="EM-channel.png" alt="Graphic representation of the EM ion detection device" width="80%"><p class="caption">
-Figure 1.1: Graphic representation of the EM ion detection device
+Graphic representation of the EM ion detection device
 </p>
 </div>
-<p>After this phase of successive cascading charge amplification, the signal is converted to voltage (the EM high voltage, or EMHV; see Fig. <a href="#fig:EMdevice">1.1</a>), where the voltage is proportional to the EM gain. This last conversion depends on the age of the EM and the EMHV is usually increased with successive age to preserve ion-to-electron efficiency at a suitable sensitivity.</p>
-<div id="electron-multiplier-yield" class="section level4" number="1.2.1.1">
+<p>After this phase of successive cascading charge amplification, the signal is converted to voltage (the EM high voltage, or EMHV; see Fig. @ref(fig:EMdevice)), where the voltage is proportional to the EM gain. This last conversion depends on the age of the EM and the EMHV is usually increased with successive age to preserve ion-to-electron efficiency at a suitable sensitivity.</p>
+<div id="electron-multiplier-yield" class="section level4">
 <h4 class="hasAnchor">
-<a href="#electron-multiplier-yield" class="anchor"></a><span class="header-section-number">1.2.1.1</span> Electron Multiplier Yield</h4>
+<a href="#electron-multiplier-yield" class="anchor"></a>Electron Multiplier Yield</h4>
 <p>The amplitude of EM secondary electron output to EMHV conversion follows the so-called Peak Height Distribution (PHD). In tuning the EM detection system, the EM secondary electron output to EMHV conversion is optimized so that the probability of an electron output to have a certain EMHV is higher than a pre-defined threshold. This discriminator threshold is set to filter-out the background noise (typically 5<span class="math inline">\(\,\)</span>ct<span class="math inline">\(\,\)</span>s<sup>-</sup>). However the discriminator threshold will inevitably also cut-off part of the genuine EM secondary electron output <span class="citation">(Slodzian et al. 2001)</span>.</p>
 <div class="figure">
-<span id="fig:PHDcurve"></span>
-<img src="IC-process_files/figure-html/PHDcurve-1.png" alt="An example of a typical PHD distribution. The effect of the discriminator threshold on the EM Yield is examplified by the shaded area underneath the probability density function, which would pertain to the probability of an EM output to be larger than the threshold" width="672"><p class="caption">
-Figure 1.2: An example of a typical PHD distribution. The effect of the discriminator threshold on the EM Yield is examplified by the shaded area underneath the probability density function, which would pertain to the probability of an EM output to be larger than the threshold
+<img src="IC-process_files/figure-html/PHDcurve-1.png" alt="An example of a typical PHD distribution. The effect of the discriminator threshold on the EM Yield is examplified by the shaded area underneath the probability density function, which would pertain to the probability of an EM output to be larger than the threshold" width="700"><p class="caption">
+An example of a typical PHD distribution. The effect of the discriminator threshold on the EM Yield is examplified by the shaded area underneath the probability density function, which would pertain to the probability of an EM output to be larger than the threshold
 </p>
 </div>
-<p>This causes the true EM Yield <span class="math inline">\(Y_{EM}\)</span> to be smaller than 100% (see Fig. <a href="#fig:PHDcurve">1.2</a>). The PHD distribution adheres to the following principles:</p>
+<p>This causes the true EM Yield <span class="math inline">\(Y_{EM}\)</span> to be smaller than 100% (see Fig. @ref(fig:PHDcurve)). The PHD distribution adheres to the following principles:</p>
 <ol style="list-style-type: decimal">
 <li>Poisson statistics can account for the random processes involved in the initial generation of secondary ions (coupled to incident ions at the first dynode) and for each stage of successive multiplication by secondary electron generation at subsequent dynodes along the EM channel.</li>
 <li>A geometric distribution describes the success of amplification at each dynode, which is independent and with identical probabilities at each dynode.</li>
 <li>Successive stages of electron amplification results in a compounding of these random processes, but the shape of the PHD converges after the fourth or fifth stage of amplification <span class="citation">(Dietz and Hanrahan 1978)</span>.</li>
 </ol>
 <p>Given the previous points, the probability of the whole amplification process can be gauged by taking a geometric compounded Poisson (or Polya-Aeppli) random variable <span class="citation">(Dietz 1970; Dietz and Hanrahan 1978)</span>, which can be described by the following equation:</p>
-<p><span class="math display" id="eq:PolyaAeppli">\[\begin{equation}
+<p><span class="math display">\[\begin{equation}
 
   P(x;\lambda, p) \; = \; \text{Pr}(X = x) \; =\\
    \begin{cases}
      e^{-\lambda}, &amp; \text{if } x = 0 \\ 
      e^{-\lambda}\sum_{n=1}^{y}{\frac{\lambda^n}{n!}}\binom{y-1}{n-1}p^{\lambda-n}(1-p)^n, &amp; \text{if } x = 1,2,... \\
    \end{cases}
-  \tag{1.1}
+  (\#eq:PolyaAeppli)
 
 \end{equation}\]</span></p>
 <p>where <span class="math inline">\(\lambda\)</span> and <span class="math inline">\(p\)</span> determine, respectively, the location and the shape of the Polya-Aeppli probability distribution, see <span class="citation">Burden (2014)</span> for a full derivation of this equation and the associated parameters. Note, that the discriminator threshold causes <span class="math inline">\(x &gt; 0\)</span>. Furthermore, if <span class="math inline">\(p\)</span> = 0, the Polya-Aeppli probability distribution simplifies to a Poisson distribution.</p>
 <p>The discriminator threshold value, the mean and variance of the measured PHD, can be used to calculate the probability that of successful ion-to-electron conversions before the analysis. This provides a means to get an accurate estimate of the true EM Yield (<span class="math inline">\(Y_{EM}\)</span>).</p>
 <p>Th function <code>cor_yield</code> calculates the yield with a given mean (<code>mean_PHD</code>), standard deviation (<code>SD_PHD</code>), and threshold value for the PHD, and makes use of the package <code>pPolyaAeppli</code> <span class="citation">(Burden 2014)</span>.</p>
 <p>The <span class="math inline">\(Y_{EM}\)</span> can then be used to calculate the corrected counts and count rates.</p>
-<p><span class="math display" id="eq:Yield">\[\begin{equation}
+<p><span class="math display">\[\begin{equation}
   X_{i}^* = \frac{X_i }{Y_{EM}} 
-  \tag{1.2}
+  (\#eq:Yield)
 \end{equation}\]</span></p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># original count rate of a chemical species</span>
@@ -189,13 +176,13 @@ Figure 1.2: An example of a typical PHD distribution. The effect of the discrimi
 <span class="co">#&gt; [1] 30007.95</span></code></pre></div>
 <p>The shape of the PHD distribution changes with the age of the EM but its deleterious effect on secondary ion-to-electron conversion can be alleviated by changing the EMHV. Tools for the assessment of EM deterioration is dealt with in a subsequent section.</p>
 </div>
-<div id="dead-time" class="section level4" number="1.2.1.2">
+<div id="dead-time" class="section level4">
 <h4 class="hasAnchor">
-<a href="#dead-time" class="anchor"></a><span class="header-section-number">1.2.1.2</span> Dead time</h4>
+<a href="#dead-time" class="anchor"></a>Dead time</h4>
 <p>Another bias introduced by EM ion detection devices is the time associated for recovery after an ion hits the first dynode. During the intermediate time, a second ion arriving at the same time can then not be recorded because of the electronic paralysis of the EM. Although this dead time (<span class="math inline">\(t_{ns}\)</span>) is small (<span class="math inline">\(44\,\)</span>ns), high count frequencies can cause the cumulate effect of this re-occurring phenomenon to become significant for the final count numbers. The count rates can be corrected by the following equation:</p>
-<p><span class="math display" id="eq:Dead">\[\begin{equation}
+<p><span class="math display">\[\begin{equation}
   X_{i}^{*} = \frac{X_i}{1- X_i  \times t_{ns} \times 10^9}
-  \tag{1.3}
+  (\#eq:Dead)
 \end{equation}\]</span></p>
 <p>The function <code>cor_DT</code> is implemented to correct for this systematic bias of EM devices.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
@@ -210,7 +197,7 @@ Figure 1.2: An example of a typical PHD distribution. The effect of the discrimi
 
 <span class="co"># Carry-out the routine point workflow</span>
 <span class="co"># Raw data containing 13C and 12C counts on carbonate</span>
-<span class="va">tb_rw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_IC.html">read_IC</a></span><span class="op">(</span><span class="fu"><a href="../reference/point_example.html">point_example</a></span><span class="op">(</span><span class="st">"2018-01-19-GLENDON"</span><span class="op">)</span><span class="op">)</span>
+<span class="va">tb_rw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_IC.html">read_IC</a></span><span class="op">(</span><span class="fu"><a href="../reference/point_example.html">point_example</a></span><span class="op">(</span><span class="st">"2018-01-19-GLENDON"</span><span class="op">)</span>, meta <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
 
 <span class="co"># processing raw ion count data</span>
 <span class="va">tb_pr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cor_IC.html">cor_IC</a></span><span class="op">(</span><span class="va">tb_rw</span><span class="op">)</span> </code></pre></div>
@@ -220,9 +207,9 @@ Figure 1.2: An example of a typical PHD distribution. The effect of the discrimi
 <!-- , where $f$ is 0.5 based on Poisson statistics, BTU has been shown to vary among matrices. At this stage it is hard assess what $K$ could have been. -->
 </div>
 </div>
-<div id="analytical-bias-introduced-by-faraday-cups" class="section level3" number="1.2.2">
+<div id="analytical-bias-introduced-by-faraday-cups" class="section level3">
 <h3 class="hasAnchor">
-<a href="#analytical-bias-introduced-by-faraday-cups" class="anchor"></a><span class="header-section-number">1.2.2</span> Analytical bias introduced by Faraday Cups</h3>
+<a href="#analytical-bias-introduced-by-faraday-cups" class="anchor"></a>Analytical bias introduced by Faraday Cups</h3>
 <p>To be included in the future.</p>
 <!-- ## SIMS isotope calibration -->
 <!-- Calibration of SIMS isotope measurements .. a twofold; 1) it enables inter-laboratory comparison .. 2) it corrects for isotope fractionation caused during secondary ion production and possibly ... (instrumental mass fractionation).  -->
@@ -233,56 +220,52 @@ Figure 1.2: An example of a typical PHD distribution. The effect of the discrimi
 <!-- $$ s_{\delta_{\bar{x}}} = \sqrt{\left( \frac{ s_{\bar{x}_{R}} } { \bar{x}_R } \right)^2 + \left( \frac{ s_{\bar{x}_{R_{std}}}  } { \bar{x}_{R_{std}} } \right)^2 + \left( \frac{ s_{\delta_{std}} } { \delta_{std} +1000 } \right)^2} $$ -->
 </div>
 </div>
-<div id="systematic-bias-by-ionization-yield-fluctuations" class="section level2" number="1.3">
+<div id="systematic-bias-by-ionization-yield-fluctuations" class="section level2">
 <h2 class="hasAnchor">
-<a href="#systematic-bias-by-ionization-yield-fluctuations" class="anchor"></a><span class="header-section-number">1.3</span> Systematic bias by ionization yield fluctuations</h2>
-<p>In contrast to EM yield, ionization yield defines the efficiency whereby secondary ions are generated per incident primary ion. The probability whereby the primary beam produced secondary ions depends strongly on properties of the substrate (matrix effects) and the evolving sputter pit as well as the machine settings, such as the beam type (Cs<sup>+</sup> and O<sup>-</sup>) and sample charging. The latter effect of sample charge build-up combined with the deepening of the sputter pit are connected to large systematic biases seen in the count rates of individual ions (see Fig. <a href="#fig:ionR1">1.3</a>) throughout a single analysis <span class="citation">(Fitzsimons, Harte, and Clark 2000)</span>.</p>
+<a href="#systematic-bias-by-ionization-yield-fluctuations" class="anchor"></a>Systematic bias by ionization yield fluctuations</h2>
+<p>In contrast to EM yield, ionization yield defines the efficiency whereby secondary ions are generated per incident primary ion. The probability whereby the primary beam produced secondary ions depends strongly on properties of the substrate (matrix effects) and the evolving sputter pit as well as the machine settings, such as the beam type (Cs<sup>+</sup> and O<sup>-</sup>) and sample charging. The latter effect of sample charge build-up combined with the deepening of the sputter pit are connected to large systematic biases seen in the count rates of individual ions (see Fig. @ref(fig:ionR1)) throughout a single analysis <span class="citation">(Fitzsimons, Harte, and Clark 2000)</span>.</p>
 <div class="figure">
-<span id="fig:ionR1"></span>
 <img src="IC-process_files/figure-html/ionR1-1.png" alt="Changes in the ionization potential examplified by single ion monotonic trends in count rates over subsequent measurements of a single analysis with the NanoSIMS Cameca50L." width="768"><p class="caption">
-Figure 1.3: Changes in the ionization potential examplified by single ion monotonic trends in count rates over subsequent measurements of a single analysis with the NanoSIMS Cameca50L.
+Changes in the ionization potential examplified by single ion monotonic trends in count rates over subsequent measurements of a single analysis with the NanoSIMS Cameca50L.
 </p>
 </div>
-<p>The systematic changes induced by ionization differences in count rate affect modulate count rates for both isotopes of the same equally (see Fig. <a href="#fig:ionR1">1.3</a>). From the <em>the formula for exact propagation of error</em> <span class="citation">(Ku 1966)</span> it can further be deduced that the error of co-variate ratios, such as for isotope ratios (<span class="math inline">\(R\)</span>), will effectively be dampened by the co-variate term in the equation (see vignette <a href="IC-precision.html">IC-precision</a>) and <span class="citation">Fitzsimons, Harte, and Clark (2000)</span>. However, this is not the case for none-isotope ion ratios and so their propagated error is also largely an effect of this systematic variance induced by ionization trends (see Fig. <a href="#fig:ionR2">1.4</a>).</p>
+<p>The systematic changes induced by ionization differences in count rate affect modulate count rates for both isotopes of the same equally (see Fig. @ref(fig:ionR1)). From the <em>the formula for exact propagation of error</em> <span class="citation">(Ku 1966)</span> it can further be deduced that the error of co-variate ratios, such as for isotope ratios (<span class="math inline">\(R\)</span>), will effectively be dampened by the co-variate term in the equation (see vignette <a href="IC-precision.html">IC-precision</a>) and <span class="citation">Fitzsimons, Harte, and Clark (2000)</span>. However, this is not the case for none-isotope ion ratios and so their propagated error is also largely an effect of this systematic variance induced by ionization trends (see Fig. @ref(fig:ionR2)).</p>
 <div class="figure">
-<span id="fig:ionR2"></span>
 <img src="IC-process_files/figure-html/ionR2-1.png" alt="Changes in the ratios of none-isotope and isotope ratios compared." width="768"><p class="caption">
-Figure 1.4: Changes in the ratios of none-isotope and isotope ratios compared.
+Changes in the ratios of none-isotope and isotope ratios compared.
 </p>
 </div>
-<p>Upon plotting the count rate ratios against time (Fig. <a href="#fig:ionR2">1.4</a>), it becomes apparent that the none-isotope ratios are affected by monotonic trends over the duration of the analysis. This effect reflects the differential ionization potentials and trajectories of secondary beam stabilization over the analysis (as explained above; Fig. <a href="#fig:ionR1">1.3</a>).</p>
-<p><span class="math display" id="eq:components">\[\begin{equation}
+<p>Upon plotting the count rate ratios against time (Fig. @ref(fig:ionR2)), it becomes apparent that the none-isotope ratios are affected by monotonic trends over the duration of the analysis. This effect reflects the differential ionization potentials and trajectories of secondary beam stabilization over the analysis (as explained above; Fig. @ref(fig:ionR1)).</p>
+<p><span class="math display">\[\begin{equation}
   y_t = l_0 + T_t + P_t + \epsilon_t 
-  \tag{1.4} 
+  (\#eq:components) 
 \end{equation}\]</span></p>
-<p>Time-series can be decomposed in several components (Eq. <a href="#eq:components">(1.4)</a>); the base level or mean of the time series; <span class="math inline">\(l0\)</span>, a structural trend component <span class="math inline">\(T_t\)</span> which change dependent on the time increment, a cyclical component <span class="math inline">\(P_t\)</span> and a noise component <span class="math inline">\(\epsilon_t\)</span>. Structural trends of a variable (i.e. count rates of species <span class="math inline">\(X_i^a\)</span>) based on the independent variable time (i.e. <span class="math inline">\(n\)</span>- series of measurements) can be described with regression analysis with the simplest implementation presented by the linear regression model:</p>
-<p><span class="math display" id="eq:linreg">\[\begin{equation}
+<p>Time-series can be decomposed in several components (Eq. @ref(eq:components)); the base level or mean of the time series; <span class="math inline">\(l0\)</span>, a structural trend component <span class="math inline">\(T_t\)</span> which change dependent on the time increment, a cyclical component <span class="math inline">\(P_t\)</span> and a noise component <span class="math inline">\(\epsilon_t\)</span>. Structural trends of a variable (i.e. count rates of species <span class="math inline">\(X_i^a\)</span>) based on the independent variable time (i.e. <span class="math inline">\(n\)</span>- series of measurements) can be described with regression analysis with the simplest implementation presented by the linear regression model:</p>
+<p><span class="math display">\[\begin{equation}
   \hat{y}_t = \beta_0 + \beta_1x_t + \epsilon_t
-  \tag{1.5}
+  (\#eq:linreg)
 \end{equation}\]</span></p>
-<p>The General Additive Model (GAM) is an extension of this model with addition of a smoothing function replacing the linear term of the previous function (Eq <a href="#eq:linreg">(1.5)</a>:</p>
-<p><span class="math display" id="eq:GAM">\[\begin{equation}
+<p>The General Additive Model (GAM) is an extension of this model with addition of a smoothing function replacing the linear term of the previous function (Eq @ref(eq:linreg):</p>
+<p><span class="math display">\[\begin{equation}
   \hat{y}_t = \beta_0 + f(x_1) + \epsilon_t
-  \tag{1.6}
+  (\#eq:GAM)
 \end{equation}\]</span></p>
 <p>The function <code><a href="../reference/predict_ionize.html">predict_ionize()</a></code> provides a convenient implementation of GAM from the package <code>mgcv</code>, which has the function <code>s()</code>, to define the smooth in the function <code>gam()</code>. The protocol implemented assures effective bandwidth selection based on goodness of fit measured with a penalized information criterion. With the knowledge that ionization is represented as global trend, this allows for subtraction of the model fit from the actual count rate data to allow for a more accurate assessment of the <span class="math inline">\(l0\)</span> as well as the random component <span class="math inline">\(\epsilon_t\)</span> informing about the precision unbiased by a large systematic offset.</p>
-<p><span class="math display" id="eq:detr">\[\begin{equation}
+<p><span class="math display">\[\begin{equation}
   X_i^a* = \bar{\hat{X}}^a + (X_i^a - \hat{X}_i^a)
-  \tag{1.7}
+  (\#eq:detr)
 \end{equation}\]</span></p>
 <p>The <code>point</code> package provides additional diagnostic tools to assess whether the model represents an under- or over-fit on the data (see vignette <a href="IC-diagnostics.html">IC-diagnostics</a>).</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">tb_dt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict_ionize.html">predict_ionize</a></span><span class="op">(</span><span class="va">tb_pr</span>, <span class="va">file.nm</span><span class="op">)</span></code></pre></div>
 <div class="figure">
-<span id="fig:ionR3"></span>
 <img src="IC-process_files/figure-html/ionR3-1.png" alt="GAM predicted model fit (dashed black line) to single ion count rates and median count rate (solid blue line)." width="768"><p class="caption">
-Figure 1.5: GAM predicted model fit (dashed black line) to single ion count rates and median count rate (solid blue line).
+GAM predicted model fit (dashed black line) to single ion count rates and median count rate (solid blue line).
 </p>
 </div>
 <div class="figure">
-<span id="fig:ionR4"></span>
 <img src="IC-process_files/figure-html/ionR4-1.png" alt="An extraction of the $l0$ and $\epsilon_t$ components, by appliciation of Eq. \@ref(eq:detr), and thereby yielding corrected none-isotope ion count ratios." width="384"><p class="caption">
-Figure 1.6: An extraction of the <span class="math inline">\(l0\)</span> and <span class="math inline">\(\epsilon_t\)</span> components, by appliciation of Eq. <a href="#eq:detr">(1.7)</a>, and thereby yielding corrected none-isotope ion count ratios.
+An extraction of the <span class="math inline">\(l0\)</span> and <span class="math inline">\(\epsilon_t\)</span> components, by appliciation of Eq. @ref(eq:detr), and thereby yielding corrected none-isotope ion count ratios.
 </p>
 </div>
 <!-- ## Assessors of analytical drift -->

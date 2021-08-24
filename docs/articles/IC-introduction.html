@@ -81,18 +81,7 @@
 
       
 
-      </header><script src="IC-introduction_files/header-attrs-2.8/header-attrs.js"></script><script src="IC-introduction_files/jquery-1.11.3/jquery.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1">
-<link href="IC-introduction_files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet">
-<script src="IC-introduction_files/bootstrap-3.3.5/js/bootstrap.min.js"></script><script src="IC-introduction_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script><script src="IC-introduction_files/bootstrap-3.3.5/shim/respond.min.js"></script><style>h1 {font-size: 34px;}
-       h1.title {font-size: 38px;}
-       h2 {font-size: 30px;}
-       h3 {font-size: 24px;}
-       h4 {font-size: 18px;}
-       h5 {font-size: 16px;}
-       h6 {font-size: 12px;}
-       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
-       pre:not([class]) { background-color: white }</style>
-<script src="IC-introduction_files/navigation-1.1/tabsets.js"></script><div class="row">
+      </header><script src="IC-introduction_files/header-attrs-2.9/header-attrs.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>IC-introduction</h1>
@@ -106,14 +95,14 @@
 
     
     
-<div id="introduction-to-point" class="section level1" number="1">
+<div id="introduction-to-point" class="section level1">
 <h1 class="hasAnchor">
-<a href="#introduction-to-point" class="anchor"></a><span class="header-section-number">1</span> Introduction to point</h1>
+<a href="#introduction-to-point" class="anchor"></a>Introduction to point</h1>
 <p>The large imprecision in secondary ion generation during Secondary Ion Mass Spectrometry (SIMS) analyses, and associated registration of ion counts with the detection devices, requires the generation of large quantities of data in order to suppress the uncertainty associated with the final output value. This would be the case either with single ion abundances or isotope ratios, and causes the accumulation of large datasets and numerous files. Additional meta-data files record machine-specific settings, e.g., regarding the optics, beam stability and mass spectrometer of, e.g., a <em>Cameca NanoSIMS 50L</em> <span class="citation">(Slodzian et al. 1992)</span> for my studies, that vary depending on the type of analyses or environmental conditions. And, although, the default software of the instrument (e.g. Cameca<sup>TM</sup> software <span class="citation">(Cameca)</span>) can do all of this data accumulation and transformation, there are certain benefits in getting more control on those actions, which are hidden away in the code of the commercial software. Foremost, it enables controlling ion count corrections related to systematic biases which are linked to the detection systems. Furthermore, more control on the data analysis allows sub-setting or collating of analyses to calculate either internal or external precision of the study. Perhaps the most powerful aspect of the greater freedom associated with the usage of point is the performance of diagnostics that evaluate the internal consistency of the ion count ratios. These diagnostics can inform about factors that are normally not easily detectable, such as, heterogeneity of the sampled surface or instability of the instrument during individual runs. All of these features are in discussed in detail in the accompanying vignettes, whereas this vignette will only delve into the basics of the work-flow.</p>
 </div>
-<div id="nomenclature" class="section level1" number="2">
+<div id="nomenclature" class="section level1">
 <h1 class="hasAnchor">
-<a href="#nomenclature" class="anchor"></a><span class="header-section-number">2</span> Nomenclature</h1>
+<a href="#nomenclature" class="anchor"></a>Nomenclature</h1>
 <p>Concise terminology is required when discussing pulsed ion count data to prevent ambiguity surrounding for instance the usage of terms such as the analytical substrate (the rock or biological sample), machine set-up and instrument performance as well as conventions associated with statistics. It would become easy to mix-up terms, as, for instance, sample can refer to the physical sample analysed during a study, but sample can also relate to the set of individual objects collected during a statistical analysis, as such we refer henceforward to analytical substrate when discussing the former. The levels at which ion counts are detected and accumulated during a study can be another source of confusion, where we have the single instance of an ion hitting the detector, or the event. However, in order to get an idea of the abundance of a certain chemical species, we need of course a suite of these events which then together constitute a single measurement. So, the measurement (<span class="math inline">\(N_i\)</span>) would the minimal level at which the machine starts recording and generating data output. Due to the fundamental imprecision of pulsed ion count measurements, it is necessary to record a whole collection, or series, of these measurements in order to limit the uncertainty surrounding our abundance estimate of the chemical species. In other words, we want to know how well our sample (i.e., the statistical sample) approximates the true population mean (<span class="math inline">\(\mu\)</span>). This accumulation of measurements, or <span class="math inline">\(n\)</span>-series of measurements, is then collectively referred to as an analysis (or <span class="math inline">\(N_{(i)} = M_j\)</span>). A study, on for instance the carbon isotope composition of a carbonate rock, would not only rely on one such analysis, but would compare a suite of analyses across its surface, or even between different specimens. This is then referred to as a study, or <span class="math inline">\(m\)</span>-series of analyses <span class="math inline">\(M_{(j)}\)</span>.</p>
 <p>To summarise:</p>
 <ul>
@@ -130,9 +119,9 @@
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va">point</span><span class="op">)</span> <span class="co"># load package</span></code></pre></div>
 </div>
-<div id="the-point-workflow" class="section level1" number="3">
+<div id="the-point-workflow" class="section level1">
 <h1 class="hasAnchor">
-<a href="#the-point-workflow" class="anchor"></a><span class="header-section-number">3</span> The point workflow</h1>
+<a href="#the-point-workflow" class="anchor"></a>The point workflow</h1>
 <p>The most basic work-flow consists of three steps:</p>
 <ol style="list-style-type: decimal">
 <li>Loading the machine generated raw ion counts and collating them into a dataframe (<a href="https://tibble.tidyverse.org/">tibble</a>) with the function <code><a href="../reference/read_IC.html">read_IC()</a></code>.</li>

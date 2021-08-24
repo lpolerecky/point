@@ -41,8 +41,8 @@
 
 <meta property="og:title" content="Read raw ion count data — read_IC" />
 <meta property="og:description" content="read_IC() is designed to obtain the numerical data associated with ion
-counts.
-read_meta() can be used to specifically retrieve the metadate
+counts and minimal set meta-data.
+read_meta() can be used to specifically retrieve the meta date
 associated with ion count data analysis, thereby loading specifications
 related to the optics, the primary and secondary ion beams, and the mass
 spectrometer." />
@@ -139,14 +139,14 @@ spectrometer." />
 
     <div class="ref-description">
     <p><code>read_IC()</code> is designed to obtain the numerical data associated with ion
-counts.
-<code>read_meta()</code> can be used to specifically retrieve the metadate
+counts and minimal set meta-data.
+<code>read_meta()</code> can be used to specifically retrieve the meta date
 associated with ion count data analysis, thereby loading specifications
 related to the optics, the primary and secondary ion beams, and the mass
 spectrometer.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>read_IC</span><span class='op'>(</span><span class='va'>directory</span>, meta <span class='op'>=</span> <span class='cn'>TRUE</span>, hide <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+    <pre class="usage"><span class='fu'>read_IC</span><span class='op'>(</span><span class='va'>directory</span>, meta <span class='op'>=</span> <span class='cn'>FALSE</span>, hide <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 
 <span class='fu'>read_meta</span><span class='op'>(</span><span class='va'>directory</span><span class='op'>)</span></pre>
 
@@ -160,7 +160,7 @@ data txt  files.</p></td>
     </tr>
     <tr>
       <th>meta</th>
-      <td><p>Logical indicating whether to include metadata.</p></td>
+      <td><p>Logical indicating whether to include full meta-data.</p></td>
     </tr>
     <tr>
       <th>hide</th>
@@ -186,20 +186,20 @@ associated with the SIMS measurements.</p>
     <pre class="examples"><div class='input'><span class='co'># Use point_example() to access the examples bundled with this package</span>
 
 <span class='fu'>read_IC</span><span class='op'>(</span><span class='fu'><a href='point_example.html'>point_example</a></span><span class='op'>(</span><span class='st'>"2018-01-19-GLENDON"</span><span class='op'>)</span><span class='op'>)</span>
-</div><div class='output co'>#&gt; <span style='color: #949494;'># A tibble: 81,900 x 7</span><span>
-#&gt;    file.nm                 t.nm  N.rw species.nm sample.nm          n.rw bl.nm
-#&gt;    </span><span style='color: #949494;font-style: italic;'>&lt;chr&gt;</span><span>                  </span><span style='color: #949494;font-style: italic;'>&lt;dbl&gt;</span><span> </span><span style='color: #949494;font-style: italic;'>&lt;dbl&gt;</span><span> </span><span style='color: #949494;font-style: italic;'>&lt;chr&gt;</span><span>      </span><span style='color: #949494;font-style: italic;'>&lt;chr&gt;</span><span>             </span><span style='color: #949494;font-style: italic;'>&lt;dbl&gt;</span><span> </span><span style='color: #949494;font-style: italic;'>&lt;int&gt;</span><span>
-#&gt; </span><span style='color: #BCBCBC;'> 1</span><span> 2018-01-19-GLENDON_1_1  0.54 </span><span style='text-decoration: underline;'>12</span><span>040 12C        Belemnite, Indium  </span><span style='text-decoration: underline;'>3</span><span>900     1
-#&gt; </span><span style='color: #BCBCBC;'> 2</span><span> 2018-01-19-GLENDON_1_1  1.08 </span><span style='text-decoration: underline;'>11</span><span>950 12C        Belemnite, Indium  </span><span style='text-decoration: underline;'>3</span><span>900     1
-#&gt; </span><span style='color: #BCBCBC;'> 3</span><span> 2018-01-19-GLENDON_1_1  1.62 </span><span style='text-decoration: underline;'>12</span><span>100 12C        Belemnite, Indium  </span><span style='text-decoration: underline;'>3</span><span>900     1
-#&gt; </span><span style='color: #BCBCBC;'> 4</span><span> 2018-01-19-GLENDON_1_1  2.16 </span><span style='text-decoration: underline;'>11</span><span>946 12C        Belemnite, Indium  </span><span style='text-decoration: underline;'>3</span><span>900     1
-#&gt; </span><span style='color: #BCBCBC;'> 5</span><span> 2018-01-19-GLENDON_1_1  2.7  </span><span style='text-decoration: underline;'>12</span><span>178 12C        Belemnite, Indium  </span><span style='text-decoration: underline;'>3</span><span>900     1
-#&gt; </span><span style='color: #BCBCBC;'> 6</span><span> 2018-01-19-GLENDON_1_1  3.24 </span><span style='text-decoration: underline;'>12</span><span>114 12C        Belemnite, Indium  </span><span style='text-decoration: underline;'>3</span><span>900     1
-#&gt; </span><span style='color: #BCBCBC;'> 7</span><span> 2018-01-19-GLENDON_1_1  3.78 </span><span style='text-decoration: underline;'>12</span><span>147 12C        Belemnite, Indium  </span><span style='text-decoration: underline;'>3</span><span>900     1
-#&gt; </span><span style='color: #BCBCBC;'> 8</span><span> 2018-01-19-GLENDON_1_1  4.32 </span><span style='text-decoration: underline;'>12</span><span>092 12C        Belemnite, Indium  </span><span style='text-decoration: underline;'>3</span><span>900     1
-#&gt; </span><span style='color: #BCBCBC;'> 9</span><span> 2018-01-19-GLENDON_1_1  4.86 </span><span style='text-decoration: underline;'>12</span><span>024 12C        Belemnite, Indium  </span><span style='text-decoration: underline;'>3</span><span>900     1
-#&gt; </span><span style='color: #BCBCBC;'>10</span><span> 2018-01-19-GLENDON_1_1  5.4  </span><span style='text-decoration: underline;'>12</span><span>045 12C        Belemnite, Indium  </span><span style='text-decoration: underline;'>3</span><span>900     1
-#&gt; </span><span style='color: #949494;'># … with 81,890 more rows</span><span></div></span></pre>
+</div><div class='output co'>#&gt; <span style='color: #949494;'># A tibble: 81,900 × 4</span>
+#&gt;    file.nm                 t.nm  N.rw species.nm
+#&gt;    <span style='color: #949494; font-style: italic;'>&lt;chr&gt;</span>                  <span style='color: #949494; font-style: italic;'>&lt;dbl&gt;</span> <span style='color: #949494; font-style: italic;'>&lt;dbl&gt;</span> <span style='color: #949494; font-style: italic;'>&lt;chr&gt;</span>     
+#&gt; <span style='color: #BCBCBC;'> 1</span> 2018-01-19-GLENDON_1_1  0.54 <span style='text-decoration: underline;'>12</span>040 12C       
+#&gt; <span style='color: #BCBCBC;'> 2</span> 2018-01-19-GLENDON_1_1  1.08 <span style='text-decoration: underline;'>11</span>950 12C       
+#&gt; <span style='color: #BCBCBC;'> 3</span> 2018-01-19-GLENDON_1_1  1.62 <span style='text-decoration: underline;'>12</span>100 12C       
+#&gt; <span style='color: #BCBCBC;'> 4</span> 2018-01-19-GLENDON_1_1  2.16 <span style='text-decoration: underline;'>11</span>946 12C       
+#&gt; <span style='color: #BCBCBC;'> 5</span> 2018-01-19-GLENDON_1_1  2.7  <span style='text-decoration: underline;'>12</span>178 12C       
+#&gt; <span style='color: #BCBCBC;'> 6</span> 2018-01-19-GLENDON_1_1  3.24 <span style='text-decoration: underline;'>12</span>114 12C       
+#&gt; <span style='color: #BCBCBC;'> 7</span> 2018-01-19-GLENDON_1_1  3.78 <span style='text-decoration: underline;'>12</span>147 12C       
+#&gt; <span style='color: #BCBCBC;'> 8</span> 2018-01-19-GLENDON_1_1  4.32 <span style='text-decoration: underline;'>12</span>092 12C       
+#&gt; <span style='color: #BCBCBC;'> 9</span> 2018-01-19-GLENDON_1_1  4.86 <span style='text-decoration: underline;'>12</span>024 12C       
+#&gt; <span style='color: #BCBCBC;'>10</span> 2018-01-19-GLENDON_1_1  5.4  <span style='text-decoration: underline;'>12</span>045 12C       
+#&gt; <span style='color: #949494;'># … with 81,890 more rows</span></div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

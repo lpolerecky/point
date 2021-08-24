@@ -144,13 +144,13 @@
   .nest <span class='op'>=</span> <span class='cn'>NULL</span>,
   .method <span class='op'>=</span> <span class='st'>"CooksD"</span>,
   .reps <span class='op'>=</span> <span class='fl'>1</span>,
-  .X <span class='op'>=</span> <span class='va'>Xt.pr</span>,
-  .N <span class='op'>=</span> <span class='va'>N.pr</span>,
-  .species <span class='op'>=</span> <span class='va'>species.nm</span>,
-  .t <span class='op'>=</span> <span class='va'>t.nm</span>,
+  .X <span class='op'>=</span> <span class='cn'>NULL</span>,
+  .N <span class='op'>=</span> <span class='cn'>NULL</span>,
+  .species <span class='op'>=</span> <span class='cn'>NULL</span>,
+  .t <span class='op'>=</span> <span class='cn'>NULL</span>,
   .output <span class='op'>=</span> <span class='st'>"inference"</span>,
-  .label <span class='op'>=</span> <span class='cn'>NULL</span>,
-  .meta <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  .label <span class='op'>=</span> <span class='st'>"none"</span>,
+  .meta <span class='op'>=</span> <span class='cn'>FALSE</span>,
   .alpha_level <span class='op'>=</span> <span class='fl'>0.05</span>,
   .hyp <span class='op'>=</span> <span class='st'>"none"</span>,
   .plot <span class='op'>=</span> <span class='cn'>FALSE</span>,
@@ -290,7 +290,7 @@ how to use the function, and possible methods for outlier detection. Options
 are <code>"CooksD"</code> (default), <code>"Cameca"</code>, <code>"Rm"</code>, <code>"norm_E"</code>,
 <code>"CV"</code>, <code>"IR"</code>, and <code>"QQ"</code>, see the
 <code><a href='../articles/IC-diagnostics.html'>vignette("IC-diagnostics", package = "point")</a></code> for examples and
-<code>point::<a href='names_diag.html'>names_diag</a></code>. The
+<code>point::<a href='names_plot.html'>names_plot</a></code>. The
 argument <code>.output</code> can be used to toggle between <code>"complete"</code>;
 returning <code><a href='stat_X.html'>stat_R()</a></code> and <code><a href='stat_X.html'>stat_X()</a></code> statistics, diagnostics, and
 inference test results, <code>"augmented"</code>; returning the augmented IC after
@@ -304,19 +304,19 @@ removing outliers, <code>"diagnostic"</code>; for only outlier detection results
 <span class='co'># Cook's D style diagnostic-augmentation of ion count data for</span>
 <span class='co'># isotope ratios</span>
 <span class='fu'>diag_R</span><span class='op'>(</span><span class='va'>simu_IC</span>, <span class='st'>"13C"</span>, <span class='st'>"12C"</span>, <span class='va'>type.nm</span>, <span class='va'>spot.nm</span>, .plot <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
-</div><div class='img'><img src='diag_R-1.png' alt='' width='700' height='433' /></div><div class='output co'>#&gt; <span style='color: #949494;'># A tibble: 9 x 7</span><span>
+</div><div class='img'><img src='diag_R-1.png' alt='' width='700' height='433' /></div><div class='output co'>#&gt; <span style='color: #949494;'># A tibble: 9 × 7</span>
 #&gt;   execution type.nm    spot.nm ratio.nm M_R_Xt.pr F_R_Xt.pr p_R_Xt.pr
-#&gt;       </span><span style='color: #949494;font-style: italic;'>&lt;dbl&gt;</span><span> </span><span style='color: #949494;font-style: italic;'>&lt;chr&gt;</span><span>        </span><span style='color: #949494;font-style: italic;'>&lt;int&gt;</span><span> </span><span style='color: #949494;font-style: italic;'>&lt;chr&gt;</span><span>        </span><span style='color: #949494;font-style: italic;'>&lt;dbl&gt;</span><span>     </span><span style='color: #949494;font-style: italic;'>&lt;dbl&gt;</span><span>     </span><span style='color: #949494;font-style: italic;'>&lt;dbl&gt;</span><span>
-#&gt; </span><span style='color: #BCBCBC;'>1</span><span>         1 symmetric        1 13C/12C     0.011</span><span style='text-decoration: underline;'>0</span><span>   105.     2.00</span><span style='color: #949494;'>e</span><span style='color: #BB0000;'>-64</span><span>
-#&gt; </span><span style='color: #BCBCBC;'>2</span><span>         1 symmetric        2 13C/12C     0.011</span><span style='text-decoration: underline;'>0</span><span>   127.     2.81</span><span style='color: #949494;'>e</span><span style='color: #BB0000;'>-77</span><span>
-#&gt; </span><span style='color: #BCBCBC;'>3</span><span>         1 symmetric        3 13C/12C     0.011</span><span style='text-decoration: underline;'>0</span><span>   122.     1.42</span><span style='color: #949494;'>e</span><span style='color: #BB0000;'>-74</span><span>
-#&gt; </span><span style='color: #BCBCBC;'>4</span><span>         1 asymmetric       1 13C/12C     0.011</span><span style='text-decoration: underline;'>1</span><span>    63.2    1.28</span><span style='color: #949494;'>e</span><span style='color: #BB0000;'>-39</span><span>
-#&gt; </span><span style='color: #BCBCBC;'>5</span><span>         1 asymmetric       2 13C/12C     0.011</span><span style='text-decoration: underline;'>1</span><span>    74.9    1.09</span><span style='color: #949494;'>e</span><span style='color: #BB0000;'>-46</span><span>
-#&gt; </span><span style='color: #BCBCBC;'>6</span><span>         1 asymmetric       3 13C/12C     0.011</span><span style='text-decoration: underline;'>1</span><span>    71.9    6.70</span><span style='color: #949494;'>e</span><span style='color: #BB0000;'>-45</span><span>
-#&gt; </span><span style='color: #BCBCBC;'>7</span><span>         1 ideal            1 13C/12C     0.011</span><span style='text-decoration: underline;'>2</span><span>     0.267  8.49</span><span style='color: #949494;'>e</span><span style='color: #BB0000;'>- 1</span><span>
-#&gt; </span><span style='color: #BCBCBC;'>8</span><span>         1 ideal            2 13C/12C     0.011</span><span style='text-decoration: underline;'>2</span><span>     0.219  8.83</span><span style='color: #949494;'>e</span><span style='color: #BB0000;'>- 1</span><span>
-#&gt; </span><span style='color: #BCBCBC;'>9</span><span>         1 ideal            3 13C/12C     0.011</span><span style='text-decoration: underline;'>2</span><span>     1.73   1.59</span><span style='color: #949494;'>e</span><span style='color: #BB0000;'>- 1</span><span></div><div class='input'>
-</div></span></pre>
+#&gt;       <span style='color: #949494; font-style: italic;'>&lt;dbl&gt;</span> <span style='color: #949494; font-style: italic;'>&lt;chr&gt;</span>        <span style='color: #949494; font-style: italic;'>&lt;int&gt;</span> <span style='color: #949494; font-style: italic;'>&lt;chr&gt;</span>        <span style='color: #949494; font-style: italic;'>&lt;dbl&gt;</span>     <span style='color: #949494; font-style: italic;'>&lt;dbl&gt;</span>     <span style='color: #949494; font-style: italic;'>&lt;dbl&gt;</span>
+#&gt; <span style='color: #BCBCBC;'>1</span>         1 symmetric        1 13C/12C     0.011<span style='text-decoration: underline;'>0</span>   105.     2.00<span style='color: #949494;'>e</span><span style='color: #BB0000;'>-64</span>
+#&gt; <span style='color: #BCBCBC;'>2</span>         1 symmetric        2 13C/12C     0.011<span style='text-decoration: underline;'>0</span>   127.     2.81<span style='color: #949494;'>e</span><span style='color: #BB0000;'>-77</span>
+#&gt; <span style='color: #BCBCBC;'>3</span>         1 symmetric        3 13C/12C     0.011<span style='text-decoration: underline;'>0</span>   122.     1.42<span style='color: #949494;'>e</span><span style='color: #BB0000;'>-74</span>
+#&gt; <span style='color: #BCBCBC;'>4</span>         1 asymmetric       1 13C/12C     0.011<span style='text-decoration: underline;'>1</span>    63.2    1.28<span style='color: #949494;'>e</span><span style='color: #BB0000;'>-39</span>
+#&gt; <span style='color: #BCBCBC;'>5</span>         1 asymmetric       2 13C/12C     0.011<span style='text-decoration: underline;'>1</span>    74.9    1.09<span style='color: #949494;'>e</span><span style='color: #BB0000;'>-46</span>
+#&gt; <span style='color: #BCBCBC;'>6</span>         1 asymmetric       3 13C/12C     0.011<span style='text-decoration: underline;'>1</span>    71.9    6.70<span style='color: #949494;'>e</span><span style='color: #BB0000;'>-45</span>
+#&gt; <span style='color: #BCBCBC;'>7</span>         1 ideal            1 13C/12C     0.011<span style='text-decoration: underline;'>2</span>     0.267  8.49<span style='color: #949494;'>e</span><span style='color: #BB0000;'>- 1</span>
+#&gt; <span style='color: #BCBCBC;'>8</span>         1 ideal            2 13C/12C     0.011<span style='text-decoration: underline;'>2</span>     0.219  8.83<span style='color: #949494;'>e</span><span style='color: #BB0000;'>- 1</span>
+#&gt; <span style='color: #BCBCBC;'>9</span>         1 ideal            3 13C/12C     0.011<span style='text-decoration: underline;'>2</span>     1.73   1.59<span style='color: #949494;'>e</span><span style='color: #BB0000;'>- 1</span></div><div class='input'>
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
