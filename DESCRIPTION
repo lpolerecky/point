@@ -9,6 +9,7 @@ Authors@R:
            email = "schobbenmartin@gmail.com",
            role = "cre", 
            comment = c(ORCID = "0000-0001-8560-0037"))
+URL: https://martinschobben.github.io/point/
 Maintainer: Martin Schobben <schobbenmartin@gmail.com>
 Description: The point functions provide a convenient way to work with and evaluate pulsed ion count data. The package offers solution to loading and collating raw ion count text files into a convenient data frame (tibble). The package corrects ion counts for systematic biases related to detection devices and calculates statistics to gauge the analytical precision. Finally, the package contains methods to detect isotopic variability in the analyte.
 License: GPL-3
