@@ -23,6 +23,7 @@ knitr::opts_chunk$set(
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 [![DOI](https://zenodo.org/badge/240023228.svg)](https://zenodo.org/badge/latestdoi/240023228)
 [![Travis build status](https://travis-ci.org/MartinSchobben/point.svg?branch=master)](https://travis-ci.org/MartinSchobben/point)
+[![R-CMD-check](https://github.com/MartinSchobben/point/workflows/R-CMD-check/badge.svg)](https://github.com/MartinSchobben/point/actions)
 <!-- badges: end -->
 
 

@@ -74,8 +74,8 @@ Cameca <- function(.IC, .ion1, .ion2, ..., .X = NULL, .N = NULL, .species = NULL
   fct_min <- qnorm((.alpha_level / 2))
   fct_max <- qnorm(1 - (.alpha_level / 2))
 
-  group_by(.IC, !!! gr_by) %>%
-    mutate(
+  dplyr::group_by(.IC, !!! gr_by) %>%
+    dplyr::mutate(
       !! args[["hat_s_R"]] := sd(!! args[["R"]]),
       !! args[["hat_X1"]] := !! args[["M_R"]] * !! args[["X2"]],
       flag = if_else(
@@ -89,6 +89,5 @@ Cameca <- function(.IC, .ion1, .ion2, ..., .X = NULL, .N = NULL, .species = NULL
         ),
       flag = as.factor(.data$flag)
       ) %>%
-    ungroup()
-
+    dplyr::ungroup()
 }

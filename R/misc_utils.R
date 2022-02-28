@@ -249,16 +249,16 @@ cov_R <- function(.IC, .ion, ..., .species = NULL, .t = NULL,
       ungroup()
     }
   # Remove white space in ion names and add underscore for polyatomic species
-  IC <- mutate(
+  IC <- dplyr::mutate(
     .IC,
     !! args[[".species"]] := ion_trim(!! args[[".species"]])
     ) %>%
-    filter(!! args[[".species"]] %in% sapply(.ion, ion_trim))
+    dplyr::filter(!! args[[".species"]] %in% sapply(.ion, ion_trim))
 
   # Wide format
   tidyr::pivot_wider(
     IC,
-    c(!!! gr_by, !! args[[".t"]], !! args[[".species"]]),
+    # c(!!! gr_by, !! args[[".t"]], !! args[[".species"]]),
     names_from = !! args[[".species"]],
     values_from = -c(!!! gr_by, !! args[[".t"]], !! args[[".species"]]),
     names_sep = "."

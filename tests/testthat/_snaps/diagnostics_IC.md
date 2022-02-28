@@ -94,15 +94,7 @@
       #   Xt.pr.13C <dbl>, Xt.pr.12C <dbl>, n_t.nm.13C <int>, n_t.nm.12C <int>,
       #   tot_N.pr.13C <dbl>, tot_N.pr.12C <dbl>, M_Xt.pr.13C <dbl>,
       #   M_Xt.pr.12C <dbl>, S_Xt.pr.13C <dbl>, S_Xt.pr.12C <dbl>,
-      #   RS_Xt.pr.13C <dbl>, RS_Xt.pr.12C <dbl>, SeM_Xt.pr.13C <dbl>,
-      #   SeM_Xt.pr.12C <dbl>, hat_S_N.pr.13C <dbl>, hat_S_N.pr.12C <dbl>,
-      #   hat_RS_N.pr.13C <dbl>, hat_RS_N.pr.12C <dbl>, hat_SeM_N.pr.13C <dbl>,
-      #   hat_SeM_N.pr.12C <dbl>, chi2_N.pr.13C <dbl>, chi2_N.pr.12C <dbl>,
-      #   n_R_t.nm <int>, M_R_Xt.pr <dbl>, S_R_Xt.pr <dbl>, RS_R_Xt.pr <dbl>,
-      #   SeM_R_Xt.pr <dbl>, RSeM_R_Xt.pr <dbl>, hat_S_R_N.pr <dbl>,
-      #   hat_RS_R_N.pr <dbl>, hat_SeM_R_N.pr <dbl>, hat_RSeM_R_N.pr <dbl>,
-      #   chi2_R_N.pr <dbl>, R_Xt.pr <dbl>, ratio.nm <chr>, CooksD <dbl>, flag <fct>,
-      #   Xt.e <dbl>, F_R_Xt.pr <dbl>, p_R_Xt.pr <dbl>
+      #   RS_Xt.pr.13C <dbl>, RS_Xt.pr.12C <dbl>, SeM_Xt.pr.13C <dbl>, ...
 
 ---
 
@@ -149,15 +141,7 @@
       #   Xt.pr.13C <dbl>, Xt.pr.12C <dbl>, n_t.nm.13C <int>, n_t.nm.12C <int>,
       #   tot_N.pr.13C <dbl>, tot_N.pr.12C <dbl>, M_Xt.pr.13C <dbl>,
       #   M_Xt.pr.12C <dbl>, S_Xt.pr.13C <dbl>, S_Xt.pr.12C <dbl>,
-      #   RS_Xt.pr.13C <dbl>, RS_Xt.pr.12C <dbl>, SeM_Xt.pr.13C <dbl>,
-      #   SeM_Xt.pr.12C <dbl>, hat_S_N.pr.13C <dbl>, hat_S_N.pr.12C <dbl>,
-      #   hat_RS_N.pr.13C <dbl>, hat_RS_N.pr.12C <dbl>, hat_SeM_N.pr.13C <dbl>,
-      #   hat_SeM_N.pr.12C <dbl>, chi2_N.pr.13C <dbl>, chi2_N.pr.12C <dbl>,
-      #   n_R_t.nm <int>, M_R_Xt.pr <dbl>, S_R_Xt.pr <dbl>, RS_R_Xt.pr <dbl>,
-      #   SeM_R_Xt.pr <dbl>, RSeM_R_Xt.pr <dbl>, hat_S_R_N.pr <dbl>,
-      #   hat_RS_R_N.pr <dbl>, hat_SeM_R_N.pr <dbl>, hat_RSeM_R_N.pr <dbl>,
-      #   chi2_R_N.pr <dbl>, R_Xt.pr <dbl>, ratio.nm <chr>, hat_Xt.pr.13C <dbl>,
-      #   CooksD <dbl>, flag <fct>
+      #   RS_Xt.pr.13C <dbl>, RS_Xt.pr.12C <dbl>, SeM_Xt.pr.13C <dbl>, ...
 
 ---
 
@@ -218,9 +202,9 @@
       7         1 ideal            1 13C/12C        0.0112     0.267  8.49e- 1
       8         1 ideal            2 13C/12C        0.0112     0.219  8.83e- 1
       9         1 ideal            3 13C/12C        0.0112     1.73   1.59e- 1
-      # ... with 4 more variables: $\hat{\bar{R}}$ <dbl>,
-      #   $\hat{\epsilon}_{\bar{R}}$ (\text{\textperthousand}) <dbl>,
-      #   $\Delta AIC_{\bar{R}}$ <dbl>, $p_{\bar{R}}$ <dbl>
+      # ... with 4 more variables: `$\\hat{\\bar{R}}$` <dbl>,
+      #   `$\\hat{\\epsilon}_{\\bar{R}}$ (\\text{\\textperthousand})` <dbl>,
+      #   `$\\Delta AIC_{\\bar{R}}$` <dbl>, `$p_{\\bar{R}}$` <dbl>
 
 # Keep metadata
 
@@ -258,8 +242,5 @@
       #   meas_bl.mt <dbl>, rejection.mt <dbl>, slit.mt <chr>, lens.mt <chr>,
       #   presput.mt <chr>, rast_com.mt <dbl>, frame.mt <chr>, blank_rast.mt <chr>,
       #   raster.mt <chr>, tune.mt <chr>, reg_mode.mt <chr>, chk_frm.mt <dbl>,
-      #   sec_ion_cent.mt <chr>, frame_sec_ion_cent.mt <chr>, width_hor.mt <dbl>,
-      #   width_ver.mt <dbl>, E0S_cent.mt <chr>, width_V.mt <dbl>, E0P_off.mt <dbl>,
-      #   prim_cur_start.mt <chr>, prim_cur_after.mt <chr>, det_type.mt <chr>,
-      #   M_PHD.mt <dbl>, SD_PHD.mt <dbl>, EMHV.mt <dbl>
+      #   sec_ion_cent.mt <chr>, frame_sec_ion_cent.mt <chr>, width_hor.mt <dbl>, ...
 

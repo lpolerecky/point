@@ -86,7 +86,7 @@ read_IC <- function(directory, meta = FALSE, hide = TRUE){
     )
     # Add block number
     tb_rw <- group_by(tb_rw, .data$file.nm, .data$species.nm)%>%
-      mutate(bl.nm = ntile(n = .data$bl_num.mt)) %>%
+      mutate(bl.nm = ntile(n = as.numeric(.data$bl_num.mt))) %>%
       ungroup()
   }
   # hide meta-data
@@ -101,27 +101,31 @@ read_meta <- function(directory) {
   # Check validity of directory
   ls_files <- read_validator(directory)
   # vector of cameca variable names
-  vc_meta <- filter(
+  vc_meta <- dplyr::filter(
     point::names_cameca,
     .data$extension == ".chk_is",
     .data$format == "line"
     )
 
   # optics set-up
-  suppressMessages(
-    tb_ll <- purrr::map(
-      vc_meta$cameca,
-      ~point_lines(
-        ls_files[["chk_is"]],
-        pattern = .x,
-        sep = "\\:",
-        delim = "/"
-        )
-      ) %>%
-      purrr::compact() %>%
-      purrr::reduce(left_join) %>%
-      select(-id)
-  )
+  meta_join <- function(meta) {
+    tidyr::pivot_longer(meta, -c(.data$file.nm, .data$id), names_to = "meta")
+  }
+  tb_ll <- purrr::map(
+    vc_meta$cameca,
+    ~point_lines(
+      ls_files[["chk_is"]],
+      pattern = .x,
+      sep = "\\:",
+      delim = "/"
+      )
+    ) %>%
+    purrr::compact() %>%
+    purrr::map(meta_join) %>%
+    dplyr::bind_rows() %>%
+    dplyr::distinct(.data$file.nm, .data$meta, .data$value, .keep_all = TRUE) %>%
+    dplyr::select(-id) %>%
+    tidyr::pivot_wider(names_from = "meta")
 
   # PHD
   tb_phd <- point_table(
@@ -134,14 +138,14 @@ read_meta <- function(directory) {
     nudge_top = 1,
     nudge_tail = -3
     ) %>%
-    mutate(num.mt = readr::parse_number(.data$num.mt))
+    dplyr::mutate(num.mt = readr::parse_number(.data$num.mt))
 
-  rename(tb_ll , any_of(set_names(vc_meta$cameca, nm = vc_meta$point))) %>%
-    mutate(
+  rename(tb_ll, dplyr::any_of(set_names(vc_meta$cameca, nm = vc_meta$point))) %>%
+    dplyr::mutate(
     # Add measurement number
-      n.rw = .data$`bl_num.mt` * .data$`meas_bl.mt`,
+      n.rw = as.numeric(.data$`bl_num.mt`) * as.numeric(.data$`meas_bl.mt`),
     # Add electron detector type (EM or FC)
-      det_type.mt = if_else("FC_start.mt" %in% colnames(.), "FC", "EM")
+      det_type.mt =  dplyr::if_else("FC_start.mt" %in% colnames(.), "FC", "EM")
       ) %>%
     list(tb_phd)
   }
@@ -376,6 +380,7 @@ point_lines <- function(files, pattern = NULL, position = NULL, sep = NULL,
   vroom::vroom(
     I(vals),
     delim = delim,
+    col_types = vroom::cols(.default = vroom::col_character()), # default to character
     col_names = col_nms,
     show_col_types = FALSE
     ) %>%

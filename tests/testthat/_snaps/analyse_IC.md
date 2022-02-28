@@ -25,7 +25,7 @@
       stat_X(real_IC, file.nm, .label = "latex")
     Output
       # A tibble: 21 x 12
-         file.nm  species.nm `$n$` `$N_{tot}$` `$\\bar{X}$` `$s_{X}$` `$\\epsilon_{X}~
+         file.nm  species.nm `$n$` `$N_{tot}$` `$\\bar{X}$` `$s_{X}$` `$\\epsilon_{X~`
          <chr>    <chr>      <int>       <dbl>        <dbl>     <dbl>            <dbl>
        1 2018-01~ "${}^{12}~  3900    41718475     30616.     2738.               8.94
        2 2018-01~ "${}^{12}~  3900       15254        11.2       9.17            81.9 
@@ -37,9 +37,10 @@
        8 2018-01~ "${}^{12}~  3900    72956119     53541.     4073.               7.61
        9 2018-01~ "${}^{12}~  3900       10786         7.92      7.48            94.4 
       10 2018-01~ "${}^{12}~  3900      362709       266.      114.              42.9 
-      # ... with 11 more rows, and 5 more variables: $s_{\bar{X}}$ <dbl>,
-      #   $\hat{s}_{N}$ <dbl>, $\hat{\epsilon}_{N}$ (\text{\textperthousand}) <dbl>,
-      #   $\hat{s}_{\bar{N}}$ <dbl>, $\chi^{2}_{N}$ <dbl>
+      # ... with 11 more rows, and 5 more variables: `$s_{\\bar{X}}$` <dbl>,
+      #   `$\\hat{s}_{N}$` <dbl>,
+      #   `$\\hat{\\epsilon}_{N}$ (\\text{\\textperthousand})` <dbl>,
+      #   `$\\hat{s}_{\\bar{N}}$` <dbl>, `$\\chi^{2}_{N}$` <dbl>
 
 ---
 
@@ -62,17 +63,18 @@
       stat_R(real_IC, "13C", "12C", file.nm, .zero = TRUE, .label = "latex")
     Output
       # A tibble: 3 x 13
-        file.nm       ratio.nm `$n$` `$\\bar{R}$` `$s_{R}$` `$\\epsilon_{R}$ (\\text{~
-        <chr>         <chr>    <int>        <dbl>     <dbl>                      <dbl>
-      1 2018-01-19-G~ 13C/12C   3900       0.0110  0.00102                        93.0
-      2 2018-01-19-G~ 13C/12C   3900       0.0110  0.000779                       70.8
-      3 2018-01-19-G~ 13C/12C   3900       0.0110  0.000733                       66.5
-      # ... with 7 more variables: $s_{\bar{R}}$ <dbl>,
-      #   $\epsilon_{\bar{R}}$ (\text{\textperthousand}) <dbl>, $\hat{s}_{R}$ <dbl>,
-      #   $\hat{\epsilon}_{R}$ (\text{\textperthousand}) <dbl>,
-      #   $\hat{s}_{\bar{R}}$ <dbl>,
-      #   $\hat{\epsilon}_{\bar{R}}$ (\text{\textperthousand}) <dbl>,
-      #   $\chi^{2}_{R}$ <dbl>
+        file.nm                ratio.nm `$n$` `$\\bar{R}$` `$s_{R}$` `$\\epsilon_{R}~`
+        <chr>                  <chr>    <int>        <dbl>     <dbl>             <dbl>
+      1 2018-01-19-GLENDON_1_1 13C/12C   3900       0.0110  0.00102               93.0
+      2 2018-01-19-GLENDON_1_2 13C/12C   3900       0.0110  0.000779              70.8
+      3 2018-01-19-GLENDON_1_3 13C/12C   3900       0.0110  0.000733              66.5
+      # ... with 7 more variables: `$s_{\\bar{R}}$` <dbl>,
+      #   `$\\epsilon_{\\bar{R}}$ (\\text{\\textperthousand})` <dbl>,
+      #   `$\\hat{s}_{R}$` <dbl>,
+      #   `$\\hat{\\epsilon}_{R}$ (\\text{\\textperthousand})` <dbl>,
+      #   `$\\hat{s}_{\\bar{R}}$` <dbl>,
+      #   `$\\hat{\\epsilon}_{\\bar{R}}$ (\\text{\\textperthousand})` <dbl>,
+      #   `$\\chi^{2}_{R}$` <dbl>
 
 ---
 
@@ -81,9 +83,9 @@
         .label = "latex", .stat = c("M", "RS"))
     Output
       # A tibble: 1 x 4
-        sample.nm     ratio.nm `$\\bar{\\bar{R}}~ `$\\epsilon_{\\bar{R}}$ (\\text{\\t~
-        <chr>         <chr>                 <dbl>                                <dbl>
-      1 Belemnite,In~ 13C/12C              0.0110                                 1.85
+        sample.nm        ratio.nm `$\\bar{\\bar{R}}$` `$\\epsilon_{\\bar{R}}$ (\\tex~`
+        <chr>            <chr>                  <dbl>                            <dbl>
+      1 Belemnite,Indium 13C/12C               0.0110                             1.85
 
 ---
 
@@ -105,7 +107,7 @@
         .label = "latex", .stat = c("M", "RS"))
     Output
       # A tibble: 1 x 4
-        sample.nm     ratio.nm `$\\bar{\\bar{R}}~ `$\\epsilon_{\\bar{R}}$ (\\text{\\t~
-        <chr>         <chr>                 <dbl>                                <dbl>
-      1 Belemnite,In~ 13C/12C              0.0110                                 1.85
+        sample.nm        ratio.nm `$\\bar{\\bar{R}}$` `$\\epsilon_{\\bar{R}}$ (\\tex~`
+        <chr>            <chr>                  <dbl>                            <dbl>
+      1 Belemnite,Indium 13C/12C               0.0110                             1.85
 
