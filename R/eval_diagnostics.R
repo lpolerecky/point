@@ -92,65 +92,70 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
 
   # Predicted rare isotope count rate
   if (!(as_name(args[["hat_X1"]]) %in% colnames(.IC))) {
-    .IC <- mutate(.IC, !! args[["hat_X1"]] := !! args[["M_R"]] * !! args[["X2"]])
-    }
+    .IC <- dplyr::mutate(
+      .IC,
+      !! args[["hat_X1"]] := !! args[["M_R"]] * !! args[["X2"]]
+    )
+  }
+
   # Check number of levels of bad flag is more than 10
-  IC_n <-  count(.IC, !! args[[".execution"]], !!! gr_by, !! args[[".flag"]])
+  IC_n <- dplyr::count(
+    .IC,
+    !! args[[".execution"]],
+    !!! gr_by,
+    !! args[[".flag"]]
+  )
 
   if (nrow(filter(IC_n , !! args[[".flag"]] == "divergent" & n >= 10)) == 0) {
-    stop(
-      "Number of flagged outliers in all samples is too small for a reliable diagnostic. Execution has stopped.",
-       call. = FALSE
-      )
-    }
+    stop(paste0("Number of flagged outliers in all samples is too small for a",
+         " reliable diagnostic. Execution has stopped."), call. = FALSE)
+  }
 
   if (nrow(filter(IC_n, !! args[[".flag"]] == "divergent" & n >= 10)) <
       nrow(filter(IC_n, !! args[[".flag"]] == "divergent"))) {
-    warning(
-      "Number of flagged outliers in some samples is too small for a reliable diagnostic. Execution proceeded with remaining samples.",
-      call. = FALSE
-      )
+    warning(paste0("Number of flagged outliers in some samples is too small",
+            " for a reliable diagnostic. Execution proceeded with remaining",
+            " samples."), call. = FALSE)
     # Otherwise filter data-set
-    .IC <- filter(IC_n, !! args[[".flag"]] == "divergent" & n < 10)  %>%
-      select(!!!gr_by) %>%
-      anti_join(.IC, ., by = c(sapply(gr_by, as_name)))
-    }
+    .IC <- dplyr::filter(IC_n, !! args[[".flag"]] == "divergent" & n < 10)  %>%
+      dplyr::select(!!!gr_by) %>%
+      dplyr::anti_join(.IC, ., by = c(sapply(gr_by, as_name)))
+  }
 
   # Check for ionization efficiency trend
   if (any(between(pull(.IC , !! args[["chi2_N2"]]) , 0.9, 1.1))) {
-    warning(
-      "Linear ionization trend absent in some or all analyses; F statistic might be unreliable.",
-      call. = FALSE
-      )
-    }
+    warning(paste0("Linear ionization trend absent in some or all analyses; ",
+            "F statistic might be unreliable."), call. = FALSE)
+  }
 
-  # Re-centre residuals along flag variable
+  # Re-center residuals along flag variable
   IC <- cstd_var(.IC, gr_by, args)
 
   # Create zero (constrained) model flag and updated model
   IC_lm <- tidyr::nest(IC, data = -c(!!! gr_by)) %>%
-    mutate(
+    dplyr::mutate(
       !! args[["ratio"]] := purrr::map(data, ~distinct(.x, !! args[["ratio"]])),
       !! args[["M_R"]] := purrr::map(data, ~distinct(.x, !! args[["M_R"]])),
       lm_out = purrr::map(data, lm_fun, args)
       ) %>%
     tidyr::unnest_wider(.data$lm_out)
 
-  #
+  # determine output type
   if (.output == "inference") {
     IC_lm <- tidyr::unnest(IC_lm, cols = c(!! args[["ratio"]], !! args[["M_R"]]))
   } else {
-    IC_lm <- select(IC_lm, -c(!! args[["ratio"]] ,!! args[["M_R"]]))
+    IC_lm <- dplyr::select(IC_lm, -c(!! args[["ratio"]] ,!! args[["M_R"]]))
   }
 
   if (is_symbol(quo_get_expr(nest))) {
+
     # Groups for nested data
     nest_args <- c(as_name(nest), as_name(args[[".execution"]]))
     nest_gr <- gr_by[!sapply(gr_by, as_name) %in% nest_args]
 
     # Nest over nest groups
     IC_mlm <- tidyr::nest(IC, data = -c(!!! nest_gr)) %>%
-      mutate(
+      dplyr::mutate(
         gls_out =
           purrr::map(.data$data, purrr::possibly(gls_fun, NA), args, .tf = .tf),
         inter_out =
@@ -163,7 +168,7 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
             .tf = .tf
           )
       ) %>%
-      select(-c(.data$gls_out, .data$data)) %>%
+      dplyr::select(-c(.data$gls_out, .data$data)) %>%
       tidyr::unnest_wider(.data$inter_out)
 
     # Collect
@@ -242,7 +247,7 @@ mlm_fun <- function(.IC, .gls, args, nest, .tf) {
   # log likelihood test
   IC_aov <- anova(mlm_inter, gls_0)
 
-  lst(
+  tibble::lst(
     # GLS results
     !! args[["hat_M_M_R"]] := purrr::pluck(.gls, as_name(args[["hat_M_M_R"]])),
     # model relative standard deviation of group and associated standard error
@@ -342,8 +347,11 @@ mlm_RS <- function(sum, arg, output = "value") {
   # Relative variance of the slope
   RS <-  ran / fix
 
-  if (output == "value") {return(RS * 1000)} # per mille
-
+  if (output == "value") {
+    RS * 1000 # per mille
+  } else {
+    RS
+  }
 }
 
 # correction for testing on the boundary Zuur et al 2008 (CH 5, p 123)

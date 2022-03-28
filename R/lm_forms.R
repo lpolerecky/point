@@ -1,4 +1,19 @@
-# Linear model call
+#' Linear model
+#'
+#' @param data ion count dataset
+#' @param arg1 outcome variable
+#' @param arg2 predictor variable
+#' @param flag nominal predictor variable for outliers
+#' @param trans transformation of the predictor ("log" or "ppt" dividing through
+#'  thousand)
+#' @param vorce for mixed effect modelling this dictates whether inter-analysis
+#' isotope variance, or intra-analysis isotope variance is modelled
+#' @param nest for mixed effect moddeling this is the variable for the nesting
+#  structure
+#' @param type type of model fitting (ratio method (RM), ordinary least squares
+#' (OLS), generalized least squares (GLS), or linear mixed effects (LME)
+#'
+#' @return
 lm_form <- function(data, arg1, arg2, flag = NULL, trans = NULL, vorce = NULL,
                     nest = NULL, type = "OLS") {
 
@@ -70,7 +85,7 @@ lm_form <- function(data, arg1, arg2, flag = NULL, trans = NULL, vorce = NULL,
           NULL,
           parse_expr(
             paste(
-              paste0("-1 + I(", as_name(arg2), "/ 1000)"),
+              paste0("-1 + I(c(", as_name(arg2), ")/ 1000)"),
               paste("execution", as_name(nest), sep = "/"),
               sep = "|"
               )
@@ -103,7 +118,7 @@ lm_form <- function(data, arg1, arg2, flag = NULL, trans = NULL, vorce = NULL,
           parse_expr(
             paste0(
               "I(",
-              paste(1, paste0("log(",as_name(arg2),")"), sep = "/"),
+              paste(1, paste0("log(", as_name(arg2), ")"), sep = "/"),
               ")"
               )
             )
@@ -114,7 +129,7 @@ lm_form <- function(data, arg1, arg2, flag = NULL, trans = NULL, vorce = NULL,
           parse_expr(
             paste0(
               "I(",
-              paste(1, paste0("I(",as_name(arg2),"/ 1000)"), sep = "/"),
+              paste(1, paste0("I(c(", as_name(arg2), ")/ 1000)"), sep = "/"),
               ")"
               )
             )
@@ -138,9 +153,10 @@ lm_form <- function(data, arg1, arg2, flag = NULL, trans = NULL, vorce = NULL,
           lm_switch("GLS", trans),
           data = expr(data),
           weights = wght_switch("GLS", trans),
-          .ns = "nlme"),
-        data_env
+          .ns = "nlme"
         ),
+        data_env
+      ),
       Rm = eval(
         call2(
           "lm",
