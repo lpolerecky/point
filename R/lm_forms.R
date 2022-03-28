@@ -1,6 +1,6 @@
 #' Linear model
 #'
-#' @param data ion count dataset
+#' @param data ion count data
 #' @param arg1 outcome variable
 #' @param arg2 predictor variable
 #' @param flag nominal predictor variable for outliers
@@ -105,38 +105,7 @@ lm_form <- function(data, arg1, arg2, flag = NULL, trans = NULL, vorce = NULL,
 
   }
 
-  wght_switch <- function(type, trns = NULL){
-    if (type %in% c("LME", "GLS")) type <- "LME" else type = "Rm"
-    if (!is.null(trns) && trns == "log") type <- paste(type, trns, sep = "_")
 
-    switch(
-      type,
-      Rm = 1 / (pull(data, !! arg2)) ,
-      LME_log =
-        new_formula(
-          NULL,
-          parse_expr(
-            paste0(
-              "I(",
-              paste(1, paste0("log(", as_name(arg2), ")"), sep = "/"),
-              ")"
-              )
-            )
-          ),
-      LME =
-        new_formula(
-          NULL,
-          parse_expr(
-            paste0(
-              "I(",
-              paste(1, paste0("I(c(", as_name(arg2), ")/ 1000)"), sep = "/"),
-              ")"
-              )
-            )
-        )
-      )
-
-  }
 
   # Perform model in correct env
   data_env <- env(data = data)
@@ -182,4 +151,40 @@ lm_form <- function(data, arg1, arg2, flag = NULL, trans = NULL, vorce = NULL,
   }
 
   lm_method(type)
+}
+
+
+# The weighing term
+#
+# nlme weighing https://www.r-bloggers.com/2012/12/a-quick-note-in-weighting-with-nlme/
+# use formula argument (gls(y ~ x, data = dat, weights = ~1/n))
+generate_weight <- function(arg2, type, transformation = NULL) {
+
+  arg2 <- rlang::ensym(arg2)
+
+  # weighing structure for LME and GLS is equal but differs from `lm`
+  if (type %in% c("LME", "GLS")) {
+    type <- "LME"
+  } else {
+    type <- "Rm"
+  }
+
+  # parts per thousand transformation
+  if (is.null(transformation)) {
+    tr <- arg2
+  } else if (transformation == "log") {
+    tr <- rlang::parse_expr(paste0("log(", as_name(arg2), ")"))
+  } else if (transformation == "ppt") {
+    tr <- rlang::parse_expr(paste0("I(c(", as_name(arg2), ")/ 1000)"))
+  } else {
+    stop("Transformation unkown!", .call = FALSE)
+  }
+
+  # construct weight
+  switch(
+    type,
+    Rm =  rlang::expr(1 / !! tr),
+    LME = rlang::new_formula(NULL, rlang::expr(1 / !! tr))
+  )
+
 }
