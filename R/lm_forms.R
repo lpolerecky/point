@@ -177,7 +177,7 @@ generate_weight <- function(arg2, type, transformation = NULL) {
   } else if (transformation == "ppt") {
     tr <- rlang::parse_expr(paste0("I(c(", as_name(arg2), ")/ 1000)"))
   } else {
-    stop("Transformation unkown!", .call = FALSE)
+    stop("Transformation unkown!", call. = FALSE)
   }
 
   # construct weight
