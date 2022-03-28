@@ -2,7 +2,8 @@
 # minimum functionality (over time with snapshots)
 #-------------------------------------------------------------------------------
 
-test_that("consistency of systematic corrections on internal dataset with custom settings", {
+test_that(paste0("consistency of systematic corrections on internal dataset ",
+                 "with custom settings"), {
   # raw data containing 13C and 12C counts on carbonate
   tb_rw <- read_IC(point_example("2018-01-19-GLENDON"), meta = FALSE)
   # Processing raw ion count data defaults to metadata values
@@ -59,7 +60,8 @@ test_that("global environment object with similar name and misc. errors", {
 # default argument injection
 #-------------------------------------------------------------------------------
 
-test_that("Inject arguments for ion count variables if not explictely given", {
+test_that(paste0("arguments are injected for ion count variables if not ",
+                 "explictely provided"), {
   # raw data containing 13C and 12C counts on carbonate
   tb_rw <- read_IC(point_example("2018-01-19-GLENDON"), meta = TRUE)
   # NULL
@@ -70,7 +72,7 @@ test_that("Inject arguments for ion count variables if not explictely given", {
         rlang::quos(.N = N.rw, .t = NULL, .bl_t = NULL, .det = NULL,
                     .M_PHD = NULL, .SD_PHD = NULL),
         type = c("raw", "group", "meta")
-        )
+      )
       ),
     "List of 6"
     )
