@@ -1,4 +1,4 @@
-# consistency of the zeroCt and cov_R
+# the output of zeroCt and cov_R is consistent
 
     Code
       zeroCt(real_IC, "13C", "12C", file.nm)

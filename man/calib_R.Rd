@@ -40,12 +40,13 @@ A numeric value or vector.
 and delta
 }
 \details{
-A fundamental in publishing isotope data is the conversion of isotope the delta
-formulation comparing the obtained R to that of a standard. These values are
-reported on a per mill scale. However in IC calculations ratios (R) or
-fractional abundances (F) are most commonly used. This functions provide an easy way
-of making these transformations for both the average composition but also
-fractionations as enrichment factors (alpha and epsilon).
+A fundamental in publishing isotope data is the conversion of isotope the
+delta formulation comparing the obtained R to that of a standard. These
+values are reported on a per mill scale. However in IC calculations ratios
+(R) or fractional abundances (F) are most commonly used. This functions
+provide an easy way of making these transformations for both the average
+composition but also fractionations as enrichment factors
+(alpha and epsilon).
 }
 \examples{
 # R value of 0.0111 to delta on VPDB scale

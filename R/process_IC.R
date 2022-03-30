@@ -18,26 +18,28 @@
 #' @param .N A variable constituting the ion counts.
 #' @param .t A variable constituting the time increments.
 #' @param .bl_t A variable or numeric value for the blanking time
-#' (in milliseconds).
+#'  (in milliseconds).
 #' @param .det Variable or character string or variable for the detection
-#' system ("EM" or "FC").
+#'  system ("EM" or "FC").
 #' @param .deadtime A numeric value for the deadtime of the EM system with
-#' units nanoseconds.
+#'  units nanoseconds.
 #' @param .thr_PHD A numeric value for the discriminator threshold of the EM.
-#' system.
+#'  system.
 #' @param .M_PHD A variable or numeric value of the mean PHD value.
 #' @param .SD_PHD A variable or numeric value of standard deviation of
-#' the PHD value.
+#'  the PHD value.
 #' @param .hide A logical indicating whether only processed data should be
-#' returned. If \code{TRUE} The raw data is contained as an attribute named
+#'  returned. If \code{TRUE} The raw data is contained as an attribute named
 #' \code{"rawdata"}.
 #'
-#' @return A \code{tibble::\link[tibble:tibble]{tibble}()} containing the original
-#' dataset and adds the variables: \code{Xt.rw}, ion count rates uncorrected for
-#' detection device-specific biases; \code{Xt.pr}, ion count rates corrected for
-#' detection device-specific biases; and \code{N.pr}, counts corrected for
-#' detection device-specific biases.
+#' @return A \code{tibble::\link[tibble:tibble]{tibble}()} containing the
+#'  original dataset and adds the variables: \code{Xt.rw}, ion count rates
+#'  uncorrected for detection device-specific biases; \code{Xt.pr}, ion count
+#'  rates corrected for detection device-specific biases; and \code{N.pr},
+#'  counts corrected for detection device-specific biases.
+#'
 #' @export
+#'
 #' @examples
 #' # Use point_example() to access the examples bundled with this package
 #'
@@ -55,7 +57,7 @@ cor_IC <-function(.IC, ..., .N = NULL, .t = NULL, .bl_t = NULL,
   stat_validator(.IC)
 
   # Unfold metadata
-  if (ncol(select(.IC, ends_with(".mt"))) == 0) .IC <- unfold(.IC)
+  if (ncol(dplyr::select(.IC, dplyr::ends_with(".mt"))) == 0) .IC <- unfold(.IC)
 
   # Quoting the call (user-supplied expressions)
   args <- enquos(.N = .N, .t = .t, .bl_t = .bl_t, .det = .det,
@@ -74,24 +76,35 @@ cor_IC <-function(.IC, ..., .N = NULL, .t = NULL, .bl_t = NULL,
   N.pr <- quo_updt(args[[".N"]], post = "pr", update_post = TRUE)
 
   # Time increments (time between measurements minus blanking time)
-  .IC <- mutate(
+  .IC <- dplyr::mutate(
     .IC,
     dt.rw = min(!! args[[".t"]]) - !! args[[".bl_t"]] / 1e3,
     Xt.pr = !! args[[".N"]] / .data$dt.rw,
     !! N.pr := !! args[[".N"]]
-    )
+  )
 
   # PHD correction (Yield) on counts and count rates
   if (cor_check(.thr_PHD, args, "PHD")) {
-    # check if detector type is known
+
+    # Check for namespace polyaAeppli
+    if (!requireNamespace("polyaAeppli", quietly = TRUE)) {
+      stop(
+        "Package \"polyaAeppli\" must be installed to use this functionality.",
+        call. = FALSE
+      )
+    }
+
+    # Check if detector type is known
     det_check(args[[".det"]])
+
+    # Proceed with processing
     .IC <- tidyr::nest(
       .IC,
       data = -c(!!args[[".det"]], !!args[[".M_PHD"]], !!args[[".SD_PHD"]])
-      ) %>%
-      mutate(
+    ) %>%
+      dplyr::mutate(
         Y.mt =
-          if_else(
+          dplyr::if_else(
             !!args[[".det"]] == "EM",
             purrr::map2_dbl(
               !!args[[".M_PHD"]],
@@ -100,31 +113,31 @@ cor_IC <-function(.IC, ..., .N = NULL, .t = NULL, .bl_t = NULL,
               x = NULL,
               thr_PHD = .thr_PHD,
               output = "Y"
-              ),
+            ),
             1
-            )
-        ) %>%
+          )
+      ) %>%
       tidyr::unnest(cols = .data$data) %>%
-      mutate(
+      dplyr::mutate(
         Xt.pr = .data$Xt.pr / .data$Y.mt,
         !! N.pr := .data$Xt.pr * .data$dt.rw
-        )
-    }
+      )
+  }
 
   # Deadtime correction on counts and count rates
   if (!is.null(.deadtime)) {
     # check if detector type is known
     det_check(args[[".det"]])
-    .IC  <- mutate(
+    .IC  <- dplyr::mutate(
       .IC,
       Xt.pr =
-        if_else(
+        dplyr::if_else(
           !! args[[".det"]] == "EM",
           cor_DT(.data$Xt.pr, .deadtime),
           .data$Xt.pr
-          ),
+        ),
       !! N.pr := .data$Xt.pr * .data$dt.rw
-      )
+    )
   }
 
   # Output
@@ -172,7 +185,7 @@ cor_IC <-function(.IC, ..., .N = NULL, .t = NULL, .bl_t = NULL,
 #' cor_DT(x, 44)
 cor_yield <- function(x = NULL, mean_PHD, SD_PHD, thr_PHD, output = "ct"){
 
-# # Stop execution if threshold = 0 an return Xt
+  # Stop execution if threshold = 0 an return Xt
   if (thr_PHD == 0) {
     warning(
       "PHD discrimnator threshold 0; count rate or a yield of 1 is returned.",
@@ -180,22 +193,28 @@ cor_yield <- function(x = NULL, mean_PHD, SD_PHD, thr_PHD, output = "ct"){
       )
     }
 
-# Lambda parameter
-  lambda <- (2 * mean_PHD^2) / (SD_PHD^2 + mean_PHD)
+  # Lambda parameter
+  lambda <- (2 * mean_PHD ^ 2) / (SD_PHD ^ 2 + mean_PHD)
 
-# Probability parameter
-  prob <- (SD_PHD^2 - mean_PHD) / (SD_PHD^2 + mean_PHD)
+  # Probability parameter
+  prob <- (SD_PHD ^ 2 - mean_PHD) / (SD_PHD ^ 2 + mean_PHD)
 
   if (prob < 0 | prob >= 1) {
     stop("Unable to calculate probability.", call. = FALSE)
-  } else {
-    prob
+  }
+
+  # Check for namespace polyaAeppli
+  if (!requireNamespace("polyaAeppli", quietly = TRUE)) {
+    stop(
+      "Package \"polyaAeppli\" must be installed to use this function.",
+      call. = FALSE
+    )
   }
 
   Y <- polyaAeppli::pPolyaAeppli(thr_PHD, lambda, prob, lower.tail = FALSE)
 
   if (output == "Y") Y else if (output == "ct") x / Y
-  }
+}
 
 #' @rdname  cor_yield
 #'
@@ -209,16 +228,16 @@ cor_DT <- function(x, deadtime)  x / (1 - (x * deadtime * 10^-9))
 # Function which updates quosures for subsequent tidy evaluation
 quo_updt <- function(my_q, pre = NULL, post = NULL, update_post = FALSE){
   # Get expressions
-  old_expr <- get_expr(my_q)
+  old_expr <- rlang::get_expr(my_q)
   # Get text
-  old_chr <- expr_text(old_expr)
+  old_chr <- rlang::expr_text(old_expr)
   # Update
   if (update_post & stringr::str_detect(old_chr , "\\.") ){
     old_chr <- stringr::str_split(old_chr, "\\.")[[1]][1]
   }
   # Separators
   if (is.null(pre) & is.null(post)) {
-    warning("Quosure not updated")
+    warning("Quosure not updated.")
     return(my_q)
   }
   if (!is.null(pre) & is.null(post)) {
@@ -231,9 +250,9 @@ quo_updt <- function(my_q, pre = NULL, post = NULL, update_post = FALSE){
     new_chr <- paste0(pre, "_", old_chr, ".", post)
   }
   # New expression from character (remove whitespace)
-  new_expr <- parse_expr(stringr::str_replace_all(new_chr, " ", ""))
+  new_expr <- rlang::parse_expr(stringr::str_replace_all(new_chr, " ", ""))
   # Update old quosure
-  set_expr(my_q, new_expr)
+  rlang::set_expr(my_q, new_expr)
 }
 
 # if variables are not supplied, default to standard variables
@@ -247,34 +266,34 @@ supply_args <- function(args, IC, inverse = FALSE) {
   vc_nms <- c(.bl_t = "tc.mt",  .det = "det_type.mt",  .M_PHD = "M_PHD.mt",
               .SD_PHD = "SD_PHD.mt")
   # not NULL
-  arg_lgl <- purrr::map_lgl(args, ~{!is_symbol(quo_get_expr(.x))})
+  arg_lgl <- purrr::map_lgl(args, ~{!rlang::is_symbol(rlang::quo_get_expr(.x))})
   args <- args[arg_lgl]
   # not a symbol
-  arg_lgl <- purrr::map_lgl(args, ~{!is.null(quo_get_expr(.x))})
+  arg_lgl <- purrr::map_lgl(args, ~{!is.null(rlang::quo_get_expr(.x))})
   args <- args[arg_lgl]
   # one of the reference vector
   args <- args[names(args) %in% names(vc_nms)]
   names(args) <- vc_nms[names(vc_nms) %in% names(args)]
   # only valid expression
-  mutate(IC, !!!args)
+  dplyr::mutate(IC, !!!args)
 }
 
 # extract default IC variables
 extract_defaults <- function(x, y, vars, type, IC) {
-  if (!is_symbol(quo_get_expr(x))) {
+  if (!rlang::is_symbol(rlang::quo_get_expr(x))) {
     # reference table
-    vars <- filter(
+    vars <- dplyr::filter(
       vars,
       .data$argument == y,
       .data$use %in% type,
       .data$point %in% colnames(IC)
-      )
+    )
     if (nrow(vars) != 0) {
-      pull(vars, .data$point) %>%
+      dplyr::pull(vars, .data$point) %>%
         # caller environment would be similar to enquo()
-        parse_quo(env = caller_env())
+        rlang::parse_quo(env = rlang::caller_env())
     } else {
-      quo(NULL)
+      rlang::quo(NULL)
     }
   } else {
     x
@@ -286,7 +305,7 @@ extract_defaults <- function(x, y, vars, type, IC) {
 
 det_check <- function(det) {
   # custom detector type
-  if (is.null(quo_get_expr(det))) {
+  if (is.null(rlang::quo_get_expr(det))) {
       stop(
         "Supply a variable or character string for the detector type to `.det`",
         call. = FALSE
@@ -298,40 +317,43 @@ cor_check <- function(parm, args, type) {
   if (is.null(parm)) return(FALSE)
   ref <- list()
   ref$PHD <- c(".M_PHD", ".SD_PHD")
-  arg_lgl <- !purrr::map_lgl(args[ref[[type]]], ~is.null(quo_get_expr((.x))))
+  arg_lgl <- !purrr::map_lgl(
+    args[ref[[type]]],
+    ~is.null(rlang::quo_get_expr((.x)))
+  )
   if (any(arg_lgl)) {
     if (all(arg_lgl)) {
       TRUE
     } else {
       stop(
-        purrr::lift_dl(paste)(list2(
+        purrr::lift_dl(paste)(rlang::list2(
           type,
           "correction requires",
           !!! ref[[type]]
         )),
         call. = FALSE
       )
-      }
-    } else {
-      FALSE
     }
+  } else {
+    FALSE
+  }
 }
 
 # check if arguments exist in data frame
 argument_check <- function(IC, args, type) {
   # not NULL
-  arg_lgl <- purrr::map_lgl(args, ~{is.null(quo_get_expr(.x))})
+  arg_lgl <- purrr::map_lgl(args, ~{is.null(rlang::quo_get_expr(.x))})
   pos_args <- args[!arg_lgl]
   if (any(!sapply(pos_args, as_name) %in% colnames(IC))) {
     stop("Tibble does not contain the supplied variables!", call. = FALSE)
   }
   neg_args <- args[arg_lgl]
   # default names for missing argument (but not meta data)
-  vars <- filter(
+  vars <- dplyr::filter(
     point::names_cameca, .data$use %in% type,
     .data$argument %in% names(neg_args)
     ) %>%
-    pull(.data$point)
+    dplyr::pull(.data$point)
   if (any(!vars %in% colnames(IC))) {
     stop("Tibble does not contain the default variables!", call. = FALSE)
   }

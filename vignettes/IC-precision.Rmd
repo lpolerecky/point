@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
   comment = "#>",
   warning = FALSE,
   message = FALSE
-  )
+)
 ```
 
 
@@ -117,7 +117,7 @@ knitr::kable(
   head(tb_X),
   format.args = lst(digits = 3, format = "G", flag = "0"),
   caption = "Summary statistics for internal precision of single ions with `stat_X()`."
-  ) 
+) 
 ```
 
 The underlying principals for the statistics calculated with the function `stat_X()` are delineated in detail below.
@@ -206,7 +206,7 @@ knitr::kable(
   head(tb_R),
   format.args = list(digits = 3, format = "G", flag = "0"),
   caption = "Summary statistics for internal precision of isotope ratios with `stat_R()`."
-  ) 
+) 
 ```
 
 
@@ -342,7 +342,7 @@ knitr::kable(
   filter(tb_R_ext, str_detect(sample.nm, "Belemnite")),
   format.args = lst(digits = 3, format = "G", flag = "0"),
   caption = "Summary statistics for external precision of isotope ratios."
-  ) 
+) 
 ```
 
 

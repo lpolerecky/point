@@ -1,4 +1,4 @@
-# consistency of the QSA test
+# simple QSA test is consistent
 
     Code
       QSA_test(real_IC, "13C", "12C", file.nm)
@@ -21,7 +21,7 @@
       #   beta_Xt.pr.12C <dbl>, t_Xt.pr.12C <dbl>, p_Xt.pr.12C <dbl>,
       #   delta_Xt.pr.12C <dbl>
 
----
+# grouped QSA test is consistent
 
     Code
       QSA_test(real_IC, "13C", "12C", sample.nm, file.nm, .nest = file.nm)

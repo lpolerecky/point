@@ -45,15 +45,15 @@ system.}
 the PHD value.}
 
 \item{.hide}{A logical indicating whether only processed data should be
-returned. If \code{TRUE} The raw data is contained as an attribute named
+ returned. If \code{TRUE} The raw data is contained as an attribute named
 \code{"rawdata"}.}
 }
 \value{
-A \code{tibble::\link[tibble:tibble]{tibble}()} containing the original
-dataset and adds the variables: \code{Xt.rw}, ion count rates uncorrected for
-detection device-specific biases; \code{Xt.pr}, ion count rates corrected for
-detection device-specific biases; and \code{N.pr}, counts corrected for
-detection device-specific biases.
+A \code{tibble::\link[tibble:tibble]{tibble}()} containing the
+ original dataset and adds the variables: \code{Xt.rw}, ion count rates
+ uncorrected for detection device-specific biases; \code{Xt.pr}, ion count
+ rates corrected for detection device-specific biases; and \code{N.pr},
+ counts corrected for detection device-specific biases.
 }
 \description{
 \code{cor_IC} function for processing ion count data.

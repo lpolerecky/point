@@ -25,11 +25,11 @@ gg_IC <- function(.IC, .ion1, .ion2, ..., .X = NULL, .N = NULL, .flag = NULL,
 
   # Filter execution
   if (.plot_args[[".plot_type"]] == "static") {
-    .IC <- filter(.IC, .data$execution == .rep)
+    .IC <- dplyr::filter(.IC, .data$execution == .rep)
   }
 
   # Plotting arguments
-  plot_args <- list2(
+  plot_args <- rlang::list2(
     .IC = .IC,
     .x = X2,
     .y = X1,
@@ -42,36 +42,36 @@ gg_IC <- function(.IC, .ion1, .ion2, ..., .X = NULL, .N = NULL, .flag = NULL,
 
   # Residual leverage plot
   if(plot_args[[".method"]] == "norm_E") {
-      plot_args[[".y"]] <- parse_quo("studE", env = caller_env())
-      plot_args[[".x"]] <- parse_quo("hat_Xi", env = caller_env())
-      plot_args[[".hat"]] <- NULL
-      plot_args[[".sd"]] <- NULL
-    }
+    plot_args[[".y"]] <- rlang::parse_quo("studE", env = rlang::caller_env())
+    plot_args[[".x"]] <- rlang::parse_quo("hat_Xi", env = rlang::caller_env())
+    plot_args[[".hat"]] <- NULL
+    plot_args[[".sd"]] <- NULL
+  }
 
   # Normal QQ plot
   if (plot_args[[".method"]] == "QQ"){
-      plot_args[[".y"]] <- parse_quo("RQ", env = caller_env())
-      plot_args[[".x"]] <- parse_quo("TQ", env = caller_env())
-      plot_args[[".hat"]] <- quo_updt(plot_args[[".y"]], pre = "hat")
-      plot_args[[".sd"]] <- NULL
-      plot_args[[".se"]] <- quo_updt(plot_args[[".y"]], pre = "hat_e")
-    }
+    plot_args[[".y"]] <- rlang::parse_quo("RQ", env = rlang::caller_env())
+    plot_args[[".x"]] <- rlang::parse_quo("TQ", env = rlang::caller_env())
+    plot_args[[".hat"]] <- quo_updt(plot_args[[".y"]], pre = "hat")
+    plot_args[[".sd"]] <- NULL
+    plot_args[[".se"]] <- quo_updt(plot_args[[".y"]], pre = "hat_e")
+  }
 
   # Scale location plot
   if (plot_args[[".method"]] == "CV"){
-      plot_args[[".y"]] <- parse_quo("studE", env = caller_env())
-      plot_args[[".x"]] <- hat_X1
-      plot_args[[".hat"]] <- 0
-      plot_args[[".sd"]] <- NULL
-      plot_args[[".cv"]] <- 3.5
+    plot_args[[".y"]] <- rlang::parse_quo("studE", env = rlang::caller_env())
+    plot_args[[".x"]] <- hat_X1
+    plot_args[[".hat"]] <- 0
+    plot_args[[".sd"]] <- NULL
+    plot_args[[".cv"]] <- 3.5
   }
   # call
-  p_call <- call2(gg_base, !!! plot_args)
+  p_call <- rlang::call2(gg_base, !!! plot_args)
   # Execute
   if (isTRUE(.return_call)) p_call else  eval(p_call)
-  }
+}
 
-
+# base plot
 gg_base <- function(.IC, .x, .y, .flag, .method, .plot_type, ...,
                     .plot_stat = NULL, .geom = "point", .hat = NULL,
                     .sd = NULL, .se = NULL, .cv = NULL, .alpha_level,
@@ -89,33 +89,46 @@ gg_base <- function(.IC, .x, .y, .flag, .method, .plot_type, ...,
   .IC <- twodens(.IC, !! .x, !! .y, !!! gr_by, .flag = !! .flag)
 
   # Filter correct titles
-  ttl <- filter(point::names_plot, .data$name == .method)
+  ttl <- dplyr::filter(point::names_plot, .data$name == .method)
 
   # R statistics labels for geom_text
   if (!is.null(.plot_stat)) tb_labs <- stat_labs(.IC, gr_by)
 
   # Base plot
-  if (.plot_type == "static") p <- ggplot(data = .IC, aes(x = !! .x, y = !! .y))
+  if (.plot_type == "static") {
+    p <- ggplot2::ggplot(
+      data = .IC,
+      mapping = ggplot2::aes(x = !! .x, y = !! .y)
+    )
+  }
 
+  # equalize plot legend width
   plot_width <- as.numeric(
     ggplot2::ggplotGrob(p)$widths[1]) *
-    ceiling(log2(nrow(distinct(.IC, !!!gr_by)))
-            )
+    ceiling(log2(nrow(dplyr::distinct(.IC, !!!gr_by))))
 
   # Facets
-  p <- p + facet_wrap(vars(!!! gr_by), scales = "free")
+  p <- p + ggplot2::facet_wrap(ggplot2::vars(!!! gr_by), scales = "free")
 
   # Geom for "point" data
   if (.geom == "point") {
-    p <- dens_point(p, .flag, .IC, plot_width, .plot_outlier_labs)
+    if (requireNamespace("MASS", quietly = TRUE)) {
+      p <- dens_point(p, .flag, .IC, plot_width, .plot_outlier_labs)
+    } else {
+      message(paste0("Install package \"MASS\" for a better visualization of",
+                     " potential outliers."))
+      p <- p + ggplot2::geom_point(alpha = 0.3)
+    }
+
+  } else if (.geom == "hex") {
+    p <- p + ggplot2::geom_hex()
   }
-  if (.geom == "hex") p <- p + geom_hex()
-  if (.rug) p <- p + geom_rug(sides = "tr", alpha = 0.01)
+  if (.rug) p <- p + ggplot2::geom_rug(sides = "tr", alpha = 0.01)
   if (!is.null(.plot_stat)) {
     p <- p +
-      geom_text(
-        data = filter(tb_labs, .data$stat %in% .plot_stat),
-        aes(
+      ggplot2::geom_text(
+        data = dplyr::filter(tb_labs, .data$stat %in% .plot_stat),
+        mapping = ggplot2::aes(
           x = -Inf,
           y = Inf,
           label = .data$lbs
@@ -128,8 +141,12 @@ gg_base <- function(.IC, .x, .y, .flag, .method, .plot_type, ...,
   }
   # Model
   if (!is.null(.hat)) {
-    p <- p + geom_line(aes(y = !!.hat), color = "black", linetype = 2,
-                       size = 0.5)
+    p <- p + ggplot2::geom_line(
+      mapping = ggplot2::aes(y = !!.hat),
+      color = "black",
+      linetype = 2,
+      size = 0.5
+    )
   }
 
   # Model uncertainties
@@ -140,45 +157,54 @@ gg_base <- function(.IC, .x, .y, .flag, .method, .plot_type, ...,
     .IC <- ribbon_stat(.IC, .hat, bounds[!sapply(bounds, is.null)],
                        .alpha_level)
     p <- p +
-      geom_ribbon(
+      ggplot2::geom_ribbon(
         data = .IC,
-        aes(ymin = .data$lower, ymax = .data$upper),
+        mapping = ggplot2::aes(ymin = .data$lower, ymax = .data$upper),
         color = "black",
         fill = "transparent",
         linetype = 3,
         size = 0.5
-        )
-    }
+      )
+  }
 
   p <- p +
-    scale_y_continuous(
+    ggplot2::scale_y_continuous(
       breaks = scales::pretty_breaks(3),
       labels = scales::label_scientific(2)
       ) +
-    scale_x_continuous(
+    ggplot2::scale_x_continuous(
       breaks = scales::pretty_breaks(3),
       labels = scales::label_scientific(2)
       ) +
-    labs(
+    ggplot2::labs(
       x = axis_labs(ttl$xaxis, ion2, .plot_type),
       y = axis_labs(ttl$yaxis, ion1, .plot_type),
       title = ttl$label
       ) +
-    theme_classic()+
-    theme(legend.position = "top")
+    ggplot2::theme_classic()+
+    ggplot2::theme(legend.position = "top")
   }
 
 # Autocorrelation plot
 gg_IR <- function(.IC, .lag, .acf, .flag, ..., .sd = NULL){
-  ggplot(.IC, mapping = aes(x = {{.lag}}, y = {{.acf}}, color = {{.flag}})) +
-    geom_hline(aes(yintercept = 0)) +
-    geom_segment(mapping = aes(xend = {{.lag}}, yend = 0)) +
-    geom_hline(aes(yintercept = -{{.sd}}), color = "darkblue") +
-    geom_hline(aes(yintercept = {{.sd}}), color = "darkblue") +
-    facet_wrap(vars(...), scales = "free") +
-    labs(title = "ACF plot") +
-    theme_classic() +
-    theme(legend.position = "none")
+  ggplot2::ggplot(
+    data = .IC,
+    mapping = ggplot2::aes(x = {{.lag}}, y = {{.acf}}, color = {{.flag}})
+    ) +
+    ggplot2::geom_hline(mapping = ggplot2::aes(yintercept = 0)) +
+    ggplot2::geom_segment(mapping = ggplot2::aes(xend = {{.lag}}, yend = 0)) +
+    ggplot2::geom_hline(
+      mapping = ggplot2::aes(yintercept = -{{.sd}}),
+      color = "darkblue"
+    ) +
+    # ggplot2::geom_hline(
+    #   mapping = ggplot2::aes(yintercept = {{.sd}}),
+    #   color = "darkblue"
+    # ) +
+    ggplot2::facet_wrap(ggplot2::vars(...), scales = "free") +
+    ggplot2::labs(title = "ACF plot") +
+    ggplot2::theme_classic() +
+    ggplot2::theme(legend.position = "none")
 }
 
 # axis labels
@@ -187,7 +213,9 @@ axis_labs <- function(type, ion, plot_type){
   if (plot_type == "static") {
     switch(
       type,
-      ionct = substitute(a ~ "(count sec" ^ "-" * ")", list(a = ion_labeller(ion, "expr"))),
+      ionct = substitute(
+        a ~ "(count sec" ^ "-" * ")", list(a = ion_labeller(ion, "expr"))
+        ),
       studE = expression("studentized residuals (" * italic(e) ^ "*" * ")"),
       TQ = "Theoretical quantiles",
       SQ = "Sample quantiles",
@@ -212,7 +240,7 @@ axis_labs <- function(type, ion, plot_type){
 }
 
 # Create ion labels from variables
-detect_ion <- function(var, diag_type = ""){
+detect_ion <- function(var, diag_type = "") {
   if (stringr::str_detect(as_name(var), "[[:digit:]]") |
       diag_type == "CV") {
     stringr::str_split(as_name(var), "[[:punct:]]")[[1]] %>% tail(1)
@@ -222,20 +250,26 @@ detect_ion <- function(var, diag_type = ""){
 }
 
 # calculate statistics for plotting on plot
-stat_labs <- function(.IC, gr_by){
-  tb_labs <- distinct(.IC, !!! gr_by, .keep_all = TRUE) %>%
-    select(!!! gr_by, starts_with(paste0(point::names_stat_R$name, "_R"))) %>%
+stat_labs <- function(.IC, gr_by) {
+
+  tb_labs <- dplyr::distinct(.IC, !!! gr_by, .keep_all = TRUE) %>%
+    dplyr::select(
+      !!! gr_by,
+      dplyr::starts_with(paste0(point::names_stat_R$name, "_R"))
+    ) %>%
     tidyr::pivot_longer(
       -c(!!! gr_by),
       names_to = c("stat", ".value"),
       names_sep = "\\_R\\_"
-      ) %>%
+    ) %>%
     tidyr::unite(col = "value", - c(!!! gr_by, .data$stat), na.rm = TRUE)
+
   lbs <- purrr::map2(
     tb_labs$stat,
-    pull(tb_labs, .data$value),
+    dplyr::pull(tb_labs, .data$value),
     ~stat_labeller("R", stat = .x, value = as.numeric(.y), label = "expr")
     )
+  # Return with new column
   tibble::add_column(tb_labs, lbs = lbs)
 }
 
@@ -245,11 +279,11 @@ ribbon_stat <- function(IC, hat, bound, alpha_level) {
     switch(
       bound,
       sd = qnorm((1 - alpha_level / 2)),
-      se = qt((1 - alpha_level / 2), n() - 1),
+      se = qt((1 - alpha_level / 2), dplyr::n() - 1),
       cv = 1
-      )
+    )
   }
-  mutate(
+  dplyr::mutate(
     IC,
     fct = fct_switch(alpha_level, names(bound)),
     lower = !!hat - .data$fct * !!bound[[1]],
@@ -259,23 +293,29 @@ ribbon_stat <- function(IC, hat, bound, alpha_level) {
 
 # calculate 2D density
 dens_point <- function (p, flag, IC, width, plot_outlier_labs) {
+
   # colors
   div_col <- c("#8E063B", "#BB7784", "#D6BCC0", "#E2E2E2", "#BEC1D4", "#7D87B9",
                "#023FA5") # colorspace::diverge_hcl(7, rev = TRUE)
-  p <- p + geom_point(aes(color = .data$dens, alpha = .data$alpha_sc))
-  if (is_symbol(get_expr(flag))) {
+
+  # point with color following 2D density
+  p <- p + ggplot2::geom_point(
+    mapping = ggplot2::aes(color = .data$dens, alpha = .data$alpha_sc)
+  )
+
+  if (rlang::is_symbol(rlang::get_expr(flag))) {
     p <- p +
-      scale_color_gradientn(
+      ggplot2::scale_color_gradientn(
         "",
         breaks = range(IC$dens),
         labels =  plot_outlier_labs,
         colors = div_col,
         na.value = "transparent",
-        guide = guide_colourbar(ticks = FALSE, barwidth = width)
+        guide = ggplot2::guide_colourbar(ticks = FALSE, barwidth = width)
       )
   } else {
     p <- p +
-      scale_color_distiller(
+      ggplot2::scale_color_distiller(
         "",
         breaks = seq(0, 1, length.out = 100),
         palette = "YlOrRd",
@@ -285,5 +325,5 @@ dens_point <- function (p, flag, IC, width, plot_outlier_labs) {
       )
   }
   # alpha
-  p + scale_alpha_identity(guide = "none", limits = c(1e-5, 1))
+  p + ggplot2::scale_alpha_identity(guide = "none", limits = c(1e-5, 1))
 }

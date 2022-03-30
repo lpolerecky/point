@@ -2,7 +2,7 @@
 # minimum functionality (over time with snapshots)
 #-------------------------------------------------------------------------------
 
-test_that("consistency of Cameca diagnostics on internal dataset", {
+test_that("Cameca diagnostics on internal dataset are consistent", {
   # Descriptive an predictive statistics for 13C/12C ratios (note .output
   # argument and remove zero count analysis)
   tb_R <- stat_R(real_IC, "13C", "12C", file.nm, sample.nm, .output = "complete",

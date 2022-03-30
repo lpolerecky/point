@@ -44,7 +44,7 @@
 #'        .species = species.nm, .t = t.nm, .output = "flag")
 Cameca <- function(.IC, .ion1, .ion2, ..., .X = NULL, .N = NULL, .species = NULL,
                    .t = NULL, .output = "complete", .alpha_level = 0.05,
-                   .hyp = "none"){
+                   .hyp = "none") {
 
   # Grouping
   gr_by <- enquos(...)
@@ -53,41 +53,41 @@ Cameca <- function(.IC, .ion1, .ion2, ..., .X = NULL, .N = NULL, .species = NULL
   args <- enquos(.X = .X, .N = .N, .species = .species, .t = .t)
 
   # R quosures
-  args <- list2(
+  args <- rlang::list2(
     !!! args,
     X1 = quo_updt(args[[".X"]], post = .ion1), # count rate rare isotope
     X2 = quo_updt(args[[".X"]], post = .ion2), # count rate common isotope
     !!! arg_builder(args, "R"),
     R  = quo_updt(args[[".X"]], pre = "R")
-    )
+  )
 
   # new quosures
-  args <- list2(
+  args <- rlang::list2(
     !!! args,
     # Sigma cut-off bound
     hat_s_R = quo_updt(args[["R"]], pre = "hat_s"),
     # Predicted rare isotope count rate
     hat_X1 = quo_updt(args[["X1"]], pre = "hat")
-    )
+  )
 
   # quantiles for cut-off bound
   fct_min <- qnorm((.alpha_level / 2))
   fct_max <- qnorm(1 - (.alpha_level / 2))
 
-  dplyr::group_by(.IC, !!! gr_by) %>%
+  dplyr::group_by(.IC, !!! gr_by) |>
     dplyr::mutate(
       !! args[["hat_s_R"]] := sd(!! args[["R"]]),
       !! args[["hat_X1"]] := !! args[["M_R"]] * !! args[["X2"]],
-      flag = if_else(
-        between(
+      flag = dplyr::if_else(
+        dplyr::between(
           !! args[["R"]],
           unique(!! args[["M_R"]] + fct_min * !! args[["hat_s_R"]]),# mean - 2SD
           unique(!! args[["M_R"]] + fct_max * !! args[["hat_s_R"]]) # mean + 2SD
-          ),
+        ),
         "confluent",
         "divergent"
-        ),
+      ),
       flag = as.factor(.data$flag)
-      ) %>%
+      ) |>
     dplyr::ungroup()
 }

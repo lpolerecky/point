@@ -1,4 +1,4 @@
-# consistency of Cameca diagnostics on internal dataset
+# Cameca diagnostics on internal dataset are consistent
 
     Code
       Cameca(tb_R, "13C", "12C", file.nm, .X = Xt.pr, .N = N.pr, .species = species.nm,

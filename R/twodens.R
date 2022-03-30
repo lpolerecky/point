@@ -19,9 +19,8 @@
 #' @param ... Variables for grouping.
 #' @param .flag Variable identifying two components in the data.
 #'
-#' @return A
-#' \code{tibble::\link[tibble:tibble]{tibble}()} with the 2D density of x and y
-#' named \code{dens_z}.
+#' @return A \code{tibble::\link[tibble:tibble]{tibble}()} with the 2D density
+#'  of x and y named \code{dens_z}.
 #'
 #' @export
 twodens <- function(.IC, .x, .y, ..., .flag){
@@ -32,55 +31,58 @@ twodens <- function(.IC, .x, .y, ..., .flag){
   y <- enquo(.y)
 
   # Ranges for alpha and density
-  ran_z <- range(pull(count(.IC, !!! gr_by), .data$n))
+  ran_z <- range(dplyr::pull(dplyr::count(.IC, !!! gr_by), .data$n))
 
   # Calculate density for x and y frame
-  IC_dens <- group_by(.IC, !!! gr_by) %>%
-    mutate(
+  IC_dens <- dplyr::group_by(.IC, !!! gr_by) %>%
+    dplyr::mutate(
       # Group-wise ranges x and y
       min_x = min(!! x),
       max_x = max(!! x),
       min_y = min(!! y),
       max_y = max(!! y),
       # Bandwidths
-      h_x = if_else(
+      h_x = dplyr::if_else(
         MASS::bandwidth.nrd(!! x) == 0, 0.1, MASS::bandwidth.nrd(!! x)
         ),
-      h_y = if_else(
+      h_y = dplyr::if_else(
         MASS::bandwidth.nrd(!! y) == 0, 0.1, MASS::bandwidth.nrd(!! y)
         ),
       # Calculate bins for density
-      bin_n = log(ran_z[2]) / log(n()) * 100
-      ) %>%
-    ungroup() %>%
+      bin_n = log(ran_z[2]) / log(dplyr::n()) * 100
+    ) %>%
+    dplyr::ungroup() %>%
     tidyr::nest(data = -c(!!! gr_by, !! flag)) %>%
-    mutate(dens = purrr::map(.data$data, nest_dens, x, y), .keep ="unused")
+    dplyr::mutate(
+      dens = purrr::map(.data$data, nest_dens, x, y),
+      .keep ="unused"
+    )
 
-  if (is_symbol(get_expr(flag))) {
+  if (rlang::is_symbol(rlang::get_expr(flag))) {
     IC_dens <- diff_dens(IC_dens, flag)
-    } else {
-      IC_dens <- tidyr::unnest_wider(IC_dens, .data$dens, names_sep = "_")
-      }
+  } else {
+    IC_dens <- tidyr::unnest_wider(IC_dens, .data$dens, names_sep = "_")
+  }
 
-  left_join(
+  dplyr::left_join(
     tidyr::nest(.IC, IC = -c(!!! gr_by)),
     IC_dens,
     by = sapply(gr_by, as_name)
     ) %>%
-    mutate(
+    dplyr::mutate(
       dens =
         purrr::pmap(
           list(.data$IC, .data$dens_x, .data$dens_y, .data$dens_z),
           extract_dens,
           x = x,
           y = y
-          )
-        ) %>%
-    select(!!!gr_by, .data$IC, .data$dens) %>%
+        )
+      ) %>%
+    dplyr::select(!!!gr_by, .data$IC, .data$dens) %>%
     tidyr::unnest(cols = c(.data$IC, .data$dens)) %>%
-    group_by(!!! gr_by) %>%
+    dplyr::group_by(!!! gr_by) %>%
     # Adjust alpha
-    mutate(alpha_sc = (ran_z[1] / n()) / 4)
+    dplyr::mutate(alpha_sc = (ran_z[1] / dplyr::n()) / 4)
 
 }
 
@@ -89,7 +91,7 @@ twodens <- function(.IC, .x, .y, ..., .flag){
 #-------------------------------------------------------------------------------
 diff_dens <- function(IC, flag) {
   tidyr::pivot_wider(IC, names_from = !! flag, values_from = .data$dens) %>%
-    mutate(
+    dplyr:: mutate(
       dens_x = purrr::map(.data$confluent, list("x")),
       dens_y = purrr::map(.data$confluent, list("y")),
       # Take care off case when no outliers
@@ -100,14 +102,14 @@ diff_dens <- function(IC, flag) {
           .data$confluent,
           .data$divergent,
           ~{(.x$z - .y$z) ^ 3}
-          ),
+        ),
       .keep ="unused"
-      )
+    )
 }
 
 extract_dens <- function(IC, dens_x, dens_y, dens_z, x, y) {
-  x <- pull(IC, !!x)
-  y <- pull(IC, !!y)
+  x <- dplyr::pull(IC, !!x)
+  y <- dplyr::pull(IC, !!y)
   int_x <- findInterval(x, dens_x)
   int_y <- findInterval(y, dens_y)
   comb_int <- cbind(int_x, int_y)
@@ -115,8 +117,8 @@ extract_dens <- function(IC, dens_x, dens_y, dens_z, x, y) {
 }
 
 nest_dens <- function(IC, x, y) {
-  x <- pull(IC, !!x)
-  y <- pull(IC, !!y)
+  x <- dplyr::pull(IC, !!x)
+  y <- dplyr::pull(IC, !!y)
   ran_x <- c(unique(IC$min_x), unique(IC$max_x))
   ran_y <- c(unique(IC$min_y), unique(IC$max_y))
   # Calculate density

@@ -1,4 +1,4 @@
-# consistency of diagnostics wrapper on synthetic data
+# diagnostics wrapper on synthetic data is consistent
 
     Code
       diag_R(simu_IC, "13C", "12C", type.nm, spot.nm)
@@ -15,42 +15,6 @@
       7         1 ideal            1 13C/12C     0.0112     0.267  8.49e- 1
       8         1 ideal            2 13C/12C     0.0112     0.219  8.83e- 1
       9         1 ideal            3 13C/12C     0.0112     1.73   1.59e- 1
-
----
-
-    Code
-      diag_R(simu_IC, "13C", "12C", type.nm, spot.nm, .method = "QQ")
-    Output
-      # A tibble: 9 x 3
-        type.nm    spot.nm hyp            
-        <chr>        <int> <chr>          
-      1 symmetric        1 H0 (normal)    
-      2 symmetric        2 H0 (normal)    
-      3 symmetric        3 H0 (normal)    
-      4 asymmetric       1 Ha (non-normal)
-      5 asymmetric       2 Ha (non-normal)
-      6 asymmetric       3 Ha (non-normal)
-      7 ideal            1 H0 (normal)    
-      8 ideal            2 H0 (normal)    
-      9 ideal            3 H0 (normal)    
-
----
-
-    Code
-      diag_R(simu_IC, "13C", "12C", type.nm, spot.nm, .method = "IR")
-    Output
-      # A tibble: 9 x 3
-        type.nm    spot.nm hyp                           
-        <chr>        <int> <chr>                         
-      1 symmetric        1 Ha (dependence of residuals)  
-      2 symmetric        2 Ha (dependence of residuals)  
-      3 symmetric        3 Ha (dependence of residuals)  
-      4 asymmetric       1 Ha (dependence of residuals)  
-      5 asymmetric       2 Ha (dependence of residuals)  
-      6 asymmetric       3 Ha (dependence of residuals)  
-      7 ideal            1 H0 (independence of residuals)
-      8 ideal            2 H0 (independence of residuals)
-      9 ideal            3 H0 (independence of residuals)
 
 ---
 
@@ -206,6 +170,42 @@
       #   `$\\hat{\\epsilon}_{\\bar{R}}$ (\\text{\\textperthousand})` <dbl>,
       #   `$\\Delta AIC_{\\bar{R}}$` <dbl>, `$p_{\\bar{R}}$` <dbl>
 
+# QQ diagnostic on synthetic data is consistent
+
+    Code
+      diag_R(simu_IC, "13C", "12C", type.nm, spot.nm, .method = "QQ")
+    Output
+      # A tibble: 9 x 3
+        type.nm    spot.nm hyp            
+        <chr>        <int> <chr>          
+      1 symmetric        1 H0 (normal)    
+      2 symmetric        2 H0 (normal)    
+      3 symmetric        3 H0 (normal)    
+      4 asymmetric       1 Ha (non-normal)
+      5 asymmetric       2 Ha (non-normal)
+      6 asymmetric       3 Ha (non-normal)
+      7 ideal            1 H0 (normal)    
+      8 ideal            2 H0 (normal)    
+      9 ideal            3 H0 (normal)    
+
+# IR diagnostic on synthetic data is consistent
+
+    Code
+      diag_R(simu_IC, "13C", "12C", type.nm, spot.nm, .method = "IR")
+    Output
+      # A tibble: 9 x 3
+        type.nm    spot.nm hyp                           
+        <chr>        <int> <chr>                         
+      1 symmetric        1 Ha (dependence of residuals)  
+      2 symmetric        2 Ha (dependence of residuals)  
+      3 symmetric        3 Ha (dependence of residuals)  
+      4 asymmetric       1 Ha (dependence of residuals)  
+      5 asymmetric       2 Ha (dependence of residuals)  
+      6 asymmetric       3 Ha (dependence of residuals)  
+      7 ideal            1 H0 (independence of residuals)
+      8 ideal            2 H0 (independence of residuals)
+      9 ideal            3 H0 (independence of residuals)
+
 # Keep metadata
 
     Code
@@ -221,7 +221,7 @@
 ---
 
     Code
-      diag_R(real_IC, "13C", "12C", file.nm, .meta = TRUE) %>% unfold()
+      unfold(diag_R(real_IC, "13C", "12C", file.nm, .meta = TRUE))
     Output
       # A tibble: 81,900 x 43
          execution file.nm     ratio.nm M_R_Xt.pr F_R_Xt.pr p_R_Xt.pr  t.nm species.nm

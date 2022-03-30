@@ -7,3 +7,7 @@
 .Renviron
 inst/doc
 docs
+
+# derived
+/**/*.pdf
+/**/*.svg

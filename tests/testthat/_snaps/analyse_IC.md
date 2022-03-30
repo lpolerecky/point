@@ -1,4 +1,4 @@
-# consistency of precision estimates on internal dataset
+# precision estimates on internal dataset are consistent
 
     Code
       stat_X(real_IC, file.nm)

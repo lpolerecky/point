@@ -79,10 +79,10 @@ count measurements will be removed from the calculations.}
 }
 \value{
 A \code{tibble::\link[tibble:tibble]{tibble}} containing descriptive
-and predictive statistics for ion counts and isotope ratios. The naming
-convention depends on the argument \code{latex}; if set to \code{FALSE},
-variable names concerning statistics will consist of an abbreviation pasted
-together with the input variable names of \code{Xt}.
+ and predictive statistics for ion counts and isotope ratios. The naming
+ convention depends on the argument \code{latex}; if set to \code{FALSE},
+ variable names concerning statistics will consist of an abbreviation pasted
+ together with the input variable names of \code{Xt}.
 }
 \description{
 \code{stat_X} function for descriptive and predictive statistics on single

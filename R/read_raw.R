@@ -46,21 +46,25 @@ read_IC <- function(directory, meta = FALSE, hide = TRUE){
     .name_repair = "minimal"
     ) %>%
     tidyr::drop_na() %>%
-    mutate(file.nm = recode(.data$file.nm, !!! set_names(names(ls_IC), ls_IC)))
+    dplyr::mutate(
+      file.nm =
+        dplyr::recode(.data$file.nm, !!! rlang::set_names(names(ls_IC), ls_IC))
+    )
 
   # meta data names according to Cameca
-  point_nms <- filter(
+  point_nms <- dplyr::filter(
     point::names_cameca,
     .data$extension == ".is_txt",
     .data$use == "meta"
     )
+
   tb_meta <- point_lines(ls_IC, pattern = "B", sep = "\\=", id = "num.mt") %>%
     # meta data names
-    rename(set_names(point_nms$cameca, nm = point_nms$point)) %>%
-    mutate(
+    dplyr::rename(rlang::set_names(point_nms$cameca, nm = point_nms$point)) %>%
+    dplyr::mutate(
       species.nm = stringr::str_extract(.data$mass.mt, "(?<=\\().+?(?=\\))"),
       tc.mt = readr::parse_number(.data$tc.mt)
-      )
+     )
 
   # vector of detector numbering
   vc_num <- rep(
@@ -70,24 +74,24 @@ read_IC <- function(directory, meta = FALSE, hide = TRUE){
     each = nrow(tb_IC) / length(ls_IC) / max(tb_meta$num.mt),
     # total number of measurements
     length.out = nrow(tb_IC)
-    )
+  )
 
-  tb_rw <- left_join(
+  tb_rw <- dplyr::left_join(
     tibble::add_column(tb_IC, num.mt = vc_num),
     tb_meta,
     by = c("file.nm", "num.mt")
-    )
+  )
 
   # extended meta-data
   if (isTRUE(meta)) {
     suppressMessages(
-    tb_rw <- list2(tb_rw, !!! read_meta(directory)) %>%
-      purrr::reduce(left_join)
+      tb_rw <- rlang::list2(tb_rw, !!! read_meta(directory)) %>%
+        purrr::reduce(dplyr::left_join)
     )
     # Add block number
-    tb_rw <- group_by(tb_rw, .data$file.nm, .data$species.nm)%>%
-      mutate(bl.nm = ntile(n = as.numeric(.data$bl_num.mt))) %>%
-      ungroup()
+    tb_rw <- dplyr::group_by(tb_rw, .data$file.nm, .data$species.nm)%>%
+      dplyr::mutate(bl.nm = dplyr::ntile(n = as.numeric(.data$bl_num.mt))) %>%
+      dplyr::ungroup()
   }
   # hide meta-data
   if (isTRUE(hide)) tb_rw <- fold(tb_rw, type = ".mt")
@@ -105,7 +109,7 @@ read_meta <- function(directory) {
     point::names_cameca,
     .data$extension == ".chk_is",
     .data$format == "line"
-    )
+  )
 
   # optics set-up
   meta_join <- function(meta) {
@@ -124,7 +128,7 @@ read_meta <- function(directory) {
     purrr::map(meta_join) %>%
     dplyr::bind_rows() %>%
     dplyr::distinct(.data$file.nm, .data$meta, .data$value, .keep_all = TRUE) %>%
-    dplyr::select(-id) %>%
+    dplyr::select(-.data$id) %>%
     tidyr::pivot_wider(names_from = "meta")
 
   # PHD
@@ -137,16 +141,19 @@ read_meta <- function(directory) {
     col_types = "-cddd",
     nudge_top = 1,
     nudge_tail = -3
-    ) %>%
+  ) %>%
     dplyr::mutate(num.mt = readr::parse_number(.data$num.mt))
 
-  rename(tb_ll, dplyr::any_of(set_names(vc_meta$cameca, nm = vc_meta$point))) %>%
+  dplyr::rename(
+    tb_ll,
+    dplyr::any_of(rlang::set_names(vc_meta$cameca, nm = vc_meta$point))
+  ) %>%
     dplyr::mutate(
-    # Add measurement number
+      # Add measurement number
       n.rw = as.numeric(.data$`bl_num.mt`) * as.numeric(.data$`meas_bl.mt`),
-    # Add electron detector type (EM or FC)
+      # Add electron detector type (EM or FC)
       det_type.mt =  dplyr::if_else("FC_start.mt" %in% colnames(.), "FC", "EM")
-      ) %>%
+    ) %>%
     list(tb_phd)
   }
 
@@ -188,7 +195,7 @@ point_example <- function(path = NULL) {
 ICdir_chk <-function(directory, types = c("is_txt", "chk_is", "stat")){
   # types <- paste0(".", types)
   # check if type is valid
-  sys_types <- c("is_txt", "chk_is", "stat") %>% set_names()
+  sys_types <- c("is_txt", "chk_is", "stat") %>% rlang::set_names()
   if (any(types %in% sys_types)) {
     types <- sys_types[sys_types %in% types]
   } else {
@@ -198,18 +205,18 @@ ICdir_chk <-function(directory, types = c("is_txt", "chk_is", "stat")){
   dir_nm <- stringr::str_extract(
     directory,
     stringr::str_c("(?<=", dirname(directory), "/)(.)+")
-    )
+  )
   ls_files <- fs::dir_ls(directory)%>%
     purrr::keep(stringr::str_detect(., pattern = dir_nm))
   ls_names <- unique(fs::path_ext_remove(fs::path_file(ls_files))) %>%
     purrr::keep(stringr::str_detect(., pattern = "(_[:digit:]+_[:digit:]+)$"))
   ls_types <- purrr::cross(list(directory, ls_names, ext = types)) %>%
     purrr::map_chr(purrr::lift(fs::path)) %>%
-    set_names(nm = rep(ls_names, n_distinct(types)))
+    rlang::set_names(nm = rep(ls_names, dplyr::n_distinct(types)))
 
   if (length(ls_types > 0) & all(ls_types %in% ls_files)) {
     # makes grouped list
-    split(ls_types, rep(names(types), each = n_distinct(ls_names)))
+    split(ls_types, rep(names(types), each = dplyr::n_distinct(ls_names)))
   } else {
     FALSE
   }
@@ -245,10 +252,10 @@ unfold <- function(df, type = "metadata", merge = TRUE) {
     return(df)
   }
   meta <- attr(df, type)
-  vars <- select(meta, ends_with(".nm")) %>%
+  vars <- dplyr::select(meta, dplyr::ends_with(".nm")) %>%
     colnames()
   vars <- vars[which(vars %in% colnames(df))]
-  if (merge) return(left_join(df, meta, by = vars)) else return(meta)
+  if (merge) return(dplyr::left_join(df, meta, by = vars)) else return(meta)
 }
 #' @rdname unfold
 #'
@@ -259,11 +266,14 @@ fold <- function(df, type, meta = NULL) {
   vc_type <- vc_type[vc_type %in% type]
 
   if (is.null(meta)){
-    tb <- select(df, -c(ends_with(type)))
-    ls_tb <- purrr::map(vc_type, ~select(df, ends_with(".nm") | ends_with(.x)))
+    tb <- dplyr::select(df, -c(dplyr::ends_with(type)))
+    ls_tb <- purrr::map(
+      vc_type,
+      ~dplyr::select(df, dplyr::ends_with(".nm") | dplyr::ends_with(.x))
+    )
     ls_tb[[length(vc_type) + 1]] <- (tb)
   } else {
-    ls_tb <- list2(metadata = meta, df)
+    ls_tb <- rlang::list2(metadata = meta, df)
   }
   purrr::reduce2(rev(ls_tb), rev(names(vc_type)), write_attr)
 }
@@ -284,9 +294,10 @@ read_validator <- function(directory, types = c("is_txt", "chk_is", "stat")){
   # Check if directory contains specified file types
   if (isFALSE(ICdir_chk(directory, types))) {
     stop(
-      "`directory` does not contain required filetypes: .is_txt, .chk_is, and .stat.",
+      paste0("`directory` does not contain required filetypes: .is_txt,",
+             " .chk_is, and .stat."),
       call. = FALSE
-      )
+    )
   } else {
     ls_files <- ICdir_chk(directory, types)
   }
@@ -307,8 +318,13 @@ row_scanner <- function(ls, reg_expr, return_line = FALSE, nudge = 0) {
   ext_line <- lines[pos_line + nudge]
   # Are these lines identical ?
   if (isTRUE(return_line)) {
-    if (length(unique(ext_line)) > 1) warning("Column names are not equal.", call. = FALSE)
-    col_nms <- stringr::str_split(unique(ext_line), "\\s(?=[[:upper:]])")[[1]] %>%
+    if (length(unique(ext_line)) > 1) {
+      warning("Column names are not equal.", call. = FALSE)
+    }
+    col_nms <- stringr::str_split(
+      unique(ext_line),
+      "\\s(?=[[:upper:]])"
+    )[[1]] %>%
       stringr::str_trim()
     # empty strings
     nm_empty <- stringi::stri_isempty(col_nms)
@@ -358,8 +374,12 @@ point_lines <- function(files, pattern = NULL, position = NULL, sep = NULL,
     file_nms <- rep(file_nms, each = length(files) %/% length(file_nms))
   }
 
-    # replace NAs
-  files <- stringr::str_replace_all(files, pattern = "N\\/A", replacement = "NA")
+  # replace NAs
+  files <- stringr::str_replace_all(
+    files,
+    pattern = "N\\/A",
+    replacement = "NA"
+  )
 
   # extract column names with regex
   col_nms <- stringr::str_extract_all(
@@ -371,24 +391,31 @@ point_lines <- function(files, pattern = NULL, position = NULL, sep = NULL,
     unique()
 
   # regex column names
-  remove_reg <- stringr::str_c("(\\Q", col_nms, "\\E\\s*", sep, ")", collapse = "|")
+  remove_reg <- stringr::str_c(
+    "(\\Q", col_nms, "\\E\\s*", sep, ")",
+    collapse = "|"
+  )
   # extract column names regex from output to obtain values
   vals <- stringr::str_remove_all(files, paste0(remove_reg, "|\\s"))
   # create appropriate value separators
-  separators <- rep(c(rep(delim, length(pattern) - 1), "\n"), length(files) / length(pattern))
+  separators <- rep(
+    c(rep(delim, length(pattern) - 1), "\n"),
+    length(files) / length(pattern)
+  )
   vals <- stringr::str_c(vals, separators, collapse = "")
   vroom::vroom(
     I(vals),
     delim = delim,
-    col_types = vroom::cols(.default = vroom::col_character()), # default to character
+    # default to character
+    col_types = vroom::cols(.default = vroom::col_character()),
     col_names = col_nms,
     show_col_types = FALSE
-    ) %>%
+  ) %>%
     tibble::add_column(
       file.nm = file_nms,
       {{id}} := file_num,
       .before = col_nms[1]
-      )
+    )
 
   }
 
@@ -407,10 +434,9 @@ point_table <- function(directory, pattern_begin, table_depth,
       pattern_begin,
       return_line = TRUE,
       nudge = nudge_top
-      )
-    ) %>%
+    )
+  ) %>%
     purrr::transpose()
-
 
   # max depth of table
   if (!is.null(pattern_end)) {

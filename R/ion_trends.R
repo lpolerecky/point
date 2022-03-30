@@ -34,7 +34,7 @@ predict_ionize <- function(.IC, ..., .nest = NULL, .X = NULL, .N = NULL,
                            .plot = TRUE, .method = "median", .hide = TRUE){
 
   # Metadata
-  if (ncol(select(.IC, ends_with(".mt"))) == 0) .IC <- unfold(.IC)
+  if (ncol(dplyr::select(.IC, dplyr::ends_with(".mt"))) == 0) .IC <- unfold(.IC)
 
   # Quoting the call (user-supplied expressions)
   # Additional arguments
@@ -42,14 +42,15 @@ predict_ionize <- function(.IC, ..., .nest = NULL, .X = NULL, .N = NULL,
     .IC,
     enquos(.X = .X, .N = .N, .species = .species, .t = .t, .bl_t = .bl_t),
     type = c("processed", "group", "meta")
-    )
+  )
 
   # Grouping and nesting
-  gr_by <- enquos(...) %>% append(args[[".species"]])
+  gr_by <- enquos(...) %>%
+    append(args[[".species"]])
   nest <- enquo(.nest)
 
   # New quosures
-  if (is_symbol(get_expr(nest))) {
+  if (rlang::is_symbol(rlang::get_expr(nest))) {
     # group-wise
     nest_gr <- gr_by[!sapply(gr_by, as_name) %in% as_name(nest)]
     X.mdl <-quo_updt(args[[".X"]], post = "grp", update_post =  TRUE)
@@ -64,44 +65,46 @@ predict_ionize <- function(.IC, ..., .nest = NULL, .X = NULL, .N = NULL,
   N.l0 <- quo_updt(args[[".N"]], post = "l0", update_post = TRUE)
 
   # Group-wise
-  if (is_symbol(get_expr(nest))) {
+  if (rlang::is_symbol(rlang::quo_get_expr(nest))) {
     IC <- tidyr::nest(.IC, data = -c(!!! nest_gr)) %>%
-      mutate(gam_out = purrr::map(.data$data, ~gam_fun(.x, args, X.mdl))) %>%
+      dplyr::mutate(
+        gam_out = purrr::map(.data$data, ~gam_fun(.x, args, X.mdl))
+      ) %>%
       tidyr::unnest(cols = c(.data$data, .data$gam_out)) %>%
-      group_by(!!! nest_gr) %>%
-      mutate(
+      dplyr::group_by(!!! nest_gr) %>%
+      dplyr::mutate(
         # Group wise mean
         !! M_X.l0 := mth_switch(.method,!! X.mdl),
         # mean plus random intercept correction
         !! X.l0 := !! M_X.l0 + (!! args[[".X"]] - !! X.mdl) + .data$ran_in.ml,
         !! N.l0 := !! X.l0 * (min(!! args[[".t"]]) - (!! args[[".bl_t"]] / 1e3))
-        )
-    # Single analysis
+      )
+  # Single analysis
   } else {
     IC <- tidyr::nest(.IC, data = -c(!!! gr_by)) %>%
-      mutate(
+      dplyr::mutate(
         !! X.mdl := purrr::map(.data$data, ~as.vector(gam_form(.x, args)))
         ) %>%
       tidyr::unnest(cols = c(.data$data, !! X.mdl)) %>%
-      group_by(!!! gr_by) %>%
-      mutate(
+      dplyr::group_by(!!! gr_by) %>%
+      dplyr::mutate(
         !! M_X.l0 := mth_switch(.method, !! X.mdl),
         # mean correction
         !! X.l0 := !! M_X.l0 + (!! args[[".X"]]- !! X.mdl),
         !! N.l0 := !! X.l0 * (min(!! args[[".t"]]) - (!! args[[".bl_t"]] / 1e3))
-        )
-    }
+      )
+  }
 
-  IC <- ungroup(IC)
+  IC <- dplyr::ungroup(IC)
 
   if (.plot) {
-    if (is_symbol(get_expr(nest))) {
-      facets_gr <- quos(!!! nest_gr)
+    if (rlang::is_symbol(rlang::get_expr(nest))) {
+      facets_gr <- rlang::quos(!!! nest_gr)
     } else {
-      facets_gr <- quos(!!! gr_by)
+      facets_gr <- rlang::quos(!!! gr_by)
     }
 
-    plot_args <- list2(
+    plot_args <- rlang::list2(
         .IC = IC,
         .x = args[[".t"]],
         .y = args[[".X"]],
@@ -111,30 +114,34 @@ predict_ionize <- function(.IC, ..., .nest = NULL, .X = NULL, .N = NULL,
         !!! facets_gr,
         .hat = X.mdl,
         .alpha_level = NULL
-        )
-    ggh <- geom_hline(aes(yintercept = !! M_X.l0), color = "blue", size = 1.1)
+      )
+
+    ggh <- ggplot2::geom_hline(
+      mapping = ggplot2::aes(yintercept = !! M_X.l0),
+      color = "blue",
+      size = 1.1
+    )
 
     # Plot
-    expr(gg_base(!!! plot_args) + ggh) %>%
+    rlang::expr(gg_base(!!! plot_args) + ggh) %>%
       eval() %>%
       print()
 
     # Hide model data
     if (.hide) IC <- fold(IC, c(".mt",".rw", ".ml"))
     IC
-    }
+  }
   # Hide model data
   if (.hide) IC <- fold(IC, c(".mt",".rw", ".ml"))
   IC
 }
 
-
+# averaging
 mth_switch <- function(mth, arg) {
   switch(
     mth,
-    median = call2("median", arg),
-    mean  = call2("mean", arg),
+    median = median(arg),
+    mean  = mean(arg),
     stop("unknown method", call. = FALSE)
-    ) %>%
-    eval()
+  )
 }

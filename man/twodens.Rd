@@ -19,9 +19,8 @@ twodens(.IC, .x, .y, ..., .flag)
 \item{.flag}{Variable identifying two components in the data.}
 }
 \value{
-A
-\code{tibble::\link[tibble:tibble]{tibble}()} with the 2D density of x and y
-named \code{dens_z}.
+A \code{tibble::\link[tibble:tibble]{tibble}()} with the 2D density
+ of x and y named \code{dens_z}.
 }
 \description{
 \code{twodens} function for 2D density calculations of one or two components

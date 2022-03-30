@@ -1,7 +1,10 @@
 ---
-output: 
+output:
   github_document:
-    pandoc_args: --webtex=http://chart.apis.google.com/chart?cht=tx&chl=
+    html_preview: FALSE
+    math_method:
+      engine: webtex
+      url: https://latex.codecogs.com/svg.image?
 bibliography: vignettes/packages.bib 
 ---
 
@@ -19,11 +22,18 @@ knitr::opts_chunk$set(
 ```
 
 
+```{r loc, echo=FALSE}
+here::i_am("README.Rmd")
+```
+
+
+# pkgdown <img src="man/figures/point-logo.png" align="right" alt="" width="300" />
+
 <!-- badges: start -->
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 [![DOI](https://zenodo.org/badge/240023228.svg)](https://zenodo.org/badge/latestdoi/240023228)
-[![Travis build status](https://travis-ci.org/MartinSchobben/point.svg?branch=master)](https://travis-ci.org/MartinSchobben/point)
 [![R-CMD-check](https://github.com/MartinSchobben/point/workflows/R-CMD-check/badge.svg)](https://github.com/MartinSchobben/point/actions)
+[![Codecov test coverage](https://codecov.io/gh/MartinSchobben/point/branch/master/graph/badge.svg)](https://app.codecov.io/gh/MartinSchobben/point?branch=master)
 <!-- badges: end -->
 
 
@@ -89,7 +99,7 @@ library(point)
 A more detailed outline of the general point workflow is given in the vignette *IC-introduction* (`vignette("IC-introduction")`). 
 
 ```{r workflow-graph, out.width="100%", echo=FALSE}
-knitr::include_graphics("vignettes/workflow.png")
+knitr::include_graphics(here::here("man/figures/workflow.png"))
 ```
 
 
@@ -116,7 +126,7 @@ library(point)
 # inst/extdata directory.
 
 # Raw data containing 13C and 12C counts on carbonate
-tb_rw <- read_IC(point_example("2018-01-19-GLENDON"))
+tb_rw <- read_IC(point_example("2018-01-19-GLENDON"), meta = TRUE)
 
 # Processing raw ion count data
 tb_pr <- cor_IC(tb_rw)
