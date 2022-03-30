@@ -1,5 +1,5 @@
 
-# point <img src="man/figures/point-logo.png" align="right" alt="" width="30" />
+# point <img src="man/figures/point-logo.png" align="right" width=120 height=139 alt="" />
 
 <!-- badges: start -->
 
@@ -22,8 +22,8 @@ precision of, respectively, individual analyses and complete series of
 analyses, this functionality allows for the interrogation of the
 analytical consistency. Access to raw ion count data is, furthermore,
 useful as it allows detection of anomalous values associated with
-e.g. machine instability or heterogeneity of the analysed sample. Upon
-detection, anomalous values can be omitted or further analysed to
+e.g. machine instability or heterogeneity of the analysed substrate.
+Upon detection, anomalous values can be omitted or further analysed to
 delineate the source of variation.
 
 The point package is still under development but the master branch is
