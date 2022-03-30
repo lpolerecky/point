@@ -1,7 +1,5 @@
 
-    #> here() starts at /home/nicola/Documents/work/code/point
-
-# pkgdown <img src="man/figures/point-logo.png" align="right" alt="" width="300" />
+# point <img src="man/figures/point-logo.png" align="right" alt="" width="30" />
 
 <!-- badges: start -->
 
@@ -29,7 +27,7 @@ detection, anomalous values can be omitted or further analysed to
 delineate the source of variation.
 
 The point package is still under development but the master branch is
-functioning. Functionality is automatically tested with Travis CI.
+functioning. Functionality is automatically tested with CI.
 
 ## Credits
 
@@ -47,9 +45,9 @@ tidyverse universe, including: *dplyr* (Wickham et al. 2022), *tidyr*
 *magrittr* (Bache and Wickham 2022), *rlang* (Henry and Wickham 2022),
 and *purrr* (Henry and Wickham 2020) for internal functioning as well as
 specialised statistics; *polyaAeppli* (Burden 2014), *broom* (Robinson,
-Hayes, and Couch 2022), *broom.mixed* (Bolker and Robinson 2021), *nlme*
-(Pinheiro, Bates, and R-core 2022), and *mgcv* (Wood 2022). Plots are
-made with *ggplot2* (Wickham 2016)
+Hayes, and Couch 2022), *broom.mixed* (Bolker and Robinson 2022), *nlme*
+(Pinheiro, Bates, and R Core Team 2022), and *mgcv* (Wood 2022). Plots
+are made with *ggplot2* (Wickham 2016)
 
 ## Installation
 
@@ -162,7 +160,7 @@ Forward-Pipe Operator for r*.
 
 <div id="ref-broom.mixed" class="csl-entry">
 
-Bolker, Ben, and David Robinson. 2021. *Broom.mixed: Tidying Methods for
+Bolker, Ben, and David Robinson. 2022. *Broom.mixed: Tidying Methods for
 Mixed Models*. <https://github.com/bbolker/broom.mixed>.
 
 </div>
@@ -197,7 +195,7 @@ Müller, Kirill, and Hadley Wickham. 2021. *Tibble: Simple Data Frames*.
 
 <div id="ref-nlme" class="csl-entry">
 
-Pinheiro, José, Douglas Bates, and R-core. 2022. *Nlme: Linear and
+Pinheiro, José, Douglas Bates, and R Core Team. 2022. *Nlme: Linear and
 Nonlinear Mixed Effects Models*.
 <https://svn.r-project.org/R-packages/trunk/nlme/>.
 
