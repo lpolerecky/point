@@ -54,7 +54,8 @@ Suggests:
     MASS (>= 7.3.56),
     diffviewer,
     covr,
-    here (>= 1.0.1)
+    here (>= 1.0.1),
+    pkgdown
 RoxygenNote: 7.1.2
 VignetteBuilder: knitr
 Config/testthat/edition: 3

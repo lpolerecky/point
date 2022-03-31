@@ -206,6 +206,29 @@
       8 ideal            2 H0 (independence of residuals)
       9 ideal            3 H0 (independence of residuals)
 
+# case-study with Utrecht raster dataset
+
+    Code
+      diag_R(map_sum_grid_64_MEX, "13C", "12C", dim_name.nm, sample.nm, file.nm,
+        grid.nm, .nest = grid.nm)
+    Output
+      # A tibble: 24 x 13
+         execution sample.nm file.nm  grid.nm dim_name.nm ratio.nm M_R_Xt.pr F_R_Xt.pr
+             <dbl> <chr>     <chr>      <int> <chr>       <chr>        <dbl>     <dbl>
+       1         1 MEX       map_sum~       1 height      13C/12C     0.0103    0.277 
+       2         1 MEX       map_sum~       2 height      13C/12C     0.0103    0.756 
+       3         1 MEX       map_sum~       3 height      13C/12C     0.0103    1.51  
+       4         1 MEX       map_sum~       4 height      13C/12C     0.0102    0.730 
+       5         1 MEX       map_sum~       1 width       13C/12C     0.0103    0.589 
+       6         1 MEX       map_sum~       2 width       13C/12C     0.0103    1.25  
+       7         1 MEX       map_sum~       3 width       13C/12C     0.0103    0.195 
+       8         1 MEX       map_sum~       4 width       13C/12C     0.0103    0.0209
+       9         1 MEX       map_sum~       1 depth       13C/12C     0.0103    0.996 
+      10         1 MEX       map_sum~       2 depth       13C/12C     0.0103    0.364 
+      # ... with 14 more rows, and 5 more variables: p_R_Xt.pr <dbl>,
+      #   hat_M_M_R_Xt.pr <dbl>, hat_RS_M_R_Xt.pr <dbl>, dAIC_M_R_Xt.pr <dbl>,
+      #   p_M_R_Xt.pr <dbl>
+
 # Keep metadata
 
     Code

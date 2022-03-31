@@ -52,34 +52,41 @@ test_that("IR diagnostic on synthetic data is consistent", {
 # specific error while using raster data in pointapply
 #-------------------------------------------------------------------------------
 
-# test_that("",{
-#
-#   skip_if_not_installed("pointapply")
-#
-#   library(pointapply)
-#
-#   # generate data from ZENODO repo
-#   download_point(type = "raw")
-#   MEX_files <- list.files(get_matlab("2020-08-20-GLENDON"), full.names = TRUE)
-#   MEX <- purrr::map(MEX_files, ~readmat::read_mat(.x))
-#   grid_aggregate(MEX, c("height", "width", "depth"), grid_cell = 64,
-#                  species = c("12C", "13C"), title = "MEX", name = "map_sum_grid",
-#                  corrected = TRUE, save = TRUE)
-#   load_point("map_sum_grid", "MEX", 64)
-#
-#   # diagnostics
-#   point::diag_R(
-#     map_sum_grid_64_MEX,
-#     "13C",
-#     "12C",
-#     dim_name.nm,
-#     sample.nm,
-#     file.nm,
-#     grid.nm,
-#     .nest = grid.nm
-#   )
-#
-# })
+test_that("case-study with Utrecht raster dataset", {
+
+  skip_if_offline()
+  skip_on_cran()
+  skip_on_covr()
+  skip_on_ci()
+  skip_if_not_installed("pointapply")
+  skip_if_not_installed("readmat")
+
+  library(pointapply)
+
+  # download data from ZENODO repo
+  # download_point(type = "raw")
+  # MEX_files <- list.files(get_matlab("2020-08-20-GLENDON"), full.names = TRUE)
+  # MEX <- purrr::map(MEX_files, ~readmat::read_mat(.x))
+  # grid_aggregate(MEX, c("height", "width", "depth"), grid_cell = 64,
+                 # species = c("12C", "13C"), title = "MEX",
+                 # name = "map_sum_grid", corrected = TRUE, save = TRUE)
+  load_point("map_sum_grid", "MEX", 64)
+
+  # diagnostics
+  expect_snapshot(
+    diag_R(
+      map_sum_grid_64_MEX,
+      "13C",
+      "12C",
+      dim_name.nm,
+      sample.nm,
+      file.nm,
+      grid.nm,
+      .nest = grid.nm
+    )
+  )
+
+})
 
 #-------------------------------------------------------------------------------
 # Is metadata preserved

@@ -23,6 +23,15 @@ test_that("whole formula can be generated", {
    c("nlme::lme(Xt.pr.13C ~ -1 + Xt.pr.12C, random = ~-1 + Xt.pr.12C | ",
     "    execution/nest, data = data, weights = ~1/Xt.pr.12C)")
   )
+  # LME with transformation
+  call <- formula_parser(real_IC, quo(Xt.pr.13C), quo(Xt.pr.12C), type = "LME",
+                         nest = quo(nest), transformation = "ppt",
+                         execute = FALSE)
+  expect_equal(
+    deparse(call),
+    c("nlme::lme(Xt.pr.13C ~ -1 + Xt.pr.12C, random = ~-1 + Xt.pr.12C | ",
+      "    execution/nest, data = data, weights = ~1/Xt.pr.12C)")
+  )
   # with flag
   call <- formula_parser(real_IC, quo(Xt.pr.13C), quo(Xt.pr.12C), quo(flag),
                          type = "Rm", execute = FALSE)
@@ -46,6 +55,16 @@ test_that("whole formula can be generated", {
                                                 "confluent"))
   expect_snapshot(
     formula_parser(xc, quo(Xt.pr.13C), quo(Xt.pr.12C), quo(flag), type = "Rm")
+  )
+  # GLS with transformation
+  expect_snapshot(
+    formula_parser(xc, quo(Xt.pr.13C), quo(Xt.pr.12C), type = "GLS",
+                   transformation = "ppt")
+  )
+  # LME with transformation
+  expect_snapshot(
+    formula_parser(real_IC, quo(Xt.pr.13C), quo(Xt.pr.12C), type = "LME",
+                   nest = fil.nm, transformation = "ppt")
   )
 })
 

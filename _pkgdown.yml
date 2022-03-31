@@ -1,4 +1,6 @@
-destination: docs
+url: https://martinschobben.github.io/point/
+template:
+  bootstrap: 5
 reference:
 - title: "Reading ion count data"
   desc: "Checking files, and loading ion count data and associated meta-data."
