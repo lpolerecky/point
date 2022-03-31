@@ -25,16 +25,16 @@
     Output
       [[1]]
       # A tibble: 3 x 28
-        file.nm  sample.nm  coord.mt  file_raw.mt    bl_num.mt meas_bl.mt rejection.mt
-        <chr>    <chr>      <chr>     <chr>              <dbl>      <dbl>        <dbl>
-      1 2018-01~ Belemnite~ x=-12761~ "D:\\CamecaNa~        60         65            2
-      2 2018-01~ Belemnite~ x=-12741~ "D:\\CamecaNa~        60         65            2
-      3 2018-01~ Belemnite~ x=-12721~ "D:\\CamecaNa~        60         65            2
+        file.nm       sample.nm coord.mt file_raw.mt bl_num.mt meas_bl.mt rejection.mt
+        <chr>         <chr>     <chr>    <chr>       <chr>     <chr>      <chr>       
+      1 2018-01-19-G~ Belemnit~ x=-1276~ "D:\\Camec~ 60        65         2           
+      2 2018-01-19-G~ Belemnit~ x=-1274~ "D:\\Camec~ 60        65         2           
+      3 2018-01-19-G~ Belemnit~ x=-1272~ "D:\\Camec~ 60        65         2           
       # ... with 21 more variables: slit.mt <chr>, lens.mt <chr>, presput.mt <chr>,
-      #   rast_com.mt <dbl>, frame.mt <chr>, blank_rast.mt <chr>, raster.mt <chr>,
-      #   tune.mt <chr>, reg_mode.mt <chr>, chk_frm.mt <dbl>, sec_ion_cent.mt <chr>,
-      #   frame_sec_ion_cent.mt <chr>, width_hor.mt <dbl>, width_ver.mt <dbl>,
-      #   E0S_cent.mt <chr>, width_V.mt <dbl>, E0P_off.mt <dbl>,
+      #   rast_com.mt <chr>, frame.mt <chr>, blank_rast.mt <chr>, raster.mt <chr>,
+      #   tune.mt <chr>, reg_mode.mt <chr>, chk_frm.mt <chr>, sec_ion_cent.mt <chr>,
+      #   frame_sec_ion_cent.mt <chr>, width_hor.mt <chr>, width_ver.mt <chr>,
+      #   E0S_cent.mt <chr>, width_V.mt <chr>, E0P_off.mt <chr>,
       #   prim_cur_start.mt <chr>, prim_cur_after.mt <chr>, n.rw <dbl>,
       #   det_type.mt <chr>
       

@@ -8,16 +8,7 @@
 #' @export
 #' @importFrom magrittr %>%
 #' @usage lhs \%>\% rhs
-NULL
-
-#' Tee pipe operator
-#'
-#' See \code{magrittr::\link[magrittr:tee]{\%T>\%}} for details.
-#'
-#' @name %T>%
-#' @rdname tee
-#' @keywords internal
-#' @export
-#' @importFrom magrittr %T>%
-#' @usage lhs \%T>\% rhs
+#' @param lhs A value or the magrittr placeholder.
+#' @param rhs A function call using the magrittr semantics.
+#' @return The result of calling `rhs(lhs)`.
 NULL

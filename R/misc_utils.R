@@ -53,12 +53,12 @@ ion_labeller <- function(ion, label = "latex") {
     ", comments = TRUE)
 
   suppressWarnings(
-  ls_chr <- purrr::map(
-    lst(a = ms_reg, b = el_reg, c = st_reg),
-    ~stringr::str_extract_all(ion, .x),
-    ) %>%
-    purrr::flatten() %>%
-    purrr::transpose()
+    ls_chr <- purrr::map(
+      tibble::lst(a = ms_reg, b = el_reg, c = st_reg),
+      ~stringr::str_extract_all(ion, .x),
+      ) %>%
+      purrr::flatten() %>%
+      purrr::transpose()
   )
 
   if (label == "latex" | label == "webtex") {
@@ -66,13 +66,14 @@ ion_labeller <- function(ion, label = "latex") {
       if (length(ls[["c"]]) != 0) {
         if (!stringr::str_detect(ls[["c"]], "[[:digit:]]")) ls[["c"]] <- NULL
       }
-      paste0("${}^{", ls[["a"]], "}\\mathrm{", ls[["b"]], "}_{", ls[["c"]], "}$")
+      paste0("${}^{", ls[["a"]], "}\\mathrm{", ls[["b"]], "}_{", ls[["c"]],
+             "}$")
     }
     ls_ion <- purrr::map(ls_chr, paste_ion)
     purrr::reduce(ls_ion, paste0)
     } else if (label == "expr") {
     ls_ion <- purrr::map(ls_chr, ~ substitute("" ^ a * b[c] , env = .x))
-    purrr::reduce(ls_ion, ~substitute(a * b, env = lst(a = .x, b = .y)))
+    purrr::reduce(ls_ion, ~substitute(a * b, env = list(a = .x, b = .y)))
   }
 }
 #' @rdname ion_labeller
@@ -83,9 +84,9 @@ R_labeller <- function(ion1, ion2, label = "latex") {
   if (label == "latex" | label == "webtex") {
     paste(ls_R[[1]], ls_R[[2]], sep = "") %>%
       stringr::str_replace("\\$\\$", "/")
-    } else if (label == "expr") {
-    substitute(a *"/ "* b, env = lst(a = ls_R[[1]], b = ls_R[[2]]))
-    }
+  } else if (label == "expr") {
+    substitute(a *"/ "* b, env = list(a = ls_R[[1]], b = ls_R[[2]]))
+  }
 }
 #' @rdname ion_labeller
 #'
@@ -102,28 +103,25 @@ stat_labeller <- function(var, org, stat, value, label = "latex"){
       # external precision
       if (stringr::str_detect(org, "^M$|^Ntot$")) {
         stat_chr <- paste0("\\bar{", stat_chr,"}")
-          }
+      }
       # mlm external precision
       if (stringr::str_detect(org, "^M_R$")) {
         stat_chr <- paste0("\\hat{", stat_chr,"}")
         if (stringr::str_detect(stat, "hat")) {
           stat <- stringr::str_replace(stat, "hat", "") # remove hat above stat
         }
-          }
-      } else {
-        stat_chr <- var
-        # external precision
-        if (stringr::str_detect(org, "^M$|^Ntot$")) {
-          stat_chr <- paste0("\\bar{", stat_chr,"}")
-          }
-        # mlm external precision
-        if (stringr::str_detect(org, "^M_R$")) {
-          stat_chr <- paste0("\\bar{", stat_chr,"}")
-          # if (stringr::str_detect(stat, "hat")) {
-          #   stat <- stringr::str_replace(stat, "hat", "")# remove hat above stat
-          # }
-          }
-        }
+      }
+    } else {
+      stat_chr <- var
+      # external precision
+      if (stringr::str_detect(org, "^M$|^Ntot$")) {
+        stat_chr <- paste0("\\bar{", stat_chr,"}")
+      }
+      # mlm external precision
+      if (stringr::str_detect(org, "^M_R$")) {
+        stat_chr <- paste0("\\bar{", stat_chr,"}")
+      }
+    }
 
     # p values, AIC
     if (stat == "p") return(paste0("$p_{", stat_chr,"}$"))
@@ -134,15 +132,15 @@ stat_labeller <- function(var, org, stat, value, label = "latex"){
       stat_chr <- paste0("_{", stat_chr,"}")
       if (stringr::str_detect(stat, "R")) {
         sd_prefix <- "\\epsilon"
-        } else {
-          sd_prefix <- "s"
-        }
+      } else {
+        sd_prefix <- "s"
+      }
       # Hat of predicted standard deviations and errors
       if (stringr::str_detect(stat, "hat")) {
         stat_chr <- paste0("\\hat{", sd_prefix ,"}", stat_chr)
-        } else {
-          stat_chr <- paste0(sd_prefix, stat_chr)
-        }
+      } else {
+        stat_chr <- paste0(sd_prefix, stat_chr)
+      }
     }
     #  Per mille signs  of relative standard deviations and errors
     if (stringr::str_detect(stat, "R")) {
@@ -150,13 +148,13 @@ stat_labeller <- function(var, org, stat, value, label = "latex"){
       if (label == "latex") {
         return(paste0("$", stat_chr, "$ (\\text{\\textperthousand})"))
       }
-        } else {
-          return(paste0("$", stat_chr, "$"))
-          }
+    } else {
+      return(paste0("$", stat_chr, "$"))
+    }
   }
-# plot labels as expressions
+  # plot labels as expressions
   if (label == "expr") {
-    var <- parse_expr(var)
+    var <- rlang::parse_expr(var)
     if (stat == "n") {
       return(substitute(n == ~ a, list(a = sprintf(fmt = "%.0f", value))))
     }
@@ -169,31 +167,31 @@ stat_labeller <- function(var, org, stat, value, label = "latex"){
     if (stringr::str_detect(stat, "R")) {
       sd_prefix <- expression(epsilon)
       value <- paste(sprintf(fmt = "%.1f", value), "(\u2030)")
-      } else {
-        sd_prefix <- expression(s)
-        value <- sprintf(fmt = "%.3f", value)
-        }
+    } else {
+      sd_prefix <- expression(s)
+      value <- sprintf(fmt = "%.3f", value)
+    }
     if (stringr::str_detect(stat, "hat")) {
       sd_prefix <- substitute(hat(a), list(a = sd_prefix))
-      }
+    }
     if (stringr::str_detect(stat, "M")) {
-      if (nchar(stat) == 1) {
-        return(substitute(bar(a) == ~ b, list(a = var, b = value)))
+        if (nchar(stat) == 1) {
+          return(substitute(bar(a) == ~ b, list(a = var, b = value)))
         } else {
           sym_chr <- substitute(bar(a), list(a = var))
         }
       } else {
         sym_chr <- var
-        }
+      }
     if (stringr::str_detect(stat, "S")){
       stat_chr <- substitute(
         a[b] == ~ c,
         list(a = sd_prefix, b = sym_chr, c = value)
-        )
+      )
       return(stat_chr)
-      }
+    }
   }
-  }
+}
 
 #' Function for co-variate conversion of isotope systems
 #'
@@ -239,30 +237,29 @@ cov_R <- function(.IC, .ion, ..., .species = NULL, .t = NULL,
   gr_by <- enquos(...)
 
   # Observation per group
-  obs_gr <- group_size(group_by(.IC, !!! gr_by, !! args[[".species"]]))
+  obs_gr <- dplyr::group_size(dplyr::group_by(.IC, !!! gr_by, !! args[[".species"]]))
   # Distinct observation for time increments
-  obs_t <- n_distinct(pull(.IC, !! args[[".t"]]))
+  obs_t <- dplyr::n_distinct(dplyr::pull(.IC, !! args[[".t"]]))
   # Check if t steps is consistent with grouping otherwise create new ID
   if (any(obs_gr %% obs_t != 0)) {
-    .IC <- group_by(.IC, !!! gr_by, !! args[[".species"]]) %>%
-      mutate(!! args[[".t"]] := row_number()) %>%
-      ungroup()
-    }
+    .IC <- dplyr::group_by(.IC, !!! gr_by, !! args[[".species"]]) %>%
+      dplyr::mutate(!! args[[".t"]] := dplyr::row_number()) %>%
+      dplyr::ungroup()
+  }
   # Remove white space in ion names and add underscore for polyatomic species
-  IC <- mutate(
+  IC <- dplyr::mutate(
     .IC,
     !! args[[".species"]] := ion_trim(!! args[[".species"]])
-    ) %>%
-    filter(!! args[[".species"]] %in% sapply(.ion, ion_trim))
+  ) %>%
+    dplyr::filter(!! args[[".species"]] %in% sapply(.ion, ion_trim))
 
   # Wide format
   tidyr::pivot_wider(
     IC,
-    c(!!! gr_by, !! args[[".t"]], !! args[[".species"]]),
     names_from = !! args[[".species"]],
     values_from = -c(!!! gr_by, !! args[[".t"]], !! args[[".species"]]),
     names_sep = "."
-    )
+  )
 }
 #' Remove analytical runs with zero counts
 #'
@@ -309,27 +306,30 @@ zeroCt <- function(.IC, .ion1, .ion2, ..., .N = NULL, .species = NULL,
   # Remove white space in ion names and add underscore for polyatomic species
   .ion1 <- ion_trim(.ion1)
   .ion2 <- ion_trim(.ion2)
-  IC <- mutate(
+  IC <- dplyr::mutate(
     .IC,
     !! args[[".species"]] := ion_trim(!! args[[".species"]])
-    ) %>%
-    filter(!! args[[".species"]] == .ion1 | !! args[[".species"]] == .ion2)
+  ) %>%
+    dplyr::filter(
+      !! args[[".species"]] == .ion1 | !! args[[".species"]] == .ion2
+    )
 
   if (isTRUE(.warn)) {
-    if (any(pull(IC, !! args[[".N"]]) == 0)) {
+    if (any(dplyr::pull(IC, !! args[[".N"]]) == 0)) {
       warning("Zero counts present and removed.", call. = FALSE)
     }
   }
 
-  ls_0 <- filter(IC, !! args[[".N"]] == 0) %>%
-    select(!!! gr_by)
-  IC <- anti_join(IC, ls_0, by = sapply(gr_by, as_name))
+  ls_0 <- dplyr::filter(IC, !! args[[".N"]] == 0) %>%
+    dplyr::select(!!! gr_by)
+  IC <- dplyr::anti_join(IC, ls_0, by = sapply(gr_by, as_name))
   if(nrow(IC) == 0) {
     warning(
       "No more data left after removing zero count analysis.",
       call. = FALSE
-      )
+    )
   }
+  # Return
   IC
 }
 

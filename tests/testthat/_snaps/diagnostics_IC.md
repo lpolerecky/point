@@ -1,4 +1,4 @@
-# consistency of diagnostics wrapper on synthetic data
+# diagnostics wrapper on synthetic data is consistent
 
     Code
       diag_R(simu_IC, "13C", "12C", type.nm, spot.nm)
@@ -15,42 +15,6 @@
       7         1 ideal            1 13C/12C     0.0112     0.267  8.49e- 1
       8         1 ideal            2 13C/12C     0.0112     0.219  8.83e- 1
       9         1 ideal            3 13C/12C     0.0112     1.73   1.59e- 1
-
----
-
-    Code
-      diag_R(simu_IC, "13C", "12C", type.nm, spot.nm, .method = "QQ")
-    Output
-      # A tibble: 9 x 3
-        type.nm    spot.nm hyp            
-        <chr>        <int> <chr>          
-      1 symmetric        1 H0 (normal)    
-      2 symmetric        2 H0 (normal)    
-      3 symmetric        3 H0 (normal)    
-      4 asymmetric       1 Ha (non-normal)
-      5 asymmetric       2 Ha (non-normal)
-      6 asymmetric       3 Ha (non-normal)
-      7 ideal            1 H0 (normal)    
-      8 ideal            2 H0 (normal)    
-      9 ideal            3 H0 (normal)    
-
----
-
-    Code
-      diag_R(simu_IC, "13C", "12C", type.nm, spot.nm, .method = "IR")
-    Output
-      # A tibble: 9 x 3
-        type.nm    spot.nm hyp                           
-        <chr>        <int> <chr>                         
-      1 symmetric        1 Ha (dependence of residuals)  
-      2 symmetric        2 Ha (dependence of residuals)  
-      3 symmetric        3 Ha (dependence of residuals)  
-      4 asymmetric       1 Ha (dependence of residuals)  
-      5 asymmetric       2 Ha (dependence of residuals)  
-      6 asymmetric       3 Ha (dependence of residuals)  
-      7 ideal            1 H0 (independence of residuals)
-      8 ideal            2 H0 (independence of residuals)
-      9 ideal            3 H0 (independence of residuals)
 
 ---
 
@@ -94,15 +58,7 @@
       #   Xt.pr.13C <dbl>, Xt.pr.12C <dbl>, n_t.nm.13C <int>, n_t.nm.12C <int>,
       #   tot_N.pr.13C <dbl>, tot_N.pr.12C <dbl>, M_Xt.pr.13C <dbl>,
       #   M_Xt.pr.12C <dbl>, S_Xt.pr.13C <dbl>, S_Xt.pr.12C <dbl>,
-      #   RS_Xt.pr.13C <dbl>, RS_Xt.pr.12C <dbl>, SeM_Xt.pr.13C <dbl>,
-      #   SeM_Xt.pr.12C <dbl>, hat_S_N.pr.13C <dbl>, hat_S_N.pr.12C <dbl>,
-      #   hat_RS_N.pr.13C <dbl>, hat_RS_N.pr.12C <dbl>, hat_SeM_N.pr.13C <dbl>,
-      #   hat_SeM_N.pr.12C <dbl>, chi2_N.pr.13C <dbl>, chi2_N.pr.12C <dbl>,
-      #   n_R_t.nm <int>, M_R_Xt.pr <dbl>, S_R_Xt.pr <dbl>, RS_R_Xt.pr <dbl>,
-      #   SeM_R_Xt.pr <dbl>, RSeM_R_Xt.pr <dbl>, hat_S_R_N.pr <dbl>,
-      #   hat_RS_R_N.pr <dbl>, hat_SeM_R_N.pr <dbl>, hat_RSeM_R_N.pr <dbl>,
-      #   chi2_R_N.pr <dbl>, R_Xt.pr <dbl>, ratio.nm <chr>, CooksD <dbl>, flag <fct>,
-      #   Xt.e <dbl>, F_R_Xt.pr <dbl>, p_R_Xt.pr <dbl>
+      #   RS_Xt.pr.13C <dbl>, RS_Xt.pr.12C <dbl>, SeM_Xt.pr.13C <dbl>, ...
 
 ---
 
@@ -149,15 +105,7 @@
       #   Xt.pr.13C <dbl>, Xt.pr.12C <dbl>, n_t.nm.13C <int>, n_t.nm.12C <int>,
       #   tot_N.pr.13C <dbl>, tot_N.pr.12C <dbl>, M_Xt.pr.13C <dbl>,
       #   M_Xt.pr.12C <dbl>, S_Xt.pr.13C <dbl>, S_Xt.pr.12C <dbl>,
-      #   RS_Xt.pr.13C <dbl>, RS_Xt.pr.12C <dbl>, SeM_Xt.pr.13C <dbl>,
-      #   SeM_Xt.pr.12C <dbl>, hat_S_N.pr.13C <dbl>, hat_S_N.pr.12C <dbl>,
-      #   hat_RS_N.pr.13C <dbl>, hat_RS_N.pr.12C <dbl>, hat_SeM_N.pr.13C <dbl>,
-      #   hat_SeM_N.pr.12C <dbl>, chi2_N.pr.13C <dbl>, chi2_N.pr.12C <dbl>,
-      #   n_R_t.nm <int>, M_R_Xt.pr <dbl>, S_R_Xt.pr <dbl>, RS_R_Xt.pr <dbl>,
-      #   SeM_R_Xt.pr <dbl>, RSeM_R_Xt.pr <dbl>, hat_S_R_N.pr <dbl>,
-      #   hat_RS_R_N.pr <dbl>, hat_SeM_R_N.pr <dbl>, hat_RSeM_R_N.pr <dbl>,
-      #   chi2_R_N.pr <dbl>, R_Xt.pr <dbl>, ratio.nm <chr>, hat_Xt.pr.13C <dbl>,
-      #   CooksD <dbl>, flag <fct>
+      #   RS_Xt.pr.13C <dbl>, RS_Xt.pr.12C <dbl>, SeM_Xt.pr.13C <dbl>, ...
 
 ---
 
@@ -218,9 +166,68 @@
       7         1 ideal            1 13C/12C        0.0112     0.267  8.49e- 1
       8         1 ideal            2 13C/12C        0.0112     0.219  8.83e- 1
       9         1 ideal            3 13C/12C        0.0112     1.73   1.59e- 1
-      # ... with 4 more variables: $\hat{\bar{R}}$ <dbl>,
-      #   $\hat{\epsilon}_{\bar{R}}$ (\text{\textperthousand}) <dbl>,
-      #   $\Delta AIC_{\bar{R}}$ <dbl>, $p_{\bar{R}}$ <dbl>
+      # ... with 4 more variables: `$\\hat{\\bar{R}}$` <dbl>,
+      #   `$\\hat{\\epsilon}_{\\bar{R}}$ (\\text{\\textperthousand})` <dbl>,
+      #   `$\\Delta AIC_{\\bar{R}}$` <dbl>, `$p_{\\bar{R}}$` <dbl>
+
+# QQ diagnostic on synthetic data is consistent
+
+    Code
+      diag_R(simu_IC, "13C", "12C", type.nm, spot.nm, .method = "QQ")
+    Output
+      # A tibble: 9 x 3
+        type.nm    spot.nm hyp            
+        <chr>        <int> <chr>          
+      1 symmetric        1 H0 (normal)    
+      2 symmetric        2 H0 (normal)    
+      3 symmetric        3 H0 (normal)    
+      4 asymmetric       1 Ha (non-normal)
+      5 asymmetric       2 Ha (non-normal)
+      6 asymmetric       3 Ha (non-normal)
+      7 ideal            1 H0 (normal)    
+      8 ideal            2 H0 (normal)    
+      9 ideal            3 H0 (normal)    
+
+# IR diagnostic on synthetic data is consistent
+
+    Code
+      diag_R(simu_IC, "13C", "12C", type.nm, spot.nm, .method = "IR")
+    Output
+      # A tibble: 9 x 3
+        type.nm    spot.nm hyp                           
+        <chr>        <int> <chr>                         
+      1 symmetric        1 Ha (dependence of residuals)  
+      2 symmetric        2 Ha (dependence of residuals)  
+      3 symmetric        3 Ha (dependence of residuals)  
+      4 asymmetric       1 Ha (dependence of residuals)  
+      5 asymmetric       2 Ha (dependence of residuals)  
+      6 asymmetric       3 Ha (dependence of residuals)  
+      7 ideal            1 H0 (independence of residuals)
+      8 ideal            2 H0 (independence of residuals)
+      9 ideal            3 H0 (independence of residuals)
+
+# case-study with Utrecht raster dataset
+
+    Code
+      diag_R(map_sum_grid_64_MEX, "13C", "12C", dim_name.nm, sample.nm, file.nm,
+        grid.nm, .nest = grid.nm)
+    Output
+      # A tibble: 24 x 13
+         execution sample.nm file.nm  grid.nm dim_name.nm ratio.nm M_R_Xt.pr F_R_Xt.pr
+             <dbl> <chr>     <chr>      <int> <chr>       <chr>        <dbl>     <dbl>
+       1         1 MEX       map_sum~       1 height      13C/12C     0.0103    0.277 
+       2         1 MEX       map_sum~       2 height      13C/12C     0.0103    0.756 
+       3         1 MEX       map_sum~       3 height      13C/12C     0.0103    1.51  
+       4         1 MEX       map_sum~       4 height      13C/12C     0.0102    0.730 
+       5         1 MEX       map_sum~       1 width       13C/12C     0.0103    0.589 
+       6         1 MEX       map_sum~       2 width       13C/12C     0.0103    1.25  
+       7         1 MEX       map_sum~       3 width       13C/12C     0.0103    0.195 
+       8         1 MEX       map_sum~       4 width       13C/12C     0.0103    0.0209
+       9         1 MEX       map_sum~       1 depth       13C/12C     0.0103    0.996 
+      10         1 MEX       map_sum~       2 depth       13C/12C     0.0103    0.364 
+      # ... with 14 more rows, and 5 more variables: p_R_Xt.pr <dbl>,
+      #   hat_M_M_R_Xt.pr <dbl>, hat_RS_M_R_Xt.pr <dbl>, dAIC_M_R_Xt.pr <dbl>,
+      #   p_M_R_Xt.pr <dbl>
 
 # Keep metadata
 
@@ -237,7 +244,7 @@
 ---
 
     Code
-      diag_R(real_IC, "13C", "12C", file.nm, .meta = TRUE) %>% unfold()
+      unfold(diag_R(real_IC, "13C", "12C", file.nm, .meta = TRUE))
     Output
       # A tibble: 81,900 x 43
          execution file.nm     ratio.nm M_R_Xt.pr F_R_Xt.pr p_R_Xt.pr  t.nm species.nm
@@ -258,8 +265,5 @@
       #   meas_bl.mt <dbl>, rejection.mt <dbl>, slit.mt <chr>, lens.mt <chr>,
       #   presput.mt <chr>, rast_com.mt <dbl>, frame.mt <chr>, blank_rast.mt <chr>,
       #   raster.mt <chr>, tune.mt <chr>, reg_mode.mt <chr>, chk_frm.mt <dbl>,
-      #   sec_ion_cent.mt <chr>, frame_sec_ion_cent.mt <chr>, width_hor.mt <dbl>,
-      #   width_ver.mt <dbl>, E0S_cent.mt <chr>, width_V.mt <dbl>, E0P_off.mt <dbl>,
-      #   prim_cur_start.mt <chr>, prim_cur_after.mt <chr>, det_type.mt <chr>,
-      #   M_PHD.mt <dbl>, SD_PHD.mt <dbl>, EMHV.mt <dbl>
+      #   sec_ion_cent.mt <chr>, frame_sec_ion_cent.mt <chr>, width_hor.mt <dbl>, ...
 

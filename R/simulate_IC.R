@@ -36,6 +36,7 @@ simu_R <- function(.sys, .type, .ion1, .ion2, .reference, .seed, .n = 3e3,
   if (!(.type %in% c("symmetric", "asymmetric", "ideal"))) {
     stop("Unkown type of simulation")
   }
+
   M_N <- .N / .n
   ini_n <- .n
   blocks <- rep(1:(.n / .bl), each = .bl)
@@ -58,7 +59,7 @@ simu_R <- function(.sys, .type, .ion1, .ion2, .reference, .seed, .n = 3e3,
           unique(.data$M_N.in) * (1 + (.sys / 100) / 2),
           length.out = ini_n
         )
-        ),
+      ),
     # Isotopic variation
     R.in = R_gen(
       ini_n,
@@ -68,27 +69,27 @@ simu_R <- function(.sys, .type, .ion1, .ion2, .reference, .seed, .n = 3e3,
       isotope = .ion1,
       input = "delta",
       type = .type
-      )
-    ) %>%
+    )
+  ) %>%
     # Expand over species and repetition (virtual samples)
     tidyr::expand_grid(spot.nm = c(1:.reps), species.nm = c(.ion1, .ion2)) %>%
     # Convert common isotope N with variable R
-    mutate(
-      seed = .seed + .reps + row_number(),
-      N.in = if_else(
+    dplyr::mutate(
+      seed = .seed + .reps + dplyr::row_number(),
+      N.in = dplyr::if_else(
         .data$species.nm == .ion2, R_conv(.data$N.in, .data$R.in), .data$N.in
         )
         ) %>%
     # Random variation (Number generation)
-    group_by(.data$type.nm, .data$species.nm) %>%
-    mutate(
+    dplyr::group_by(.data$type.nm, .data$species.nm) %>%
+    dplyr::mutate(
       N.sm =
         purrr::pmap_dbl(
           list(M_N = .data$N.in, seed = .data$seed), N_gen),
       Xt.sm = .data$N.sm
       ) %>%
-    ungroup() %>%
-    select(-c(.data$seed, .data$N.in, .data$M_N.in, .data$R.in))
+    dplyr::ungroup() %>%
+    dplyr::select(-c(.data$seed, .data$N.in, .data$M_N.in, .data$R.in))
 
 }
 
@@ -117,7 +118,7 @@ R_gen <- function(reps, baseR, devR, reference, isotope, input = "delta", type) 
     type = "composition",
     input = input,
     output = "R"
-    )
+  )
 
   devR <- calib_R(
     devR,
@@ -126,22 +127,20 @@ R_gen <- function(reps, baseR, devR, reference, isotope, input = "delta", type) 
     type = "composition",
     input = input,
     output = "R"
-    )
+  )
 
   if (type == "ideal") {
     R_simu <- rep(baseR, reps)
     return(R_simu)
-    }
-  if (type == "asymmetric") {
+  } else if (type == "asymmetric") {
     R_simu <- approx(
       c(1, 5 * reps / 6, reps),
       c(baseR, devR, devR),
       n = reps ,
       method = "constant"
-      )$y
+    )$y
     return(R_simu)
-    }
-  if (type == "symmetric") {
+  } else if (type == "symmetric") {
     R_simu <- approx(
       c(1, reps),
       c(devR, baseR),
@@ -150,4 +149,4 @@ R_gen <- function(reps, baseR, devR, reference, isotope, input = "delta", type) 
       )$y
     return(R_simu)
   }
-  }
+}

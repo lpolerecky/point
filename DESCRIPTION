@@ -11,40 +11,51 @@ Authors@R:
            comment = c(ORCID = "0000-0001-8560-0037"))
 URL: https://martinschobben.github.io/point/
 Maintainer: Martin Schobben <schobbenmartin@gmail.com>
-Description: The point functions provide a convenient way to work with and evaluate pulsed ion count data. The package offers solution to loading and collating raw ion count text files into a convenient data frame (tibble). The package corrects ion counts for systematic biases related to detection devices and calculates statistics to gauge the analytical precision. Finally, the package contains methods to detect isotopic variability in the analyte.
+Description: The point functions provide a convenient way to work with and 
+    evaluate pulsed ion count data. The package offers solution to loading and 
+    collating raw ion count text files into a convenient data frame (tibble). 
+    The package corrects ion counts for systematic biases related to detection 
+    devices and calculates statistics to gauge the analytical precision. 
+    Finally, the package contains methods to detect isotopic variability in the 
+    analyte.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Depends: 
-    R (>= 3.6),
+    R (>= 4.1),
 Imports: 
-    dplyr (>= 0.8),
-    tidyr (>= 1.0),
-    tibble (>= 2.1),
+    dplyr (>= 1.0.8),
+    tidyr (>= 1.2.0),
+    tibble (>= 3.1.6),
     stringr (>= 1.4),
-    readr (>= 1.3),
-    magrittr (>= 1.5),
-    ggplot2 (>= 3.2),
-    rlang (>= 0.4),
-    purrr (>= 0.3),
-    mgcv (>= 1.8),
-    nlme (>= 3.1),
-    broom (>= 0.7.6),
-    polyaAeppli (>= 2.0),
-    MASS,
+    readr (>= 2.1.2),
+    magrittr (>= 2.0.3),
+    ggplot2 (>= 3.3.5),
+    rlang (>= 1.0.2),
+    purrr (>= 0.3.4),
+    mgcv (>= 1.8.40),
+    nlme (>= 3.1.157),
+    broom (>= 0.7.12),
     scales (>= 1.1.1),
-    fs (>= 1.5.0),
-    vroom (>= 1.5.1),
-    stringi (>= 1.6.2)
+    fs (>= 1.5.2),
+    vroom (>= 1.5.7),
+    stringi (>= 1.7.6)
 Suggests: 
     roxygen2,
-    nortest,
-    broom.mixed,
+    nortest (>= 1.0.4),
+    broom.mixed (>= 0.2.9.3),
     bookdown,
     rmarkdown,
     knitr,
     vdiffr,
-    testthat
-RoxygenNote: 7.1.1
+    testthat,
+    stats (>= 4.1.3),
+    polyaAeppli (>= 2.0),
+    MASS (>= 7.3.56),
+    diffviewer,
+    covr,
+    here (>= 1.0.1),
+    pkgdown
+RoxygenNote: 7.1.2
 VignetteBuilder: knitr
 Config/testthat/edition: 3

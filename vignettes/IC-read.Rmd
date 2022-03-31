@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   warning = FALSE
-  )
+)
 ```
 
 
@@ -83,13 +83,14 @@ The function `read_IC()` takes a character string indicating the directory file 
 This generates a tibble which includes;
 
 * `file.nm`: file name
-* `t.rw`: time increments of the measurements $t_i$
+* `t.nm`: time increments of the measurements $t_i$
 * `N.rw`: the individual measurement counts $N_i$
 * `species.nm`: chemical species name
+* `sample.nm`: physical sample name
 * `n.rw`: the total number of measurements $n$
 * `bl.nm`: count block identifier
 
-The warnings signals that some metadata files have no associated data files with ion counts. These files are omitted with this argument combination call to `read_IC()`.
+Warnings signals are used to inform to inform that e.g. some metadata files have no associated data files with ion counts. These files are omitted with this argument combination call to `read_IC()`.
 
 <!-- The second warning indicates that there are inconsistencies in the length $n$ of the analyses when comparing raw data and the actual rows of count data. This can indicates that an analysis was aborted leaving an incomplete ion count sequences. To figure out which file this is use the function compare_length(), which uses the `waldo` package to compare objects. -->
 
@@ -149,12 +150,12 @@ tb_mt <- drop_na(tb_mt[[2]], M_PHD.mt, SD_PHD.mt) %>%
     lambda = (2 * M_PHD.mt^2) / (SD_PHD.mt^2 + M_PHD.mt),
     prob = (SD_PHD.mt^2 - M_PHD.mt) / (SD_PHD.mt^2 + M_PHD.mt),
     prob = if_else(prob < 0 | prob >= 1 , NA_real_, prob),
-    ) %>% 
+  ) %>% 
   drop_na(lambda, prob) %>% 
   mutate(
     density = dPolyaAeppli(PHD, lambda = lambda, prob = prob),
     Y = pPolyaAeppli(50, lambda = lambda, prob = prob, lower.tail = FALSE)
-    ) 
+  ) 
 
 # Plot of PHD over analysis sequence
 ggplot(tb_mt, aes(x = PHD, y = density)) +

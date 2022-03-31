@@ -43,7 +43,7 @@
 #' # QSA test
 #' QSA_test(tb_pr, "13C", "12C", file.nm)
 QSA_test <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL, .N = NULL,
-                     .species = NULL, .t = NULL, .plot = TRUE){
+                     .species = NULL, .t = NULL, .plot = TRUE) {
 
   # Quoting the call (user-supplied expressions)
   args <- inject_args(
@@ -65,10 +65,10 @@ QSA_test <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL, .N = NULL,
                .species = !! args[[".species"]]) %>%
     cov_R(c(.ion1, .ion2), !!! gr_by, .species = !! args[[".species"]],
           .t = !! args[[".t"]]) %>%
-    mutate(!! R_X  := !! X1  / !! X2 )
+    dplyr::mutate(!! R_X  := !! X1  / !! X2 )
 
   df_lm <- tidyr::nest(IC, data = -c(!!! gr_by)) %>%
-    mutate(
+    dplyr::mutate(
       lm_out =
         purrr::map(
           .data$data,
@@ -80,12 +80,21 @@ QSA_test <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL, .N = NULL,
     tidyr::unnest_wider(.data$lm_out) %>%
     tidyr::unnest(cols = .data$data)
 
-  if (is_symbol(quo_get_expr(nest))) {
+  if (rlang::is_symbol(rlang::quo_get_expr(nest))) {
+
+    # broom.mixed
+    if (!requireNamespace("broom.mixed", quietly = TRUE)) {
+      stop(
+        "Package \"broom.mixed\" must be installed to use this function.",
+        call. = FALSE
+      )
+    }
+
     # Groups for nested data
     nest_gr <- gr_by[!sapply(gr_by, as_name) %in% as_name(nest)]
 
     df_mlm <- tidyr::nest(IC, data = -c(!!! nest_gr)) %>%
-      mutate(
+      dplyr::mutate(
         mlm_out =
           purrr::map(
             .data$data,
@@ -95,12 +104,12 @@ QSA_test <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL, .N = NULL,
             .group = nest
           )
         ) %>%
-      select(-.data$data) %>%
+      dplyr::select(-.data$data) %>%
       tidyr::unnest_wider(.data$mlm_out)
 
-    ls_mlm <- lst(df_lm, df_mlm)
+    ls_mlm <- list(df_lm, df_mlm)
     # Prepare output
-    purrr::reduce(ls_mlm, left_join, by = sapply(nest_gr, as_name))
+    purrr::reduce(ls_mlm,   dplyr::left_join, by = sapply(nest_gr, as_name))
   } else {
     df_lm
   }
@@ -114,49 +123,47 @@ QSA_test <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL, .N = NULL,
 mlm_QSA <- function(.IC, .X1, .X2, .group = NULL) {
 
   # lm  model
-  if (is.null(get_expr(.group))) {
-    lm_QSA <- lm_form(.IC, .X1, .X2)
-    td <- broom::tidy(lm_QSA) %>% mutate(effect = "fixed")
+  if (is.null(rlang::get_expr(.group))) {
+    lm_QSA <- formula_parser(.IC, .X1, .X2)
+    td <- broom::tidy(lm_QSA) %>%
+      dplyr::mutate(effect = "fixed")
     min <-  min(fitted(lm_QSA))
     max <-  max(fitted(lm_QSA))
     label <- .X2
   }
   # mlm  model
-  if (!is.null(get_expr(.group))) {
-    mlm_QSA <- lm_form(.IC, .X1, .X2, nest = .group, type = "QSA")
+  if (!is.null(rlang::get_expr(.group))) {
+    mlm_QSA <- formula_parser(.IC, .X1, .X2, nest = .group, type = "QSA")
     td <- broom.mixed::tidy(mlm_QSA)
     min <-  min(fitted(mlm_QSA))
     max <-  max(fitted(mlm_QSA))
     label <- .group
   }
 
-  lst(
+  tibble::lst(
     # model params
     "alpha_{{label}}" :=
-      pull(
-        filter(td, .data$effect == "fixed" & .data$term == "(Intercept)"),
+      dplyr::pull(
+        dplyr::filter(td, .data$effect == "fixed" &
+                        .data$term == "(Intercept)"),
         .data$estimate
         ),
     "beta_{{label}}" :=
-      pull(
-        filter(td, .data$effect == "fixed" & .data$term == as_name(.X2)),
+      dplyr::pull(
+        dplyr::filter(td, .data$effect == "fixed" & .data$term == as_name(.X2)),
         .data$estimate
         ),
     "t_{{label}}" :=
-      pull(
-        filter(td, .data$effect == "fixed" & .data$term == as_name(.X2)),
+      dplyr::pull(
+        dplyr::filter(td, .data$effect == "fixed" & .data$term == as_name(.X2)),
         .data$statistic
         ),
     "p_{{label}}" :=
-      pull(
-        filter(td, .data$effect == "fixed" & .data$term == as_name(.X2)),
+      dplyr::pull(
+        dplyr::filter(td, .data$effect == "fixed" & .data$term == as_name(.X2)),
         .data$`p.value`
         ),
     # modelled delta value
     "delta_{{label}}" := (min / max - 1) * 1e3
   )
-
 }
-
-
-

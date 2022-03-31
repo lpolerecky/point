@@ -23,6 +23,11 @@ knitr::opts_chunk$set(
 ```
 
 
+```{r loc, echo=FALSE, message=FALSE}
+here::i_am("vignettes/IC-diagnostics.Rmd")
+```
+
+
 # Diagnostics for Ion Count Data
 
 The random nature of secondary ions emitted from a sample is described by Poisson statistics, and can be used to predict the precision of SIMS measurements under ideal circumstances (e.g., the predicted standard error can be deduced from the total counts of secondary ions). However, besides this fundamental source of imprecision, real SIMS measurements are additionally affected by other factors such as sample heterogeneity, instrument instability, the development and geometry of the sputter pit, and sample charging. Although some of these biases can be avoided by proper instrument tuning and sample documentation (e.g. T/SEM to characterise the textural properties of a rock sample) prior to SIMS measurement, factors such as instrument instability or sample heterogeneity can never be fully eliminated. In this vignette, diagnostic tools are showcased which can help evaluate the potential impact of such factors on the precision of ion count data.
@@ -50,7 +55,7 @@ theme_replace(
   plot.background = element_rect(fill = "transparent", color = NA),
   panel.background = element_rect(fill = "transparent", color = NA),
   legend.background = element_rect(fill = "transparent", color = NA)
-  )
+)
 ```
 
 
@@ -103,7 +108,7 @@ ls_dia <- purrr::map2(
   ion2, 
   ~diag_R(tb_pr, .x, .y, file.nm, bl.nm, .method = "Cameca", .reps = 2, 
           .output = "diagnostic", .meta = TRUE) 
-  )       
+)       
 ```
 
 
@@ -131,7 +136,7 @@ fun_CAMECA <- function(IC){
       species.nm = map_chr(
         species.nm,
         ~stringr::str_remove_all(stringr::str_trim(.x), "\\s"))
-      )
+    )
     
   filter(IC, file.nm  == "2018-01-19-GLENDON_1_1", execution == "2") %>%
     distinct(file.nm, bl.nm, .keep_all = TRUE) %>%
@@ -145,7 +150,7 @@ fun_CAMECA <- function(IC){
       `Err_mean (%)` = RSeM_R_Xt.pr / 10,
       `Poisson (%)` = hat_RSeM_R_N.pr / 10,
       "Khi2" = chi2_R_N.pr
-      )
+    )
 
 }
 
@@ -155,8 +160,8 @@ det_fun <- function(R, meta) {
     pull(filter(meta, species.nm == ls_R[[1]][1]), num.mt), 
     "/", 
     pull(filter(meta, species.nm == ls_R[[1]][2]), num.mt)
-    )
-  }
+  )
+}
 
 # Call the function
 tb_CM <- purrr::map_dfr(ls_dia, fun_CAMECA) %>% 
@@ -166,7 +171,7 @@ tb_CM <- purrr::map_dfr(ls_dia, fun_CAMECA) %>%
 
 
 ```{r xcpcameca, out.width="90%", echo=FALSE, fig.cap="An excerpt of the Cameca stat-file for count block based 2$\\sigma$-rejection and associated blockwise statistics"}
-knitr::include_graphics("excerpt_stat.png")
+knitr::include_graphics(here::here("man/figures/excerpt_stat.png"))
 ```
 
 
@@ -174,8 +179,10 @@ knitr::include_graphics("excerpt_stat.png")
 knitr::kable(
   head(tb_CM),
   format.args = list(digits = 2, format = "G", flag = "0"),
-  caption = "Blockwise statistics for augmented dataset (replication of Fig. \\@ref(fig:xcpcameca) with the point package)."
-  ) 
+  caption = paste0("Blockwise statistics for augmented dataset", 
+                   " (replication of Fig. \\@ref(fig:xcpcameca) with the point", 
+                   "package).")
+) 
 ```
 
 
@@ -208,8 +215,8 @@ tb_R <- mutate(
       type.nm == "ideal",
       base.nm,
       calib_R(force.nm, "VPDB", "13C", input = "delta", output = "R")
-      )
-  )
+    )
+)
 
 # Plot
 ggplot(tb_R, aes(x = R_Xt.pr)) +

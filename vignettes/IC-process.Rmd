@@ -17,7 +17,12 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
-  )
+)
+```
+
+
+```{r loc, echo=FALSE, message=FALSE}
+here::i_am("vignettes/IC-process.Rmd")
 ```
 
 
@@ -61,7 +66,7 @@ theme_replace(
   plot.background = element_rect(fill = "transparent", color = NA),
   panel.background = element_rect(fill = "transparent", color = NA),
   legend.background = element_rect(fill = "transparent", color = NA)
-  )
+)
 ```
 
 
@@ -73,7 +78,7 @@ The EM gain is a measure of the electron output current relative to the ion inpu
 
 
 ```{r EMdevice, out.width="80%", echo=FALSE, fig.cap="Graphic representation of the EM ion detection device"}
-knitr::include_graphics("EM-channel.png")
+knitr::include_graphics(here::here("man/figures/EM-channel.png"))
 ```
 
 After this phase of successive cascading charge amplification, the signal is converted to voltage (the EM high voltage, or EMHV; see Fig. \@ref(fig:EMdevice)), where the voltage is proportional to the EM gain. This last conversion depends on the age of the EM and the EMHV is usually increased with successive age to preserve ion-to-electron efficiency at a suitable sensitivity. 
@@ -295,7 +300,7 @@ The General Additive Model (GAM) is an extension of this model with addition of 
   (\#eq:GAM)
 \end{equation}
 
-The function `predict_ionize()` provides a convenient implementation of GAM from the package `mgcv`, which has the function `s()`, to define the smooth in the function `gam()`. The protocol implemented assures effective bandwidth selection based on goodness of fit measured with a penalized information criterion. With the knowledge that ionization is represented as global trend, this allows for subtraction of the model fit from the actual count rate data to allow for a more accurate assessment of the $l0$ as well as the random component $\epsilon_t$ informing about the precision unbiased by a large systematic offset. 
+The function `predict_ionize()` provides a convenient implementation of GAM from the package `mgcv`, which has the function `s()`, to define the smooth function in the `gam()` call. The protocol implemented assures effective bandwidth selection based on goodness of fit measured with a penalized information criterion. With the knowledge that ionization is represented as global trend, this allows for subtraction of the model fit from the actual count rate data to allow for a more accurate assessment of the $l0$ as well as the random component $\epsilon_t$ informing about the precision unbiased by a large systematic offset. 
 
 \begin{equation}
   X_i^a* = \bar{\hat{X}}^a + (X_i^a - \hat{X}_i^a)

@@ -3,12 +3,13 @@
 #' \code{calib_R} function to convert isotope values back-and-forth between R
 #' and delta
 #'
-#' A fundamental in publishing isotope data is the conversion of isotope the delta
-#' formulation comparing the obtained R to that of a standard. These values are
-#' reported on a per mill scale. However in IC calculations ratios (R) or
-#' fractional abundances (F) are most commonly used. This functions provide an easy way
-#' of making these transformations for both the average composition but also
-#' fractionations as enrichment factors (alpha and epsilon).
+#' A fundamental in publishing isotope data is the conversion of isotope the
+#' delta formulation comparing the obtained R to that of a standard. These
+#' values are reported on a per mill scale. However in IC calculations ratios
+#' (R) or fractional abundances (F) are most commonly used. This functions
+#' provide an easy way of making these transformations for both the average
+#' composition but also fractionations as enrichment factors
+#' (alpha and epsilon).
 #'
 #' @param x  A numeric value or vector.
 #' @param reference A character or numeric value or vector.
@@ -17,9 +18,9 @@
 #' @param input The type of input value, R, F, and delta.
 #' @param output Desired output value, R, F, and delta.
 #' @param y A numeric value or vector of the product when calculating enrichment
-#' factors, following the convention; x = R(product)/ y = R(substrate). Both x
-#' and y should have the same notation, either R, F or delta, as supplied to
-#' the argument input.
+#'  factors, following the convention; x = R(product)/ y = R(substrate). Both x
+#'  and y should have the same notation, either R, F or delta, as supplied to
+#'  the argument input.
 #' @return A numeric value or vector.
 #'
 #' @export
@@ -47,17 +48,16 @@ calib_R <- function(x, reference, isotope, type = "composition",
   if (input == output) stop("Input and output are equal.", call. = FALSE)
   if (type == "enrichment") {
     if (!c(output == "epsilon" | output == "alpha")) {
-      stop("For enrichment conversion at least output has to be an enrichment factor.", call. = FALSE)
-      } else {
-        if(!is.null(y) & c(input == "epsilon" | input == "alpha")) {
-           stop("Input epsilon or alpha is only meaningfull when converting between enrichment factors.", call. = FALSE)
-          }
-        if (is.null(y) & !c(input == "epsilon" | input == "alpha")) {
-           stop("For enrichment conversion of one value input has to be alpha or epsilon.", call. = FALSE)
-          }
-        }
-      }
-
+      stop(paste0("For enrichment conversion at least output has to be an",
+                  "enrichment factor."), call. = FALSE)
+    } else if(!is.null(y) & c(input == "epsilon" | input == "alpha")) {
+           stop(paste0("Input epsilon or alpha is only meaningfull when",
+                       "converting between enrichment factors."), call. = FALSE)
+    } else if (is.null(y) & !c(input == "epsilon" | input == "alpha")) {
+           stop(paste0("For enrichment conversion of one value input has to be",
+                       "alpha or epsilon."), call. = FALSE)
+    }
+  }
 
   # Transformations for compositions
   conv_composition <- function(method, value, reference, isotope) {
@@ -69,8 +69,8 @@ calib_R <- function(x, reference, isotope, type = "composition",
       F_delta = calib_F_delta(value, reference, isotope),
       delta_R = calib_delta_R(value, reference, isotope),
       delta_F = calib_delta_F(value, reference, isotope)
-      )
-    }
+    )
+  }
 
   # Calculations of enrichment factors for kinetic reactions
   conv_enrichment <- function(method, value){
@@ -78,8 +78,8 @@ calib_R <- function(x, reference, isotope, type = "composition",
       method,
       epsilon_alpha = calib_epsilon_alpha(value),
       alpha_epsilon = calib_alpha_epsilon(value)
-      )
-    }
+    )
+  }
 
   conv_output <- function(type, input, output, value, reference, isotope){
     switch(
@@ -88,24 +88,25 @@ calib_R <- function(x, reference, isotope, type = "composition",
         paste(input, output, sep = "_"),
         value, reference,
         isotope
-        ),
+      ),
       enrichment = conv_enrichment(paste(input, output, sep = "_"), value)
-      )
+    )
   }
 
   if (is.null(y)) {
 
     return(conv_output(type, input, output, x, reference, isotope))
 
-    } else {
+  } else {
 
-      R1 <- conv_output("composition", input, "R", x, reference, isotope)
-      R2 <- conv_output("composition", input, "R", y, reference, isotope)
-      alpha <- R2 / R1
-      if (output == "alpha") return(alpha)
-      if (output == "epsilon") return(conv_enrichment("alpha_epsilon", alpha))
-    }
+    R1 <- conv_output("composition", input, "R", x, reference, isotope)
+    R2 <- conv_output("composition", input, "R", y, reference, isotope)
+    alpha <- R2 / R1
+    if (output == "alpha") return(alpha)
+    if (output == "epsilon") return(conv_enrichment("alpha_epsilon", alpha))
+
   }
+}
 
 
 #-------------------------------------------------------------------------------
@@ -138,19 +139,31 @@ find_reference <- function(.reference, .isotope){
   # Reference standard database
   tb_ref <- point::reference_R
 
-  if (is_character(.reference)) {
+  if (rlang::is_character(.reference)) {
+
     if (.reference %in% tb_ref$reference) {
-      tb_ref <- filter(tb_ref, .data$reference == .reference)
+
+      tb_ref <- dplyr::filter(tb_ref, .data$reference == .reference)
+
       if (.isotope %in% tb_ref$isotope) {
-        return(pull(filter(tb_ref, .data$isotope == .isotope), .data$value))
-        } else {
-          stop("Isotope unkown for reference standard, provide numeric value manually", call. = FALSE)
-          }
+        out <- dplyr::filter(tb_ref, .data$isotope == .isotope) |>
+          dplyr::pull(.data$value)
+        return(out)
       } else {
-        stop("Reference standard unkown, provide numeric value manually", call. = FALSE)
-        }
+        stop(paste0("Isotope unkown for reference standard, provide numeric",
+                    "value manually"), call. = FALSE)
+      }
+
     } else {
+
+      stop("Reference standard unkown, provide numeric value manually",
+           call. = FALSE)
+    }
+
+  } else {
+
     return(.reference)
+
   }
 }
 

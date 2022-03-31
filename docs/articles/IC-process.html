@@ -4,115 +4,84 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="description" content="point">
 <title>IC-process • point</title>
-<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script><!-- bootstrap-toc --><link rel="stylesheet" href="../bootstrap-toc.css">
-<script src="../bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
+<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="../deps/bootstrap-5.1.0/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.1.0/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
-<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
-<script src="../pkgdown.js"></script><meta property="og:title" content="IC-process">
+<!-- bootstrap-toc --><script src="https://cdn.rawgit.com/afeld/bootstrap-toc/v1.0.1/dist/bootstrap-toc.min.js"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="IC-process">
 <meta property="og:description" content="point">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
 </head>
-<body data-spy="scroll" data-target="#toc">
-    <div class="container template-article">
-      <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
-  <div class="container">
-    <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false">
-        <span class="sr-only">Toggle navigation</span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </button>
-      <span class="navbar-brand">
-        <a class="navbar-link" href="../index.html">point</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.0.9003</span>
-      </span>
-    </div>
+<body>
+    <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
+    
 
-    <div id="navbar" class="navbar-collapse collapse">
-      <ul class="nav navbar-nav">
-<li>
-  <a href="../index.html">
-    <span class="fas fa-home fa-lg"></span>
-     
-  </a>
+    <nav class="navbar fixed-top navbar-light navbar-expand-lg bg-light"><div class="container">
+    
+    <a class="navbar-brand me-2" href="../index.html">point</a>
+
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9003</small>
+
+    
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div id="navbar" class="collapse navbar-collapse ms-3">
+      <ul class="navbar-nav me-auto">
+<li class="nav-item">
+  <a class="nav-link" href="../reference/index.html">Reference</a>
 </li>
-<li>
-  <a href="../reference/index.html">Reference</a>
-</li>
-<li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-    Articles
-     
-    <span class="caret"></span>
-  </a>
-  <ul class="dropdown-menu" role="menu">
-<li>
-      <a href="../articles/IC-diagnostics.html">IC-diagnostics</a>
-    </li>
-    <li>
-      <a href="../articles/IC-introduction.html">IC-introduction</a>
-    </li>
-    <li>
-      <a href="../articles/IC-precision.html">IC-precision</a>
-    </li>
-    <li>
-      <a href="../articles/IC-process.html">IC-process</a>
-    </li>
-    <li>
-      <a href="../articles/IC-read.html">IC-read</a>
-    </li>
-  </ul>
+<li class="active nav-item dropdown">
+  <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
+  <div class="dropdown-menu" aria-labelledby="dropdown-articles">
+    <a class="dropdown-item" href="../articles/IC-diagnostics.html">IC-diagnostics</a>
+    <a class="dropdown-item" href="../articles/IC-introduction.html">IC-introduction</a>
+    <a class="dropdown-item" href="../articles/IC-precision.html">IC-precision</a>
+    <a class="dropdown-item" href="../articles/IC-process.html">IC-process</a>
+    <a class="dropdown-item" href="../articles/IC-read.html">IC-read</a>
+  </div>
 </li>
       </ul>
-<ul class="nav navbar-nav navbar-right"></ul>
+<form class="form-inline my-2 my-lg-0" role="search">
+        <input type="search" class="form-control me-sm-2" aria-label="Toggle navigation" name="search-input" data-search-index="../search.json" id="search-input" placeholder="Search for" autocomplete="off">
+</form>
+
+      <ul class="navbar-nav"></ul>
 </div>
-<!--/.nav-collapse -->
+
+    
   </div>
-<!--/.container -->
-</div>
-<!--/.navbar -->
+</nav><div class="container template-article">
 
-      
 
-      </header><script src="IC-process_files/header-attrs-2.9/header-attrs.js"></script><script src="IC-process_files/jquery-1.11.3/jquery.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1">
-<link href="IC-process_files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet">
-<script src="IC-process_files/bootstrap-3.3.5/js/bootstrap.min.js"></script><script src="IC-process_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script><script src="IC-process_files/bootstrap-3.3.5/shim/respond.min.js"></script><style>h1 {font-size: 34px;}
-       h1.title {font-size: 38px;}
-       h2 {font-size: 30px;}
-       h3 {font-size: 24px;}
-       h4 {font-size: 18px;}
-       h5 {font-size: 16px;}
-       h6 {font-size: 12px;}
-       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
-       pre:not([class]) { background-color: white }</style>
-<script src="IC-process_files/navigation-1.1/tabsets.js"></script><div class="row">
-  <div class="col-md-9 contents">
-    <div class="page-header toc-ignore">
-      <h1 data-toc-skip>IC-process</h1>
-                        <h4 class="author">Martin Schobben</h4>
+<div class="row">
+  <main id="main"><div class="page-header">
+      <img src="" class="logo" alt=""><h1>IC-process</h1>
+                        <h4 data-toc-skip class="author">Martin Schobben</h4>
             
       
       
-      <div class="hidden name"><code>IC-process.Rmd</code></div>
-
+      <div class="d-none name"><code>IC-process.Rmd</code></div>
     </div>
 
     
     
-<div id="accuracy-of-ion-count-data" class="section level1" number="1">
-<h1 class="hasAnchor">
-<a href="#accuracy-of-ion-count-data" class="anchor"></a><span class="header-section-number">1</span> Accuracy of Ion Count Data</h1>
+<div class="section level2" number="1">
+<h2 id="accuracy-of-ion-count-data">
+<span class="header-section-number">1</span> Accuracy of Ion Count Data<a class="anchor" aria-label="anchor" href="#accuracy-of-ion-count-data"></a>
+</h2>
 <p>Systematic bias can be introduced by the way secondary ions are generated from primary Cs<sup>+</sup> and O<sup>-</sup> bombardment on the analytical substrate as well as the <em>ion-to-electron conversion efficiency</em> in the detection systems. Commonly used detection system are electron multipliers (EM) for low secondary ion currents and Faraday cups (FC) for high secondary ion currents.</p>
-<div id="nomenclature" class="section level2" number="1.1">
-<h2 class="hasAnchor">
-<a href="#nomenclature" class="anchor"></a><span class="header-section-number">1.1</span> Nomenclature</h2>
+<div class="section level3" number="1.1">
+<h3 id="nomenclature">
+<span class="header-section-number">1.1</span> Nomenclature<a class="anchor" aria-label="anchor" href="#nomenclature"></a>
+</h3>
 <ul>
 <li>Sample: sample of the true population</li>
 <li>Analytical substrate: physical sample measured during SIMS analysis</li>
@@ -124,34 +93,40 @@
 <li>Study: <span class="math inline">\(m\)</span>-series of analyses <span class="math inline">\(M_{(j)}\)</span>, constituting the different spots on the analytical substrate</li>
 </ul>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va">point</span><span class="op">)</span> <span class="co"># load package</span></code></pre></div>
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://martinschobben.github.io/point/">point</a></span><span class="op">)</span> <span class="co"># load package</span></code></pre></div>
 <p>The following packages are used in the examples that follow.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org">dplyr</a></span><span class="op">)</span> <span class="co"># manipulating data</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org">ggplot2</a></span><span class="op">)</span> <span class="co"># manipulating strings</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va">polyaAeppli</span><span class="op">)</span> <span class="co"># Polya-Aeppli distribution</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://tibble.tidyverse.org/">tibble</a></span><span class="op">)</span> <span class="co"># tibble dataframe</span></code></pre></div>
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span> <span class="co"># manipulating data</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span> <span class="co"># manipulating strings</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">polyaAeppli</span><span class="op">)</span> <span class="co"># Polya-Aeppli distribution</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tibble.tidyverse.org/" class="external-link">tibble</a></span><span class="op">)</span> <span class="co"># tibble dataframe</span></code></pre></div>
 </div>
-<div id="systematic-bias-by-ion-detection-devices" class="section level2" number="1.2">
-<h2 class="hasAnchor">
-<a href="#systematic-bias-by-ion-detection-devices" class="anchor"></a><span class="header-section-number">1.2</span> Systematic bias by ion detection devices</h2>
-<div id="analytical-bias-introduced-by-electron-multipliers" class="section level3" number="1.2.1">
-<h3 class="hasAnchor">
-<a href="#analytical-bias-introduced-by-electron-multipliers" class="anchor"></a><span class="header-section-number">1.2.1</span> Analytical bias introduced by electron multipliers</h3>
+<div class="section level3" number="1.2">
+<h3 id="systematic-bias-by-ion-detection-devices">
+<span class="header-section-number">1.2</span> Systematic bias by ion detection devices<a class="anchor" aria-label="anchor" href="#systematic-bias-by-ion-detection-devices"></a>
+</h3>
+<div class="section level4" number="1.2.1">
+<h4 id="analytical-bias-introduced-by-electron-multipliers">
+<span class="header-section-number">1.2.1</span> Analytical bias introduced by electron multipliers<a class="anchor" aria-label="anchor" href="#analytical-bias-introduced-by-electron-multipliers"></a>
+</h4>
 <p>The EM gain is a measure of the electron output current relative to the ion input and the amplification after ion-to-electron conversion. In this process an incident secondary ion triggers the generation of an electron at the first dynode (conversion dynode) of the EM channel; in turn, the resultant secondary electron strikes a consecutive dynode thereby amplifying the signal, where the latter process of secondary electron amplification is repeated multiple times (for the <em>Cameca NanoSIMS 50L</em> this generally results in a gain of <span class="math inline">\(10^8\)</span> electrons).</p>
+<pre><code><span class="co">#&gt; Warning in knitr::include_graphics(here::here("man/figures/EM-channel.png")): It</span>
+<span class="co">#&gt; is highly recommended to use relative paths for images. You had absolute paths:</span>
+<span class="co">#&gt; "/home/nicola/Documents/work/code/point/man/figures/EM-channel.png"</span></code></pre>
 <div class="figure">
-<span id="fig:EMdevice"></span>
-<img src="EM-channel.png" alt="Graphic representation of the EM ion detection device" width="80%"><p class="caption">
+<span style="display:block;" id="fig:EMdevice"></span>
+<img src="../reference/figures/EM-channel.png" alt="Graphic representation of the EM ion detection device" width="80%"><p class="caption">
 Figure 1.1: Graphic representation of the EM ion detection device
 </p>
 </div>
 <p>After this phase of successive cascading charge amplification, the signal is converted to voltage (the EM high voltage, or EMHV; see Fig. <a href="#fig:EMdevice">1.1</a>), where the voltage is proportional to the EM gain. This last conversion depends on the age of the EM and the EMHV is usually increased with successive age to preserve ion-to-electron efficiency at a suitable sensitivity.</p>
-<div id="electron-multiplier-yield" class="section level4" number="1.2.1.1">
-<h4 class="hasAnchor">
-<a href="#electron-multiplier-yield" class="anchor"></a><span class="header-section-number">1.2.1.1</span> Electron Multiplier Yield</h4>
+<div class="section level5" number="1.2.1.1">
+<h5 id="electron-multiplier-yield">
+<span class="header-section-number">1.2.1.1</span> Electron Multiplier Yield<a class="anchor" aria-label="anchor" href="#electron-multiplier-yield"></a>
+</h5>
 <p>The amplitude of EM secondary electron output to EMHV conversion follows the so-called Peak Height Distribution (PHD). In tuning the EM detection system, the EM secondary electron output to EMHV conversion is optimized so that the probability of an electron output to have a certain EMHV is higher than a pre-defined threshold. This discriminator threshold is set to filter-out the background noise (typically 5<span class="math inline">\(\,\)</span>ct<span class="math inline">\(\,\)</span>s<sup>-</sup>). However the discriminator threshold will inevitably also cut-off part of the genuine EM secondary electron output <span class="citation">(Slodzian et al. 2001)</span>.</p>
 <div class="figure">
-<span id="fig:PHDcurve"></span>
+<span style="display:block;" id="fig:PHDcurve"></span>
 <img src="IC-process_files/figure-html/PHDcurve-1.png" alt="An example of a typical PHD distribution. The effect of the discriminator threshold on the EM Yield is examplified by the shaded area underneath the probability density function, which would pertain to the probability of an EM output to be larger than the threshold" width="672"><p class="caption">
 Figure 1.2: An example of a typical PHD distribution. The effect of the discriminator threshold on the EM Yield is examplified by the shaded area underneath the probability density function, which would pertain to the probability of an EM output to be larger than the threshold
 </p>
@@ -167,7 +142,7 @@ Figure 1.2: An example of a typical PHD distribution. The effect of the discrimi
 
   P(x;\lambda, p) \; = \; \text{Pr}(X = x) \; =\\
    \begin{cases}
-     e^{-\lambda}, &amp; \text{if } x = 0 \\ 
+     e^{-\lambda}, &amp; \text{if } x = 0 \\
      e^{-\lambda}\sum_{n=1}^{y}{\frac{\lambda^n}{n!}}\binom{y-1}{n-1}p^{\lambda-n}(1-p)^n, &amp; \text{if } x = 1,2,... \\
    \end{cases}
   \tag{1.1}
@@ -178,10 +153,10 @@ Figure 1.2: An example of a typical PHD distribution. The effect of the discrimi
 <p>Th function <code>cor_yield</code> calculates the yield with a given mean (<code>mean_PHD</code>), standard deviation (<code>SD_PHD</code>), and threshold value for the PHD, and makes use of the package <code>pPolyaAeppli</code> <span class="citation">(Burden 2014)</span>.</p>
 <p>The <span class="math inline">\(Y_{EM}\)</span> can then be used to calculate the corrected counts and count rates.</p>
 <p><span class="math display" id="eq:Yield">\[\begin{equation}
-  X_{i}^* = \frac{X_i }{Y_{EM}} 
+  X_{i}^* = \frac{X_i }{Y_{EM}}
   \tag{1.2}
 \end{equation}\]</span></p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># original count rate of a chemical species</span>
 <span class="va">x</span> <span class="op">&lt;-</span> <span class="fl">30000</span>
 <span class="co"># function to correct count rate based on EM Yield</span>
@@ -189,21 +164,22 @@ Figure 1.2: An example of a typical PHD distribution. The effect of the discrimi
 <span class="co">#&gt; [1] 30007.95</span></code></pre></div>
 <p>The shape of the PHD distribution changes with the age of the EM but its deleterious effect on secondary ion-to-electron conversion can be alleviated by changing the EMHV. Tools for the assessment of EM deterioration is dealt with in a subsequent section.</p>
 </div>
-<div id="dead-time" class="section level4" number="1.2.1.2">
-<h4 class="hasAnchor">
-<a href="#dead-time" class="anchor"></a><span class="header-section-number">1.2.1.2</span> Dead time</h4>
+<div class="section level5" number="1.2.1.2">
+<h5 id="dead-time">
+<span class="header-section-number">1.2.1.2</span> Dead time<a class="anchor" aria-label="anchor" href="#dead-time"></a>
+</h5>
 <p>Another bias introduced by EM ion detection devices is the time associated for recovery after an ion hits the first dynode. During the intermediate time, a second ion arriving at the same time can then not be recorded because of the electronic paralysis of the EM. Although this dead time (<span class="math inline">\(t_{ns}\)</span>) is small (<span class="math inline">\(44\,\)</span>ns), high count frequencies can cause the cumulate effect of this re-occurring phenomenon to become significant for the final count numbers. The count rates can be corrected by the following equation:</p>
 <p><span class="math display" id="eq:Dead">\[\begin{equation}
   X_{i}^{*} = \frac{X_i}{1- X_i  \times t_{ns} \times 10^9}
   \tag{1.3}
 \end{equation}\]</span></p>
 <p>The function <code>cor_DT</code> is implemented to correct for this systematic bias of EM devices.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># corrected count rate for a deadtime of 44 ns</span>
 <span class="fu"><a href="../reference/cor_yield.html">cor_DT</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">44</span><span class="op">)</span>
 <span class="co">#&gt; [1] 30039.65</span></code></pre></div>
-<p>For a convenient workflow the functions that correct for EM count biases are wrapped in the function <code><a href="../reference/cor_IC.html">cor_IC()</a></code>. This function takes the <a href="https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html">tibble</a> as loaded with the function <code><a href="../reference/read_IC.html">read_IC()</a></code> (see vignette <a href="IC-read.html">IC-read</a>) and requires setting the following arguments: <code>N</code>, a variable for the raw ion count;<code>t</code>, a variable for the time increments; <code>Det</code> a character string or variable identifying the ion detection system: EM (<code>"EM"</code>) or FC (<code>"FC"</code>); <code>deadtime</code>, a numeric value for the deadtime in nanoseconds; and <code>thr_PHD</code>, a numeric value for the discriminator threshold.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<p>For a convenient workflow the functions that correct for EM count biases are wrapped in the function <code><a href="../reference/cor_IC.html">cor_IC()</a></code>. This function takes the <a href="https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html" class="external-link">tibble</a> as loaded with the function <code><a href="../reference/read_IC.html">read_IC()</a></code> (see vignette <a href="IC-read.html">IC-read</a>) and requires setting the following arguments: <code>N</code>, a variable for the raw ion count;<code>t</code>, a variable for the time increments; <code>Det</code> a character string or variable identifying the ion detection system: EM (<code>"EM"</code>) or FC (<code>"FC"</code>); <code>deadtime</code>, a numeric value for the deadtime in nanoseconds; and <code>thr_PHD</code>, a numeric value for the discriminator threshold.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># Use point_example() to access the examples bundled with this package </span>
 
 <span class="co"># Carry-out the routine point workflow </span>
@@ -220,9 +196,10 @@ Figure 1.2: An example of a typical PHD distribution. The effect of the discrimi
 <!-- , where $f$ is 0.5 based on Poisson statistics, BTU has been shown to vary among matrices. At this stage it is hard assess what $K$ could have been. -->
 </div>
 </div>
-<div id="analytical-bias-introduced-by-faraday-cups" class="section level3" number="1.2.2">
-<h3 class="hasAnchor">
-<a href="#analytical-bias-introduced-by-faraday-cups" class="anchor"></a><span class="header-section-number">1.2.2</span> Analytical bias introduced by Faraday Cups</h3>
+<div class="section level4" number="1.2.2">
+<h4 id="analytical-bias-introduced-by-faraday-cups">
+<span class="header-section-number">1.2.2</span> Analytical bias introduced by Faraday Cups<a class="anchor" aria-label="anchor" href="#analytical-bias-introduced-by-faraday-cups"></a>
+</h4>
 <p>To be included in the future.</p>
 <!-- ## SIMS isotope calibration -->
 <!-- Calibration of SIMS isotope measurements .. a twofold; 1) it enables inter-laboratory comparison .. 2) it corrects for isotope fractionation caused during secondary ion production and possibly ... (instrumental mass fractionation).  -->
@@ -233,27 +210,28 @@ Figure 1.2: An example of a typical PHD distribution. The effect of the discrimi
 <!-- $$ s_{\delta_{\bar{x}}} = \sqrt{\left( \frac{ s_{\bar{x}_{R}} } { \bar{x}_R } \right)^2 + \left( \frac{ s_{\bar{x}_{R_{std}}}  } { \bar{x}_{R_{std}} } \right)^2 + \left( \frac{ s_{\delta_{std}} } { \delta_{std} +1000 } \right)^2} $$ -->
 </div>
 </div>
-<div id="systematic-bias-by-ionization-yield-fluctuations" class="section level2" number="1.3">
-<h2 class="hasAnchor">
-<a href="#systematic-bias-by-ionization-yield-fluctuations" class="anchor"></a><span class="header-section-number">1.3</span> Systematic bias by ionization yield fluctuations</h2>
+<div class="section level3" number="1.3">
+<h3 id="systematic-bias-by-ionization-yield-fluctuations">
+<span class="header-section-number">1.3</span> Systematic bias by ionization yield fluctuations<a class="anchor" aria-label="anchor" href="#systematic-bias-by-ionization-yield-fluctuations"></a>
+</h3>
 <p>In contrast to EM yield, ionization yield defines the efficiency whereby secondary ions are generated per incident primary ion. The probability whereby the primary beam produced secondary ions depends strongly on properties of the substrate (matrix effects) and the evolving sputter pit as well as the machine settings, such as the beam type (Cs<sup>+</sup> and O<sup>-</sup>) and sample charging. The latter effect of sample charge build-up combined with the deepening of the sputter pit are connected to large systematic biases seen in the count rates of individual ions (see Fig. <a href="#fig:ionR1">1.3</a>) throughout a single analysis <span class="citation">(Fitzsimons, Harte, and Clark 2000)</span>.</p>
 <div class="figure">
-<span id="fig:ionR1"></span>
+<span style="display:block;" id="fig:ionR1"></span>
 <img src="IC-process_files/figure-html/ionR1-1.png" alt="Changes in the ionization potential examplified by single ion monotonic trends in count rates over subsequent measurements of a single analysis with the NanoSIMS Cameca50L." width="768"><p class="caption">
 Figure 1.3: Changes in the ionization potential examplified by single ion monotonic trends in count rates over subsequent measurements of a single analysis with the NanoSIMS Cameca50L.
 </p>
 </div>
 <p>The systematic changes induced by ionization differences in count rate affect modulate count rates for both isotopes of the same equally (see Fig. <a href="#fig:ionR1">1.3</a>). From the <em>the formula for exact propagation of error</em> <span class="citation">(Ku 1966)</span> it can further be deduced that the error of co-variate ratios, such as for isotope ratios (<span class="math inline">\(R\)</span>), will effectively be dampened by the co-variate term in the equation (see vignette <a href="IC-precision.html">IC-precision</a>) and <span class="citation">Fitzsimons, Harte, and Clark (2000)</span>. However, this is not the case for none-isotope ion ratios and so their propagated error is also largely an effect of this systematic variance induced by ionization trends (see Fig. <a href="#fig:ionR2">1.4</a>).</p>
 <div class="figure">
-<span id="fig:ionR2"></span>
+<span style="display:block;" id="fig:ionR2"></span>
 <img src="IC-process_files/figure-html/ionR2-1.png" alt="Changes in the ratios of none-isotope and isotope ratios compared." width="768"><p class="caption">
 Figure 1.4: Changes in the ratios of none-isotope and isotope ratios compared.
 </p>
 </div>
 <p>Upon plotting the count rate ratios against time (Fig. <a href="#fig:ionR2">1.4</a>), it becomes apparent that the none-isotope ratios are affected by monotonic trends over the duration of the analysis. This effect reflects the differential ionization potentials and trajectories of secondary beam stabilization over the analysis (as explained above; Fig. <a href="#fig:ionR1">1.3</a>).</p>
 <p><span class="math display" id="eq:components">\[\begin{equation}
-  y_t = l_0 + T_t + P_t + \epsilon_t 
-  \tag{1.4} 
+  y_t = l_0 + T_t + P_t + \epsilon_t
+  \tag{1.4}
 \end{equation}\]</span></p>
 <p>Time-series can be decomposed in several components (Eq. <a href="#eq:components">(1.4)</a>); the base level or mean of the time series; <span class="math inline">\(l0\)</span>, a structural trend component <span class="math inline">\(T_t\)</span> which change dependent on the time increment, a cyclical component <span class="math inline">\(P_t\)</span> and a noise component <span class="math inline">\(\epsilon_t\)</span>. Structural trends of a variable (i.e. count rates of species <span class="math inline">\(X_i^a\)</span>) based on the independent variable time (i.e. <span class="math inline">\(n\)</span>- series of measurements) can be described with regression analysis with the simplest implementation presented by the linear regression model:</p>
 <p><span class="math display" id="eq:linreg">\[\begin{equation}
@@ -265,22 +243,22 @@ Figure 1.4: Changes in the ratios of none-isotope and isotope ratios compared.
   \hat{y}_t = \beta_0 + f(x_1) + \epsilon_t
   \tag{1.6}
 \end{equation}\]</span></p>
-<p>The function <code><a href="../reference/predict_ionize.html">predict_ionize()</a></code> provides a convenient implementation of GAM from the package <code>mgcv</code>, which has the function <code>s()</code>, to define the smooth in the function <code>gam()</code>. The protocol implemented assures effective bandwidth selection based on goodness of fit measured with a penalized information criterion. With the knowledge that ionization is represented as global trend, this allows for subtraction of the model fit from the actual count rate data to allow for a more accurate assessment of the <span class="math inline">\(l0\)</span> as well as the random component <span class="math inline">\(\epsilon_t\)</span> informing about the precision unbiased by a large systematic offset.</p>
+<p>The function <code><a href="../reference/predict_ionize.html">predict_ionize()</a></code> provides a convenient implementation of GAM from the package <code>mgcv</code>, which has the function <code>s()</code>, to define the smooth function in the <code>gam()</code> call. The protocol implemented assures effective bandwidth selection based on goodness of fit measured with a penalized information criterion. With the knowledge that ionization is represented as global trend, this allows for subtraction of the model fit from the actual count rate data to allow for a more accurate assessment of the <span class="math inline">\(l0\)</span> as well as the random component <span class="math inline">\(\epsilon_t\)</span> informing about the precision unbiased by a large systematic offset.</p>
 <p><span class="math display" id="eq:detr">\[\begin{equation}
   X_i^a* = \bar{\hat{X}}^a + (X_i^a - \hat{X}_i^a)
   \tag{1.7}
 \end{equation}\]</span></p>
 <p>The <code>point</code> package provides additional diagnostic tools to assess whether the model represents an under- or over-fit on the data (see vignette <a href="IC-diagnostics.html">IC-diagnostics</a>).</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">tb_dt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict_ionize.html">predict_ionize</a></span><span class="op">(</span><span class="va">tb_pr</span>, <span class="va">file.nm</span><span class="op">)</span></code></pre></div>
 <div class="figure">
-<span id="fig:ionR3"></span>
+<span style="display:block;" id="fig:ionR3"></span>
 <img src="IC-process_files/figure-html/ionR3-1.png" alt="GAM predicted model fit (dashed black line) to single ion count rates and median count rate (solid blue line)." width="768"><p class="caption">
 Figure 1.5: GAM predicted model fit (dashed black line) to single ion count rates and median count rate (solid blue line).
 </p>
 </div>
 <div class="figure">
-<span id="fig:ionR4"></span>
+<span style="display:block;" id="fig:ionR4"></span>
 <img src="IC-process_files/figure-html/ionR4-1.png" alt="An extraction of the $l0$ and $\epsilon_t$ components, by appliciation of Eq. \@ref(eq:detr), and thereby yielding corrected none-isotope ion count ratios." width="384"><p class="caption">
 Figure 1.6: An extraction of the <span class="math inline">\(l0\)</span> and <span class="math inline">\(\epsilon_t\)</span> components, by appliciation of Eq. <a href="#eq:detr">(1.7)</a>, and thereby yielding corrected none-isotope ion count ratios.
 </p>
@@ -290,55 +268,53 @@ Figure 1.6: An extraction of the <span class="math inline">\(l0\)</span> and <sp
 <!-- $$ \delta_t = \frac{R_t - R_{t1}}{R_{t1} }\times 10^3 $$ -->
 </div>
 </div>
-<div id="references" class="section level1 unnumbered">
-<h1 class="hasAnchor">
-<a href="#references" class="anchor"></a>References</h1>
+<div class="section level2">
+<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-Burden2014" class="csl-entry">
-Burden, Conrad J. 2014. <span>“<span class="nocase">An R Implementation of the Polya-Aeppli Distribution</span>.”</span> <a href="http://arxiv.org/abs/1406.2780">http://arxiv.org/abs/1406.2780</a>.
+Burden, Conrad J. 2014. <span>“<span class="nocase">An R Implementation of the Polya-Aeppli Distribution</span>.”</span> <a href="http://arxiv.org/abs/1406.2780" class="external-link">http://arxiv.org/abs/1406.2780</a>.
 </div>
 <div id="ref-Dietz1970" class="csl-entry">
-Dietz, L. A. 1970. <span>“<span class="nocase">General method for computing the statistics of charge amplification in particle and photon detectors used for pulse counting</span>.”</span> <em>International Journal of Mass Spectrometry and Ion Physics</em> 5 (1-2): 11–19. <a href="https://doi.org/10.1016/0020-7381(70)87002-4">https://doi.org/10.1016/0020-7381(70)87002-4</a>.
+Dietz, L. A. 1970. <span>“<span class="nocase">General method for computing the statistics of charge amplification in particle and photon detectors used for pulse counting</span>.”</span> <em>International Journal of Mass Spectrometry and Ion Physics</em> 5 (1-2): 11–19. <a href="https://doi.org/10.1016/0020-7381(70)87002-4" class="external-link">https://doi.org/10.1016/0020-7381(70)87002-4</a>.
 </div>
 <div id="ref-Dietz1978" class="csl-entry">
-Dietz, L. A., and L. R. Hanrahan. 1978. <span>“<span class="nocase">Electron multiplier-scintillator detector for pulse counting positive or negative ions</span>.”</span> <em>Review of Scientific Instruments</em> 49 (9): 1250–56. <a href="https://doi.org/10.1063/1.1135590">https://doi.org/10.1063/1.1135590</a>.
+Dietz, L. A., and L. R. Hanrahan. 1978. <span>“<span class="nocase">Electron multiplier-scintillator detector for pulse counting positive or negative ions</span>.”</span> <em>Review of Scientific Instruments</em> 49 (9): 1250–56. <a href="https://doi.org/10.1063/1.1135590" class="external-link">https://doi.org/10.1063/1.1135590</a>.
 </div>
 <div id="ref-Fitzsimons2000a" class="csl-entry">
-Fitzsimons, I. C. W., B. Harte, and R. M. Clark. 2000. <span>“<span class="nocase">SIMS stable isotope measurement: counting statistics and analytical precision</span>.”</span> <em>Mineralogical Magazine</em> 64 (01): 59–83. <a href="https://doi.org/10.1180/002646100549139">https://doi.org/10.1180/002646100549139</a>.
+Fitzsimons, I. C. W., B. Harte, and R. M. Clark. 2000. <span>“<span class="nocase">SIMS stable isotope measurement: counting statistics and analytical precision</span>.”</span> <em>Mineralogical Magazine</em> 64 (01): 59–83. <a href="https://doi.org/10.1180/002646100549139" class="external-link">https://doi.org/10.1180/002646100549139</a>.
 </div>
 <div id="ref-Ku1966" class="csl-entry">
-Ku, H. H. 1966. <span>“<span class="nocase">Notes on the use of propagation of error formulas</span>.”</span> <em>Journal of Research of the National Bureau of Standards, Section C: Engineering and Instrumentation</em> 70C (4): 263. <a href="https://doi.org/10.6028/jres.070c.025">https://doi.org/10.6028/jres.070c.025</a>.
+Ku, H. H. 1966. <span>“<span class="nocase">Notes on the use of propagation of error formulas</span>.”</span> <em>Journal of Research of the National Bureau of Standards, Section C: Engineering and Instrumentation</em> 70C (4): 263. <a href="https://doi.org/10.6028/jres.070c.025" class="external-link">https://doi.org/10.6028/jres.070c.025</a>.
 </div>
 <div id="ref-SLodzian2001" class="csl-entry">
-Slodzian, Georges, M Chaintreau, R Dennebouy, and A Rousse. 2001. <span>“<span class="nocase">Precise in situ measurements of isotopic abundances with pulse</span>.”</span> <em>The European Physical Journal Applied Physics</em> 14: 199–231. <a href="https://doi.org/10.1051/epjap:2001160">https://doi.org/10.1051/epjap:2001160</a>.
+Slodzian, Georges, M Chaintreau, R Dennebouy, and A Rousse. 2001. <span>“<span class="nocase">Precise in situ measurements of isotopic abundances with pulse</span>.”</span> <em>The European Physical Journal Applied Physics</em> 14: 199–231. <a href="https://doi.org/10.1051/epjap:2001160" class="external-link">https://doi.org/10.1051/epjap:2001160</a>.
 </div>
 </div>
 </div>
-  </div>
-
-  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
-
-        <nav id="toc" data-toggle="toc"><h2 data-toc-skip>Contents</h2>
-    </nav>
-</div>
-
+  </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
+    </nav></aside>
 </div>
 
 
 
-      <footer><div class="copyright">
-  <p>Developed by Martin Schobben.</p>
+    <footer><div class="pkgdown-footer-left">
+  <p></p>
+<p>Developed by Martin Schobben.</p>
 </div>
 
-<div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+<div class="pkgdown-footer-right">
+  <p></p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a>
+2.0.2.</p>
 </div>
 
-      </footer>
+    </footer>
 </div>
 
   
 
+  
 
   </body>
 </html>

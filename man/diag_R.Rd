@@ -95,10 +95,10 @@ text for outliers (default = c("divergent", "confluent")).}
 }
 \value{
 A \code{ggplot2::\link[ggplot2:ggplot]{ggplot}()} is returned
-(if \code{.plot = TRUE}) along with a
-\code{tibble::\link[tibble:tibble]{tibble}()} which can contain statistics
-diagnostics, hypothesis test results associated with the chosen method and
-depending on the argument \code{.output}.
+ (if \code{.plot = TRUE}) along with a
+ \code{tibble::\link[tibble:tibble]{tibble}()} which can contain statistics
+ diagnostics, hypothesis test results associated with the chosen method and
+ depending on the argument \code{.output}.
 }
 \description{
 \code{diag_R} wrapper function for diagnostics on isotope count data

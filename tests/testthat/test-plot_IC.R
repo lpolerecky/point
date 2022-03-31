@@ -3,6 +3,11 @@
 #-------------------------------------------------------------------------------
 
 test_that("consistency of plotting", {
+  # only use for development purposes
+  skip_on_cran()
+  skip_on_ci()
+  skip_on_covr()
+
   # complete diagnostics
   tb_dia <- diag_R(simu_IC, "13C", "12C", type.nm, spot.nm,
                    .output = "diagnostics")
