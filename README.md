@@ -72,7 +72,7 @@ library(point)
 A more detailed outline of the general point workflow is given in the
 vignette *IC-introduction* (`vignette("IC-introduction")`).
 
-<img src="/home/nicola/Documents/work/code/point/man/figures/workflow.png" width="100%" />
+<img src="man/figures/workflow.png" width="100%" />
 
 To read, process and analyse raw ion count data use the functions:
 
