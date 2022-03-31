@@ -169,7 +169,7 @@ predictor_transformer <- function(arg2, transformation = NULL) {
     rlang::parse_expr(paste0("log(", as_name(arg2), ")"))
     # parts per thousand transformation
   } else if (transformation == "ppt") {
-    rlang::parse_expr(paste0("I(c(", as_name(arg2), ")/ 1000)"))
+    rlang::parse_expr(paste0("I(", as_name(arg2), "/ 1000)"))
   } else {
     stop("Transformation unkown!", call. = FALSE)
   }

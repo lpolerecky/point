@@ -29,8 +29,8 @@ test_that("whole formula can be generated", {
                          execute = FALSE)
   expect_equal(
     deparse(call),
-    c("nlme::lme(Xt.pr.13C ~ -1 + Xt.pr.12C, random = ~-1 + Xt.pr.12C | ",
-      "    execution/nest, data = data, weights = ~1/Xt.pr.12C)")
+    c("nlme::lme(Xt.pr.13C ~ -1 + I(Xt.pr.12C/1000), random = ~-1 + ",
+      "    I(Xt.pr.12C/1000) | execution/nest, data = data, weights = ~1/I(Xt.pr.12C/1000))")
   )
   # with flag
   call <- formula_parser(real_IC, quo(Xt.pr.13C), quo(Xt.pr.12C), quo(flag),
@@ -63,8 +63,9 @@ test_that("whole formula can be generated", {
   )
   # LME with transformation
   expect_snapshot(
-    formula_parser(real_IC, quo(Xt.pr.13C), quo(Xt.pr.12C), type = "LME",
-                   nest = fil.nm, transformation = "ppt")
+    formula_parser(tibble::add_column(xc, execution = 1), quo(Xt.pr.13C),
+                   quo(Xt.pr.12C), type = "LME", nest = quo(file.nm),
+                   transformation = "ppt")
   )
 })
 
@@ -72,7 +73,7 @@ test_that("whole formula can be generated", {
 test_that("predictors can be transformed", {
   expect_equal(
     predictor_transformer(Xt.pr.12C, "ppt"),
-    rlang::parse_expr("I(c(Xt.pr.12C)/1000)")
+    rlang::parse_expr("I(Xt.pr.12C/1000)")
   )
   expect_equal(
     predictor_transformer(Xt.pr.12C, "log"),
@@ -106,7 +107,7 @@ test_that("fixed formula terms can be assembled", {
   fml <- generate_fixed(Xt.pr.13C, Xt.pr.12C, "OLS", transformation = "ppt")
   expect_equal(
     fml,
-    as.formula("Xt.pr.13C ~ I(c(Xt.pr.12C)/1000)", env = rlang::get_env(fml))
+    as.formula("Xt.pr.13C ~ I(Xt.pr.12C/1000)", env = rlang::get_env(fml))
   )
   fml <- generate_fixed(Xt.pr.13C, Xt.pr.12C, "OLS", transformation = "log")
   expect_equal(
@@ -116,7 +117,7 @@ test_that("fixed formula terms can be assembled", {
   fml <- generate_fixed(Xt.pr.13C, Xt.pr.12C, "GLS", transformation = "ppt")
   expect_equal(
     fml,
-    as.formula("Xt.pr.13C ~ -1 + I(c(Xt.pr.12C)/1000)", env = rlang::get_env(fml))
+    as.formula("Xt.pr.13C ~ -1 + I(Xt.pr.12C/1000)", env = rlang::get_env(fml))
   )
   fml <- generate_fixed(Xt.pr.13C, Xt.pr.12C, "GLS", transformation = "log")
   expect_equal(
@@ -138,12 +139,12 @@ test_that("fixed formula terms can be assembled", {
   fml <- generate_fixed(Xt.pr.13C, Xt.pr.12C, "OLS", flag, transformation = "ppt")
   expect_equal(
     fml,
-    as.formula("Xt.pr.13C ~ I(c(Xt.pr.12C)/1000) * flag", env = rlang::get_env(fml))
+    as.formula("Xt.pr.13C ~ I(Xt.pr.12C/1000) * flag", env = rlang::get_env(fml))
   )
   fml <- generate_fixed(Xt.pr.13C, Xt.pr.12C, "GLS", flag, transformation = "ppt")
   expect_equal(
     fml,
-    as.formula("Xt.pr.13C ~ -1 + I(c(Xt.pr.12C)/1000) * flag", env = rlang::get_env(fml))
+    as.formula("Xt.pr.13C ~ -1 + I(Xt.pr.12C/1000) * flag", env = rlang::get_env(fml))
   )
 })
 
@@ -165,7 +166,7 @@ test_that("random structure can be created", {
   fml <- generate_random(Xt.pr.12C, "LME", nest , "ppt")
   expect_equal(
     fml,
-    as.formula("~-1 + I(c(Xt.pr.12C)/1000) | execution/nest",
+    as.formula("~-1 + I(Xt.pr.12C/1000) | execution/nest",
                env = rlang::get_env(fml))
   )
   # special case
@@ -187,7 +188,7 @@ test_that("weighing structure can be build",{
   )
   expect_equal(
     generate_weight(Xt.pr.12C, "Rm", "ppt"),
-    rlang::parse_expr("1/I(c(Xt.pr.12C)/1000)")
+    rlang::parse_expr("1/I(Xt.pr.12C/1000)")
   )
   expect_equal(
     generate_weight(Xt.pr.12C, "Rm", "log"),
@@ -202,7 +203,7 @@ test_that("weighing structure can be build",{
   fml <- generate_weight(Xt.pr.12C, "GLS", "ppt")
   expect_equal(
     fml,
-    as.formula("~1/I(c(Xt.pr.12C)/1000)", env = rlang::get_env(fml))
+    as.formula("~1/I(Xt.pr.12C/1000)", env = rlang::get_env(fml))
   )
   fml <- generate_weight(Xt.pr.12C, "GLS", "log")
   expect_equal(
