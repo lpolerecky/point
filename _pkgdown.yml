@@ -6,6 +6,7 @@ reference:
   desc: "Checking files, and loading ion count data and associated meta-data."
 - contents:
   - ICdir_chk
+  - point_example
   - starts_with("read")
   - matches("fold")
 - title: "Correcting ion count data"
@@ -27,8 +28,24 @@ reference:
   - diag_R
   - Cameca
   - CV
+  - eval_diag
+  - formula_parser
 - title: "Miscellaneous tools to handle ion count data"
   desc: "Functions for easy plotting and printing of ion count data."
 - contents:
   - cov_R
   - matches("labeller")
+  - twodens
+- title: "Helpers for isotope systematics"
+  desc: "Converting between relative and absoluate isotope abudance and delta notation."
+- contents:
+  - calib_R
+  - reference_R
+- title: "Datasets"
+  desc: "Real and simulated data as well as information on methods"
+- contents:
+  - starts_with("names")
+  - starts_with("simu")
+  - starts_with("cameca")
+  - real_IC
+  - point
