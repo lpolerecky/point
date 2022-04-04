@@ -11,6 +11,28 @@ CooksD <- function(.IC, .ion1, .ion2, ..., .X = NULL, .N = NULL, .species = NULL
   # function name
   fun_nm <- rlang::as_name(match.call()[[1]])
 
+  # check for package dependencies
+  if (fun_nm == "IR") {
+    # suggested package
+    if (!requireNamespace("stats", quietly = TRUE)) {
+      stop(
+        "Package \"stats\" must be installed to use this function.",
+        call. = FALSE
+      )
+    }
+  }
+
+  # check for package dependencies
+  if (fun_nm == "QQ") {
+    # suggested package
+    if (!requireNamespace("nortest", quietly = TRUE)) {
+      stop(
+        "Package \"nortest\" must be installed to use this function.",
+        call. = FALSE
+      )
+    }
+  }
+
   # check if name has hypothesis test
   if(fun_nm != "CV" & .hyp == "bp") {
     stop("Wrong hypothesis test for this method.")
@@ -70,29 +92,56 @@ CooksD <- function(.IC, .ion1, .ion2, ..., .X = NULL, .N = NULL, .species = NULL
 nest_R_lm <- function(IC, gr_by, X1, X2, t, method, hyp, alpha_level) {
 
   tidyr::nest(IC, t = !! t, data = -c(!!! gr_by)) |>
-  dplyr::mutate(
-    R_lm =
-      purrr::map(.data$data, ~formula_parser(.x, X1, X2, type = "Rm")),
-    aug =
-      purrr::map(.data$R_lm, broom::augment),
-    extr =
-      purrr::map(.data$aug, ~transmute_reg(.x, X1, X2, method)),
-    extr =
-      purrr::map(.data$extr, ~QQ_trans(.x, method, hyp, alpha_level)),
-    extr =
-      purrr::map(.data$extr, ~IR_trans(.x, method, hyp, alpha_level)),
-    extr =
-      purrr::map2(
-        .data$aug,
-        .data$extr,
-        ~bp_wrap(.x, .y, X2, method, hyp, alpha_level)
-        ),
-    flag =
-      purrr::map(.data$extr, ~flag_set(.x, method, alpha_level))
-    ) |>
-  dplyr::select(-c(.data$R_lm, .data$aug))
+    dplyr::mutate(
+      R_lm =
+        purrr::map(.data$data, ~formula_parser(.x, X1, X2, type = "Rm")),
+      aug =
+        purrr::map(.data$R_lm, broom::augment),
+      extr =
+        trans_switch(.data$aug, X1, X2, method, hyp, alpha_level),
+      flag =
+        purrr::map(.data$extr, ~flag_set(.x, method, alpha_level))
+      ) |>
+    dplyr::select(-c(.data$R_lm, .data$aug))
 }
 
+# switch to required method
+trans_switch <- function(IC, X1, X2, method, hyp, alpha_level) {
+  switch(
+    method,
+    Rm = ,
+    norm_E =,
+    CooksD = extract_(IC, X1, X2, method),
+    QQ = QQ_(IC, X1, X2, method, hyp, alpha_level),
+    IR = IR_(IC, X1, X2, method, hyp, alpha_level),
+    CV = CV_(IC, X1, X2, method, hyp, alpha_level)
+
+  )
+}
+
+# vectorised functions
+extract_ <- function(augmented, X1, X2, method) {
+  purrr::map(augmented, ~transmute_reg(.x, X1, X2, method))
+}
+
+QQ_ <- function(augmented, X1, X2, method, hyp, alpha_level) {
+  extract_(augmented, X1, X2, method) |>
+    purrr::map(~QQ_trans(.x, method, hyp, alpha_level))
+}
+
+IR_ <- function(augmented, X1, X2, method, hyp, alpha_level) {
+  extract_(augmented, X1, X2, method) |>
+    purrr::map(~IR_trans(.x, method, hyp, alpha_level))
+}
+
+CV_ <- function(augmented, X1, X2, method, hyp, alpha_level) {
+  extracted <- extract_(augmented, X1, X2, method)
+  purrr::map2(
+    augmented,
+    extracted,
+    ~bp_wrap(.x, .y, X2, method, hyp, alpha_level)
+  )
+}
 # augment function transform  and rename variables to standards of point
 transmute_reg <- function(IC, X1, X2, type){
 
@@ -185,14 +234,6 @@ flagger <- function(IC, value, bound, fct = 1){
 # quantile transformations and hypothesis tests
 QQ_trans <- function(IC, type, hyp, alpha_level) {
 
-  # suggested package
-  if (!requireNamespace("nortest", quietly = TRUE)) {
-    stop(
-      "Package \"nortest\" must be installed to use this function.",
-      call. = FALSE
-    )
-  }
-
   # short-cut
   if (type!= "QQ") return(IC)
 
@@ -233,14 +274,6 @@ QQ_trans <- function(IC, type, hyp, alpha_level) {
 
 # auto-correlation and hypothesis tests
 IR_trans <- function(IC, type, hyp, alpha_level) {
-
-  # suggested package
-  if (!requireNamespace("stats", quietly = TRUE)) {
-    stop(
-      "Package \"stats\" must be installed to use this function.",
-      call. = FALSE
-    )
-  }
 
   # short-cut
   if (type != "IR") return(IC)

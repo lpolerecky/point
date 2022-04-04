@@ -92,7 +92,7 @@ test_that("case-study with Utrecht raster dataset", {
 # Is metadata preserved
 #-------------------------------------------------------------------------------
 
-test_that("Keep metadata", {
+test_that("diagnostics preserve metadata", {
   expect_snapshot(
     diag_R(real_IC, "13C", "12C", file.nm)
   )

@@ -1,4 +1,4 @@
-# consistency of residual diagnostics on internal dataset
+# residual diagnostics on internal dataset is consistent
 
     Code
       CooksD(tb_R, "13C", "12C", file.nm, .X = Xt.pr, .N = N.pr, .species = species.nm,
