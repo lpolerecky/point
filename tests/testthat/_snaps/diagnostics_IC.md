@@ -229,7 +229,7 @@
       #   hat_M_M_R_Xt.pr <dbl>, hat_RS_M_R_Xt.pr <dbl>, dAIC_M_R_Xt.pr <dbl>,
       #   p_M_R_Xt.pr <dbl>
 
-# Keep metadata
+# diagnostics preserve metadata
 
     Code
       diag_R(real_IC, "13C", "12C", file.nm)

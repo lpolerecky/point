@@ -18,16 +18,19 @@ formula_parser <- function(data, arg1, arg2, flag = NULL, transformation = NULL,
                            nest = NULL, type = "OLS", execute = TRUE) {
 
   # fixed terms
-  withRestarts(
+  fixed <- withRestarts(
     err <- tryCatch({
       fixed <- generate_fixed(!!arg1, !!arg2, type, flag = !!flag,
                               transformation)
       },
       error = function(e) {
-      invokeRestart("rerun")
-    }),
-    rerun = function(...) fixed <<- generate_fixed(!!arg1, !!arg2, type,
-                                                   flag = NULL, transformation)
+        invokeRestart("rerun")
+      }
+    ),
+    rerun = function(...) {
+      generate_fixed(!!arg1, !!arg2, type, flag = NULL,
+                     transformation)
+    }
   )
 
   # weight terms

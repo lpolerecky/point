@@ -1,9 +1,9 @@
 #' Analyse raw ion count data
 #'
 #' \code{stat_X} function for descriptive and predictive statistics on single
-#' ion precision.
+#'  ion precision.
 #' \code{stat_R} function for descriptive and predictive statistics on isotope
-#' ratios (R) precision with appropriate error propagation.
+#'  ratios (R) precision with appropriate error propagation.
 #'
 #' These functions are a convenient wrapper to calculate the statistics
 #' pertaining to the precision of pulsed ion count data (e.g. secondary ion mass
