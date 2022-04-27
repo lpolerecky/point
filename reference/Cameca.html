@@ -66,7 +66,8 @@ CooksD regression diagnostics based on Cook's D"><!-- mathjax --><script src="ht
   .t <span class="op">=</span> <span class="cn">NULL</span>,
   .output <span class="op">=</span> <span class="st">"complete"</span>,
   .alpha_level <span class="op">=</span> <span class="fl">0.05</span>,
-  .hyp <span class="op">=</span> <span class="st">"none"</span>
+  .hyp <span class="op">=</span> <span class="st">"none"</span>,
+  .mc_cores <span class="op">=</span> <span class="fl">1</span>
 <span class="op">)</span>
 
 <span class="fu">CooksD</span><span class="op">(</span>
@@ -80,7 +81,8 @@ CooksD regression diagnostics based on Cook's D"><!-- mathjax --><script src="ht
   .t <span class="op">=</span> <span class="cn">NULL</span>,
   .output <span class="op">=</span> <span class="st">"complete"</span>,
   .hyp <span class="op">=</span> <span class="st">"none"</span>,
-  .alpha_level <span class="op">=</span> <span class="fl">0.05</span>
+  .alpha_level <span class="op">=</span> <span class="fl">0.05</span>,
+  .mc_cores <span class="op">=</span> <span class="fl">1</span>
 <span class="op">)</span>
 
 <span class="fu">CV</span><span class="op">(</span>
@@ -94,7 +96,8 @@ CooksD regression diagnostics based on Cook's D"><!-- mathjax --><script src="ht
   .t <span class="op">=</span> <span class="cn">NULL</span>,
   .output <span class="op">=</span> <span class="st">"complete"</span>,
   .hyp <span class="op">=</span> <span class="st">"none"</span>,
-  .alpha_level <span class="op">=</span> <span class="fl">0.05</span>
+  .alpha_level <span class="op">=</span> <span class="fl">0.05</span>,
+  .mc_cores <span class="op">=</span> <span class="fl">1</span>
 <span class="op">)</span>
 
 <span class="fu">Rm</span><span class="op">(</span>
@@ -108,7 +111,8 @@ CooksD regression diagnostics based on Cook's D"><!-- mathjax --><script src="ht
   .t <span class="op">=</span> <span class="cn">NULL</span>,
   .output <span class="op">=</span> <span class="st">"complete"</span>,
   .hyp <span class="op">=</span> <span class="st">"none"</span>,
-  .alpha_level <span class="op">=</span> <span class="fl">0.05</span>
+  .alpha_level <span class="op">=</span> <span class="fl">0.05</span>,
+  .mc_cores <span class="op">=</span> <span class="fl">1</span>
 <span class="op">)</span>
 
 <span class="fu">norm_E</span><span class="op">(</span>
@@ -122,7 +126,8 @@ CooksD regression diagnostics based on Cook's D"><!-- mathjax --><script src="ht
   .t <span class="op">=</span> <span class="cn">NULL</span>,
   .output <span class="op">=</span> <span class="st">"complete"</span>,
   .hyp <span class="op">=</span> <span class="st">"none"</span>,
-  .alpha_level <span class="op">=</span> <span class="fl">0.05</span>
+  .alpha_level <span class="op">=</span> <span class="fl">0.05</span>,
+  .mc_cores <span class="op">=</span> <span class="fl">1</span>
 <span class="op">)</span>
 
 <span class="fu">QQ</span><span class="op">(</span>
@@ -136,7 +141,8 @@ CooksD regression diagnostics based on Cook's D"><!-- mathjax --><script src="ht
   .t <span class="op">=</span> <span class="cn">NULL</span>,
   .output <span class="op">=</span> <span class="st">"complete"</span>,
   .hyp <span class="op">=</span> <span class="st">"none"</span>,
-  .alpha_level <span class="op">=</span> <span class="fl">0.05</span>
+  .alpha_level <span class="op">=</span> <span class="fl">0.05</span>,
+  .mc_cores <span class="op">=</span> <span class="fl">1</span>
 <span class="op">)</span>
 
 <span class="fu">IR</span><span class="op">(</span>
@@ -150,7 +156,8 @@ CooksD regression diagnostics based on Cook's D"><!-- mathjax --><script src="ht
   .t <span class="op">=</span> <span class="cn">NULL</span>,
   .output <span class="op">=</span> <span class="st">"complete"</span>,
   .hyp <span class="op">=</span> <span class="st">"none"</span>,
-  .alpha_level <span class="op">=</span> <span class="fl">0.05</span>
+  .alpha_level <span class="op">=</span> <span class="fl">0.05</span>,
+  .mc_cores <span class="op">=</span> <span class="fl">1</span>
 <span class="op">)</span></code></pre></div>
     </div>
 
@@ -186,6 +193,9 @@ statistics `"complete"`.</p></dd>
 rejection level for outliers.</p></dd>
 <dt>.hyp</dt>
 <dd><p>Hypothesis test appropriate for the selected method.</p></dd>
+<dt>.mc_cores</dt>
+<dd><p>Number of workers for parallel execution (Does not work on
+Windows).</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -242,7 +252,7 @@ statistics required for the diagnostics.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
 </div>
 
     </footer></div>

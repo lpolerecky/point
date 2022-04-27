@@ -1,5 +1,5 @@
 pandoc: 2.7.3
-pkgdown: 2.0.2
+pkgdown: 2.0.3
 pkgdown_sha: ~
 articles:
   IC-diagnostics: IC-diagnostics.html
@@ -7,7 +7,7 @@ articles:
   IC-precision: IC-precision.html
   IC-process: IC-process.html
   IC-read: IC-read.html
-last_built: 2022-04-01T05:41Z
+last_built: 2022-04-27T17:43Z
 urls:
   reference: https://martinschobben.github.io/point/reference
   article: https://martinschobben.github.io/point/articles

@@ -110,9 +110,6 @@
 <span class="header-section-number">1.2.1</span> Analytical bias introduced by electron multipliers<a class="anchor" aria-label="anchor" href="#analytical-bias-introduced-by-electron-multipliers"></a>
 </h4>
 <p>The EM gain is a measure of the electron output current relative to the ion input and the amplification after ion-to-electron conversion. In this process an incident secondary ion triggers the generation of an electron at the first dynode (conversion dynode) of the EM channel; in turn, the resultant secondary electron strikes a consecutive dynode thereby amplifying the signal, where the latter process of secondary electron amplification is repeated multiple times (for the <em>Cameca NanoSIMS 50L</em> this generally results in a gain of <span class="math inline">\(10^8\)</span> electrons).</p>
-<pre><code><span class="co">#&gt; Warning in knitr::include_graphics(here::here("man/figures/EM-channel.png")): It</span>
-<span class="co">#&gt; is highly recommended to use relative paths for images. You had absolute paths:</span>
-<span class="co">#&gt; "/home/runner/work/point/point/man/figures/EM-channel.png"</span></code></pre>
 <div class="figure">
 <span style="display:block;" id="fig:EMdevice"></span>
 <img src="../reference/figures/EM-channel.png" alt="Graphic representation of the EM ion detection device" width="80%"><p class="caption">
@@ -156,7 +153,7 @@ Figure 1.2: An example of a typical PHD distribution. The effect of the discrimi
   X_{i}^* = \frac{X_i }{Y_{EM}} 
   \tag{1.2}
 \end{equation}\]</span></p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># original count rate of a chemical species</span>
 <span class="va">x</span> <span class="op">&lt;-</span> <span class="fl">30000</span>
 <span class="co"># function to correct count rate based on EM Yield</span>
@@ -174,12 +171,12 @@ Figure 1.2: An example of a typical PHD distribution. The effect of the discrimi
   \tag{1.3}
 \end{equation}\]</span></p>
 <p>The function <code>cor_DT</code> is implemented to correct for this systematic bias of EM devices.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># corrected count rate for a deadtime of 44 ns</span>
 <span class="fu"><a href="../reference/cor_yield.html">cor_DT</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">44</span><span class="op">)</span>
 <span class="co">#&gt; [1] 30039.65</span></code></pre></div>
 <p>For a convenient workflow the functions that correct for EM count biases are wrapped in the function <code><a href="../reference/cor_IC.html">cor_IC()</a></code>. This function takes the <a href="https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html" class="external-link">tibble</a> as loaded with the function <code><a href="../reference/read_IC.html">read_IC()</a></code> (see vignette <a href="IC-read.html">IC-read</a>) and requires setting the following arguments: <code>N</code>, a variable for the raw ion count;<code>t</code>, a variable for the time increments; <code>Det</code> a character string or variable identifying the ion detection system: EM (<code>"EM"</code>) or FC (<code>"FC"</code>); <code>deadtime</code>, a numeric value for the deadtime in nanoseconds; and <code>thr_PHD</code>, a numeric value for the discriminator threshold.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># Use point_example() to access the examples bundled with this package </span>
 
 <span class="co"># Carry-out the routine point workflow </span>
@@ -249,7 +246,7 @@ Figure 1.4: Changes in the ratios of none-isotope and isotope ratios compared.
   \tag{1.7}
 \end{equation}\]</span></p>
 <p>The <code>point</code> package provides additional diagnostic tools to assess whether the model represents an under- or over-fit on the data (see vignette <a href="IC-diagnostics.html">IC-diagnostics</a>).</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">tb_dt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict_ionize.html">predict_ionize</a></span><span class="op">(</span><span class="va">tb_pr</span>, <span class="va">file.nm</span><span class="op">)</span></code></pre></div>
 <div class="figure">
 <span style="display:block;" id="fig:ionR3"></span>
@@ -305,7 +302,7 @@ Figure 1.6: An extraction of the <span class="math inline">\(l0\)</span> and <sp
 
 <div class="pkgdown-footer-right">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
 </div>
 
     </footer>
