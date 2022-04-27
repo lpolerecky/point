@@ -58,5 +58,5 @@ homogeneous substrate at the level of individual analysis.
 tb_0 <- zeroCt(real_IC, "12C", "40Ca 16O", sample.nm, file.nm, .warn = FALSE)
 
 # predict ionization trends
-predict_ionize(tb_0, file.nm)
+\dontrun{predict_ionize(tb_0, file.nm)}
 }

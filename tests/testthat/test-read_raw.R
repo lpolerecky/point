@@ -4,8 +4,12 @@
 # Test datasets in extdata directory
 
 test_that("Check change over time in read_IC", {
-  expect_snapshot(read_IC(point_example("2018-01-19-GLENDON")))
-  expect_snapshot(read_meta(point_example("2018-01-19-GLENDON")))
+  expect_snapshot(
+    read_IC(point_example("2018-01-19-GLENDON"))
+  )
+  expect_snapshot(
+    read_meta(point_example("2018-01-19-GLENDON"))
+  )
 })
 
 #-------------------------------------------------------------------------------

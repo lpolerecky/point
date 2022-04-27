@@ -5,36 +5,38 @@
 #' rejection (Cameca default method).
 #'
 #' @param .IC A tibble containing ion count data and diagnostics generated with
-#' \code{diag_R()}, as a minimum the outlier \code{flag} variable is required.
+#'  \code{diag_R()}, as a minimum the outlier \code{flag} variable is required.
 #' @param .ion1 A character string constituting the rare isotope (e.g. "13C").
 #' @param .ion2 A character string constituting the common isotope (e.g. "12C").
 #' @param ... Variables for grouping.
 #' @param .nest A variable hat identifies a series of analyses to calculate
-#' the significance of inter-isotope variability.
+#'  the significance of inter-isotope variability.
 #' @param .X A variable constituting the ion count rate (defaults to
-#' variables generated with \code{read_IC()})
+#'  variables generated with \code{read_IC()})
 #' @param .N A variable constituting the ion counts (defaults to variables
-#' generated with \code{read_IC()}.).
+#'  generated with \code{read_IC()}.).
 #' @param .species A variable constituting the species analysed (defaults to
-#' variables generated with \code{read_IC()}).
+#'  variables generated with \code{read_IC()}).
 #' @param .t A variable constituting the time of the analyses (defaults to
-#' variables generated with \code{read_IC()}).
+#'  variables generated with \code{read_IC()}).
 #' @param .flag A variable constituting the outlier flag (defaults to
-#' variables generated with \code{diag_R()}).
+#'  variables generated with \code{diag_R()}).
 #' @param .execution A variable constituting the iterative cycles of diagnostics
-#' (defaults to variables generated with \code{diag_R()}).
+#'  (defaults to variables generated with \code{diag_R()}).
 #' @param .output A character string for output as summary statistics
-#' ("inference") and statistics with the original data ("complete").
+#'  ("inference") and statistics with the original data ("complete").
 #' @param .tf Variable transformation as parts per thousand (\code{"ppt"}) or
-#' log (\code{"log"}) before mixed linear model application.
+#'  log (\code{"log"}) before mixed linear model application.
 #' @param .label A character string indicating whether variable names are latex
-#' (\code{"latex"}) or webtex (\code{"webtex"}) compatible. Will be extended in
-#' the future \code{default = NULL}.
+#'  (\code{"latex"}) or webtex (\code{"webtex"}) compatible. Will be extended in
+#'  the future \code{default = NULL}.
 #' @param .meta Logical whether to preserve the metadata as an attribute
-#' (defaults to TRUE).
+#'  (defaults to TRUE).
+#' @param .mc_cores Number of workers for parallel execution (Does not work on
+#'   Windows).
 #'
 #' @return A \code{tibble::\link[tibble:tibble]{tibble}()} with model output.
-#' See \code{point::names_model} for more information on the model results.
+#'  See \code{point::names_model} for more information on the model results.
 #'
 #' @export
 #' @examples
@@ -49,7 +51,8 @@
 eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
                       .N = NULL, .species = NULL, .t = NULL, .flag = NULL,
                       .execution = NULL, .output = "inference",
-                      .tf = "ppt", .label = "none", .meta = FALSE){
+                      .tf = "ppt", .label = "none", .meta = FALSE,
+                      .mc_cores = 1){
 
   # Quoting the call (user-supplied expressions)
   # Additional arguments
@@ -145,11 +148,9 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
   # Create zero (constrained) model flag and updated model
   IC_lm <- tidyr::nest(IC, data = -c(!!! gr_by)) |>
     dplyr::mutate(
-      !! args[["ratio"]] :=
-        purrr::map(data, ~dplyr::distinct(.x, !! args[["ratio"]])),
-      !! args[["M_R"]] :=
-        purrr::map(data, ~dplyr::distinct(.x, !! args[["M_R"]])),
-      lm_out = purrr::map(data, lm_fun, args)
+      lm_out =
+        parallel::mcMap(function(x) lm_fun(x, args), .data$data,
+                        mc.cores = .mc_cores)
     ) |>
     tidyr::unnest_wider(.data$lm_out)
 
@@ -176,19 +177,14 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
     # Nest over nest groups
     IC_mlm <- tidyr::nest(IC, data = -c(!!! nest_gr)) |>
       dplyr::mutate(
-        gls_out =
-          purrr::map(.data$data, purrr::possibly(gls_fun, NA), args, .tf = .tf),
         inter_out =
-          purrr::map2(
+          parallel::mcMap(
+            function(x) mlm_fun(x, args, nest, .tf = .tf),
             .data$data,
-            .data$gls_out,
-            purrr::possibly(mlm_fun, NA),
-            args,
-            nest,
-            .tf = .tf
+            mc.cores = .mc_cores
           )
       ) |>
-      dplyr::select(-c(.data$gls_out, .data$data)) |>
+      dplyr::select(-.data$data) |>
       tidyr::unnest_wider(.data$inter_out)
 
     # Collect
@@ -232,6 +228,8 @@ lm_fun <- function(.IC, args) {
   IC_aov <- broom::tidy(anova(lm_0 , lm_1))
 
   tibble::lst(
+    !! args[["ratio"]] := unique(dplyr::pull(.IC, !! args[["ratio"]])),
+    !! args[["M_R"]] := unique(dplyr::pull(.IC, !! args[["M_R"]])),
     !! args[["F_R"]] := dplyr::pull(IC_aov, .data$statistic)[2],
     !! args[["p_R"]] := dplyr::pull(IC_aov, .data$p.value)[2]
   )
@@ -257,10 +255,11 @@ gls_fun <- function(.IC, args, .tf) {
 # mlm model inter R variability
 #-------------------------------------------------------------------------------
 
-mlm_fun <- function(.IC, .gls, args, nest, .tf) {
+mlm_fun <- function(.IC, args, nest, .tf) {
 
   # zero model
-  gls_0 <- purrr::pluck(.gls, "gls_0")
+  gls <- gls_fun(.IC, args, .tf = .tf)
+  gls_0 <- purrr::pluck(gls, "gls_0")
 
   # mlm inter model
   mlm_inter <- formula_parser(
@@ -277,7 +276,7 @@ mlm_fun <- function(.IC, .gls, args, nest, .tf) {
 
   tibble::lst(
     # GLS results
-    !! args[["hat_M_M_R"]] := purrr::pluck(.gls, as_name(args[["hat_M_M_R"]])),
+    !! args[["hat_M_M_R"]] := purrr::pluck(gls, as_name(args[["hat_M_M_R"]])),
     # model relative standard deviation of group and associated standard error
     !! args[["hat_RS_M_R"]] := mlm_RS(mlm_inter, args[["X2"]]),
     # test statistic

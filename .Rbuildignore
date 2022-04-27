@@ -1,25 +1,20 @@
-^renv$
 ^renv\.lock$
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^README\.Rmd$
 ^LICENSE\.md$
-^presentations$
-^\.travis\.yml$
-^\.yml$
+^README\.Rmd$
+^man/packages\.bib$
+^codecov\.yml$
 ^_pkgdown\.yml$
-^\.github$
 
+^renv$
 ^data-raw$
 ^docs$
 ^pkgdown$
-
-R/Longitudinal\.R
-R/standard_error_mlmcoefs\.R
-R/animation\.R
+^\.git$
+^\.github$
 
 vignettes/workflow\.svg
 vignettes/Rlogo\.svg
 vignettes/EM-channel\.svg
 vignettes/excerpt_stat\.pdf
-^codecov\.yml$

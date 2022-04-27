@@ -86,9 +86,9 @@ A \code{tibble::\link[tibble:tibble]{tibble}} containing descriptive
 }
 \description{
 \code{stat_X} function for descriptive and predictive statistics on single
-ion precision.
+ ion precision.
 \code{stat_R} function for descriptive and predictive statistics on isotope
-ratios (R) precision with appropriate error propagation.
+ ratios (R) precision with appropriate error propagation.
 }
 \details{
 These functions are a convenient wrapper to calculate the statistics

@@ -44,7 +44,7 @@ read_IC <- function(directory, meta = FALSE, hide = TRUE){
     na = c("X", "Y"),
     id = "file.nm",
     .name_repair = "minimal"
-    ) %>%
+  ) %>%
     tidyr::drop_na() %>%
     dplyr::mutate(
       file.nm =
@@ -56,7 +56,7 @@ read_IC <- function(directory, meta = FALSE, hide = TRUE){
     point::names_cameca,
     .data$extension == ".is_txt",
     .data$use == "meta"
-    )
+  )
 
   tb_meta <- point_lines(ls_IC, pattern = "B", sep = "\\=", id = "num.mt") %>%
     # meta data names

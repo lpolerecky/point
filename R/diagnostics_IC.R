@@ -64,6 +64,8 @@
 #'  conversion of R (see \code{?calib_R()} for options).
 #' @param .plot_outlier_labs A character vector of length two for the colourbar
 #'  text for outliers (default = c("divergent", "confluent")).
+#' @param .mc_cores Number of workers for parallel execution (Does not work on
+#'   Windows).
 #'
 #' @return A \code{ggplot2::\link[ggplot2:ggplot]{ggplot}()} is returned
 #'  (if \code{.plot = TRUE}) along with a
@@ -84,7 +86,8 @@ diag_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .method = "CooksD",
                    .meta = FALSE, .alpha_level = 0.05, .hyp = "none",
                    .plot = FALSE, .plot_type = "static", .plot_stat = NULL,
                    .plot_iso = FALSE,
-                   .plot_outlier_labs = c("divergent", "confluent")){
+                   .plot_outlier_labs = c("divergent", "confluent"),
+                   .mc_cores = 1){
 
   # Quoting the call (user-supplied expressions)
   # Grouping
@@ -150,6 +153,7 @@ diag_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .method = "CooksD",
       .args = args,
       .diag_args = diag_args,
       .output = .output,
+      .mc_cores = .mc_cores,
       .ns = "purrr"
     )
   } else {
@@ -161,7 +165,8 @@ diag_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .method = "CooksD",
       .ion2 = .ion2,
       !!! gr_by,
       .args = args,
-      .diag_args = diag_args
+      .diag_args = diag_args,
+      .mc_cores = .mc_cores
     )
   }
 
@@ -213,7 +218,8 @@ diag_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .method = "CooksD",
         !!! args,
         .flag = rlang::parse_expr("flag"),
         .output = .output,
-        .label = .label
+        .label = .label,
+        .mc_cores = .mc_cores
       )
 
       IC <- eval(eval_call)
@@ -232,7 +238,7 @@ diag_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .method = "CooksD",
 
 # rerunning the diagnostics for several iterations
 rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .args, .diag_args,
-                         .output){
+                         .output, .mc_cores){
 
   # Grouping
   gr_by <- enquos(...)
@@ -256,7 +262,8 @@ rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .args, .diag_args,
     .ion2,
     !!! gr_by,
     .args = .args,
-    .diag_args = .diag_args
+    .diag_args = .diag_args,
+    .mc_cores = .mc_cores
   )
 
   # Save augmented data frame for next cycle
@@ -284,7 +291,7 @@ rerun_diag_R <- function(out, input, .ion1, .ion2, ..., .args, .diag_args,
 }
 
 # execute
-diag_R_exec <- function(.IC, .ion1, .ion2, ..., .args, .diag_args){
+diag_R_exec <- function(.IC, .ion1, .ion2, ..., .args, .diag_args, .mc_cores){
 
   # Grouping
   gr_by <- enquos(...)
@@ -303,7 +310,8 @@ diag_R_exec <- function(.IC, .ion1, .ion2, ..., .args, .diag_args){
     !!! gr_by,
     !!! .args,
     .output = "complete",
-    !!! .diag_args[names(.diag_args) != ".method"]
+    !!! .diag_args[names(.diag_args) != ".method"],
+    .mc_cores = .mc_cores
   )
 
   # Descriptive an predictive calls for single ions statistics

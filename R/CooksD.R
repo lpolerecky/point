@@ -3,7 +3,7 @@
 #' @export
 CooksD <- function(.IC, .ion1, .ion2, ..., .X = NULL, .N = NULL, .species = NULL,
                    .t = NULL, .output = "complete", .hyp = "none",
-                   .alpha_level = 0.05){
+                   .alpha_level = 0.05, .mc_cores = 1){
 
   # Grouping
   gr_by <- enquos(...)
@@ -58,7 +58,8 @@ CooksD <- function(.IC, .ion1, .ion2, ..., .X = NULL, .N = NULL, .species = NULL
 
   # Execute
   IC_nest <- nest_R_lm(.IC, gr_by, X1, X2, args[[".t"]], method = fun_nm,
-                       hyp = .hyp, alpha_level = .alpha_level)
+                       hyp = .hyp, alpha_level = .alpha_level,
+                       mc_cores = .mc_cores)
 
   # Output
   if (fun_nm == "IR") {
@@ -89,33 +90,36 @@ CooksD <- function(.IC, .ion1, .ion2, ..., .X = NULL, .N = NULL, .species = NULL
 #-------------------------------------------------------------------------------
 
 # nest lm (args as quos)
-nest_R_lm <- function(IC, gr_by, X1, X2, t, method, hyp, alpha_level) {
+nest_R_lm <- function(IC, gr_by, X1, X2, t, method, hyp, alpha_level,
+                      mc_cores) {
 
   tidyr::nest(IC, t = !! t, data = -c(!!! gr_by)) |>
     dplyr::mutate(
-      R_lm =
-        purrr::map(.data$data, ~formula_parser(.x, X1, X2, type = "Rm")),
       aug =
-        purrr::map(.data$R_lm, broom::augment),
+        # parallel computation makes this step faster
+        parallel::mcMap(
+          function(x) broom::augment(formula_parser(x, X1, X2, type = "Rm")),
+          .data$data,
+          mc.cores = mc_cores
+        ),
       extr =
         trans_switch(.data$aug, X1, X2, method, hyp, alpha_level),
       flag =
         purrr::map(.data$extr, ~flag_set(.x, method, alpha_level))
       ) |>
-    dplyr::select(-c(.data$R_lm, .data$aug))
+    dplyr::select(-c(.data$aug))
 }
 
 # switch to required method
 trans_switch <- function(IC, X1, X2, method, hyp, alpha_level) {
   switch(
     method,
-    Rm = ,
+    Rm =,
     norm_E =,
     CooksD = extract_(IC, X1, X2, method),
     QQ = QQ_(IC, X1, X2, method, hyp, alpha_level),
     IR = IR_(IC, X1, X2, method, hyp, alpha_level),
     CV = CV_(IC, X1, X2, method, hyp, alpha_level)
-
   )
 }
 

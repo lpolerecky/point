@@ -28,7 +28,7 @@
 #' tb_0 <- zeroCt(real_IC, "12C", "40Ca 16O", sample.nm, file.nm, .warn = FALSE)
 #'
 #' # predict ionization trends
-#' predict_ionize(tb_0, file.nm)
+#' \dontrun{predict_ionize(tb_0, file.nm)}
 predict_ionize <- function(.IC, ..., .nest = NULL, .X = NULL, .N = NULL,
                            .species = NULL, .t = NULL, .bl_t = NULL,
                            .plot = TRUE, .method = "median", .hide = TRUE){

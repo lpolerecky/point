@@ -18,26 +18,19 @@ formula_parser <- function(data, arg1, arg2, flag = NULL, transformation = NULL,
                            nest = NULL, type = "OLS", execute = TRUE) {
 
   # fixed terms
-  fixed <- withRestarts(
-    err <- tryCatch({
-      fixed <- generate_fixed(!!arg1, !!arg2, type, flag = !!flag,
-                              transformation)
-      },
-      error = function(e) {
-        invokeRestart("rerun")
-      }
-    ),
-    rerun = function(...) {
-      generate_fixed(!!arg1, !!arg2, type, flag = NULL,
-                     transformation)
-    }
-  )
+  if (is.null(flag)) {
+    fixed <- generate_fixed(!!arg1, !!arg2, type, flag = NULL, transformation)
+  } else {
+    fixed <- generate_fixed(!!arg1, !!arg2, type, flag = flag, transformation)
+  }
 
   # weight terms
   weights <- generate_weight(!!arg2, type, transformation)
 
   # random terms
-  try(rand <- generate_random(!!arg2, type, !!nest, transformation), silent = TRUE)
+  if (!is.null(nest)) {
+    rand <- generate_random(!!arg2, type, !!nest, transformation)
+  }
 
   # Switch between types of linear model
   fml <- switch(

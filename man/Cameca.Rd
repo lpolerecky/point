@@ -21,7 +21,8 @@ Cameca(
   .t = NULL,
   .output = "complete",
   .alpha_level = 0.05,
-  .hyp = "none"
+  .hyp = "none",
+  .mc_cores = 1
 )
 
 CooksD(
@@ -35,7 +36,8 @@ CooksD(
   .t = NULL,
   .output = "complete",
   .hyp = "none",
-  .alpha_level = 0.05
+  .alpha_level = 0.05,
+  .mc_cores = 1
 )
 
 CV(
@@ -49,7 +51,8 @@ CV(
   .t = NULL,
   .output = "complete",
   .hyp = "none",
-  .alpha_level = 0.05
+  .alpha_level = 0.05,
+  .mc_cores = 1
 )
 
 Rm(
@@ -63,7 +66,8 @@ Rm(
   .t = NULL,
   .output = "complete",
   .hyp = "none",
-  .alpha_level = 0.05
+  .alpha_level = 0.05,
+  .mc_cores = 1
 )
 
 norm_E(
@@ -77,7 +81,8 @@ norm_E(
   .t = NULL,
   .output = "complete",
   .hyp = "none",
-  .alpha_level = 0.05
+  .alpha_level = 0.05,
+  .mc_cores = 1
 )
 
 QQ(
@@ -91,7 +96,8 @@ QQ(
   .t = NULL,
   .output = "complete",
   .hyp = "none",
-  .alpha_level = 0.05
+  .alpha_level = 0.05,
+  .mc_cores = 1
 )
 
 IR(
@@ -105,7 +111,8 @@ IR(
   .t = NULL,
   .output = "complete",
   .hyp = "none",
-  .alpha_level = 0.05
+  .alpha_level = 0.05,
+  .mc_cores = 1
 )
 }
 \arguments{
@@ -138,6 +145,9 @@ statistics `"complete"`.}
 rejection level for outliers.}
 
 \item{.hyp}{Hypothesis test appropriate for the selected method.}
+
+\item{.mc_cores}{Number of workers for parallel execution (Does not work on
+Windows).}
 }
 \value{
 A \code{tibble\link[tibble:tibble]{tibble}()} containing either the

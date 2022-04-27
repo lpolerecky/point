@@ -25,7 +25,8 @@ diag_R(
   .plot_type = "static",
   .plot_stat = NULL,
   .plot_iso = FALSE,
-  .plot_outlier_labs = c("divergent", "confluent")
+  .plot_outlier_labs = c("divergent", "confluent"),
+  .mc_cores = 1
 )
 }
 \arguments{
@@ -92,6 +93,9 @@ conversion of R (see \code{?calib_R()} for options).}
 
 \item{.plot_outlier_labs}{A character vector of length two for the colourbar
 text for outliers (default = c("divergent", "confluent")).}
+
+\item{.mc_cores}{Number of workers for parallel execution (Does not work on
+Windows).}
 }
 \value{
 A \code{ggplot2::\link[ggplot2:ggplot]{ggplot}()} is returned

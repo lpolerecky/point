@@ -19,7 +19,8 @@ eval_diag(
   .output = "inference",
   .tf = "ppt",
   .label = "none",
-  .meta = FALSE
+  .meta = FALSE,
+  .mc_cores = 1
 )
 }
 \arguments{
@@ -65,10 +66,13 @@ the future \code{default = NULL}.}
 
 \item{.meta}{Logical whether to preserve the metadata as an attribute
 (defaults to TRUE).}
+
+\item{.mc_cores}{Number of workers for parallel execution (Does not work on
+Windows).}
 }
 \value{
 A \code{tibble::\link[tibble:tibble]{tibble}()} with model output.
-See \code{point::names_model} for more information on the model results.
+ See \code{point::names_model} for more information on the model results.
 }
 \description{
 \code{eval_diag} function for the evaluation of effect size and significance

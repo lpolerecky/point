@@ -27,6 +27,8 @@
 #' @param .alpha_level The significance level of the hypothesis test and
 #' rejection level for outliers.
 #' @param .hyp Hypothesis test appropriate for the selected method.
+#' @param .mc_cores Number of workers for parallel execution (Does not work on
+#'  Windows).
 #'
 #' @return A \code{tibble\link[tibble:tibble]{tibble}()} containing either the
 #' original dataset with new columns related to the diagnostics or only the
@@ -44,7 +46,7 @@
 #'        .species = species.nm, .t = t.nm, .output = "flag")
 Cameca <- function(.IC, .ion1, .ion2, ..., .X = NULL, .N = NULL, .species = NULL,
                    .t = NULL, .output = "complete", .alpha_level = 0.05,
-                   .hyp = "none") {
+                   .hyp = "none", .mc_cores = 1) {
 
   # Grouping
   gr_by <- enquos(...)
