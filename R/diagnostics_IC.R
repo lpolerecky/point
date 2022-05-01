@@ -125,7 +125,7 @@ diag_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .method = "CooksD",
              call. = FALSE)
   }
   # Metadata
-  if(.meta) meta <- unfold(.IC, merge = FALSE)
+  if(isTRUE(.meta)) meta <- unfold(.IC, merge = FALSE)
 
   # Set alternative hypothesis tests
   if (.output == "inference" | .output == "complete") {
@@ -177,7 +177,7 @@ diag_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .method = "CooksD",
   if (.method != "IR") IC <- reduce_diag(IC, .output)
 
   # Plot data
-  if (.plot) {
+  if (isTRUE(.plot)) {
     if (.method != "IR") {
       plot_call <- rlang::call2(
         "gg_IC",
@@ -232,7 +232,7 @@ diag_R <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .method = "CooksD",
   }
 
   # Return metadata
-  if (.meta) IC <- fold(IC, type = ".mt",  meta = meta)
+  if (isTRUE(.meta)) IC <- fold(IC, type = ".mt",  meta = meta)
   IC
 }
 

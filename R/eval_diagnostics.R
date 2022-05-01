@@ -71,7 +71,7 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
   nest <- enquo(.nest)
 
   # Metadata
-  if(.meta) meta <- unfold(.IC, merge = FALSE)
+  if(isTRUE(.meta)) .meta <- unfold(.IC, merge = FALSE)
 
   # Update quosures (rare and common isotope)
   args <- rlang::list2(
@@ -104,15 +104,16 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
   }
 
   # Check number of levels of bad flag is more than 10
-  IC_n <- dplyr::count(
-    .IC,
-    !! args[[".execution"]],
-    !!! gr_by,
-    !! args[[".flag"]]
-  )
+  IC_n <- dplyr::count(.IC, !!! gr_by, !! args[[".flag"]], !! args[["ratio"]],
+                       !! args[["M_R"]])
 
   n_o <- nrow(dplyr::filter(IC_n , !! args[[".flag"]] == "divergent" &
                               .data$n >= 10))
+
+  # store remainder and starting data for intra-analyses test
+  part <- NULL
+  IC_lm <- .IC
+
   if (n_o == 0) {
 
     stop(paste0("Number of flagged outliers in all samples is too small for a",
@@ -120,33 +121,32 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
 
   }
 
-  if (nrow(dplyr::filter(IC_n, !! args[[".flag"]] == "divergent" &
-                         .data$n >= 10)) <
-      nrow(dplyr::filter(IC_n, !! args[[".flag"]] == "divergent"))) {
+  if (n_o < nrow(dplyr::filter(IC_n, !! args[[".flag"]] == "divergent"))) {
 
     warning(paste0("Number of flagged outliers in some samples is too small",
             " for a reliable diagnostic. Execution proceeded with remaining",
             " samples."), call. = FALSE)
 
+
     # Otherwise filter data-set
-    .IC <- dplyr::filter(IC_n, !! args[[".flag"]] == "divergent" &
-                           .data$n < 10) |>
-      dplyr::select(!!!gr_by) |>
-      dplyr::anti_join(.IC, ., by = c(sapply(gr_by, as_name)))
+    part <- dplyr::filter(IC_n, .data$n < 10) |>
+      dplyr::select(!!! gr_by, !! args[["ratio"]], !! args[["M_R"]])
+
+    IC_lm <- dplyr::anti_join(IC_lm, part, by = sapply(gr_by, as_name))
 
   }
 
   # Check for ionization efficiency trend
-  if (any(dplyr::between(dplyr::pull(.IC , !! args[["chi2_N2"]]) , 0.9, 1.1))) {
+  if (any(dplyr::between(dplyr::pull(IC_lm, !! args[["chi2_N2"]]) , 0.9, 1.1))){
     warning(paste0("Linear ionization trend absent in some or all analyses; ",
             "F statistic might be unreliable."), call. = FALSE)
   }
 
   # Re-center residuals along flag variable
-  IC <- cstd_var(.IC, gr_by, args)
+  IC_lm  <- cstd_var(IC_lm, gr_by, args)
 
   # Create zero (constrained) model flag and updated model
-  IC_lm <- tidyr::nest(IC, data = -c(!!! gr_by)) |>
+  IC_lm <- tidyr::nest(IC_lm, data = -c(!!! gr_by)) |>
     dplyr::mutate(
       lm_out =
         parallel::mcMap(function(x) lm_fun(x, args), .data$data,
@@ -154,19 +154,16 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
     ) |>
     tidyr::unnest_wider(.data$lm_out)
 
-  # determine output type
-  if (.output == "inference") {
+  # Add analysis with insufficient outliers
+  IC_lm <- dplyr::bind_rows(IC_lm, part)
 
-    IC_lm <- tidyr::unnest(
-      IC_lm,
-      cols = c(!! args[["ratio"]], !! args[["M_R"]])
-    )
+  # For output complete these variables need to be removed to prevent
+  # duplication
+  if (.output == "complete") {
 
-  } else {
+    IC_lm <- dplyr::select(IC_lm, -c(!! args[["ratio"]], !! args[["M_R"]]))
 
-    IC_lm <- dplyr::select(IC_lm, -c(!! args[["ratio"]] ,!! args[["M_R"]]))
-
-  }
+   }
 
   if (rlang::is_symbol(rlang::quo_get_expr(nest))) {
 
@@ -175,7 +172,7 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
     nest_gr <- gr_by[!sapply(gr_by, as_name) %in% nest_args]
 
     # Nest over nest groups
-    IC_mlm <- tidyr::nest(IC, data = -c(!!! nest_gr)) |>
+    IC_mlm <- tidyr::nest(.IC, data = -c(!!! nest_gr)) |>
       dplyr::mutate(
         inter_out =
           parallel::mcMap(
@@ -194,18 +191,18 @@ eval_diag <- function(.IC, .ion1, .ion2, ..., .nest = NULL, .X = NULL,
     IC <- purrr::reduce(
       IC_mlm,
       dplyr::left_join, by = sapply(nest_gr, as_name)
-      ) |>
-      output_lm(args, model_args, nest, .meta, .label, .output)
+    ) |>
+      output_lm(args, model_args, nest, .meta, .label, .output) |>
+      dplyr::arrange(!!! gr_by)
 
-    # Return metadata
-    if (.meta) return(fold(IC, type = ".mt",  meta = meta)) else return(IC)
+    # Short-cut
+    return(IC)
 
   }
 
   # Prepare output
-  IC <- output_lm(IC_lm, args, model_args, nest, .meta, .label, .output)
-  # Return metadata
-  if (.meta) fold(IC, type = ".mt",  meta = meta) else IC
+  output_lm(IC_lm, args, model_args, nest, .meta, .label, .output) |>
+    dplyr::arrange(!!!gr_by)
 
 }
 
@@ -290,7 +287,8 @@ mlm_fun <- function(.IC, args, nest, .tf) {
 # output function
 #-------------------------------------------------------------------------------
 
-output_lm <- function(IC, args, model_args, nest, meta = NULL, label = "none", output) {
+output_lm <- function(IC, args, model_args, nest, meta = FALSE, label = "none",
+                      output) {
 
   # Output transform
   trans_out <- function(IC, output) {
@@ -307,7 +305,7 @@ output_lm <- function(IC, args, model_args, nest, meta = NULL, label = "none", o
 
   IC <- eval(trans_out(IC, output))
 
-  #Latex labels
+  # Latex labels
   if (label == "latex" | label == "webtex") {
 
     tb_model <- point::names_model
@@ -333,7 +331,7 @@ output_lm <- function(IC, args, model_args, nest, meta = NULL, label = "none", o
   }
 
   # Return with metadata
-  if (!is.null(meta)) IC <- fold(IC, type = ".mt", meta = meta)
+  if (!isFALSE(meta)) IC <- fold(IC, type = ".mt", meta = meta)
   # Return
   IC
 }

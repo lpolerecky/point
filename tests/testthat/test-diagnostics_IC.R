@@ -60,6 +60,7 @@ test_that("case-study with Utrecht raster dataset", {
   skip_on_ci()
   skip_if_not_installed("pointapply")
   skip_if_not_installed("readmat")
+  skip("Manual check only")
 
   library(pointapply)
 

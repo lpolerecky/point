@@ -6,15 +6,15 @@
       # A tibble: 9 x 7
         execution type.nm    spot.nm ratio.nm M_R_Xt.pr F_R_Xt.pr p_R_Xt.pr
             <dbl> <chr>        <int> <chr>        <dbl>     <dbl>     <dbl>
-      1         1 symmetric        1 13C/12C     0.0110   105.     2.00e-64
-      2         1 symmetric        2 13C/12C     0.0110   127.     2.81e-77
-      3         1 symmetric        3 13C/12C     0.0110   122.     1.42e-74
-      4         1 asymmetric       1 13C/12C     0.0111    63.2    1.28e-39
-      5         1 asymmetric       2 13C/12C     0.0111    74.9    1.09e-46
-      6         1 asymmetric       3 13C/12C     0.0111    71.9    6.70e-45
-      7         1 ideal            1 13C/12C     0.0112     0.267  8.49e- 1
-      8         1 ideal            2 13C/12C     0.0112     0.219  8.83e- 1
-      9         1 ideal            3 13C/12C     0.0112     1.73   1.59e- 1
+      1         1 asymmetric       1 13C/12C     0.0111    63.2    1.28e-39
+      2         1 asymmetric       2 13C/12C     0.0111    74.9    1.09e-46
+      3         1 asymmetric       3 13C/12C     0.0111    71.9    6.70e-45
+      4         1 ideal            1 13C/12C     0.0112     0.267  8.49e- 1
+      5         1 ideal            2 13C/12C     0.0112     0.219  8.83e- 1
+      6         1 ideal            3 13C/12C     0.0112     1.73   1.59e- 1
+      7         1 symmetric        1 13C/12C     0.0110   105.     2.00e-64
+      8         1 symmetric        2 13C/12C     0.0110   127.     2.81e-77
+      9         1 symmetric        3 13C/12C     0.0110   122.     1.42e-74
 
 ---
 
@@ -40,18 +40,18 @@
       diag_R(simu_IC, "13C", "12C", type.nm, spot.nm, .output = "complete")
     Output
       # A tibble: 27,000 x 56
-         execution type.nm   spot.nm  t.nm trend.nm.13C trend.nm.12C base.nm.13C
-             <dbl> <chr>       <int> <int>        <dbl>        <dbl>       <dbl>
-       1         1 symmetric       1     1          120          120           0
-       2         1 symmetric       1     2          120          120           0
-       3         1 symmetric       1     3          120          120           0
-       4         1 symmetric       1     4          120          120           0
-       5         1 symmetric       1     5          120          120           0
-       6         1 symmetric       1     6          120          120           0
-       7         1 symmetric       1     7          120          120           0
-       8         1 symmetric       1     8          120          120           0
-       9         1 symmetric       1     9          120          120           0
-      10         1 symmetric       1    10          120          120           0
+         execution type.nm    spot.nm  t.nm trend.nm.13C trend.nm.12C base.nm.13C
+             <dbl> <chr>        <int> <int>        <dbl>        <dbl>       <dbl>
+       1         1 asymmetric       1     1          120          120           0
+       2         1 asymmetric       1     2          120          120           0
+       3         1 asymmetric       1     3          120          120           0
+       4         1 asymmetric       1     4          120          120           0
+       5         1 asymmetric       1     5          120          120           0
+       6         1 asymmetric       1     6          120          120           0
+       7         1 asymmetric       1     7          120          120           0
+       8         1 asymmetric       1     8          120          120           0
+       9         1 asymmetric       1     9          120          120           0
+      10         1 asymmetric       1    10          120          120           0
       # ... with 26,990 more rows, and 49 more variables: base.nm.12C <dbl>,
       #   force.nm.13C <dbl>, force.nm.12C <dbl>, bl.nm.13C <int>, bl.nm.12C <int>,
       #   n.rw.13C <dbl>, n.rw.12C <dbl>, N.pr.13C <dbl>, N.pr.12C <dbl>,
@@ -139,15 +139,15 @@
       # A tibble: 9 x 7
         execution type.nm    spot.nm ratio.nm `$\\bar{R}$` `$F_{R}$` `$p_{R}$`
             <dbl> <chr>        <int> <chr>           <dbl>     <dbl>     <dbl>
-      1         1 symmetric        1 13C/12C        0.0110   105.     2.00e-64
-      2         1 symmetric        2 13C/12C        0.0110   127.     2.81e-77
-      3         1 symmetric        3 13C/12C        0.0110   122.     1.42e-74
-      4         1 asymmetric       1 13C/12C        0.0111    63.2    1.28e-39
-      5         1 asymmetric       2 13C/12C        0.0111    74.9    1.09e-46
-      6         1 asymmetric       3 13C/12C        0.0111    71.9    6.70e-45
-      7         1 ideal            1 13C/12C        0.0112     0.267  8.49e- 1
-      8         1 ideal            2 13C/12C        0.0112     0.219  8.83e- 1
-      9         1 ideal            3 13C/12C        0.0112     1.73   1.59e- 1
+      1         1 asymmetric       1 13C/12C        0.0111    63.2    1.28e-39
+      2         1 asymmetric       2 13C/12C        0.0111    74.9    1.09e-46
+      3         1 asymmetric       3 13C/12C        0.0111    71.9    6.70e-45
+      4         1 ideal            1 13C/12C        0.0112     0.267  8.49e- 1
+      5         1 ideal            2 13C/12C        0.0112     0.219  8.83e- 1
+      6         1 ideal            3 13C/12C        0.0112     1.73   1.59e- 1
+      7         1 symmetric        1 13C/12C        0.0110   105.     2.00e-64
+      8         1 symmetric        2 13C/12C        0.0110   127.     2.81e-77
+      9         1 symmetric        3 13C/12C        0.0110   122.     1.42e-74
 
 ---
 
@@ -157,15 +157,15 @@
       # A tibble: 9 x 11
         execution type.nm    spot.nm ratio.nm `$\\bar{R}$` `$F_{R}$` `$p_{R}$`
             <dbl> <chr>        <int> <chr>           <dbl>     <dbl>     <dbl>
-      1         1 symmetric        1 13C/12C        0.0110   105.     2.00e-64
-      2         1 symmetric        2 13C/12C        0.0110   127.     2.81e-77
-      3         1 symmetric        3 13C/12C        0.0110   122.     1.42e-74
-      4         1 asymmetric       1 13C/12C        0.0111    63.2    1.28e-39
-      5         1 asymmetric       2 13C/12C        0.0111    74.9    1.09e-46
-      6         1 asymmetric       3 13C/12C        0.0111    71.9    6.70e-45
-      7         1 ideal            1 13C/12C        0.0112     0.267  8.49e- 1
-      8         1 ideal            2 13C/12C        0.0112     0.219  8.83e- 1
-      9         1 ideal            3 13C/12C        0.0112     1.73   1.59e- 1
+      1         1 asymmetric       1 13C/12C        0.0111    63.2    1.28e-39
+      2         1 asymmetric       2 13C/12C        0.0111    74.9    1.09e-46
+      3         1 asymmetric       3 13C/12C        0.0111    71.9    6.70e-45
+      4         1 ideal            1 13C/12C        0.0112     0.267  8.49e- 1
+      5         1 ideal            2 13C/12C        0.0112     0.219  8.83e- 1
+      6         1 ideal            3 13C/12C        0.0112     1.73   1.59e- 1
+      7         1 symmetric        1 13C/12C        0.0110   105.     2.00e-64
+      8         1 symmetric        2 13C/12C        0.0110   127.     2.81e-77
+      9         1 symmetric        3 13C/12C        0.0110   122.     1.42e-74
       # ... with 4 more variables: `$\\hat{\\bar{R}}$` <dbl>,
       #   `$\\hat{\\epsilon}_{\\bar{R}}$ (\\text{\\textperthousand})` <dbl>,
       #   `$\\Delta AIC_{\\bar{R}}$` <dbl>, `$p_{\\bar{R}}$` <dbl>
@@ -205,29 +205,6 @@
       7 ideal            1 H0 (independence of residuals)
       8 ideal            2 H0 (independence of residuals)
       9 ideal            3 H0 (independence of residuals)
-
-# case-study with Utrecht raster dataset
-
-    Code
-      diag_R(map_sum_grid_64_MEX, "13C", "12C", dim_name.nm, sample.nm, file.nm,
-        grid.nm, .nest = grid.nm)
-    Output
-      # A tibble: 24 x 13
-         execution sample.nm file.nm  grid.nm dim_name.nm ratio.nm M_R_Xt.pr F_R_Xt.pr
-             <dbl> <chr>     <chr>      <int> <chr>       <chr>        <dbl>     <dbl>
-       1         1 MEX       map_sum~       1 height      13C/12C     0.0103    0.277 
-       2         1 MEX       map_sum~       2 height      13C/12C     0.0103    0.756 
-       3         1 MEX       map_sum~       3 height      13C/12C     0.0103    1.51  
-       4         1 MEX       map_sum~       4 height      13C/12C     0.0102    0.730 
-       5         1 MEX       map_sum~       1 width       13C/12C     0.0103    0.589 
-       6         1 MEX       map_sum~       2 width       13C/12C     0.0103    1.25  
-       7         1 MEX       map_sum~       3 width       13C/12C     0.0103    0.195 
-       8         1 MEX       map_sum~       4 width       13C/12C     0.0103    0.0209
-       9         1 MEX       map_sum~       1 depth       13C/12C     0.0103    0.996 
-      10         1 MEX       map_sum~       2 depth       13C/12C     0.0103    0.364 
-      # ... with 14 more rows, and 5 more variables: p_R_Xt.pr <dbl>,
-      #   hat_M_M_R_Xt.pr <dbl>, hat_RS_M_R_Xt.pr <dbl>, dAIC_M_R_Xt.pr <dbl>,
-      #   p_M_R_Xt.pr <dbl>
 
 # diagnostics preserve metadata
 
