@@ -11,7 +11,7 @@ v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/
 coverage](https://codecov.io/gh/MartinSchobben/point/branch/master/graph/badge.svg)](https://app.codecov.io/gh/MartinSchobben/point?branch=master)
 <!-- badges: end -->
 
-# Introduction to point
+# Introduction
 
 This project was originally inspired by the lack of detailed insight in
 the inner workings of the default software for the *Cameca NanoSIMS50L*
