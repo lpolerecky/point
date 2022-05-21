@@ -1,10 +1,7 @@
 ---
 output:
   github_document:
-    html_preview: FALSE
-    math_method:
-      engine: webtex
-      url: https://latex.codecogs.com/svg.image?
+    html_preview: TRUE
 bibliography: vignettes/packages.bib 
 ---
 
@@ -37,12 +34,18 @@ here::i_am("README.Rmd")
 <!-- badges: end -->
 
 
-# Introduction to point
+# Introduction
 
-This project was originally inspired by the lack of detailed insight in the inner workings of the default software for the *Cameca NanoSIMS50L* (Utrecht University). Hence this project has the objective of processing raw ion count data into ion and isotope ratios of point-sourced measurements. Combined with statistics for the internal and external precision of, respectively, individual analyses and complete series of analyses, this functionality allows for the interrogation of the analytical consistency. Access to raw ion count data is, furthermore, useful as it allows detection of anomalous values associated with e.g. machine instability or heterogeneity of the analysed substrate. Upon detection, anomalous values can be omitted or further analysed to delineate the source of variation.
+<!--
+LP: In my opinion, your text was too complicated for a casual reader. This is because you use very technical terminology and even new terminology that will only become clear later, when you define it (e.g., internal and external precision). Also, I think it will be better if you omit the negative tone at the beginning and simply state what the software is and what it does. What I find important is to be clear that we are talking about spot measurements. I think this is the “common” – perhaps not the most accurate – name for it in the community. You call it “point-sourced measurements”, but I feel this term is not quite clear. See my suggestion below, where I tried to highlight the key features and – hopefully – keep it simple. 
+-->
 
-The point package is still under development but the master branch is functioning. Functionality is automatically tested with CI.
+*Point* is an open-source software for the analysis of data obtained by the **NanoSIMS 50L** (Cameca) instrument. It provides tools for quantifying ion and isotope ratios from the ion count data acquired through a series of measurements in **individual spots** on the sample (in the analytical software supplied by Cameca, this type of analysis is called the **isotopes analysis**). More specifically, it enables one to assess the analytical consistency of the measurements, quantify the variability of the calculated ratios within and between individual analyses, and identify possible sources of such variability (e.g., instrument instability or sample heterogeneity).
 
+The *point* package is written in R [@rversion]. It is still under development but the master branch is functioning. Functionality is automatically tested with CI.
+<!-- 
+LP: The meaning of CI needs to be clarified. It's probably a software developer jargon, but not clear for a casual user. 
+-->
 
 ```{r pkgs, echo=FALSE, message=FALSE}
 # following code for loading and writing the bibtex references for the used pkgs
@@ -72,14 +75,14 @@ bibtex::write.bib(
 ```
 
 
-## Credits
+# Credits
 
-The construction of the R [@rversion] package *point* and associated documentation was aided by the packages; *devtools* [@devtools], *roxygen2* [@roxygen2], *testthat* [@testthat], *knitr* [@knitr2014 ; @knitr2015], *rmarkdown* [@rmarkdown2018; @rmarkdown2020], *bookdown* [@bookdown2016] and the superb guidance in the book: *R packages: organize, test, document, and share your code*, by @Wickham2015. In addition, this package relies on a set of external packages from the tidyverse universe, including: *dplyr* [@dplyr], *tidyr* [@tidyr], *tibble* [@tibble], *stringr* [@stringr], *readr* [@readr], *magrittr* [@magrittr], *rlang* [@rlang], and *purrr* [@purrr] for internal functioning as well as specialised statistics; *polyaAeppli* [@polyaAeppli], *broom* [@broom], *broom.mixed* [@broom.mixed], *nlme* [@nlme], and *mgcv* [@mgcv]. Plots are made with *ggplot2* [@ggplot22016]
+The development of the package *point* and associated documentation was aided by the packages; *devtools* [@devtools], *roxygen2* [@roxygen2], *testthat* [@testthat], *knitr* [@knitr2014 ; @knitr2015], *rmarkdown* [@rmarkdown2018; @rmarkdown2020], *bookdown* [@bookdown2016] and the superb guidance in the book: *R packages: organize, test, document, and share your code*, by @Wickham2015. In addition, this package relies on a set of external packages from the tidyverse universe, including: *dplyr* [@dplyr], *tidyr* [@tidyr], *tibble* [@tibble], *stringr* [@stringr], *readr* [@readr], *magrittr* [@magrittr], *rlang* [@rlang], and *purrr* [@purrr] for internal functioning as well as specialised statistics; *polyaAeppli* [@polyaAeppli], *broom* [@broom], *broom.mixed* [@broom.mixed], *nlme* [@nlme], and *mgcv* [@mgcv]. Plots are made with *ggplot2* [@ggplot22016]
 
 
-## Installation
+# Installation
 
-You can install the released version of point 
+You can install the released version of *point* using the following command:
 
 ``` r
 # Install point from GitHub:
@@ -87,52 +90,68 @@ You can install the released version of point
 devtools::install_github("MartinSchobben/point")
 ```
 
-## Usage
+# Usage
 
-Load point with `library`.
+To start using *point*, load it into R using the following command:
 
 ```r
 library(point)
 ```
 
-## The point workflow
- 
-A more detailed outline of the general point workflow is given in the vignette *IC-introduction* (`vignette("IC-introduction")`). 
+A diagram outlining the general workflow implemented in the *point* package is shown below and described in more detail in the vignette *IC-introduction* (`vignette("IC-introduction")`). 
 
 ```{r workflow-graph, out.width="100%", echo=FALSE}
-knitr::include_graphics(here::here("man/figures/workflow.png"))
+knitr::include_graphics("man/figures/workflow.png")
 ```
 
+Use the following functions to read, process and analyse raw ion count data:
 
-To read, process and analyse raw ion count data use the functions:
-
-* `read_IC()`: raw ion count data (Cameca NanoSIMS 50L)
+* `read_IC()`: read raw ion count data (generated by Cameca's NanoSIMS 50L)
 * `cor_IC()`: process ion count data
 * `stat_X()`: analyse single ion count data
 * `stat_R()`: analyse ion ratios
 * `diag_R()`: diagnose ion ratios
 
-## Example 1: internal precision of isotope ratios
+More detailed information is available from the following vignettes:
 
-This is an example of how *Cameca NanoSIMS50L* raw data files can be extracted, processed and analysed for the ^13^C/^12^C isotope ratio ($R$). This produces a [tibble](https://tibble.tidyverse.org/) with descriptive and predictive (Poisson) statistics (demarcated with an \^) of the ion count data. This can be done for single analysis in order to obtain internal precision.
+*IC-read* (`vignette("IC-read")`): reading raw ion count data    
+*IC-process* (`vignette("IC-process")`): processing ion count data        
+*IC-precision* (`vignette("IC-precision")`): statistics concerning ion count precision    
+*IC-diagnostics* (`vignette("IC-diagnostics")`): diagnostics on internal variation
 
+<!--
+LP: Is this 'vignette' supposed to be an R-command? If I load point and type this in the console, I don’t get anything, just a warning message:
+vignette ‘IC-introduction’ not found
+-->
+
+## Example
+
+When conducting isotope ratio measurements in individual spots on the sample using the *NanoSIMS 50L* instrument, the measurement software generates three files with raw data for each spot: `chk_is`, `stat`, and `is_txt`. The data files are exported in a folder specified by the user. An example of this raw data, acquired during the measurement of the ^13^C/^12^C isotope ratio along a transect comprising three spots (separated by 20 $\mu$m) on a sample of glendonite, is shown [here](inst/extdata/2018-01-19-GLENDON/).
+<!--
+LP: check whether the link to 'here' is correct
+-->
+
+### Calculating internal precision of isotope ratios
+
+<!-- LP: We need to clarify the meaning of "internal precision. I think it's a term introduced by you, and it is not quite obvious what it means exactly. Especially when we start talking about internal vs. external precision. " -->
+
+Combine the functions `read_IC`, `cor_IC`, and `stat_R` to extract, process and analyse the data for the ^13^C/^12^C isotope ratio ($R$). These steps yield a [tibble](https://tibble.tidyverse.org/) with descriptive and predictive (Poisson) statistics of the ion count data (the predictive statistics are denoted with a hat). The results provide information about the internal precision of the individual analyses.
 
 ```{r setup-point, message=FALSE, echo=FALSE}
 library(point)
 ```
 
-
 ```{r example1}
 # Use point_example() to access the examples bundled with this package in the
 # inst/extdata directory.
 
-# Raw data containing 13C and 12C counts on carbonate
+# Read raw data containing 13C and 12C ion counts on carbonate
 tb_rw <- read_IC(point_example("2018-01-19-GLENDON"), meta = TRUE)
 
-# Processing raw ion count data
+# Process raw ion count data
 tb_pr <- cor_IC(tb_rw)
 
-# Internal precision for 13C/12C ratios
+# Calculate internal precision for the 13C/12C ratios
 tb_R <- stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .label = "webtex")
 ```
 
@@ -142,29 +161,27 @@ knitr::kable(tb_R, format.args = list(digits = 3, format = "G", flag = "0"))
 ```
 
 
-## Example 2: external precision of isotope ratios
+### Calculating external precision of isotope ratios
 
-To calculate the external reproducibility of isotope ratios one needs to use the `.nest` argument to define sets of analyses.
+<!--
+LP: Here again, it is unclear what is meant. I rewrote the text slightly, but we need to add more info about 'sets of analyses' and 'external reproducibility'
+-->
 
-  
+Use the `.nest` argument to define sets of analyses. In this way, the external reproducibility of isotope ratios can be calculated.
+
 ```{r example2}
 # external precision for 13C/12C ratios
 tb_R <- stat_R(tb_pr, "13C", "12C", sample.nm, file.nm, .nest = file.nm, 
                .label = "webtex")
 ```
 
-
 ```{r echo=FALSE}
 knitr::kable(tb_R, format.args = list(digits = 3, format = "G", flag = "0")) 
 ```
 
-
-For more detailed information:
-
-*IC-read* (`vignette("IC-read")`): reading raw ion count data use     
-*IC-process* (`vignette("IC-process")`): processing ion count data        
-*IC-precision* (`vignette("IC-precision")`): statistics concerning ion count precision    
-*IC-diagnostics* (`vignette("IC-diagnostics")`): diagnostics on internal variation
+<!--
+LP: As a last point, I would say that it would be useful to culminate these examples with one showing the true power of the package, so something about the diagnostics. The examples above only show the basic things, and so they are not very motivating.
+-->
 
 
 # References
